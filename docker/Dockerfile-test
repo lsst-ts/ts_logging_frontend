@@ -1,0 +1,16 @@
+FROM node:lts as builder
+
+WORKDIR /usr/src/nightly_digest
+
+# Install and cache app dependencies
+COPY nightly_digest/package.json .
+RUN npm install
+COPY . .
+RUN npm run build
+
+RUN chown -R node:node node_modules
+
+COPY nightly_digest .
+COPY docker/run-tests.sh .
+
+CMD ["/usr/src/nightly_digest/run-tests.sh"]
