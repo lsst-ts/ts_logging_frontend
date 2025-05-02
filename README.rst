@@ -2,6 +2,5 @@
 ts_logging_frontend
 ###################
 
-
-
-.. Add a brief (few sentence) description of what this package provides.
+``ts_logging_frontend`` is a package containing the frontend service for
+displaying the different modules and logging summaries from ``ts_logging_and_reporting.``
