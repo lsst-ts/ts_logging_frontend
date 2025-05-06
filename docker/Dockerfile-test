@@ -1,0 +1,11 @@
+FROM node:lts AS builder
+
+WORKDIR /usr/src/app
+COPY . .
+
+# Install app dependencies
+RUN npm install
+RUN npm install vitest
+
+# Run tests with vitest
+CMD ["npx", "vitest", "run"]
