@@ -1,16 +1,11 @@
-FROM node:lts as builder
+FROM node:lts AS builder
 
-WORKDIR /usr/src/nightly_digest
+WORKDIR /usr/src/app
+COPY . .
 
-# Install and cache app dependencies
-#COPY nightly_digest/package.json .
-#RUN npm install
-#COPY . .
-#RUN npm run build
+# Install app dependencies
+RUN npm install
+RUN npm install vitest
 
-#RUN chown -R node:node node_modules
-
-#COPY nightly_digest .
-#COPY docker/run-tests.sh .
-
-#CMD ["/usr/src/nightly_digest/run-tests.sh"]
+# Run tests with vitest
+CMD ["npx", "vitest", "run"]

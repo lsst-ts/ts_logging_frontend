@@ -19,8 +19,6 @@ pipeline {
   agent any
   environment {
     dockerImage = ""
-    // SAL setup file
-    SAL_SETUP_FILE = "/home/saluser/.setup_dev.sh"
     // LTD credentials
     user_ci = credentials('lsst-io')
     LTD_USERNAME="${user_ci_USR}"
@@ -41,8 +39,8 @@ pipeline {
       }
       steps {
         script {
-          sh "docker build -f docker/Dockerfile-test -t nightly-digest-frontend-test  ."
-          sh "docker run nightly-digest-frontend-test"
+          sh "docker build -f docker/Dockerfile-test -t nightly-digest-tests  ."
+          sh "docker run nightly-digest-tests"
         }
       }
     }
