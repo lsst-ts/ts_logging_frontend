@@ -5,28 +5,28 @@ import {DatePicker} from "@/components/ui/datepicker.jsx"
 
 const instruments = [
     {
-        value: "comcam",
-        label: "ComCam",
+        value: "simonyi",
+        label: "Simonyi",
     },
     {
-        value: "lsstcam",
-        label: "LSSTCam"
+        value: "auxtel",
+        label: "AuxTel"
     },
 ]
-function Parameters() {
+function Parameters({startDay, endDay, onStartDayChange, onEndDayChange, instrument}) {
     return (
         <>
             <div className="pt-3">
                 <Label htmlFor="instruments" className="text-white text-base pb-1"> Instruments </Label>
-                <ComboBox id="instruments" options={instruments} />
+                <ComboBox id="instruments" options={instruments} selectedValue={instrument} />
             </div>
             <div className="pt-8">
                 <Label htmlFor="dayobsstart" className="text-white text-base pb-1"> Dayobs - start </Label>
-                <DatePicker id="dayobsstart" />
+                <DatePicker id="dayobsstart" selectedDate={startDay} onDateChange={onStartDayChange}/>
             </div>
             <div className="pt-8">
                 <Label htmlFor="dayobsend" className="text-white text-base pb-1"> Dayobs - end </Label>
-                <DatePicker id="dayobsend" />
+                <DatePicker id="dayobsend" selectedDate={endDay} onDateChange={onEndDayChange}/>
             </div>
         </>
     )
