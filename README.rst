@@ -10,12 +10,7 @@ Then you can install dependencies and run the frontend with the following comman
 
 ::
 
-    npm install --legacy-peer-deps
-
-This will install the required dependencies for the frontend. The ``--legacy-peer-deps`` flag is used to avoid issues with peer dependencies.
-After the dependencies are installed, you can run the frontend using the following command:
-
-::
+    npm install
     npm run dev
 
 This will start a local server on port 5173. You can access the frontend by navigating to

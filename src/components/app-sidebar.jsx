@@ -7,7 +7,8 @@ import {
 } from '@/components/ui/sidebar.jsx'
 import Parameters from "@/components/parameters"
 import SideLinks from "@/components/sidelinks"
-export function AppSidebar(){
+export function AppSidebar({...props}){
+
     return (
         <Sidebar variant="sidebar">
             <SidebarHeader className="px-6 py-8">
@@ -46,7 +47,7 @@ export function AppSidebar(){
             <SidebarContent className="px-7">
                 <SidebarGroup>
                     <SidebarGroupContent>
-                        <Parameters/>
+                        <Parameters startDay={props.startDay} onStartDayChange={props.onStartDayChange} endDay={props.endDay} onEndDayChange={props.onEndDayChange} instrument={props.instrument} onInstrumentChange={props.onInstrumentChange}/>
                     </SidebarGroupContent>
                 </SidebarGroup>
                 <SidebarGroup className="pt-10">
