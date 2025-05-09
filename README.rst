@@ -23,3 +23,24 @@ To run tests, you can use the following command:
     npm run test
 
 This will run the tests using Vitest, a Vite-native test framework.
+
+#######
+Shadcn
+#######
+This project uses shadcn/ui for the component library. The components are based on Radix UI and Tailwind CSS.
+The components are designed to be easily customizable and extendable. The shadcn/ui library provides a set of pre-built components that can be used to build the frontend.
+
+shadcn is already configured.
+- configurations go in `src/components.json`
+- Follow instructions in the [docs](https://ui.shadcn.com/docs) to install a component
+- Installed components go in `src/components/ui/`
+
+#########################
+Styling with Tailwind CSS
+#########################
+This project uses Tailwind CSS for styling. Tailwind is a utility-first CSS framework that allows you to build custom designs without having to leave your HTML. It provides a set of utility classes that can be used to style your components.
+Tailwind is already configured. Global styles and configurations go in:
+
+- `src/index.css` 
+- `tailwind.config.js`
+
