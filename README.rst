@@ -23,3 +23,17 @@ To run tests, you can use the following command:
     npm run test
 
 This will run the tests using Vitest, a Vite-native test framework.
+
+This project also uses pre-commit hooks to ensure code quality. Please make sure
+to run the following command to install the pre-commit hooks:
+
+::
+
+    pre-commit install
+
+This will set up the pre-commit hooks to run automatically before each commit.
+To run the pre-commit hooks manually, you can use the following command:
+::
+
+    pre-commit run --all-files
+This will run all the pre-commit hooks on all files in the project.
