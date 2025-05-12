@@ -14,6 +14,9 @@ export default defineConfig({
     globals: true,
     environment: "jsdom",
   },
+  server: {
+    allowedHosts: ["frontend"],
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
