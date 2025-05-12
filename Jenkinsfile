@@ -41,7 +41,7 @@ pipeline {
             pre-commit run --all-files
             
             npm install vitest
-            npm run test
+            npx vitest run --run --no-color --reporter=verbose
           """
         }
       }
