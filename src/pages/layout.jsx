@@ -9,8 +9,8 @@ import MetricsTimeLoss from "@/components/metrics-timeloss.jsx";
 
 export default function Layout({ children }) {
   const [nooftickets, setNooftickets] = useState(0);
-  const [dayObsStart, setDayObsStart] = useState(Date.now());
-  const [dayObsEnd, setDayObsEnd] = useState(Date.now());
+  const [dayObsStart, setDayObsStart] = useState(new Date());
+  const [dayObsEnd, setDayObsEnd] = useState(new Date());
   const [instrument, setInstrument] = useState("auxtel");
 
   useEffect(() => {
