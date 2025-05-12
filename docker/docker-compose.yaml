@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  frontend:
+    container_name: nightlydigest-frontend
+    build:
+      context: ${FRONTEND_PATH}
+      dockerfile: docker/Dockerfile
+    image: nightlydigest-frontend-local
+    ports:
+      - "5173:5173"
+    volumes:
+      - ${FRONTEND_PATH}:/usr/src/app
+      - /usr/src/app/node_modules
+
+  backend:
+    container_name: nightlydigest-backend
+    build:
+      context: ${BACKEND_PATH}
+      dockerfile: docker/Dockerfile
+    image: nightlydigest-backend-local
+    environment:
+      - ACCESS_TOKEN=${ACCESS_TOKEN}
+    ports:
+      - "8080:8080"
+    volumes:
+      - ${BACKEND_PATH}:/home/saluser/develop
+
+  nginx:
+    container_name: nightlydigest-nginx
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
