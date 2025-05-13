@@ -11,6 +11,19 @@ vi.stubGlobal(
   ),
 );
 
+Object.defineProperty(window, "matchMedia", {
+  writable: true,
+  value: vi.fn().mockImplementation((query) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(), // deprecated
+    removeListener: vi.fn(), // deprecated
+    addEventListener: vi.fn(), // modern API
+    removeEventListener: vi.fn(), // modern API
+  })),
+});
+
 describe("App Component", () => {
   it("renders without crashing", () => {
     render(<App />);
