@@ -11,7 +11,8 @@ import TimeLossIcon from "../assets/TimeLossIcon.svg";
 import JiraIcon from "../assets/JiraIcon.svg";
 
 export default function Layout({ children }) {
-  const [nooftickets, setNooftickets] = useState(0);
+  const [tickets, setTickets] = useState([]);
+  const [exposures, setExposures] = useState([]);
   const [dayObsStart, setDayObsStart] = useState(new Date());
   const [dayObsEnd, setDayObsEnd] = useState(new Date());
   const [instrument, setInstrument] = useState("auxtel");
@@ -31,13 +32,34 @@ export default function Layout({ children }) {
       );
       if (res.ok) {
         const tix = JSON.parse(await res.text());
-        setNooftickets(tix.issues.length);
+        setTickets(tix.issues);
+      } else {
+        console.log("error");
+      }
+    }
+
+    async function fetchExposures() {
+      let start = dayObsStart.toISOString().split("T")[0];
+      let end = dayObsEnd.toISOString().split("T")[0];
+      const res = await fetch(
+        `http://0.0.0.0:8000/exposures?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      );
+      if (res.ok) {
+        const data = JSON.parse(await res.text());
+        setExposures(data.exposures);
       } else {
         console.log("error");
       }
     }
 
     fetchJiraTickets();
+    fetchExposures();
   }, [dayObsStart, dayObsEnd, instrument]);
 
   return (
