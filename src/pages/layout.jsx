@@ -12,15 +12,27 @@ import JiraIcon from "../assets/JiraIcon.svg";
 
 export default function Layout({ children }) {
   const [tickets, setTickets] = useState([]);
-  const [exposures, setExposures] = useState([]);
-  const [dayObsStart, setDayObsStart] = useState(new Date());
-  const [dayObsEnd, setDayObsEnd] = useState(new Date());
-  const [instrument, setInstrument] = useState("auxtel");
+  const [exposures, setExposures] = useState(0);
+  const [dayObsStart, setDayObsStart] = useState(new Date(2025, 2, 1));
+  const [dayObsEnd, setDayObsEnd] = useState(new Date(2025, 2, 2));
+  const [instrument, setInstrument] = useState("LSSTCam");
+
+  const handleStartDateChange = (date) => {
+    console.log("Start date changed:", date);
+    setDayObsStart(date);
+  };
+
+  const handleInstrumentChange = (inst) => {
+    console.log("Instrument changed:", inst);
+    setInstrument(inst);
+  };
 
   useEffect(() => {
+    console.log("Effect triggered", dayObsStart, dayObsEnd, instrument);
+    let start = dayObsStart.toISOString().split("T")[0];
+    let end = dayObsEnd.toISOString().split("T")[0];
+
     async function fetchJiraTickets() {
-      let start = dayObsStart.toISOString().split("T")[0];
-      let end = dayObsEnd.toISOString().split("T")[0];
       const res = await fetch(
         `http://0.0.0.0:8000/jira-tickets?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`,
         {
@@ -39,8 +51,6 @@ export default function Layout({ children }) {
     }
 
     async function fetchExposures() {
-      let start = dayObsStart.toISOString().split("T")[0];
-      let end = dayObsEnd.toISOString().split("T")[0];
       const res = await fetch(
         `http://0.0.0.0:8000/exposures?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`,
         {
@@ -52,7 +62,7 @@ export default function Layout({ children }) {
       );
       if (res.ok) {
         const data = JSON.parse(await res.text());
-        setExposures(data.exposures);
+        setExposures(data.exposures_count);
       } else {
         console.log("error");
       }
@@ -67,11 +77,11 @@ export default function Layout({ children }) {
       <SidebarProvider>
         <AppSidebar
           startDay={dayObsStart}
-          onStartDayChange={setDayObsStart}
+          onStartDayChange={handleStartDateChange}
           endDay={dayObsEnd}
           onEndDayChange={setDayObsEnd}
           instrument={instrument}
-          onInstrumentChange={setInstrument}
+          onInstrumentChange={handleInstrumentChange}
         />
         <main className="w-full bg-stone-800">
           {/* Show/Hide Sidebar button */}
