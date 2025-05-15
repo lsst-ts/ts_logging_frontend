@@ -1,3 +1,10 @@
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+
 import InfoIcon from "../assets/InfoIcon.svg";
 
 export default function MetricsCard({ icon, data, label, metadata, tooltip }) {
@@ -17,7 +24,17 @@ export default function MetricsCard({ icon, data, label, metadata, tooltip }) {
           <div className="text-md">{label}</div>
           {metadata && <div className="text-sm">{metadata}</div>}
         </div>
-        {tooltip && <img src={InfoIcon} className="self-end"/>}
+        {/* Code for tooltip, currently works only for mouse hover, not by touch on tablet. */}
+        {/* {tooltip &&
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger className="self-end min-w-4"><img src={InfoIcon}/></TooltipTrigger>
+              <TooltipContent>
+                <p>{tooltip}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        } */}
       </div>
     </div>
   );
