@@ -9,16 +9,19 @@ import ShutterIcon from "../assets/ShutterIcon.svg";
 import EfficiencyIcon from "../assets/EfficiencyIcon.svg";
 import TimeLossIcon from "../assets/TimeLossIcon.svg";
 import JiraIcon from "../assets/JiraIcon.svg";
+import { calculateEfficiency } from "@/utils/fetchUtils";
 
 export default function Layout({ children }) {
   const [exposures, setExposures] = useState(0);
   const [dayObsStart, setDayObsStart] = useState(new Date(2025, 4, 12));
   const [dayObsEnd, setDayObsEnd] = useState(new Date(2025, 4, 13));
   const [instrument, setInstrument] = useState("LSSTCam");
-  const [efficiency, setEfficiency] = useState(0.0);
-  const [timeLoss, setTimeLoss] = useState(0.0);
-  const [weatherLossPercent, setWeatherLossPercent] = useState(0.0);
-  const [faultLossPercent, setFaultLossPercent] = useState(0.0);
+  const [efficiency, setEfficiency] = useState(0);
+  const [efficiencyText, setEfficiencyText] = useState(`${efficiency} %`);
+  const [timeLoss, setTimeLoss] = useState("0 hours");
+  const [timeLossDetails, setTimeLossDetails] = useState(
+    "(- weather; - fault)",
+  );
 
   const handleStartDateChange = (date) => {
     setDayObsStart(date);
@@ -94,21 +97,28 @@ export default function Layout({ children }) {
       }
     }
 
+    // Fetch exposures, almanac, and narrative log
     fetchExposures();
     fetchAlmanac();
     fetchNarrativeLog();
 
-    if (nightHours !== 0) {
-      setEfficiency(sumExpTime / (nightHours * 60 * 60 - weatherLoss));
-    } else {
-      setEfficiency(0);
-    }
+    // Calculate efficiency
+    let eff = calculateEfficiency(nightHours, sumExpTime, weatherLoss);
+    setEfficiency(eff);
+    setEfficiencyText(`${eff} %`);
 
+    // Calculate time loss
     let loss = weatherLoss + faultLoss;
     if (loss > 0) {
-      setTimeLoss(loss);
-      setWeatherLossPercent((weatherLoss / loss) * 100);
-      setFaultLossPercent((faultLoss / loss) * 100);
+      let weatherPercent = (weatherLoss / loss) * 100;
+      let faultPercent = (faultLoss / loss) * 100;
+      setTimeLoss(`${loss} hours`);
+      setTimeLossDetails(
+        `(${weatherPercent}% weather; ${faultPercent}% fault)`,
+      );
+    } else {
+      setTimeLoss("0 hours");
+      setTimeLossDetails("(- weather; - fault)");
     }
   }, [dayObsStart, dayObsEnd, instrument]);
 
@@ -133,28 +143,24 @@ export default function Layout({ children }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
               <MetricsCard
                 icon={ShutterIcon}
-                data="838"
+                data={exposures}
                 label="Nighttime exposures taken"
-                metadata="(843 expected)"
+                metadata="(TBD expected)"
                 tooltip="On-sky exposures taken during the night."
               />
               <MetricsCard
-                icon={<EfficiencyChart value={92} size={40} />}
-                data="92 %"
+                icon={<EfficiencyChart value={efficiency} size={40} />}
+                data={efficiencyText}
                 label="Open-shutter (-weather) efficiency"
                 tooltip="Efficiency computed as total exposure time / (time between 18 degree twilights minus time lost to weather)"
               />
               <MetricsCard
                 icon={TimeLossIcon}
-                data="0.8 hrs"
+                data={timeLoss}
                 label="Time loss"
-                metadata="(80% weather; 20% fault)"
+                metadata={timeLossDetails}
               />
-              <MetricsCard
-                icon={JiraIcon}
-                data={nooftickets}
-                label="Jira tickets"
-              />
+              <MetricsCard icon={JiraIcon} data="TBD" label="Jira tickets" />
             </div>
             {/* Applets */}
             <div className="flex flex-col gap-4">
