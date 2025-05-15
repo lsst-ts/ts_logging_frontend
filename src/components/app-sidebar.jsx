@@ -12,11 +12,11 @@ export function AppSidebar({ ...props }) {
   return (
     <Sidebar variant="sidebar">
       <SidebarHeader className="px-6 py-8">
-        <div className="flex flex-row">
+        <div className="flex flex-row justify-center gap-2">
           <svg
             className="pr-2"
-            width="58"
-            height="48"
+            width="90"
+            height="75"
             viewBox="0 0 58 48"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
@@ -55,9 +55,9 @@ export function AppSidebar({ ...props }) {
             />
           </svg>
 
-          <h1 className="text-white text-3xl tracking-tight uppercase text-center">
+          <h1 className="flex flex-col justify-between text-white text-3xl uppercase text-left">
             <span className="font-extrabold">Nightly</span>
-            <span className="tracking-wider"> Digest</span>
+            <span className="tracking-[5px]">Digest</span>
           </h1>
         </div>
       </SidebarHeader>
