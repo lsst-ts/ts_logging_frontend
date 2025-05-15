@@ -17,7 +17,6 @@ export function DatePicker({ selectedDate, onDateChange }) {
 
   const handleChange = (newDate) => {
     setDate(newDate);
-    console.log("Date changed:", newDate);
     if (date) {
       onDateChange(date);
     }
