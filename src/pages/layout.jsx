@@ -51,8 +51,9 @@ export default function Layout({ children }) {
           instrument={instrument}
           onInstrumentChange={setInstrument}
         />
-        <main className="flex bg-gray-800">
-          <SidebarTrigger />
+        <main className="w-full bg-stone-800">
+          {/* Show/Hide Sidebar button */}
+          <SidebarTrigger className="color-teal-500"/>
           {children}
           {/* Main content */}
           <div className="flex flex-col w-full p-8 gap-8">

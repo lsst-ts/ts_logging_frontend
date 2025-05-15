@@ -121,6 +121,13 @@
   * {
     @apply border-border outline-ring/50;
   }
+
+  html, body {
+    overscroll-behavior: none;
+    background-color: #1c1917; /* stone-800 */
+    /* font-family: 'Inter', sans-serif; */
+  }
+
   body {
     @apply bg-background text-foreground;
   }
