@@ -2,10 +2,13 @@ import { useState, useEffect } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar.jsx";
 import { AppSidebar } from "@/components/app-sidebar.jsx";
 import Applet from "@/components/applet.jsx";
-import MetricsJira from "@/components/metrics-jira.jsx";
-import MetricsExposures from "@/components/metrics-exposures.jsx";
-import MetricsEfficiency from "@/components/metrics-efficiency.jsx";
-import MetricsTimeLoss from "@/components/metrics-timeloss.jsx";
+import MetricsCard from "@/components/metrics-card.jsx";
+
+import ShutterIcon from "../assets/ShutterIcon.svg";
+import EfficiencyIcon from "../assets/EfficiencyIcon.svg";
+import TimeLossIcon from "../assets/TimeLossIcon.svg";
+import JiraIcon from "../assets/JiraIcon.svg";
+
 
 export default function Layout({ children }) {
   const [nooftickets, setNooftickets] = useState(0);
@@ -51,28 +54,44 @@ export default function Layout({ children }) {
         <main className="flex bg-gray-800">
           <SidebarTrigger />
           {children}
+          {/* Main content */}
+          <div className="flex flex-col w-full p-8 gap-8">
+            {/* Metrics */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                <MetricsCard                  icon={ShutterIcon}
+                  data="838"
+                  label="Nighttime exposures taken"
+                  metadata="(843 expected)"
+                  tooltip="On-sky exposures taken during the night." />
+                <MetricsCard
+                  icon={EfficiencyIcon}
+                  data="92 %"
+                  label="Open-shutter (-weather) efficiency"
+                  tooltip="Efficiency computed as total exposure time / (time between 18 degree twilights minus time lost to weather)" />
+                <MetricsCard
+                  icon={TimeLossIcon}
+                  data="0.8 hrs"
+                  label="Time loss"
+                  metadata="(80% weather; 20% fault)" />
+                <MetricsCard
+                  icon={JiraIcon}
+                  data={nooftickets}
+                  label="Jira tickets" />
+            </div>
+            {/* Applets */}
+            <div className="flex flex-col gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <Applet />
+                <Applet />
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <Applet />
+                <Applet />
+                <Applet />
+              </div>
+            </div>
+          </div>
         </main>
-        <div className="w-full bg-gray-800">
-          <div className="grid grid-cols-4 gap-20 pt-8 pr-8">
-            <MetricsExposures noOfExposures="838" noOfExpectedExposures="843" />
-            <MetricsEfficiency efficiency="92" />
-            <MetricsTimeLoss
-              timeLoss="0.8"
-              weatherPercentage="80"
-              faultPercentage="20"
-            />
-            <MetricsJira noOfTickets={nooftickets} />
-          </div>
-          <div className="grid grid-cols-2 gap-10 pt-8 pl-4 pr-14">
-            <Applet />
-            <Applet />
-          </div>
-          <div className="grid grid-cols-3 gap-6 pt-8 pl-4 pr-14">
-            <Applet />
-            <Applet />
-            <Applet />
-          </div>
-        </div>
       </SidebarProvider>
     </>
   );
