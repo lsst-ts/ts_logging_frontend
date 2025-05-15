@@ -6,7 +6,8 @@ import {
   SidebarGroupContent,
 } from "@/components/ui/sidebar.jsx";
 import Parameters from "@/components/parameters";
-import SideLinks from "@/components/sidelinks";
+import NavMenu from "@/components/navMenu";
+
 export function AppSidebar({ ...props }) {
   return (
     <Sidebar variant="sidebar">
@@ -75,7 +76,7 @@ export function AppSidebar({ ...props }) {
         </SidebarGroup>
         <SidebarGroup className="pt-10">
           <SidebarGroupContent>
-            <SideLinks activeKey="summary" />
+            <NavMenu activeKey="digest" />
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
