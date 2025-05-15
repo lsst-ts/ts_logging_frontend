@@ -11,7 +11,6 @@ import TimeLossIcon from "../assets/TimeLossIcon.svg";
 import JiraIcon from "../assets/JiraIcon.svg";
 
 export default function Layout({ children }) {
-  const [tickets, setTickets] = useState([]);
   const [exposures, setExposures] = useState(0);
   const [dayObsStart, setDayObsStart] = useState(new Date(2025, 4, 12));
   const [dayObsEnd, setDayObsEnd] = useState(new Date(2025, 4, 13));
@@ -37,24 +36,6 @@ export default function Layout({ children }) {
     let nightHours = 0.0;
     let weatherLoss = 0.0;
     let faultLoss = 0.0;
-
-    async function fetchJiraTickets() {
-      const res = await fetch(
-        `http://0.0.0.0:8000/jira-tickets?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        },
-      );
-      if (res.ok) {
-        const tix = JSON.parse(await res.text());
-        setTickets(tix.issues);
-      } else {
-        console.log("error");
-      }
-    }
 
     async function fetchExposures() {
       const res = await fetch(
@@ -113,7 +94,6 @@ export default function Layout({ children }) {
       }
     }
 
-    fetchJiraTickets();
     fetchExposures();
     fetchAlmanac();
     fetchNarrativeLog();
