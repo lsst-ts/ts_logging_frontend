@@ -13,17 +13,19 @@ import JiraIcon from "../assets/JiraIcon.svg";
 export default function Layout({ children }) {
   const [tickets, setTickets] = useState([]);
   const [exposures, setExposures] = useState(0);
-  const [dayObsStart, setDayObsStart] = useState(new Date(2025, 2, 1));
-  const [dayObsEnd, setDayObsEnd] = useState(new Date(2025, 2, 2));
+  const [dayObsStart, setDayObsStart] = useState(new Date(2025, 4, 12));
+  const [dayObsEnd, setDayObsEnd] = useState(new Date(2025, 4, 13));
   const [instrument, setInstrument] = useState("LSSTCam");
+  const [efficiency, setEfficiency] = useState(0.0);
+  const [timeLoss, setTimeLoss] = useState(0.0);
+  const [weatherLossPercent, setWeatherLossPercent] = useState(0.0);
+  const [faultLossPercent, setFaultLossPercent] = useState(0.0);
 
   const handleStartDateChange = (date) => {
-    console.log("Start date changed:", date);
     setDayObsStart(date);
   };
 
   const handleInstrumentChange = (inst) => {
-    console.log("Instrument changed:", inst);
     setInstrument(inst);
   };
 
@@ -31,6 +33,10 @@ export default function Layout({ children }) {
     console.log("Effect triggered", dayObsStart, dayObsEnd, instrument);
     let start = dayObsStart.toISOString().split("T")[0];
     let end = dayObsEnd.toISOString().split("T")[0];
+    let sumExpTime = 0.0;
+    let nightHours = 0.0;
+    let weatherLoss = 0.0;
+    let faultLoss = 0.0;
 
     async function fetchJiraTickets() {
       const res = await fetch(
@@ -63,6 +69,45 @@ export default function Layout({ children }) {
       if (res.ok) {
         const data = JSON.parse(await res.text());
         setExposures(data.exposures_count);
+        sumExpTime = data.sum_exposure_time;
+        console.log(sumExpTime);
+      } else {
+        console.log("error");
+      }
+    }
+
+    async function fetchAlmanac() {
+      const res = await fetch(
+        `http://0.0.0.0:8000/almanac?dayObsStart=${start}&dayObsEnd=${end}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      );
+      if (res.ok) {
+        const data = JSON.parse(await res.text());
+        nightHours = data.night_hours;
+      } else {
+        console.log("error");
+      }
+    }
+
+    async function fetchNarrativeLog() {
+      const res = await fetch(
+        `http://0.0.0.0:8000/narrative-log?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      );
+      if (res.ok) {
+        const data = JSON.parse(await res.text());
+        weatherLoss = data.time_lost_to_weather;
+        faultLoss = data.time_lost_to_faults;
       } else {
         console.log("error");
       }
@@ -70,6 +115,21 @@ export default function Layout({ children }) {
 
     fetchJiraTickets();
     fetchExposures();
+    fetchAlmanac();
+    fetchNarrativeLog();
+
+    if (nightHours !== 0) {
+      setEfficiency(sumExpTime / (nightHours * 60 * 60 - weatherLoss));
+    } else {
+      setEfficiency(0);
+    }
+
+    let loss = weatherLoss + faultLoss;
+    if (loss > 0) {
+      setTimeLoss(loss);
+      setWeatherLossPercent((weatherLoss / loss) * 100);
+      setFaultLossPercent((faultLoss / loss) * 100);
+    }
   }, [dayObsStart, dayObsEnd, instrument]);
 
   return (
