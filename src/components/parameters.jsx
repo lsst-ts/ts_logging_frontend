@@ -1,5 +1,11 @@
 import * as React from "react";
-import { ComboBox } from "@/components/ui/combobox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { DatePicker } from "@/components/ui/datepicker.jsx";
 
@@ -13,30 +19,42 @@ const instruments = [
     label: "AuxTel",
   },
 ];
+
 function Parameters({
   startDay,
   endDay,
   onStartDayChange,
   onEndDayChange,
   instrument,
+  onInstrumentChange,
 }) {
   return (
     <>
       <div className="pt-3">
-        <Label htmlFor="instruments" className="text-white text-base pb-1">
+        <Label htmlFor="instrument" className="text-white text-base pb-1">
           {" "}
-          Instruments{" "}
+          Instrument:{" "}
         </Label>
-        <ComboBox
-          id="instruments"
-          options={instruments}
-          selectedValue={instrument}
-        />
+        <Select value={instrument} onValueChange={onInstrumentChange}>
+          <SelectTrigger
+            id="instrument"
+            className="w-[200px] bg-white justify-between font-normal rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] focus-visible:ring-4 focus-visible:ring-green-500/50"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {instruments.map((instr) => (
+              <SelectItem key={instr.value} value={instr.value}>
+                {instr.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       <div className="pt-8">
         <Label htmlFor="dayobsstart" className="text-white text-base pb-1">
           {" "}
-          Dayobs - start{" "}
+          Dayobs (UTC) - start:{" "}
         </Label>
         <DatePicker
           id="dayobsstart"
@@ -47,7 +65,7 @@ function Parameters({
       <div className="pt-8">
         <Label htmlFor="dayobsend" className="text-white text-base pb-1">
           {" "}
-          Dayobs - end{" "}
+          Dayobs (UTC) - end:{" "}
         </Label>
         <DatePicker
           id="dayobsend"

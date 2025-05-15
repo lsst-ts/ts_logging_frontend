@@ -121,7 +121,14 @@
   * {
     @apply border-border outline-ring/50;
   }
+
+  html,
   body {
-    @apply bg-background text-foreground;
+    overscroll-behavior: none;
+    background-color: #1c1917; /* stone-800 */
+  }
+
+  body {
+    @apply bg-stone-800 text-foreground;
   }
 }
