@@ -24,6 +24,12 @@ Object.defineProperty(window, "matchMedia", {
   })),
 });
 
+window.ResizeObserver = class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
+
 describe("App Component", () => {
   it("renders without crashing", () => {
     render(<App />);

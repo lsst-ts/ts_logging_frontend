@@ -1,11 +1,11 @@
 import * as React from "react";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-  } from "@/components/ui/select"
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { DatePicker } from "@/components/ui/datepicker.jsx";
 
@@ -36,7 +36,10 @@ function Parameters({
           Instrument:{" "}
         </Label>
         <Select value={instrument} onValueChange={onInstrumentChange}>
-          <SelectTrigger id="instrument" className="w-[200px] bg-white justify-between font-normal rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] focus-visible:ring-4 focus-visible:ring-green-500/50">
+          <SelectTrigger
+            id="instrument"
+            className="w-[200px] bg-white justify-between font-normal rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] focus-visible:ring-4 focus-visible:ring-green-500/50"
+          >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

@@ -4,12 +4,11 @@ import { AppSidebar } from "@/components/app-sidebar.jsx";
 import Applet from "@/components/applet.jsx";
 import MetricsCard from "@/components/metrics-card.jsx";
 
-import { EfficiencyChart } from "@/components/ui/RadialChart.jsx"
+import { EfficiencyChart } from "@/components/ui/RadialChart.jsx";
 import ShutterIcon from "../assets/ShutterIcon.svg";
 import EfficiencyIcon from "../assets/EfficiencyIcon.svg";
 import TimeLossIcon from "../assets/TimeLossIcon.svg";
 import JiraIcon from "../assets/JiraIcon.svg";
-
 
 export default function Layout({ children }) {
   const [nooftickets, setNooftickets] = useState(0);
@@ -54,31 +53,36 @@ export default function Layout({ children }) {
         />
         <main className="w-full bg-stone-800">
           {/* Show/Hide Sidebar button */}
-          <SidebarTrigger className="color-teal-500"/>
+          <SidebarTrigger className="color-teal-500" />
           {children}
           {/* Main content */}
           <div className="flex flex-col w-full p-8 gap-8">
             {/* Metrics */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                <MetricsCard                  icon={ShutterIcon}
-                  data="838"
-                  label="Nighttime exposures taken"
-                  metadata="(843 expected)"
-                  tooltip="On-sky exposures taken during the night." />
-                <MetricsCard
-                  icon={<EfficiencyChart value={92} size={40} />}
-                  data="92 %"
-                  label="Open-shutter (-weather) efficiency"
-                  tooltip="Efficiency computed as total exposure time / (time between 18 degree twilights minus time lost to weather)" />
-                <MetricsCard
-                  icon={TimeLossIcon}
-                  data="0.8 hrs"
-                  label="Time loss"
-                  metadata="(80% weather; 20% fault)" />
-                <MetricsCard
-                  icon={JiraIcon}
-                  data={nooftickets}
-                  label="Jira tickets" />
+              <MetricsCard
+                icon={ShutterIcon}
+                data="838"
+                label="Nighttime exposures taken"
+                metadata="(843 expected)"
+                tooltip="On-sky exposures taken during the night."
+              />
+              <MetricsCard
+                icon={<EfficiencyChart value={92} size={40} />}
+                data="92 %"
+                label="Open-shutter (-weather) efficiency"
+                tooltip="Efficiency computed as total exposure time / (time between 18 degree twilights minus time lost to weather)"
+              />
+              <MetricsCard
+                icon={TimeLossIcon}
+                data="0.8 hrs"
+                label="Time loss"
+                metadata="(80% weather; 20% fault)"
+              />
+              <MetricsCard
+                icon={JiraIcon}
+                data={nooftickets}
+                label="Jira tickets"
+              />
             </div>
             {/* Applets */}
             <div className="flex flex-col gap-4">
