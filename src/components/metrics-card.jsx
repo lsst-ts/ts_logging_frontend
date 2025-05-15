@@ -5,7 +5,12 @@ export default function MetricsCard({ icon, data, label, metadata, tooltip }) {
     <div className="flex flex-col justify-between bg-teal-900 text-white font-light p-4 rounded-lg shadow-[4px_4px_4px_0px_#0369A1]">
       <div className="flex flex-row justify-between h-12">
         <div className="text-2xl">{data}</div>
-        {icon && <img src={icon} />}
+        {/* Render dynamic component and static icons */}
+        {icon && (typeof icon === "string" ? (
+          <img src={icon} alt={label} />
+        ) : (
+          <div>{icon}</div>
+        ))}
       </div>
       <div className="flex flex-row justify-between min-h-12">
         <div className="flex flex-col justify-between">

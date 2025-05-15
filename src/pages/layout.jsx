@@ -4,6 +4,7 @@ import { AppSidebar } from "@/components/app-sidebar.jsx";
 import Applet from "@/components/applet.jsx";
 import MetricsCard from "@/components/metrics-card.jsx";
 
+import { EfficiencyChart } from "@/components/ui/RadialChart.jsx"
 import ShutterIcon from "../assets/ShutterIcon.svg";
 import EfficiencyIcon from "../assets/EfficiencyIcon.svg";
 import TimeLossIcon from "../assets/TimeLossIcon.svg";
@@ -65,7 +66,7 @@ export default function Layout({ children }) {
                   metadata="(843 expected)"
                   tooltip="On-sky exposures taken during the night." />
                 <MetricsCard
-                  icon={EfficiencyIcon}
+                  icon={<EfficiencyChart value={92} size={40} />}
                   data="92 %"
                   label="Open-shutter (-weather) efficiency"
                   tooltip="Efficiency computed as total exposure time / (time between 18 degree twilights minus time lost to weather)" />
