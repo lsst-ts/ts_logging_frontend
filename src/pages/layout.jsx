@@ -40,9 +40,13 @@ export default function Layout({ children }) {
     let weatherLoss = 0.0;
     let faultLoss = 0.0;
 
+    const httpProtocol = window.location.protocol;
+    const host = window.location.host;
+    const backendLocation = `${httpProtocol}//${host}/nightlydigest/api`;
+
     async function fetchExposures() {
       const res = await fetch(
-        `http://0.0.0.0:8000/exposures?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`,
+        `${backendLocation}/exposures?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`,
         {
           method: "GET",
           headers: {
@@ -62,7 +66,7 @@ export default function Layout({ children }) {
 
     async function fetchAlmanac() {
       const res = await fetch(
-        `http://0.0.0.0:8000/almanac?dayObsStart=${start}&dayObsEnd=${end}`,
+        `${backendLocation}/almanac?dayObsStart=${start}&dayObsEnd=${end}`,
         {
           method: "GET",
           headers: {
@@ -80,7 +84,7 @@ export default function Layout({ children }) {
 
     async function fetchNarrativeLog() {
       const res = await fetch(
-        `http://0.0.0.0:8000/narrative-log?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`,
+        `${backendLocation}/narrative-log?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`,
         {
           method: "GET",
           headers: {
