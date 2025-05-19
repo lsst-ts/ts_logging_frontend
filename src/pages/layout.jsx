@@ -22,6 +22,16 @@ export default function Layout({ children }) {
   const [timeLossDetails, setTimeLossDetails] = useState(
     "(- weather; - fault)",
   );
+  const [nightHours, setNightHours] = useState(0.0);
+  const [weatherLoss, setWeatherLoss] = useState(0.0);
+  const [sumExpTime, setSumExpTime] = useState(0.0);
+  const [faultLoss, setFaultLoss] = useState(0.0);
+
+  // const httpProtocol = window.location.protocol;
+  // const host = window.location.host;
+  // const backendLocation = `${httpProtocol}//${host}/nightlydigest/api`;
+  //TODO: use the above code to get the backend location dynamically
+  const backendLocation = "http://0.0.0.0:8000";
 
   const handleStartDateChange = (date) => {
     setDayObsStart(date);
@@ -32,17 +42,8 @@ export default function Layout({ children }) {
   };
 
   useEffect(() => {
-    console.log("Effect triggered", dayObsStart, dayObsEnd, instrument);
     let start = dayObsStart.toISOString().split("T")[0];
     let end = dayObsEnd.toISOString().split("T")[0];
-    let sumExpTime = 0.0;
-    let nightHours = 0.0;
-    let weatherLoss = 0.0;
-    let faultLoss = 0.0;
-
-    const httpProtocol = window.location.protocol;
-    const host = window.location.host;
-    const backendLocation = `${httpProtocol}//${host}/nightlydigest/api`;
 
     async function fetchExposures() {
       const res = await fetch(
@@ -57,8 +58,7 @@ export default function Layout({ children }) {
       if (res.ok) {
         const data = JSON.parse(await res.text());
         setExposures(data.exposures_count);
-        sumExpTime = data.sum_exposure_time;
-        console.log(sumExpTime);
+        setSumExpTime(data.sum_exposure_time);
       } else {
         console.log("error");
       }
@@ -76,7 +76,7 @@ export default function Layout({ children }) {
       );
       if (res.ok) {
         const data = JSON.parse(await res.text());
-        nightHours = data.night_hours;
+        setNightHours(data.night_hours);
       } else {
         console.log("error");
       }
@@ -94,8 +94,8 @@ export default function Layout({ children }) {
       );
       if (res.ok) {
         const data = JSON.parse(await res.text());
-        weatherLoss = data.time_lost_to_weather;
-        faultLoss = data.time_lost_to_faults;
+        setWeatherLoss(data.time_lost_to_weather);
+        setFaultLoss(faultLoss);
       } else {
         console.log("error");
       }
@@ -105,7 +105,9 @@ export default function Layout({ children }) {
     fetchExposures();
     fetchAlmanac();
     fetchNarrativeLog();
+  }, [dayObsStart, dayObsEnd, instrument]);
 
+  useEffect(() => {
     // Calculate efficiency
     let eff = calculateEfficiency(nightHours, sumExpTime, weatherLoss);
     setEfficiency(eff);
@@ -124,7 +126,7 @@ export default function Layout({ children }) {
       setTimeLoss("0 hours");
       setTimeLossDetails("(- weather; - fault)");
     }
-  }, [dayObsStart, dayObsEnd, instrument]);
+  }, [sumExpTime, weatherLoss, nightHours, faultLoss]);
 
   return (
     <>

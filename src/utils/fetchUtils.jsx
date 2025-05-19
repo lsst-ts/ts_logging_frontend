@@ -11,7 +11,7 @@ const calculateEfficiency = (nightHours, sumExpTime, weatherLoss) => {
   if (nightHours !== 0) {
     eff = sumExpTime / (nightHours * 60 * 60 - weatherLoss);
   }
-  return eff;
+  return eff === 0 ? 0 : eff.toFixed(2);
 };
 
 export { calculateEfficiency };
