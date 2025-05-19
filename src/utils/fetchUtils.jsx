@@ -14,4 +14,27 @@ const calculateEfficiency = (nightHours, sumExpTime, weatherLoss) => {
   return eff === 0 ? 0 : eff.toFixed(2);
 };
 
-export { calculateEfficiency };
+/**
+ * Calculates the total time loss and provides a breakdown of the loss due to weather and faults.
+ *
+ * @param {number} weatherLoss - The amount of time lost due to weather (in seconds).
+ * @param {number} faultLoss - The amount of time lost due to faults (in seconds).
+ * @returns {[string, string]} A tuple where the first element is the total time loss as a string (e.g., "5 seconds"),
+ * and the second element is a string detailing the percentage breakdown of weather and fault losses.
+ */
+const calculateTimeLoss = (weatherLoss, faultLoss) => {
+  let loss = weatherLoss + faultLoss;
+
+  let timeLoss = "0 hours";
+  let timeLossDetails = "(- weather; - fault)";
+
+  if (loss > 0) {
+    let weatherPercent = (weatherLoss / loss) * 100;
+    let faultPercent = (faultLoss / loss) * 100;
+    timeLoss = `${loss} hours`;
+    timeLossDetails = `(${weatherPercent}% weather; ${faultPercent}% fault)`;
+  }
+
+  return timeLoss, timeLossDetails;
+};
+export { calculateEfficiency, calculateTimeLoss };

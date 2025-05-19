@@ -9,7 +9,7 @@ import ShutterIcon from "../assets/ShutterIcon.svg";
 import EfficiencyIcon from "../assets/EfficiencyIcon.svg";
 import TimeLossIcon from "../assets/TimeLossIcon.svg";
 import JiraIcon from "../assets/JiraIcon.svg";
-import { calculateEfficiency } from "@/utils/fetchUtils";
+import { calculateEfficiency, calculateTimeLoss } from "@/utils/fetchUtils";
 
 export default function Layout({ children }) {
   const [exposures, setExposures] = useState(0);
@@ -114,18 +114,9 @@ export default function Layout({ children }) {
     setEfficiencyText(`${eff} %`);
 
     // Calculate time loss
-    let loss = weatherLoss + faultLoss;
-    if (loss > 0) {
-      let weatherPercent = (weatherLoss / loss) * 100;
-      let faultPercent = (faultLoss / loss) * 100;
-      setTimeLoss(`${loss} hours`);
-      setTimeLossDetails(
-        `(${weatherPercent}% weather; ${faultPercent}% fault)`,
-      );
-    } else {
-      setTimeLoss("0 hours");
-      setTimeLossDetails("(- weather; - fault)");
-    }
+    let lossValues = calculateTimeLoss(weatherLoss, faultLoss);
+    setTimeLoss(lossValues[0]);
+    setTimeLossDetails(lossValues[1]);
   }, [sumExpTime, weatherLoss, nightHours, faultLoss]);
 
   return (
