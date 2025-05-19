@@ -9,7 +9,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { DatePicker } from "@/components/ui/datepicker.jsx";
 
-const instruments = [
+const telescopes = [
   {
     value: "simonyi",
     label: "Simonyi",
@@ -25,27 +25,27 @@ function Parameters({
   endDay,
   onStartDayChange,
   onEndDayChange,
-  instrument,
-  onInstrumentChange,
+  telescope,
+  onTelescopeChange,
 }) {
   return (
     <>
       <div className="pt-3">
-        <Label htmlFor="instrument" className="text-white text-base pb-1">
+        <Label htmlFor="telescope" className="text-white text-base pb-1">
           {" "}
-          Instrument:{" "}
+          Telescope:{" "}
         </Label>
-        <Select value={instrument} onValueChange={onInstrumentChange}>
+        <Select value={telescope} onValueChange={onTelescopeChange}>
           <SelectTrigger
-            id="instrument"
+            id="telescope"
             className="w-[200px] bg-white justify-between font-normal rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] focus-visible:ring-4 focus-visible:ring-green-500/50"
           >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {instruments.map((instr) => (
-              <SelectItem key={instr.value} value={instr.value}>
-                {instr.label}
+            {telescopes.map((tel) => (
+              <SelectItem key={tel.value} value={tel.value}>
+                {tel.label}
               </SelectItem>
             ))}
           </SelectContent>

@@ -69,8 +69,8 @@ export function AppSidebar({ ...props }) {
               onStartDayChange={props.onStartDayChange}
               endDay={props.endDay}
               onEndDayChange={props.onEndDayChange}
-              instrument={props.instrument}
-              onInstrumentChange={props.onInstrumentChange}
+              telescope={props.telescope}
+              onTelescopeChange={props.onTelescopeChange}
             />
           </SidebarGroupContent>
         </SidebarGroup>

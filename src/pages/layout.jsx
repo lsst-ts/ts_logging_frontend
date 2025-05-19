@@ -14,14 +14,14 @@ export default function Layout({ children }) {
   const [nooftickets, setNooftickets] = useState(0);
   const [dayObsStart, setDayObsStart] = useState(new Date());
   const [dayObsEnd, setDayObsEnd] = useState(new Date());
-  const [instrument, setInstrument] = useState("auxtel");
+  const [telescope, setTelescope] = useState("auxtel");
 
   useEffect(() => {
     async function fetchJiraTickets() {
       let start = dayObsStart.toISOString().split("T")[0];
       let end = dayObsEnd.toISOString().split("T")[0];
       const res = await fetch(
-        `http://0.0.0.0:8000/jira-tickets?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`,
+        `http://0.0.0.0:8000/jira-tickets?dayObsStart=${start}&dayObsEnd=${end}&telescope=${telescope}`,
         {
           method: "GET",
           headers: {
@@ -38,7 +38,7 @@ export default function Layout({ children }) {
     }
 
     fetchJiraTickets();
-  }, [dayObsStart, dayObsEnd, instrument]);
+  }, [dayObsStart, dayObsEnd, telescope]);
 
   return (
     <>
@@ -48,8 +48,8 @@ export default function Layout({ children }) {
           onStartDayChange={setDayObsStart}
           endDay={dayObsEnd}
           onEndDayChange={setDayObsEnd}
-          instrument={instrument}
-          onInstrumentChange={setInstrument}
+          telescope={telescope}
+          onTelescopeChange={setTelescope}
         />
         <main className="w-full bg-stone-800">
           {/* Show/Hide Sidebar button */}
