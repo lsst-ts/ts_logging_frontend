@@ -27,11 +27,9 @@ export default function Layout({ children }) {
   const [sumExpTime, setSumExpTime] = useState(0.0);
   const [faultLoss, setFaultLoss] = useState(0.0);
 
-  // const httpProtocol = window.location.protocol;
-  // const host = window.location.host;
-  // const backendLocation = `${httpProtocol}//${host}/nightlydigest/api`;
-  //TODO: use the above code to get the backend location dynamically
-  const backendLocation = "http://0.0.0.0:8000";
+  const httpProtocol = window.location.protocol;
+  const host = window.location.host;
+  const backendLocation = `${httpProtocol}//${host}/nightlydigest/api`;
 
   const handleStartDateChange = (date) => {
     setDayObsStart(date);
