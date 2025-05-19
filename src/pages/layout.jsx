@@ -46,58 +46,74 @@ export default function Layout({ children }) {
     let end = dayObsEnd.toISOString().split("T")[0];
 
     async function fetchExposures() {
-      const res = await fetch(
-        `${backendLocation}/exposures?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
+      try {
+        const res = await fetch(
+          `${backendLocation}/exposures?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
           },
-        },
-      );
-      if (res.ok) {
-        const data = JSON.parse(await res.text());
+        );
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error(`Fetch failed with status ${res.status}: ${errorText}`);
+          return;
+        }
+        const data = await res.json();
         setExposures(data.exposures_count);
         setSumExpTime(data.sum_exposure_time);
-      } else {
-        console.log("error");
+      } catch (error) {
+        console.error("Error fetching exposures:", error);
       }
     }
 
     async function fetchAlmanac() {
-      const res = await fetch(
-        `${backendLocation}/almanac?dayObsStart=${start}&dayObsEnd=${end}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
+      try {
+        const res = await fetch(
+          `${backendLocation}/almanac?dayObsStart=${start}&dayObsEnd=${end}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
           },
-        },
-      );
-      if (res.ok) {
-        const data = JSON.parse(await res.text());
+        );
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error(`Fetch failed with status ${res.status}: ${errorText}`);
+          return;
+        }
+
+        const data = await res.json();
         setNightHours(data.night_hours);
-      } else {
-        console.log("error");
+      } catch (error) {
+        console.error("Error fetching almanac:", error);
       }
     }
 
     async function fetchNarrativeLog() {
-      const res = await fetch(
-        `${backendLocation}/narrative-log?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
+      try {
+        const res = await fetch(
+          `${backendLocation}/narrative-log?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
           },
-        },
-      );
-      if (res.ok) {
-        const data = JSON.parse(await res.text());
+        );
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error(`Fetch failed with status ${res.status}: ${errorText}`);
+          return;
+        }
+        const data = await res.json();
         setWeatherLoss(data.time_lost_to_weather);
         setFaultLoss(faultLoss);
-      } else {
-        console.log("error");
+      } catch (error) {
+        console.error("Error fetching narrative log:", error);
       }
     }
 
