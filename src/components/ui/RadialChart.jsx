@@ -1,26 +1,20 @@
 "use client";
 
-import {
-  RadialBarChart,
-  RadialBar,
-  PolarGrid,
-  PolarRadiusAxis,
-  Label,
-} from "recharts";
+import { RadialBarChart, RadialBar } from "recharts";
 import { ChartContainer } from "@/components/ui/chart";
 
-export function EfficiencyChart({ valuePercent = 92, size = 50 }) {
+export function EfficiencyChart({ value }) {
   const chartData = [
     {
-      efficiency: valuePercent,
+      efficiency: value,
       fill: "#FFFFFF",
     },
   ];
   const chartConfig = {};
-  const valueAngle = -(valuePercent / 100) * 360;
+  const valueAngle = -(value / 100) * 360;
 
   return (
-    <div style={{ width: size, height: size }}>
+    <div style={{ width: 40, height: 40 }}>
       <ChartContainer
         config={chartConfig}
         className="mx-auto aspect-square min-h-[40px] w-full"

@@ -89,7 +89,7 @@ export default function Layout({ children }) {
                 tooltip="On-sky exposures taken during the night."
               />
               <MetricsCard
-                icon={<EfficiencyChart value={efficiency} size={40} />}
+                icon={<EfficiencyChart value={efficiency} />}
                 data={efficiencyText}
                 label="Open-shutter (-weather) efficiency"
                 tooltip="Efficiency computed as total exposure time / (time between 18 degree twilights minus time lost to weather)"
