@@ -9,7 +9,13 @@ import ShutterIcon from "../assets/ShutterIcon.svg";
 import EfficiencyIcon from "../assets/EfficiencyIcon.svg";
 import TimeLossIcon from "../assets/TimeLossIcon.svg";
 import JiraIcon from "../assets/JiraIcon.svg";
-import { calculateEfficiency, calculateTimeLoss } from "@/utils/fetchUtils";
+import {
+  calculateEfficiency,
+  calculateTimeLoss,
+  fetchExposures,
+  fetchAlmanac,
+  fetchNarrativeLog,
+} from "@/utils/fetchUtils";
 
 export default function Layout({ children }) {
   const [exposures, setExposures] = useState(0);
@@ -21,10 +27,6 @@ export default function Layout({ children }) {
   const [weatherLoss, setWeatherLoss] = useState(0.0);
   const [sumExpTime, setSumExpTime] = useState(0.0);
   const [faultLoss, setFaultLoss] = useState(0.0);
-
-  const httpProtocol = window.location.protocol;
-  const host = window.location.host;
-  const backendLocation = `${httpProtocol}//${host}/nightlydigest/api`;
 
   const handleStartDateChange = (date) => {
     setDayObsStart(date);
@@ -38,82 +40,22 @@ export default function Layout({ children }) {
     let start = dayObsStart.toISOString().split("T")[0];
     let end = dayObsEnd.toISOString().split("T")[0];
 
-    async function fetchExposures() {
-      try {
-        const res = await fetch(
-          `${backendLocation}/exposures?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          },
-        );
-        if (!res.ok) {
-          const errorText = await res.text();
-          console.error(`Fetch failed with status ${res.status}: ${errorText}`);
-          return;
-        }
-        const data = await res.json();
-        setExposures(data.exposures_count);
-        setSumExpTime(data.sum_exposure_time);
-      } catch (error) {
-        console.error("Error fetching exposures:", error);
-      }
-    }
-
-    async function fetchAlmanac() {
-      try {
-        const res = await fetch(
-          `${backendLocation}/almanac?dayObsStart=${start}&dayObsEnd=${end}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          },
-        );
-        if (!res.ok) {
-          const errorText = await res.text();
-          console.error(`Fetch failed with status ${res.status}: ${errorText}`);
-          return;
-        }
-
-        const data = await res.json();
-        setNightHours(data.night_hours);
-      } catch (error) {
-        console.error("Error fetching almanac:", error);
-      }
-    }
-
-    async function fetchNarrativeLog() {
-      try {
-        const res = await fetch(
-          `${backendLocation}/narrative-log?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          },
-        );
-        if (!res.ok) {
-          const errorText = await res.text();
-          console.error(`Fetch failed with status ${res.status}: ${errorText}`);
-          return;
-        }
-        const data = await res.json();
-        setWeatherLoss(data.time_lost_to_weather);
-        setFaultLoss(faultLoss);
-      } catch (error) {
-        console.error("Error fetching narrative log:", error);
-      }
-    }
-
     // Fetch exposures, almanac, and narrative log
-    fetchExposures();
-    fetchAlmanac();
-    fetchNarrativeLog();
+    fetchExposures(start, end, instrument).then(
+      ([exposuresCount, exposureTime]) => {
+        setExposures(exposuresCount);
+        setSumExpTime(exposureTime);
+      },
+    );
+
+    fetchAlmanac(start, end).then((hours) => {
+      setNightHours(hours);
+    });
+
+    fetchNarrativeLog(start, end, instrument).then(([weather, fault]) => {
+      setWeatherLoss(weather);
+      setFaultLoss(fault);
+    });
   }, [dayObsStart, dayObsEnd, instrument]);
 
   const efficiency = calculateEfficiency(nightHours, sumExpTime, weatherLoss);
