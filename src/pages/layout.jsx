@@ -16,12 +16,7 @@ export default function Layout({ children }) {
   const [dayObsStart, setDayObsStart] = useState(new Date(2025, 4, 12));
   const [dayObsEnd, setDayObsEnd] = useState(new Date(2025, 4, 13));
   const [instrument, setInstrument] = useState("LSSTCam");
-  const [efficiency, setEfficiency] = useState(0);
-  const [efficiencyText, setEfficiencyText] = useState(`${efficiency} %`);
-  const [timeLoss, setTimeLoss] = useState("0 hours");
-  const [timeLossDetails, setTimeLossDetails] = useState(
-    "(- weather; - fault)",
-  );
+
   const [nightHours, setNightHours] = useState(0.0);
   const [weatherLoss, setWeatherLoss] = useState(0.0);
   const [sumExpTime, setSumExpTime] = useState(0.0);
@@ -121,17 +116,9 @@ export default function Layout({ children }) {
     fetchNarrativeLog();
   }, [dayObsStart, dayObsEnd, instrument]);
 
-  useEffect(() => {
-    // Calculate efficiency
-    let eff = calculateEfficiency(nightHours, sumExpTime, weatherLoss);
-    setEfficiency(eff);
-    setEfficiencyText(`${eff} %`);
-
-    // Calculate time loss
-    let lossValues = calculateTimeLoss(weatherLoss, faultLoss);
-    setTimeLoss(lossValues[0]);
-    setTimeLossDetails(lossValues[1]);
-  }, [sumExpTime, weatherLoss, nightHours, faultLoss]);
+  const efficiency = calculateEfficiency(nightHours, sumExpTime, weatherLoss);
+  const efficiencyText = `${efficiency} %`;
+  const [timeLoss, timeLossDetails] = calculateTimeLoss(weatherLoss, faultLoss);
 
   return (
     <>
