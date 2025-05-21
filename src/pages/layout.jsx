@@ -32,14 +32,25 @@ export default function Layout({ children }) {
     setDayObsStart(date);
   };
 
+  const handleEndDateChange = (date) => {
+    setDayObsEnd(date);
+  };
+
   const handleInstrumentChange = (inst) => {
     setInstrument(inst);
   };
 
   useEffect(() => {
-    let start = dayObsStart.toISOString().split("T")[0];
-    let end = dayObsEnd.toISOString().split("T")[0];
+    // increment start and end dates by one day
+    // because the date picker returns the date at zero index
+    let startDate = new Date(dayObsStart);
+    startDate.setDate(startDate.getDate() + 1);
 
+    let endDate = new Date(dayObsEnd);
+    endDate.setDate(endDate.getDate() + 1);
+
+    let start = startDate.toISOString().split("T")[0];
+    let end = endDate.toISOString().split("T")[0];
     // Fetch exposures, almanac, and narrative log
     fetchExposures(start, end, instrument).then(
       ([exposuresCount, exposureTime]) => {
@@ -58,6 +69,7 @@ export default function Layout({ children }) {
     });
   }, [dayObsStart, dayObsEnd, instrument]);
 
+  // calculate open shutter efficiency
   const efficiency = calculateEfficiency(nightHours, sumExpTime, weatherLoss);
   const efficiencyText = `${efficiency} %`;
   const [timeLoss, timeLossDetails] = calculateTimeLoss(weatherLoss, faultLoss);
@@ -69,7 +81,7 @@ export default function Layout({ children }) {
           startDay={dayObsStart}
           onStartDayChange={handleStartDateChange}
           endDay={dayObsEnd}
-          onEndDayChange={setDayObsEnd}
+          onEndDayChange={handleEndDateChange}
           instrument={instrument}
           onInstrumentChange={handleInstrumentChange}
         />

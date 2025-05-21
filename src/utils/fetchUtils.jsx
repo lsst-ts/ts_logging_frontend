@@ -23,17 +23,14 @@ const calculateEfficiency = (nightHours, sumExpTime, weatherLoss) => {
  * and the second element is a string detailing the percentage breakdown of weather and fault losses.
  */
 const calculateTimeLoss = (weatherLoss, faultLoss) => {
-  weatherLoss = weatherLoss / 3600; // Convert seconds to hours
-  faultLoss = faultLoss / 3600; // Convert seconds to hours
   let loss = weatherLoss + faultLoss;
-
-  let timeLoss = "0 hours";
+  let timeLoss = "0 seconds";
   let timeLossDetails = "(- weather; - fault)";
 
   if (loss > 0) {
     let weatherPercent = (weatherLoss / loss) * 100;
     let faultPercent = (faultLoss / loss) * 100;
-    timeLoss = `${loss} hours`;
+    timeLoss = `${loss.toFixed(2)} seconds`;
     timeLossDetails = `(${weatherPercent}% weather; ${faultPercent}% fault)`;
   }
 
