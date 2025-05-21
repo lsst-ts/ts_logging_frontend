@@ -9,47 +9,69 @@ import ShutterIcon from "../assets/ShutterIcon.svg";
 import EfficiencyIcon from "../assets/EfficiencyIcon.svg";
 import TimeLossIcon from "../assets/TimeLossIcon.svg";
 import JiraIcon from "../assets/JiraIcon.svg";
+import {
+  calculateEfficiency,
+  calculateTimeLoss,
+  fetchExposures,
+  fetchAlmanac,
+  fetchNarrativeLog,
+} from "@/utils/fetchUtils";
 
 export default function Layout({ children }) {
-  const [nooftickets, setNooftickets] = useState(0);
-  const [dayObsStart, setDayObsStart] = useState(new Date());
-  const [dayObsEnd, setDayObsEnd] = useState(new Date());
-  const [instrument, setInstrument] = useState("auxtel");
+  const [exposures, setExposures] = useState(0);
+  const [dayObsStart, setDayObsStart] = useState(new Date(2025, 4, 12));
+  const [dayObsEnd, setDayObsEnd] = useState(new Date(2025, 4, 13));
+  const [instrument, setInstrument] = useState("LSSTCam");
+
+  const [nightHours, setNightHours] = useState(0.0);
+  const [weatherLoss, setWeatherLoss] = useState(0.0);
+  const [sumExpTime, setSumExpTime] = useState(0.0);
+  const [faultLoss, setFaultLoss] = useState(0.0);
+
+  const handleStartDateChange = (date) => {
+    setDayObsStart(date);
+  };
+
+  const handleInstrumentChange = (inst) => {
+    setInstrument(inst);
+  };
 
   useEffect(() => {
-    async function fetchJiraTickets() {
-      let start = dayObsStart.toISOString().split("T")[0];
-      let end = dayObsEnd.toISOString().split("T")[0];
-      const res = await fetch(
-        `http://0.0.0.0:8000/jira-tickets?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        },
-      );
-      if (res.ok) {
-        const tix = JSON.parse(await res.text());
-        setNooftickets(tix.issues.length);
-      } else {
-        console.log("error");
-      }
-    }
+    let start = dayObsStart.toISOString().split("T")[0];
+    let end = dayObsEnd.toISOString().split("T")[0];
 
-    fetchJiraTickets();
+    // Fetch exposures, almanac, and narrative log
+    fetchExposures(start, end, instrument).then(
+      ([exposuresCount, exposureTime]) => {
+        setExposures(exposuresCount);
+        setSumExpTime(exposureTime);
+      },
+    );
+
+    fetchAlmanac(start, end).then((hours) => {
+      setNightHours(hours);
+    });
+
+    fetchNarrativeLog(start, end, instrument).then(([weather, fault]) => {
+      setWeatherLoss(weather);
+      setFaultLoss(fault);
+    });
   }, [dayObsStart, dayObsEnd, instrument]);
+
+  const efficiency = calculateEfficiency(nightHours, sumExpTime, weatherLoss);
+  const efficiencyText = `${efficiency} %`;
+  const [timeLoss, timeLossDetails] = calculateTimeLoss(weatherLoss, faultLoss);
 
   return (
     <>
       <SidebarProvider>
         <AppSidebar
           startDay={dayObsStart}
-          onStartDayChange={setDayObsStart}
+          onStartDayChange={handleStartDateChange}
           endDay={dayObsEnd}
           onEndDayChange={setDayObsEnd}
           instrument={instrument}
-          onInstrumentChange={setInstrument}
+          onInstrumentChange={handleInstrumentChange}
         />
         <main className="w-full bg-stone-800">
           {/* Show/Hide Sidebar button */}
@@ -61,28 +83,24 @@ export default function Layout({ children }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
               <MetricsCard
                 icon={ShutterIcon}
-                data="838"
+                data={exposures}
                 label="Nighttime exposures taken"
-                metadata="(843 expected)"
+                metadata="(TBD expected)"
                 tooltip="On-sky exposures taken during the night."
               />
               <MetricsCard
-                icon={<EfficiencyChart value={92} size={40} />}
-                data="92 %"
+                icon={<EfficiencyChart value={efficiency} size={40} />}
+                data={efficiencyText}
                 label="Open-shutter (-weather) efficiency"
                 tooltip="Efficiency computed as total exposure time / (time between 18 degree twilights minus time lost to weather)"
               />
               <MetricsCard
                 icon={TimeLossIcon}
-                data="0.8 hrs"
+                data={timeLoss}
                 label="Time loss"
-                metadata="(80% weather; 20% fault)"
+                metadata={timeLossDetails}
               />
-              <MetricsCard
-                icon={JiraIcon}
-                data={nooftickets}
-                label="Jira tickets"
-              />
+              <MetricsCard icon={JiraIcon} data="TBD" label="Jira tickets" />
             </div>
             {/* Applets */}
             <div className="flex flex-col gap-4">
