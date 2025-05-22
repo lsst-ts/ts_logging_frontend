@@ -99,6 +99,7 @@ export default function Layout({ children }) {
                 data={timeLoss}
                 label="Time loss"
                 metadata={timeLossDetails}
+                tooltip="Time loss as reported in the Narrative Log."
               />
               <MetricsCard icon={JiraIcon} data="TBD" label="Jira tickets" />
             </div>
