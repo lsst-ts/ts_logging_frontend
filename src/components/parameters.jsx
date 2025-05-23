@@ -34,7 +34,7 @@ function Parameters({
       <div className="pt-3">
         <Label htmlFor="instrument" className="text-white text-base pb-1">
           {" "}
-          Instrument:{" "}
+          Telescope:{" "}
         </Label>
         <Select value={instrument} onValueChange={onInstrumentChange}>
           <SelectTrigger
