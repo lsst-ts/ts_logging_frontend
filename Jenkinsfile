@@ -16,7 +16,13 @@ properties(
 )
 
 pipeline {
-  agent any
+  agent{
+    docker {
+      alwaysPull true
+      image 'lsstts/develop-env:develop'
+      args "--entrypoint=''"
+    }
+  }
   environment {
     dockerImage = ""
     // LTD credentials
@@ -25,22 +31,18 @@ pipeline {
     LTD_PASSWORD="${user_ci_PSW}"
   }
   stages {
-    stage("Run tests") {
-      when {
-        anyOf {
-          branch "main"
-          branch "develop"
-          branch "bugfix/*"
-          branch "hotfix/*"
-          branch "release/*"
-          branch "tickets/*"
-          branch "PR-*"
-        }
-      }
+    stage("Run pre-commit hooks and tests") {
       steps {
         script {
-          sh "docker build -f docker/Dockerfile-test -t nightly-digest-tests  ."
-          sh "docker run nightly-digest-tests"
+          sh """
+            source /home/saluser/.setup_dev.sh
+            
+            npm install
+            pre-commit run --all-files
+            
+            npm install vitest
+            npx vitest run --run --no-color --reporter=verbose
+          """
         }
       }
     }

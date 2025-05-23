@@ -12,6 +12,7 @@ repos:
         files: \.[j]sx?|\.css$  # *.js, *.jsx and css
         types: [file]
         exclude: docs/
+        language_version: 18.17.0
 
   - repo: https://github.com/pre-commit/mirrors-eslint
     rev: v9.25.0
