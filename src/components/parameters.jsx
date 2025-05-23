@@ -22,10 +22,10 @@ const instruments = Object.keys(TELESCOPES).map((key) => {
 });
 
 function Parameters({
-  startDay,
-  endDay,
-  onStartDayChange,
-  onEndDayChange,
+  dayobs,
+  noOfNights,
+  onDayobsChange,
+  onNoOfNightsChange,
   instrument,
   onInstrumentChange,
 }) {
@@ -53,25 +53,25 @@ function Parameters({
         </Select>
       </div>
       <div className="pt-8">
-        <Label htmlFor="dayobsstart" className="text-white text-base pb-1">
+        <Label htmlFor="dayobs" className="text-white text-base pb-1">
           {" "}
-          Dayobs (UTC) - start:{" "}
+          Night (dayobs){" "}
         </Label>
         <DatePicker
-          id="dayobsstart"
-          selectedDate={startDay}
-          onDateChange={onStartDayChange}
+          id="dayobs"
+          selectedDate={dayobs}
+          onDateChange={onDayobsChange}
         />
       </div>
       <div className="pt-8">
         <Label htmlFor="dayobsend" className="text-white text-base pb-1">
-          {" "}
-          Dayobs (UTC) - end:{" "}
+          Number of Nights
         </Label>
-        <DatePicker
-          id="dayobsend"
-          selectedDate={endDay}
-          onDateChange={onEndDayChange}
+        <input
+          type="number"
+          id="noOfNights"
+          value={noOfNights}
+          onChange={(e) => onNoOfNightsChange(e.target.value)}
         />
       </div>
     </>
