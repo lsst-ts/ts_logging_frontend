@@ -16,7 +16,13 @@ function SelectValue({ ...props }) {
   return <SelectPrimitive.Value data-slot="select-value" {...props} />;
 }
 
-function SelectTrigger({ className, size = "default", children, ...props }) {
+function SelectTrigger({
+  className,
+  size = "default",
+  children,
+  chevronDownIconClassName,
+  ...props
+}) {
   return (
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
@@ -29,7 +35,7 @@ function SelectTrigger({ className, size = "default", children, ...props }) {
     >
       {children}
       <SelectPrimitive.Icon asChild>
-        <ChevronDownIcon className="size-4" />
+        <ChevronDownIcon className={cn("size-4", chevronDownIconClassName)} />
       </SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
   );
@@ -75,7 +81,7 @@ function SelectLabel({ className, ...props }) {
   );
 }
 
-function SelectItem({ className, children, ...props }) {
+function SelectItem({ className, children, checkIconClassName, ...props }) {
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
@@ -87,7 +93,7 @@ function SelectItem({ className, children, ...props }) {
     >
       <span className="absolute right-2 flex size-3.5 items-center justify-center">
         <SelectPrimitive.ItemIndicator>
-          <CheckIcon className="size-4" />
+          <CheckIcon className={cn("size-4", checkIconClassName)} />
         </SelectPrimitive.ItemIndicator>
       </span>
       <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
@@ -105,7 +111,7 @@ function SelectSeparator({ className, ...props }) {
   );
 }
 
-function SelectScrollUpButton({ className, ...props }) {
+function SelectScrollUpButton({ className, chevronUpIconClassName, ...props }) {
   return (
     <SelectPrimitive.ScrollUpButton
       data-slot="select-scroll-up-button"
@@ -115,12 +121,16 @@ function SelectScrollUpButton({ className, ...props }) {
       )}
       {...props}
     >
-      <ChevronUpIcon className="size-4" />
+      <ChevronUpIcon className={cn("size-4", chevronUpIconClassName)} />
     </SelectPrimitive.ScrollUpButton>
   );
 }
 
-function SelectScrollDownButton({ className, ...props }) {
+function SelectScrollDownButton({
+  className,
+  chevronDownIconClassName,
+  ...props
+}) {
   return (
     <SelectPrimitive.ScrollDownButton
       data-slot="select-scroll-down-button"
@@ -130,7 +140,7 @@ function SelectScrollDownButton({ className, ...props }) {
       )}
       {...props}
     >
-      <ChevronDownIcon className="size-4" />
+      <ChevronDownIcon className={cn("size-4", chevronDownIconClassName)} />
     </SelectPrimitive.ScrollDownButton>
   );
 }
