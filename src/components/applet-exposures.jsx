@@ -83,7 +83,7 @@ function AppletExposures() {
           <div className="border-2 border-teal-900 w-1/4 p-4 flex flex-col gap-4">
             <div>
               <Label htmlFor="plotBy" className="text-white text-base pb-1">
-                Plot exposures by:
+                Plot by:
               </Label>
               <Select value={plotBy} onValueChange={setPlotBy}>
                 <SelectTrigger
