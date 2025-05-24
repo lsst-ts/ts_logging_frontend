@@ -5,6 +5,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar.jsx";
 import { AppSidebar } from "@/components/app-sidebar.jsx";
 import EfficiencyIcon from "../assets/EfficiencyIcon.svg";
 import Applet from "@/components/applet.jsx";
+import AppletExposures from "@/components/applet-exposures.jsx";
 import MetricsCard from "@/components/metrics-card.jsx";
 import { DateTime } from "luxon";
 
@@ -220,7 +221,7 @@ export default function Layout({ children }) {
             <div className="flex flex-col gap-4">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <Applet />
-                <Applet />
+                <AppletExposures />
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <Applet />
