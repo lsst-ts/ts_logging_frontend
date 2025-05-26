@@ -16,6 +16,8 @@ import {
   fetchExposures,
   fetchAlmanac,
   fetchNarrativeLog,
+  getDayobsStr,
+  getDatetimFromDayobsStr,
 } from "@/utils/fetchUtils";
 
 export default function Layout({ children }) {
@@ -29,37 +31,11 @@ export default function Layout({ children }) {
   const [sumExpTime, setSumExpTime] = useState(0.0);
   const [faultLoss, setFaultLoss] = useState(0.0);
 
-  /**
-   * Formats a given JavaScript Date object into a string format 'yyyyLLdd' using luxon.
-   *
-   * @param {Date|null|undefined} date - The date to format. If null or undefined, returns an empty string.
-   * @returns {string} The formatted date string, or an empty string if no date is provided.
-   */
-  const getDayobsStr = (date) => {
-    return date ? DateTime.fromJSDate(date).toFormat("yyyyLLdd") : "";
-  };
-
-  /**
-   * Converts a date string in 'yyyyMMdd' format (assumed to be in the 'America/Santiago' timezone)
-   * to a UTC DateTime object set at 12:00:00 local time.
-   *
-   * @param {string} dayObsStr - The date string in 'yyyyMMdd' format (e.g., '20240607').
-   * @returns luxon {DateTime} The corresponding UTC DateTime object at 12:00:00.
-   */
-  const getDatetimFromDayobsStr = (dayObsStr) => {
-    const chileZone = "America/Santiago";
-    const result = DateTime.fromFormat(dayObsStr, "yyyyMMdd", {
-      zone: chileZone,
-    }).set({ hour: 12, minute: 0, second: 0 });
-    return result.toUTC(); //.toJSDate();
-  };
-
   const handleDayobsChange = (date) => {
     setDayobs(date);
   };
 
   const handleNoOfNightsChange = (nightsCount) => {
-    console.log("Nights Count: ", nightsCount.target.value);
     setNoOfNights(nightsCount.target.value);
   };
 

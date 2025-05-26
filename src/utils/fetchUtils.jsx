@@ -1,3 +1,5 @@
+import { DateTime } from "luxon";
+
 /**
  * Calculates the efficiency of night hours usage, accounting for exposure time and weather loss.
  *
@@ -145,10 +147,37 @@ const fetchNarrativeLog = async (start, end, instrument) => {
   return [data.time_lost_to_weather, data.time_lost_to_faults];
 };
 
+/**
+ * Formats a given JavaScript Date object into a string format 'yyyyLLdd' using luxon.
+ *
+ * @param {Date|null|undefined} date - The date to format. If null or undefined, returns an empty string.
+ * @returns {string} The formatted date string, or an empty string if no date is provided.
+ */
+const getDayobsStr = (date) => {
+  return date ? DateTime.fromJSDate(date).toFormat("yyyyLLdd") : "";
+};
+
+/**
+ * Converts a date string in 'yyyyMMdd' format (assumed to be in the 'America/Santiago' timezone)
+ * to a UTC DateTime object set at 12:00:00 local time.
+ *
+ * @param {string} dayObsStr - The date string in 'yyyyMMdd' format (e.g., '20240607').
+ * @returns luxon {DateTime} The corresponding UTC DateTime object at 12:00:00.
+ */
+const getDatetimFromDayobsStr = (dayObsStr) => {
+  const chileZone = "America/Santiago";
+  const result = DateTime.fromFormat(dayObsStr, "yyyyMMdd", {
+    zone: chileZone,
+  }).set({ hour: 12, minute: 0, second: 0 });
+  return result.toUTC(); //.toJSDate();
+};
+
 export {
   calculateEfficiency,
   calculateTimeLoss,
   fetchExposures,
   fetchAlmanac,
   fetchNarrativeLog,
+  getDayobsStr,
+  getDatetimFromDayobsStr,
 };
