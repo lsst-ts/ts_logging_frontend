@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { DatePicker } from "@/components/ui/datepicker.jsx";
+import { Input } from "@/components/ui/input";
 
 const TELESCOPES = Object.freeze({
   AuxTel: "LATISS",
@@ -67,11 +68,11 @@ function Parameters({
         <Label htmlFor="dayobsend" className="text-white text-base pb-1">
           Number of Nights
         </Label>
-        <input
+        <Input
           type="number"
           id="noOfNights"
           value={noOfNights}
-          onChange={(e) => onNoOfNightsChange(e.target.value)}
+          onChange={onNoOfNightsChange}
         />
       </div>
     </>

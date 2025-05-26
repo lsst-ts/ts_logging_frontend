@@ -58,6 +58,11 @@ export default function Layout({ children }) {
     setDayobs(date);
   };
 
+  const handleNoOfNightsChange = (nightsCount) => {
+    console.log("Nights Count: ", nightsCount.target.value);
+    setNoOfNights(nightsCount.target.value);
+  };
+
   const handleInstrumentChange = (inst) => {
     setInstrument(inst);
   };
@@ -110,7 +115,7 @@ export default function Layout({ children }) {
           dayobs={dayobs}
           onDayobsChange={handleDayobsChange}
           noOfNights={noOfNights}
-          onNoOfNightsChange={setNoOfNights}
+          onNoOfNightsChange={handleNoOfNightsChange}
           instrument={instrument}
           onInstrumentChange={handleInstrumentChange}
         />
