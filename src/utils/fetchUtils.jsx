@@ -26,13 +26,13 @@ const calculateEfficiency = (nightHours, sumExpTime, weatherLoss) => {
  */
 const calculateTimeLoss = (weatherLoss, faultLoss) => {
   let loss = weatherLoss + faultLoss;
-  let timeLoss = "0 seconds";
+  let timeLoss = "0 hours";
   let timeLossDetails = "(- weather; - fault)";
 
   if (loss > 0) {
     let weatherPercent = (weatherLoss / loss) * 100;
     let faultPercent = (faultLoss / loss) * 100;
-    timeLoss = `${loss.toFixed(2)} seconds`;
+    timeLoss = `${loss.toFixed(2)} hours`;
     timeLossDetails = `(${weatherPercent}% weather; ${faultPercent}% fault)`;
   }
 
@@ -144,7 +144,7 @@ const fetchNarrativeLog = async (start, end, instrument) => {
     console.error("Error fetching Narrative Log");
     return [0, 0];
   }
-  return [data.time_lost_to_weather, data.time_lost_to_faults];
+  return [data.time_lost_to_weather, data.time_lost_to_faults, data.exposures];
 };
 
 /**

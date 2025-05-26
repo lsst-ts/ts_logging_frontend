@@ -7,7 +7,6 @@ import { DateTime } from "luxon";
 
 import { EfficiencyChart } from "@/components/ui/RadialChart.jsx";
 import ShutterIcon from "../assets/ShutterIcon.svg";
-import EfficiencyIcon from "../assets/EfficiencyIcon.svg";
 import TimeLossIcon from "../assets/TimeLossIcon.svg";
 import JiraIcon from "../assets/JiraIcon.svg";
 import {
@@ -21,7 +20,7 @@ import {
 } from "@/utils/fetchUtils";
 
 export default function Layout({ children }) {
-  const [exposures, setExposures] = useState(0);
+  const [exposureCount, setExposureCount] = useState(0);
   const [dayobs, setDayobs] = useState(DateTime.utc().toJSDate());
   const [noOfNights, setNoOfNights] = useState(1);
   const [instrument, setInstrument] = useState("LSSTCam");
@@ -61,8 +60,8 @@ export default function Layout({ children }) {
 
     // Fetch exposures, almanac, and narrative log
     fetchExposures(startDayobs, endDayobs, instrument).then(
-      ([exposuresCount, exposureTime]) => {
-        setExposures(exposuresCount);
+      ([exposuresNo, exposureTime]) => {
+        setExposureCount(exposuresNo);
         setSumExpTime(exposureTime);
       },
     );
@@ -105,7 +104,7 @@ export default function Layout({ children }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
               <MetricsCard
                 icon={ShutterIcon}
-                data={exposures}
+                data={exposureCount}
                 label="Nighttime exposures taken"
                 metadata="(TBD expected)"
                 tooltip="On-sky exposures taken during the night."
