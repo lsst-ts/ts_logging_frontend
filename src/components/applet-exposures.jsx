@@ -1,5 +1,7 @@
 // Applet: Display a breakdown of the exposures into type, reason, and program.
 
+"use client";
+
 import { useState } from "react";
 
 import {
@@ -16,13 +18,19 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-
+import { Bar, BarChart, XAxis, YAxis } from "recharts";
+import {
+  // ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
 import InfoIcon from "../assets/InfoIcon.svg";
 import DownloadIcon from "../assets/DownloadIcon.svg";
 
 function AppletExposures() {
   const [plotBy, setPlotBy] = useState("Number");
-  const [groupBy, setGroupBy] = useState("Obs. reason");
+  const [groupBy, setGroupBy] = useState("Science program");
   const [sortBy, setSortBy] = useState("Default");
 
   const plotByOptions = [
@@ -43,6 +51,59 @@ function AppletExposures() {
     { value: "Highest number first", label: "Highest number first" },
     { value: "Lowest number first", label: "Lowest number first" },
   ];
+
+  const chartData = [
+    { browser: "chrome", exposures: 275, fill: "#9c27b0" },
+    { browser: "safari", exposures: 200, fill: "#ff9800" },
+    { browser: "firefox", exposures: 187, fill: "#4caf50" },
+    { browser: "edge", exposures: 173, fill: "#2196f3" },
+    { browser: "other", exposures: 90, fill: "#607d8b" },
+  ];
+
+  const chartConfig = {
+    visitors: {
+      label: "Exposures",
+    },
+    chrome: {
+      label: "BLOCK-295",
+      color: "hsl(var(--chart-1))",
+    },
+    safari: {
+      label: "BLOCK-305",
+      color: "hsl(var(--chart-2))",
+    },
+    firefox: {
+      label: "BLOCK-306",
+      color: "hsl(var(--chart-3))",
+    },
+    edge: {
+      label: "BLOCK-T17",
+      color: "hsl(var(--chart-4))",
+    },
+    other: {
+      label: "spec-survey",
+      color: "hsl(var(--chart-5))",
+    },
+  };
+
+  // Custom shape for bars - 2 rounded corners
+  const CustomBarShape = (props) => {
+    const { fill, x, y, width, height } = props;
+
+    return (
+      <path
+        d={`M${x},${y} 
+           h${width - 5} 
+           a5,5 0 0 1 5,5 
+           v${height - 10} 
+           a5,5 0 0 1 -5,5 
+           h-${width - 5} 
+           z`}
+        fill={fill}
+        stroke="none"
+      />
+    );
+  };
 
   return (
     <Card className="border-none p-0 bg-stone-800 gap-2">
@@ -74,12 +135,52 @@ function AppletExposures() {
           </Popover>
         </div>
       </CardHeader>
-
       <CardContent className="grid gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 h-80 font-thin">
         <div className="flex flex-row gap-4">
-          <div className="border-2 border-teal-900 w-3/4 p-4">
-            Insert chart of exposures here.
+          {/* Plot display */}
+          <div className="border-2 border-teal-900 w-3/4 p-4 max-h-[282px] overflow-y-scroll">
+            <ChartContainer config={chartConfig}>
+              <BarChart
+                data={chartData}
+                layout="vertical"
+                margin={{
+                  left: 30,
+                }}
+                barCategoryGap="10%"
+                barGap={10}
+              >
+                <Bar
+                  dataKey="exposures"
+                  layout="vertical"
+                  barSize={20}
+                  shape={<CustomBarShape />}
+                />
+                <YAxis
+                  dataKey="browser"
+                  type="category"
+                  axisLine={{ stroke: "#ffffff", strokeWidth: 2 }}
+                  tickLine={false}
+                  tick={{ fill: "#ffffff" }} // axis labels
+                  tickMargin={10} // space for labels
+                  tickFormatter={(value) => chartConfig[value]?.label}
+                />
+                <XAxis
+                  dataKey="exposures"
+                  type="number"
+                  orientation="top"
+                  axisLine={{ stroke: "#ffffff", strokeWidth: 2 }}
+                  tickLine={{ stroke: "#ffffff", strokeWidth: 2 }}
+                  tick={{ fill: "#ffffff", fontSize: 12 }}
+                />
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent hideLabel />}
+                />
+              </BarChart>
+            </ChartContainer>
           </div>
+
+          {/* Plot controls */}
           <div className="border-2 border-teal-900 w-1/4 p-4 flex flex-col gap-4">
             <div>
               <Label htmlFor="plotBy" className="text-white text-base pb-1">
