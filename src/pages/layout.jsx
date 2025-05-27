@@ -22,7 +22,9 @@ import {
 
 export default function Layout({ children }) {
   const [exposureCount, setExposureCount] = useState(0);
-  const [dayobs, setDayobs] = useState(DateTime.utc().toJSDate());
+  const [dayobs, setDayobs] = useState(
+    DateTime.utc().minus({ days: 1 }).toJSDate(),
+  );
   const [noOfNights, setNoOfNights] = useState(1);
   const [instrument, setInstrument] = useState("LSSTCam");
 
