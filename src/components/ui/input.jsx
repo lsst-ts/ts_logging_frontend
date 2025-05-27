@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-export function Input({ className, type, ...props }) {
+export function Input({ className, type, onValueChange, ...props }) {
   return (
     <input
       type={type}
@@ -15,6 +15,10 @@ export function Input({ className, type, ...props }) {
         "text-black text-base pb-1",
         className,
       )}
+      onChange={(e) => {
+        const value = e.target.value;
+        if (onValueChange) onValueChange(value);
+      }}
       {...props}
     />
   );

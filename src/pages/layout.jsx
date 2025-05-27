@@ -36,7 +36,7 @@ export default function Layout({ children }) {
   };
 
   const handleNoOfNightsChange = (nightsCount) => {
-    setNoOfNights(nightsCount.target.value);
+    setNoOfNights(nightsCount);
   };
 
   const handleInstrumentChange = (inst) => {

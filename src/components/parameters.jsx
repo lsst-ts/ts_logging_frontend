@@ -71,8 +71,9 @@ function Parameters({
         <Input
           type="number"
           id="noOfNights"
+          min="1"
           value={noOfNights}
-          onChange={onNoOfNightsChange}
+          onValueChange={onNoOfNightsChange}
         />
       </div>
     </>
