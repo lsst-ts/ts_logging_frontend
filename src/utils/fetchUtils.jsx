@@ -164,12 +164,12 @@ const getDayobsStr = (date) => {
  * @param {string} dayObsStr - The date string in 'yyyyMMdd' format (e.g., '20240607').
  * @returns luxon {DateTime} The corresponding UTC DateTime object at 12:00:00.
  */
-const getDatetimFromDayobsStr = (dayObsStr) => {
+const getDatetimeFromDayobsStr = (dayObsStr) => {
   const chileZone = "America/Santiago";
   const result = DateTime.fromFormat(dayObsStr, "yyyyMMdd", {
     zone: chileZone,
   }).set({ hour: 12, minute: 0, second: 0 });
-  return result.toUTC(); //.toJSDate();
+  return result.toUTC();
 };
 
 export {
@@ -179,5 +179,5 @@ export {
   fetchAlmanac,
   fetchNarrativeLog,
   getDayobsStr,
-  getDatetimFromDayobsStr,
+  getDatetimeFromDayobsStr,
 };

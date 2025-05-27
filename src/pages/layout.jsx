@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar.jsx";
 import { AppSidebar } from "@/components/app-sidebar.jsx";
+import EfficiencyIcon from "../assets/EfficiencyIcon.svg";
 import Applet from "@/components/applet.jsx";
 import MetricsCard from "@/components/metrics-card.jsx";
 import { DateTime } from "luxon";
@@ -16,7 +17,7 @@ import {
   fetchAlmanac,
   fetchNarrativeLog,
   getDayobsStr,
-  getDatetimFromDayobsStr,
+  getDatetimeFromDayobsStr,
 } from "@/utils/fetchUtils";
 
 export default function Layout({ children }) {
@@ -50,7 +51,7 @@ export default function Layout({ children }) {
       return;
     }
 
-    let dateFromDayobs = getDatetimFromDayobsStr(dayobsStr);
+    let dateFromDayobs = getDatetimeFromDayobsStr(dayobsStr);
 
     let startDate = dateFromDayobs.minus({ days: noOfNights - 1 });
     let startDayobs = startDate.toFormat("yyyyLLdd");
