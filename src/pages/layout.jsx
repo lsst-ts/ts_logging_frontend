@@ -33,6 +33,10 @@ export default function Layout({ children }) {
   const [sumExpTime, setSumExpTime] = useState(0.0);
   const [faultLoss, setFaultLoss] = useState(0.0);
 
+  const [exposuresLoading, setExposuresLoading] = useState(true);
+  const [almanacLoading, setAlmanacLoading] = useState(true);
+  const [narrativeLoading, setNarrativeLoading] = useState(true);
+
   const handleDayobsChange = (date) => {
     setDayobs(date);
   };
@@ -47,38 +51,41 @@ export default function Layout({ children }) {
 
   useEffect(() => {
     let dayobsStr = getDayobsStr(dayobs);
-
     if (!dayobsStr) {
       console.error("No Date Selected!");
       return;
     }
-
     let dateFromDayobs = getDatetimeFromDayobsStr(dayobsStr);
-
     let startDate = dateFromDayobs.minus({ days: noOfNights - 1 });
     let startDayobs = startDate.toFormat("yyyyLLdd");
-
     let endDate = dateFromDayobs.plus({ days: 1 });
     let endDayobs = endDate.toFormat("yyyyLLdd");
 
-    // Fetch exposures, almanac, and narrative log
-    fetchExposures(startDayobs, endDayobs, instrument).then(
-      ([exposuresNo, exposureTime]) => {
+    setExposuresLoading(true);
+    fetchExposures(startDayobs, endDayobs, instrument)
+      .then(([exposuresNo, exposureTime]) => {
         setExposureCount(exposuresNo);
         setSumExpTime(exposureTime);
-      },
-    );
+      })
+      .catch((err) => console.error("Exposures fetch error:", err))
+      .finally(() => setExposuresLoading(false));
 
-    fetchAlmanac(startDayobs, endDayobs).then((hours) => {
-      setNightHours(hours);
-    });
+    setAlmanacLoading(true);
+    fetchAlmanac(startDayobs, endDayobs)
+      .then((hours) => {
+        setNightHours(hours);
+      })
+      .catch((err) => console.error("Almanac fetch error:", err))
+      .finally(() => setAlmanacLoading(false));
 
-    fetchNarrativeLog(startDayobs, endDayobs, instrument).then(
-      ([weather, fault]) => {
+    setNarrativeLoading(true);
+    fetchNarrativeLog(startDayobs, endDayobs, instrument)
+      .then(([weather, fault]) => {
         setWeatherLoss(weather);
         setFaultLoss(fault);
-      },
-    );
+      })
+      .catch((err) => console.error("Narrative fetch error:", err))
+      .finally(() => setNarrativeLoading(false));
   }, [dayobs, noOfNights, instrument]);
 
   // calculate open shutter efficiency
@@ -111,12 +118,14 @@ export default function Layout({ children }) {
                 label="Nighttime exposures taken"
                 metadata="(TBD expected)"
                 tooltip="On-sky exposures taken during the night."
+                loading={exposuresLoading}
               />
               <MetricsCard
                 icon={<EfficiencyChart value={efficiency} />}
                 data={efficiencyText}
                 label="Open-shutter (-weather) efficiency"
                 tooltip="Efficiency computed as total exposure time / (time between 18 degree twilights minus time lost to weather)"
+                loading={almanacLoading || exposuresLoading}
               />
               <MetricsCard
                 icon={TimeLossIcon}
@@ -124,8 +133,14 @@ export default function Layout({ children }) {
                 label="Time loss"
                 metadata={timeLossDetails}
                 tooltip="Time loss as reported in the Narrative Log."
+                loading={narrativeLoading}
               />
-              <MetricsCard icon={JiraIcon} data="TBD" label="Jira tickets" />
+              <MetricsCard
+                icon={JiraIcon}
+                data="TBD"
+                label="Jira tickets"
+                loading={false}
+              />
             </div>
             {/* Applets */}
             <div className="flex flex-col gap-4">
