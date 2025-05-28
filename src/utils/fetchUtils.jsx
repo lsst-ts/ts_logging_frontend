@@ -158,18 +158,16 @@ const getDayobsStr = (date) => {
 };
 
 /**
- * Converts a date string in 'yyyyMMdd' format (assumed to be in the 'America/Santiago' timezone)
+ * Converts a date string in 'yyyyMMdd' format that is in UTC timezone
  * to a UTC DateTime object set at 12:00:00 local time.
  *
  * @param {string} dayObsStr - The date string in 'yyyyMMdd' format (e.g., '20240607').
  * @returns luxon {DateTime} The corresponding UTC DateTime object at 12:00:00.
  */
 const getDatetimeFromDayobsStr = (dayObsStr) => {
-  const chileZone = "America/Santiago";
-  const result = DateTime.fromFormat(dayObsStr, "yyyyMMdd", {
-    zone: chileZone,
+  return DateTime.fromFormat(dayObsStr, "yyyyMMdd", {
+    zone: "UTC",
   }).set({ hour: 12, minute: 0, second: 0 });
-  return result.toUTC();
 };
 
 export {
