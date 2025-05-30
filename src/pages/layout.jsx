@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar.jsx";
 import { AppSidebar } from "@/components/app-sidebar.jsx";
+import EfficiencyIcon from "../assets/EfficiencyIcon.svg";
 import Applet from "@/components/applet.jsx";
 import MetricsCard from "@/components/metrics-card.jsx";
+import { DateTime } from "luxon";
 
 import { EfficiencyChart } from "@/components/ui/RadialChart.jsx";
 import ShutterIcon from "../assets/ShutterIcon.svg";
-import EfficiencyIcon from "../assets/EfficiencyIcon.svg";
 import TimeLossIcon from "../assets/TimeLossIcon.svg";
 import JiraIcon from "../assets/JiraIcon.svg";
 import {
@@ -15,12 +16,16 @@ import {
   fetchExposures,
   fetchAlmanac,
   fetchNarrativeLog,
+  getDayobsStr,
+  getDatetimeFromDayobsStr,
 } from "@/utils/fetchUtils";
 
 export default function Layout({ children }) {
-  const [exposures, setExposures] = useState(0);
-  const [dayObsStart, setDayObsStart] = useState(new Date(2025, 4, 12));
-  const [dayObsEnd, setDayObsEnd] = useState(new Date(2025, 4, 13));
+  const [exposureCount, setExposureCount] = useState(0);
+  const [dayobs, setDayobs] = useState(
+    DateTime.utc().minus({ days: 1 }).toJSDate(),
+  );
+  const [noOfNights, setNoOfNights] = useState(1);
   const [instrument, setInstrument] = useState("LSSTCam");
 
   const [nightHours, setNightHours] = useState(0.0);
@@ -28,8 +33,12 @@ export default function Layout({ children }) {
   const [sumExpTime, setSumExpTime] = useState(0.0);
   const [faultLoss, setFaultLoss] = useState(0.0);
 
-  const handleStartDateChange = (date) => {
-    setDayObsStart(date);
+  const handleDayobsChange = (date) => {
+    setDayobs(date);
+  };
+
+  const handleNoOfNightsChange = (nightsCount) => {
+    setNoOfNights(nightsCount);
   };
 
   const handleInstrumentChange = (inst) => {
@@ -37,27 +46,42 @@ export default function Layout({ children }) {
   };
 
   useEffect(() => {
-    let start = dayObsStart.toISOString().split("T")[0];
-    let end = dayObsEnd.toISOString().split("T")[0];
+    let dayobsStr = getDayobsStr(dayobs);
+
+    if (!dayobsStr) {
+      console.error("No Date Selected!");
+      return;
+    }
+
+    let dateFromDayobs = getDatetimeFromDayobsStr(dayobsStr);
+
+    let startDate = dateFromDayobs.minus({ days: noOfNights - 1 });
+    let startDayobs = startDate.toFormat("yyyyLLdd");
+
+    let endDate = dateFromDayobs.plus({ days: 1 });
+    let endDayobs = endDate.toFormat("yyyyLLdd");
 
     // Fetch exposures, almanac, and narrative log
-    fetchExposures(start, end, instrument).then(
-      ([exposuresCount, exposureTime]) => {
-        setExposures(exposuresCount);
+    fetchExposures(startDayobs, endDayobs, instrument).then(
+      ([exposuresNo, exposureTime]) => {
+        setExposureCount(exposuresNo);
         setSumExpTime(exposureTime);
       },
     );
 
-    fetchAlmanac(start, end).then((hours) => {
+    fetchAlmanac(startDayobs, endDayobs).then((hours) => {
       setNightHours(hours);
     });
 
-    fetchNarrativeLog(start, end, instrument).then(([weather, fault]) => {
-      setWeatherLoss(weather);
-      setFaultLoss(fault);
-    });
-  }, [dayObsStart, dayObsEnd, instrument]);
+    fetchNarrativeLog(startDayobs, endDayobs, instrument).then(
+      ([weather, fault]) => {
+        setWeatherLoss(weather);
+        setFaultLoss(fault);
+      },
+    );
+  }, [dayobs, noOfNights, instrument]);
 
+  // calculate open shutter efficiency
   const efficiency = calculateEfficiency(nightHours, sumExpTime, weatherLoss);
   const efficiencyText = `${efficiency} %`;
   const [timeLoss, timeLossDetails] = calculateTimeLoss(weatherLoss, faultLoss);
@@ -66,10 +90,10 @@ export default function Layout({ children }) {
     <>
       <SidebarProvider>
         <AppSidebar
-          startDay={dayObsStart}
-          onStartDayChange={handleStartDateChange}
-          endDay={dayObsEnd}
-          onEndDayChange={setDayObsEnd}
+          dayobs={dayobs}
+          onDayobsChange={handleDayobsChange}
+          noOfNights={noOfNights}
+          onNoOfNightsChange={handleNoOfNightsChange}
           instrument={instrument}
           onInstrumentChange={handleInstrumentChange}
         />
@@ -83,7 +107,7 @@ export default function Layout({ children }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
               <MetricsCard
                 icon={ShutterIcon}
-                data={exposures}
+                data={exposureCount}
                 label="Nighttime exposures taken"
                 metadata="(TBD expected)"
                 tooltip="On-sky exposures taken during the night."

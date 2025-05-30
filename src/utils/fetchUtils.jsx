@@ -1,3 +1,5 @@
+import { DateTime } from "luxon";
+
 /**
  * Calculates the efficiency of night hours usage, accounting for exposure time and weather loss.
  *
@@ -23,17 +25,14 @@ const calculateEfficiency = (nightHours, sumExpTime, weatherLoss) => {
  * and the second element is a string detailing the percentage breakdown of weather and fault losses.
  */
 const calculateTimeLoss = (weatherLoss, faultLoss) => {
-  weatherLoss = weatherLoss / 3600; // Convert seconds to hours
-  faultLoss = faultLoss / 3600; // Convert seconds to hours
   let loss = weatherLoss + faultLoss;
-
   let timeLoss = "0 hours";
   let timeLossDetails = "(- weather; - fault)";
 
   if (loss > 0) {
     let weatherPercent = (weatherLoss / loss) * 100;
     let faultPercent = (faultLoss / loss) * 100;
-    timeLoss = `${loss} hours`;
+    timeLoss = `${loss.toFixed(2)} hours`;
     timeLossDetails = `(${weatherPercent}% weather; ${faultPercent}% fault)`;
   }
 
@@ -145,7 +144,30 @@ const fetchNarrativeLog = async (start, end, instrument) => {
     console.error("Error fetching Narrative Log");
     return [0, 0];
   }
-  return [data.time_lost_to_weather, data.time_lost_to_faults];
+  return [data.time_lost_to_weather, data.time_lost_to_faults, data.exposures];
+};
+
+/**
+ * Formats a given JavaScript Date object into a string format 'yyyyLLdd' using luxon.
+ *
+ * @param {Date|null|undefined} date - The date to format. If null or undefined, returns an empty string.
+ * @returns {string} The formatted date string, or an empty string if no date is provided.
+ */
+const getDayobsStr = (date) => {
+  return date ? DateTime.fromJSDate(date).toFormat("yyyyLLdd") : "";
+};
+
+/**
+ * Converts a date string in 'yyyyMMdd' format that is in UTC timezone
+ * to a UTC DateTime object set at 12:00:00 local time.
+ *
+ * @param {string} dayObsStr - The date string in 'yyyyMMdd' format (e.g., '20240607').
+ * @returns luxon {DateTime} The corresponding UTC DateTime object at 12:00:00.
+ */
+const getDatetimeFromDayobsStr = (dayObsStr) => {
+  return DateTime.fromFormat(dayObsStr, "yyyyMMdd", {
+    zone: "UTC",
+  }).set({ hour: 12, minute: 0, second: 0 });
 };
 
 export {
@@ -154,4 +176,6 @@ export {
   fetchExposures,
   fetchAlmanac,
   fetchNarrativeLog,
+  getDayobsStr,
+  getDatetimeFromDayobsStr,
 };

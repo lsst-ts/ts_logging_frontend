@@ -19,7 +19,7 @@ function Applet() {
             <PopoverTrigger className="self-end min-w-4">
               <img src={DownloadIcon} />
             </PopoverTrigger>
-            <PopoverContent>
+            <PopoverContent className="bg-black text-white text-sm border-yellow-700">
               This is a placeholder for the download/export button. Once
               implemented, clicking here will download this Applet's data to a
               .csv file.
@@ -29,7 +29,7 @@ function Applet() {
             <PopoverTrigger className="self-end min-w-4">
               <img src={InfoIcon} />
             </PopoverTrigger>
-            <PopoverContent>
+            <PopoverContent className="bg-black text-white text-sm border-yellow-700">
               This is a placeholder for the info button. Clicking here will
               display detailed information on the data displayed in this Applet,
               instructions on how to use any controls, and where the user will

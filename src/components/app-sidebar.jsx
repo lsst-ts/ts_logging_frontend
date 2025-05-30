@@ -29,10 +29,10 @@ export function AppSidebar({ ...props }) {
         <SidebarGroup>
           <SidebarGroupContent>
             <Parameters
-              startDay={props.startDay}
-              onStartDayChange={props.onStartDayChange}
-              endDay={props.endDay}
-              onEndDayChange={props.onEndDayChange}
+              dayobs={props.dayobs}
+              onDayobsChange={props.onDayobsChange}
+              noOfNights={props.noOfNights}
+              onNoOfNightsChange={props.onNoOfNightsChange}
               instrument={props.instrument}
               onInstrumentChange={props.onInstrumentChange}
             />
