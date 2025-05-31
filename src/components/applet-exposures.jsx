@@ -58,7 +58,18 @@ function AppletExposures() {
     { browser: "firefox", exposures: 187, fill: "#4caf50" },
     { browser: "edge", exposures: 173, fill: "#2196f3" },
     { browser: "other", exposures: 90, fill: "#607d8b" },
+    { browser: "other1", exposures: 3, fill: "#777d8b" },
+    { browser: "other2", exposures: 20, fill: "#607fde" },
+    { browser: "other3", exposures: 42, fill: "#649dee" },
+    { browser: "other4", exposures: 160, fill: "#107aab" },
+    { browser: "other5", exposures: 3, fill: "#777d8b" },
+    { browser: "other6", exposures: 20, fill: "#607fde" },
+    { browser: "other7", exposures: 42, fill: "#649dee" },
+    { browser: "other8", exposures: 160, fill: "#107aab" },
   ];
+
+  // const rowHeight = 30; // or 40, depending on desired bar spacing
+  // const chartHeight = chartData.length * rowHeight;
 
   const chartConfig = {
     visitors: {
@@ -82,6 +93,38 @@ function AppletExposures() {
     },
     other: {
       label: "spec-survey",
+      color: "hsl(var(--chart-5))",
+    },
+    other1: {
+      label: "B469469",
+      color: "hsl(var(--chart-5))",
+    },
+    other2: {
+      label: "BLOCK-864",
+      color: "hsl(var(--chart-5))",
+    },
+    other3: {
+      label: "BLOCK-T33",
+      color: "hsl(var(--chart-5))",
+    },
+    other4: {
+      label: "unknown",
+      color: "hsl(var(--chart-5))",
+    },
+    other5: {
+      label: "B469469",
+      color: "hsl(var(--chart-5))",
+    },
+    other6: {
+      label: "BLOCK-864",
+      color: "hsl(var(--chart-5))",
+    },
+    other7: {
+      label: "BLOCK-T33",
+      color: "hsl(var(--chart-5))",
+    },
+    other8: {
+      label: "unknown",
       color: "hsl(var(--chart-5))",
     },
   };
@@ -135,19 +178,25 @@ function AppletExposures() {
           </Popover>
         </div>
       </CardHeader>
-      <CardContent className="grid gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 h-80 font-thin">
-        <div className="flex flex-row gap-4">
-          {/* Plot display */}
-          <div className="border-2 border-teal-900 w-3/4 p-4 max-h-[282px] overflow-y-scroll">
-            <ChartContainer config={chartConfig}>
+      <CardContent className="flex gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 h-80 font-thin">
+        {/* Plot display */}
+        <div className="border-2 border-teal-900 flex-grow p-4 h-[282px] overflow-y-auto">
+          <div
+            style={{
+              height: `${chartData.length * 30}px`,
+              minHeight: "282px",
+            }}
+          >
+            <ChartContainer config={chartConfig} className="w-full h-full">
               <BarChart
                 data={chartData}
                 layout="vertical"
                 margin={{
                   left: 30,
                 }}
-                barCategoryGap="10%"
-                barGap={10}
+                // barCategoryGap="10%"  // not work?
+                // barGap={10}  // not work?
+                // height={100} // not work?
               >
                 <Bar
                   dataKey="exposures"
@@ -179,87 +228,87 @@ function AppletExposures() {
               </BarChart>
             </ChartContainer>
           </div>
+        </div>
 
-          {/* Plot controls */}
-          <div className="border-2 border-teal-900 w-1/4 p-4 flex flex-col gap-4">
-            <div>
-              <Label htmlFor="plotBy" className="text-white text-base pb-1">
-                Plot by:
-              </Label>
-              <Select value={plotBy} onValueChange={setPlotBy}>
-                <SelectTrigger
-                  id="plotBy"
-                  className="w-[150px] bg-teal-800 justify-between font-normal text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50"
-                  chevronDownIconClassName="text-white"
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-teal-800 border-2 border-white">
-                  {plotByOptions.map((option) => (
-                    <SelectItem
-                      className="text-white focus:bg-teal-700 focus:text-white"
-                      checkIconClassName="text-white"
-                      key={option.value}
-                      value={option.value}
-                    >
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="groupBy" className="text-white text-base pb-1">
-                Group by:
-              </Label>
-              <Select value={groupBy} onValueChange={setGroupBy}>
-                <SelectTrigger
-                  id="groupBy"
-                  className="w-[150px] bg-teal-800 justify-between font-normal text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50"
-                  chevronDownIconClassName="text-white"
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-teal-800 border-2 border-white">
-                  {groupByOptions.map((option) => (
-                    <SelectItem
-                      className="text-white focus:bg-teal-700 focus:text-white"
-                      checkIconClassName="text-white"
-                      key={option.value}
-                      value={option.value}
-                    >
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="sortBy" className="text-white text-base pb-1">
-                Sort by:
-              </Label>
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger
-                  id="sortBy"
-                  className="w-[150px] bg-teal-800 justify-between font-normal text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50"
-                  chevronDownIconClassName="text-white"
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-teal-800 border-2 border-white">
-                  {sortByOptions.map((option) => (
-                    <SelectItem
-                      className="text-white focus:bg-teal-700 focus:text-white"
-                      checkIconClassName="text-white"
-                      key={option.value}
-                      value={option.value}
-                    >
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+        {/* Plot controls */}
+        <div className="border-2 border-teal-900 w-[190px] p-4 flex flex-col gap-4">
+          <div>
+            <Label htmlFor="plotBy" className="text-white text-base pb-1">
+              Plot by:
+            </Label>
+            <Select value={plotBy} onValueChange={setPlotBy}>
+              <SelectTrigger
+                id="plotBy"
+                className="w-[150px] bg-teal-800 justify-between font-normal text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50"
+                chevronDownIconClassName="text-white"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-teal-800 border-2 border-white">
+                {plotByOptions.map((option) => (
+                  <SelectItem
+                    className="text-white focus:bg-teal-700 focus:text-white"
+                    checkIconClassName="text-white"
+                    key={option.value}
+                    value={option.value}
+                  >
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="groupBy" className="text-white text-base pb-1">
+              Group by:
+            </Label>
+            <Select value={groupBy} onValueChange={setGroupBy}>
+              <SelectTrigger
+                id="groupBy"
+                className="w-[150px] bg-teal-800 justify-between font-normal text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50"
+                chevronDownIconClassName="text-white"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-teal-800 border-2 border-white">
+                {groupByOptions.map((option) => (
+                  <SelectItem
+                    className="text-white focus:bg-teal-700 focus:text-white"
+                    checkIconClassName="text-white"
+                    key={option.value}
+                    value={option.value}
+                  >
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="sortBy" className="text-white text-base pb-1">
+              Sort by:
+            </Label>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger
+                id="sortBy"
+                className="w-[150px] bg-teal-800 justify-between font-normal text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50"
+                chevronDownIconClassName="text-white"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-teal-800 border-2 border-white">
+                {sortByOptions.map((option) => (
+                  <SelectItem
+                    className="text-white focus:bg-teal-700 focus:text-white"
+                    checkIconClassName="text-white"
+                    key={option.value}
+                    value={option.value}
+                  >
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </CardContent>
