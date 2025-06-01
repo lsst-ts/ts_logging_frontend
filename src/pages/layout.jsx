@@ -180,7 +180,7 @@ export default function Layout({ children }) {
         />
         <main className="w-full bg-stone-800">
           {/* Show/Hide Sidebar button */}
-          <SidebarTrigger className="color-teal-500" />
+          <SidebarTrigger className="color-teal-500 fixed hover:bg-sky-900 transition-colors duration-200" />
           {children}
           {/* Main content */}
           <div className="flex flex-col w-full p-8 gap-8">
