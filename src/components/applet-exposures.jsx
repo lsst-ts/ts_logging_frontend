@@ -36,7 +36,7 @@ function AppletExposures() {
 
   const plotByOptions = [
     { value: "Number", label: "Number" },
-    { value: "Time", label: "Time (sec)" },
+    { value: "Time", label: "Time (s)" },
   ];
 
   const groupByOptions = [
@@ -160,66 +160,81 @@ function AppletExposures() {
           </Popover>
         </div>
       </CardHeader>
-      <CardContent className="flex gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 h-80 font-thin">
+      <CardContent className="flex gap-8 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 h-[320px] font-thin">
         {/* Plot display */}
-        <div className="border-2 border-teal-900 flex-grow p-4 h-[282px] overflow-y-auto">
-          <div
-            style={{
-              height: `${chartData.length * 30}px`,
-              minHeight: "180px",
-            }}
-          >
-            <ChartContainer config={chartConfig} className="w-full h-full">
-              <BarChart
-                data={chartData}
-                layout="vertical"
-                margin={{
-                  left: 30,
-                }}
-              >
-                <Bar
-                  dataKey={plotBy === "Time" ? "totalExpTime" : "exposures"}
+        <div className="flex-grow flex flex-col justify-between">
+          <div className="flex-grow overflow-y-auto">
+            <div
+              style={{
+                height: `${chartData.length * 30}px`,
+                minHeight: "180px",
+              }}
+            >
+              <ChartContainer config={chartConfig} className="w-full h-full">
+                <BarChart
+                  data={chartData}
                   layout="vertical"
-                  barSize={20} // width
-                  minPointSize={10} // show small bars
-                  shape={<CustomBarShape />}
-                />
-                <YAxis
-                  dataKey="groupKey"
-                  type="category"
-                  axisLine={{ stroke: "#ffffff", strokeWidth: 2 }}
-                  tickLine={false}
-                  tick={{ fill: "#ffffff" }} // axis labels
-                  tickMargin={10} // space for labels
-                  tickFormatter={(value) => chartConfig[value]?.label}
-                />
-                <XAxis
-                  dataKey={plotBy === "Time" ? "totalExpTime" : "exposures"}
-                  type="number"
-                  orientation="top"
-                  axisLine={{ stroke: "#ffffff", strokeWidth: 2 }}
-                  tickLine={{ stroke: "#ffffff", strokeWidth: 2 }}
-                  tick={{ fill: "#ffffff", fontSize: 12 }}
-                />
-                <ChartTooltip
-                  cursor={false}
-                  content={<ChartTooltipContent hideLabel />}
-                />
-              </BarChart>
-            </ChartContainer>
+                  margin={{
+                    left: 30,
+                  }}
+                >
+                  <Bar
+                    dataKey={plotBy === "Time" ? "totalExpTime" : "exposures"}
+                    layout="vertical"
+                    barSize={20} // width
+                    minPointSize={10} // show small bars
+                    shape={<CustomBarShape />}
+                  />
+                  <YAxis
+                    dataKey="groupKey"
+                    type="category"
+                    axisLine={{ stroke: "#ffffff", strokeWidth: 2 }}
+                    tickLine={false}
+                    tick={{ fill: "#ffffff" }} // axis labels
+                    tickMargin={10} // space for labels
+                    tickFormatter={(value) => chartConfig[value]?.label}
+                  />
+                  <XAxis
+                    dataKey={plotBy === "Time" ? "totalExpTime" : "exposures"}
+                    type="number"
+                    orientation="top"
+                    axisLine={{ stroke: "#ffffff", strokeWidth: 2 }}
+                    tickLine={{ stroke: "#ffffff", strokeWidth: 2 }}
+                    tick={{ fill: "#ffffff", fontSize: 12 }}
+                    label={{
+                      value:
+                        plotBy === "Time"
+                          ? "Exposure time (s)"
+                          : "Number of exposures",
+                      position: "insideTop",
+                      offset: 0,
+                      fill: "#ffffff",
+                      style: { fontSize: 12 },
+                    }}
+                  />
+                  <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent hideLabel />}
+                  />
+                </BarChart>
+              </ChartContainer>
+            </div>
+          </div>
+          <div className="text-[12px]">
+            Total exposures: {rowIndices.length}
           </div>
         </div>
 
         {/* Plot controls */}
-        <div className="border-2 border-teal-900 w-[190px] p-4 flex flex-col gap-4">
+        <div className="w-[160px] flex flex-col gap-4">
           <div>
-            <Label htmlFor="plotBy" className="text-white text-base pb-1">
+            <Label htmlFor="plotBy" className="text-white text-[12px] pb-1">
               Plot by:
             </Label>
             <Select value={plotBy} onValueChange={setPlotBy}>
               <SelectTrigger
                 id="plotBy"
-                className="w-[150px] bg-teal-800 justify-between font-normal text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50"
+                className="w-[150px] bg-teal-800 justify-between font-normal text-[12px] text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50"
                 chevronDownIconClassName="text-white"
               >
                 <SelectValue />
@@ -239,13 +254,13 @@ function AppletExposures() {
             </Select>
           </div>
           <div>
-            <Label htmlFor="groupBy" className="text-white text-base pb-1">
+            <Label htmlFor="groupBy" className="text-white text-[12px] pb-1">
               Group by:
             </Label>
             <Select value={groupBy} onValueChange={setGroupBy}>
               <SelectTrigger
                 id="groupBy"
-                className="w-[150px] bg-teal-800 justify-between font-normal text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50"
+                className="w-[150px] bg-teal-800 justify-between font-normal text-[12px] text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50"
                 chevronDownIconClassName="text-white"
               >
                 <SelectValue />
@@ -265,13 +280,13 @@ function AppletExposures() {
             </Select>
           </div>
           <div>
-            <Label htmlFor="sortBy" className="text-white text-base pb-1">
+            <Label htmlFor="sortBy" className="text-white text-[12px] pb-1">
               Sort by:
             </Label>
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger
                 id="sortBy"
-                className="w-[150px] bg-teal-800 justify-between font-normal text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50"
+                className="w-[150px] bg-teal-800 justify-between font-normal text-[12px] text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50"
                 chevronDownIconClassName="text-white"
               >
                 <SelectValue />
