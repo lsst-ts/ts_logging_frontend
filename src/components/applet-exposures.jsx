@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/popover";
 import { Bar, BarChart, XAxis, YAxis } from "recharts";
 import {
-  // ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
@@ -28,20 +27,23 @@ import {
 import InfoIcon from "../assets/InfoIcon.svg";
 import DownloadIcon from "../assets/DownloadIcon.svg";
 
+import exposureData from "../exposures-lsstcam0413.json";
+
 function AppletExposures() {
   const [plotBy, setPlotBy] = useState("Number");
-  const [groupBy, setGroupBy] = useState("Science program");
+  const [groupBy, setGroupBy] = useState("science_program");
   const [sortBy, setSortBy] = useState("Default");
 
   const plotByOptions = [
     { value: "Number", label: "Number" },
-    { value: "Time", label: "Time" },
+    { value: "Time", label: "Time (sec)" },
   ];
 
   const groupByOptions = [
-    { value: "Obs. reason", label: "Obs. reason" },
-    { value: "Obs. type", label: "Obs. type" },
-    { value: "Science program", label: "Science program" },
+    { value: "observation_reason", label: "Obs. reason" },
+    { value: "img_type", label: "Img. type" },
+    { value: "science_program", label: "Science program" },
+    { value: "target_name", label: "Target name" },
   ];
 
   const sortByOptions = [
@@ -52,84 +54,64 @@ function AppletExposures() {
     { value: "Lowest number first", label: "Lowest number first" },
   ];
 
-  const chartData = [
-    { browser: "chrome", exposures: 275, fill: "#9c27b0" },
-    { browser: "safari", exposures: 200, fill: "#ff9800" },
-    { browser: "firefox", exposures: 187, fill: "#4caf50" },
-    { browser: "edge", exposures: 173, fill: "#2196f3" },
-    { browser: "other", exposures: 90, fill: "#607d8b" },
-    { browser: "other1", exposures: 3, fill: "#777d8b" },
-    { browser: "other2", exposures: 20, fill: "#607fde" },
-    { browser: "other3", exposures: 42, fill: "#649dee" },
-    { browser: "other4", exposures: 160, fill: "#107aab" },
-    { browser: "other5", exposures: 3, fill: "#777d8b" },
-    { browser: "other6", exposures: 20, fill: "#607fde" },
-    { browser: "other7", exposures: 42, fill: "#649dee" },
-    { browser: "other8", exposures: 160, fill: "#107aab" },
-  ];
+  const rowIndices = Object.keys(exposureData.exposure_id);
 
-  // const rowHeight = 30; // or 40, depending on desired bar spacing
-  // const chartHeight = chartData.length * rowHeight;
+  // Aggregate exposure count/time based on plotBy and groupBy
+  const aggregatedMap = rowIndices.reduce((acc, rowIndex) => {
+    const groupKey = exposureData[groupBy]?.[rowIndex] ?? "Unknown";
+    const expTime = parseFloat(exposureData.exp_time?.[rowIndex] ?? 0);
 
-  const chartConfig = {
-    visitors: {
-      label: "Exposures",
-    },
-    chrome: {
-      label: "BLOCK-295",
-      color: "hsl(var(--chart-1))",
-    },
-    safari: {
-      label: "BLOCK-305",
-      color: "hsl(var(--chart-2))",
-    },
-    firefox: {
-      label: "BLOCK-306",
-      color: "hsl(var(--chart-3))",
-    },
-    edge: {
-      label: "BLOCK-T17",
-      color: "hsl(var(--chart-4))",
-    },
-    other: {
-      label: "spec-survey",
-      color: "hsl(var(--chart-5))",
-    },
-    other1: {
-      label: "B469469",
-      color: "hsl(var(--chart-5))",
-    },
-    other2: {
-      label: "BLOCK-864",
-      color: "hsl(var(--chart-5))",
-    },
-    other3: {
-      label: "BLOCK-T33",
-      color: "hsl(var(--chart-5))",
-    },
-    other4: {
-      label: "unknown",
-      color: "hsl(var(--chart-5))",
-    },
-    other5: {
-      label: "B469469",
-      color: "hsl(var(--chart-5))",
-    },
-    other6: {
-      label: "BLOCK-864",
-      color: "hsl(var(--chart-5))",
-    },
-    other7: {
-      label: "BLOCK-T33",
-      color: "hsl(var(--chart-5))",
-    },
-    other8: {
-      label: "unknown",
-      color: "hsl(var(--chart-5))",
-    },
-  };
+    if (!acc[groupKey]) {
+      acc[groupKey] = { groupKey, exposures: 0, totalExpTime: 0 };
+    }
 
-  // Custom shape for bars - 2 rounded corners
+    acc[groupKey].exposures += 1;
+    acc[groupKey].totalExpTime += isNaN(expTime) ? 0 : expTime;
+
+    return acc;
+  }, {});
+
+  // Create array for chart data
+  let chartData = Object.values(aggregatedMap).map((entry, index) => ({
+    groupKey: entry.groupKey,
+    exposures: entry.exposures,
+    totalExpTime: entry.totalExpTime,
+    fill: `hsl(${index * 40}, 70%, 50%)`, // generate unique colors
+  }));
+
+  // Required for chartContainer
+  const chartConfig = chartData.reduce((config, entry) => {
+    config[entry.groupKey] = {
+      label: entry.groupKey,
+      color: entry.fill,
+    };
+    return config;
+  }, {});
+
+  // Sort chartData based on sortBy
+  if (sortBy === "Alphabetical asc.") {
+    chartData.sort((a, b) =>
+      (a.groupKey || "").localeCompare(b.groupKey || ""),
+    );
+  } else if (sortBy === "Alphabetical desc.") {
+    chartData.sort((a, b) =>
+      (b.groupKey || "").localeCompare(a.groupKey || ""),
+    );
+  } else if (sortBy === "Highest number first") {
+    chartData.sort((a, b) =>
+      plotBy === "Time"
+        ? b.totalExpTime - a.totalExpTime
+        : b.exposures - a.exposures,
+    );
+  } else if (sortBy === "Lowest number first") {
+    chartData.sort((a, b) =>
+      plotBy === "Time"
+        ? a.totalExpTime - b.totalExpTime
+        : a.exposures - b.exposures,
+    );
+  }
+
+  // Custom shape for bars (2 rounded corners)
   const CustomBarShape = (props) => {
     const { fill, x, y, width, height } = props;
 
@@ -184,7 +166,7 @@ function AppletExposures() {
           <div
             style={{
               height: `${chartData.length * 30}px`,
-              minHeight: "282px",
+              minHeight: "180px",
             }}
           >
             <ChartContainer config={chartConfig} className="w-full h-full">
@@ -194,18 +176,16 @@ function AppletExposures() {
                 margin={{
                   left: 30,
                 }}
-                // barCategoryGap="10%"  // not work?
-                // barGap={10}  // not work?
-                // height={100} // not work?
               >
                 <Bar
-                  dataKey="exposures"
+                  dataKey={plotBy === "Time" ? "totalExpTime" : "exposures"}
                   layout="vertical"
-                  barSize={20}
+                  barSize={20} // width
+                  minPointSize={10} // show small bars
                   shape={<CustomBarShape />}
                 />
                 <YAxis
-                  dataKey="browser"
+                  dataKey="groupKey"
                   type="category"
                   axisLine={{ stroke: "#ffffff", strokeWidth: 2 }}
                   tickLine={false}
@@ -214,7 +194,7 @@ function AppletExposures() {
                   tickFormatter={(value) => chartConfig[value]?.label}
                 />
                 <XAxis
-                  dataKey="exposures"
+                  dataKey={plotBy === "Time" ? "totalExpTime" : "exposures"}
                   type="number"
                   orientation="top"
                   axisLine={{ stroke: "#ffffff", strokeWidth: 2 }}
