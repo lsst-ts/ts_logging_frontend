@@ -170,7 +170,10 @@ function AppletExposures() {
                 minHeight: "180px",
               }}
             >
-              <ChartContainer config={chartConfig} className="w-full h-full">
+              <ChartContainer
+                config={chartConfig}
+                className="w-full h-full !aspect-auto"
+              >
                 <BarChart
                   data={chartData}
                   layout="vertical"
@@ -181,8 +184,8 @@ function AppletExposures() {
                   <Bar
                     dataKey={plotBy === "Time" ? "totalExpTime" : "exposures"}
                     layout="vertical"
-                    barSize={20} // width
-                    minPointSize={10} // show small bars
+                    barSize={20} // bar width
+                    minPointSize={10} // make small bars visible
                     shape={<CustomBarShape />}
                   />
                   <YAxis
