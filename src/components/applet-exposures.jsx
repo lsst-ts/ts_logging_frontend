@@ -115,14 +115,18 @@ function AppletExposures() {
   const CustomBarShape = (props) => {
     const { fill, x, y, width, height } = props;
 
+    const barWidth = width - 5;
+    const safeBarWidth = isNaN(barWidth) || barWidth < 0 ? 0 : barWidth;
+    const safeHeight = isNaN(height) || height < 10 ? 0 : height - 10;
+
     return (
       <path
         d={`M${x},${y} 
-           h${width - 5} 
+           h${safeBarWidth} 
            a5,5 0 0 1 5,5 
-           v${height - 10} 
+           v${safeHeight} 
            a5,5 0 0 1 -5,5 
-           h-${width - 5} 
+           h-${safeBarWidth} 
            z`}
         fill={fill}
         stroke="none"
