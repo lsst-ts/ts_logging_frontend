@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar.jsx";
 import { AppSidebar } from "@/components/app-sidebar.jsx";
-import EfficiencyIcon from "../assets/EfficiencyIcon.svg";
 import Applet from "@/components/applet.jsx";
 import AppletExposures from "@/components/applet-exposures.jsx";
 import MetricsCard from "@/components/metrics-card.jsx";
@@ -22,6 +21,7 @@ import {
 } from "@/utils/fetchUtils";
 
 export default function Layout({ children }) {
+  const [exposureFields, setExposureFields] = useState([]);
   const [exposureCount, setExposureCount] = useState(0);
   const [dayobs, setDayobs] = useState(
     DateTime.utc().minus({ days: 1 }).toJSDate(),
@@ -70,9 +70,10 @@ export default function Layout({ children }) {
     let endDayobs = endDate.toFormat("yyyyLLdd");
 
     fetchExposures(startDayobs, endDayobs, instrument)
-      .then(([exposuresNo, exposureTime]) => {
-        setExposureCount(exposuresNo);
-        setSumExpTime(exposureTime);
+      .then(([exposureFields, exposureCount, sumExpTime]) => {
+        setExposureFields(exposureFields);
+        setExposureCount(exposureCount);
+        setSumExpTime(sumExpTime);
       })
       .catch(() => {
         console.error("Error fetching exposures");
@@ -162,8 +163,12 @@ export default function Layout({ children }) {
             {/* Applets */}
             <div className="flex flex-col gap-4">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <AppletExposures
+                  exposureFields={exposureFields}
+                  exposureCount={exposureCount}
+                  sumExpTime={sumExpTime}
+                />
                 <Applet />
-                <AppletExposures />
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <Applet />
