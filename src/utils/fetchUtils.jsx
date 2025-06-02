@@ -90,9 +90,10 @@ const fetchData = async (url) => {
  * @param {string} start - The start date for the observation range (format: YYYY-MM-DD).
  * @param {string} end - The end date for the observation range (format: YYYY-MM-DD).
  * @param {string} instrument - The name of the instrument to filter exposures.
- * @returns {Promise<[number, number]>} A promise that resolves to an array containing:
- *   [0]: exposures_count (number) - The number of exposures.
- *   [1]: sum_exposure_time (number) - The total exposure time.
+ * @returns {Promise<[Object[], number, number]>} A promise that resolves to an array containing:
+ *   [0]: exposures (Object[]) - An array of exposure records with selected fields.
+ *   [1]: exposures_count (number) - The number of exposures.
+ *   [2]: sum_exposure_time (number) - The total exposure time.
  */
 const fetchExposures = async (start, end, instrument) => {
   const url = `${backendLocation}/exposures?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
@@ -102,7 +103,7 @@ const fetchExposures = async (start, end, instrument) => {
     return [0, 0];
   }
 
-  return [data.exposures_count, data.sum_exposure_time];
+  return [data.exposures, data.exposures_count, data.sum_exposure_time];
 };
 
 /**

@@ -27,9 +27,7 @@ import {
 import InfoIcon from "../assets/InfoIcon.svg";
 import DownloadIcon from "../assets/DownloadIcon.svg";
 
-import exposureData from "../exposures-lsstcam0413.json";
-
-function AppletExposures() {
+function AppletExposures({ exposureFields, exposureCount, sumExpTime }) {
   const [plotBy, setPlotBy] = useState("Number");
   const [groupBy, setGroupBy] = useState("science_program");
   const [sortBy, setSortBy] = useState("Default");
@@ -54,18 +52,16 @@ function AppletExposures() {
     { value: "Lowest number first", label: "Lowest number first" },
   ];
 
-  const rowIndices = Object.keys(exposureData.exposure_id);
-
   // Aggregate exposure count/time based on plotBy and groupBy
-  const aggregatedMap = rowIndices.reduce((acc, rowIndex) => {
-    const groupKey = exposureData[groupBy]?.[rowIndex] ?? "Unknown";
-    const expTime = parseFloat(exposureData.exp_time?.[rowIndex] ?? 0);
+  const aggregatedMap = exposureFields.reduce((acc, row) => {
+    const groupKey = row[groupBy] ?? "Unknown";
+    const expTime = parseFloat(row.exp_time ?? 0); // seconds
 
     if (!acc[groupKey]) {
-      acc[groupKey] = { groupKey, exposures: 0, totalExpTime: 0 };
+      acc[groupKey] = { groupKey, totalExpCount: 0, totalExpTime: 0 };
     }
 
-    acc[groupKey].exposures += 1;
+    acc[groupKey].totalExpCount += 1;
     acc[groupKey].totalExpTime += isNaN(expTime) ? 0 : expTime;
 
     return acc;
@@ -74,7 +70,7 @@ function AppletExposures() {
   // Create array for chart data
   let chartData = Object.values(aggregatedMap).map((entry, index) => ({
     groupKey: entry.groupKey,
-    exposures: entry.exposures,
+    totalExpCount: entry.totalExpCount,
     totalExpTime: entry.totalExpTime,
     fill: `hsl(${index * 40}, 70%, 50%)`, // generate unique colors
   }));
@@ -101,17 +97,17 @@ function AppletExposures() {
     chartData.sort((a, b) =>
       plotBy === "Time"
         ? b.totalExpTime - a.totalExpTime
-        : b.exposures - a.exposures,
+        : b.totalExpCount - a.totalExpCount,
     );
   } else if (sortBy === "Lowest number first") {
     chartData.sort((a, b) =>
       plotBy === "Time"
         ? a.totalExpTime - b.totalExpTime
-        : a.exposures - b.exposures,
+        : a.totalExpCount - b.totalExpCount,
     );
   }
 
-  // Custom shape for bars (2 rounded corners)
+  // Custom bar shape (2 rounded corners)
   const CustomBarShape = (props) => {
     const { fill, x, y, width, height } = props;
 
@@ -164,13 +160,14 @@ function AppletExposures() {
           </Popover>
         </div>
       </CardHeader>
+
       <CardContent className="flex gap-8 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 h-[320px] font-thin">
         {/* Plot display */}
         <div className="flex-grow flex flex-col justify-between">
           <div className="flex-grow overflow-y-auto">
             <div
               style={{
-                height: `${chartData.length * 30}px`,
+                height: `${chartData.length * 35}px`,
                 minHeight: "180px",
               }}
             >
@@ -186,7 +183,9 @@ function AppletExposures() {
                   }}
                 >
                   <Bar
-                    dataKey={plotBy === "Time" ? "totalExpTime" : "exposures"}
+                    dataKey={
+                      plotBy === "Time" ? "totalExpTime" : "totalExpCount"
+                    }
                     layout="vertical"
                     barSize={20} // bar width
                     minPointSize={10} // make small bars visible
@@ -198,11 +197,13 @@ function AppletExposures() {
                     axisLine={{ stroke: "#ffffff", strokeWidth: 2 }}
                     tickLine={false}
                     tick={{ fill: "#ffffff" }} // axis labels
-                    tickMargin={10} // space for labels
+                    tickMargin={2} // space for labels
                     tickFormatter={(value) => chartConfig[value]?.label}
                   />
                   <XAxis
-                    dataKey={plotBy === "Time" ? "totalExpTime" : "exposures"}
+                    dataKey={
+                      plotBy === "Time" ? "totalExpTime" : "totalExpCount"
+                    }
                     type="number"
                     orientation="top"
                     axisLine={{ stroke: "#ffffff", strokeWidth: 2 }}
@@ -227,8 +228,13 @@ function AppletExposures() {
               </ChartContainer>
             </div>
           </div>
+          {/* Total */}
           <div className="text-[12px]">
-            Total exposures: {rowIndices.length}
+            {plotBy === "Time" ? (
+              <>Total exposure time: {sumExpTime} seconds</>
+            ) : (
+              <>Total exposure count: {exposureCount}</>
+            )}
           </div>
         </div>
 
