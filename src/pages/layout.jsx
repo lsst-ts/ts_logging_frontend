@@ -37,6 +37,10 @@ export default function Layout({ children }) {
   const [almanacLoading, setAlmanacLoading] = useState(true);
   const [narrativeLoading, setNarrativeLoading] = useState(true);
 
+  // const [exposuresError, setExposuresError] = useState(null);
+  // const [almanacError, setAlmanacError] = useState(null);
+  // const [narrativeError, setNarrativeError] = useState(null);
+
   const handleDayobsChange = (date) => {
     setDayobs(date);
   };
@@ -50,9 +54,22 @@ export default function Layout({ children }) {
   };
 
   useEffect(() => {
+    setExposuresLoading(true);
+    setAlmanacLoading(true);
+    setNarrativeLoading(true);
+    // setExposuresError(null);
+    // setAlmanacError(null);
+    // setNarrativeError(null);
+
     let dayobsStr = getDayobsStr(dayobs);
     if (!dayobsStr) {
       console.error("No Date Selected!");
+      setExposuresLoading(false);
+      setAlmanacLoading(false);
+      setNarrativeLoading(false);
+      // setExposuresError("No Date Selected!");
+      // setAlmanacError("No Date Selected!");
+      // setNarrativeError("No Date Selected!");
       return;
     }
     let dateFromDayobs = getDatetimeFromDayobsStr(dayobsStr);
@@ -61,31 +78,40 @@ export default function Layout({ children }) {
     let endDate = dateFromDayobs.plus({ days: 1 });
     let endDayobs = endDate.toFormat("yyyyLLdd");
 
-    setExposuresLoading(true);
     fetchExposures(startDayobs, endDayobs, instrument)
       .then(([exposuresNo, exposureTime]) => {
         setExposureCount(exposuresNo);
         setSumExpTime(exposureTime);
+        setExposuresLoading(false);
       })
-      .catch((err) => console.error("Exposures fetch error:", err))
-      .finally(() => setExposuresLoading(false));
+      .catch((err) => {
+        // setExposuresError(err.message);
+        console.error("Error fetching exposures:", err);
+        setExposuresLoading(false);
+      });
 
-    setAlmanacLoading(true);
     fetchAlmanac(startDayobs, endDayobs)
       .then((hours) => {
         setNightHours(hours);
+        setAlmanacLoading(false);
       })
-      .catch((err) => console.error("Almanac fetch error:", err))
-      .finally(() => setAlmanacLoading(false));
+      .catch((err) => {
+        // setAlmanacError(err.message);
+        console.error("Error fetching almanac:", err);
+        setAlmanacLoading(false);
+      });
 
-    setNarrativeLoading(true);
     fetchNarrativeLog(startDayobs, endDayobs, instrument)
       .then(([weather, fault]) => {
         setWeatherLoss(weather);
         setFaultLoss(fault);
+        setNarrativeLoading(false);
       })
-      .catch((err) => console.error("Narrative fetch error:", err))
-      .finally(() => setNarrativeLoading(false));
+      .catch((err) => {
+        // setNarrativeError(err.message);
+        console.error("Error fetching narrative log:", err);
+        setNarrativeLoading(false);
+      });
   }, [dayobs, noOfNights, instrument]);
 
   // calculate open shutter efficiency
@@ -119,6 +145,7 @@ export default function Layout({ children }) {
                 metadata="(TBD expected)"
                 tooltip="On-sky exposures taken during the night."
                 loading={exposuresLoading}
+                // error={exposuresError}
               />
               <MetricsCard
                 icon={<EfficiencyChart value={efficiency} />}
@@ -126,6 +153,7 @@ export default function Layout({ children }) {
                 label="Open-shutter (-weather) efficiency"
                 tooltip="Efficiency computed as total exposure time / (time between 18 degree twilights minus time lost to weather)"
                 loading={almanacLoading || exposuresLoading}
+                // error={almanacError}
               />
               <MetricsCard
                 icon={TimeLossIcon}
@@ -134,6 +162,7 @@ export default function Layout({ children }) {
                 metadata={timeLossDetails}
                 tooltip="Time loss as reported in the Narrative Log."
                 loading={narrativeLoading}
+                // error={narrativeError}
               />
               <MetricsCard
                 icon={JiraIcon}

@@ -70,15 +70,14 @@ const fetchData = async (url) => {
     });
     if (!res.ok) {
       const errorText = await res.text();
-      console.error(
+      throw new Error(
         `Fetch ${url} failed with status ${res.status}: ${errorText}`,
       );
-      return;
     }
     const data = await res.json();
     return data;
   } catch (error) {
-    console.error(`Error fetching data from ${url}`, error);
+    throw new Error(`Error fetching data from ${url}: ${error.message}`);
   }
 };
 
@@ -96,13 +95,15 @@ const fetchData = async (url) => {
  */
 const fetchExposures = async (start, end, instrument) => {
   const url = `${backendLocation}/exposures?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
-  const data = await fetchData(url);
-  if (!data) {
-    console.error("Error fetching exposures");
-    return [0, 0];
+  try {
+    const data = await fetchData(url);
+    if (!data) {
+      throw new Error("Error fetching exposures");
+    }
+    return [data.exposures_count, data.sum_exposure_time];
+  } catch (err) {
+    throw new Error("Error fetching exposures: " + err.message);
   }
-
-  return [data.exposures_count, data.sum_exposure_time];
 };
 
 /**
@@ -116,13 +117,15 @@ const fetchExposures = async (start, end, instrument) => {
  */
 const fetchAlmanac = async (start, end) => {
   const url = `${backendLocation}/almanac?dayObsStart=${start}&dayObsEnd=${end}`;
-  const data = await fetchData(url);
-
-  if (!data) {
-    console.error("Error fetching Almanac");
-    return 0.0;
+  try {
+    const data = await fetchData(url);
+    if (!data) {
+      throw new Error("Error fetching Almanac");
+    }
+    return data.night_hours;
+  } catch (err) {
+    throw new Error("Error fetching Almanac: " + err.message);
   }
-  return data.night_hours;
 };
 
 /**
@@ -138,13 +141,19 @@ const fetchAlmanac = async (start, end) => {
  */
 const fetchNarrativeLog = async (start, end, instrument) => {
   const url = `${backendLocation}/narrative-log?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
-  const data = await fetchData(url);
-
-  if (!data) {
-    console.error("Error fetching Narrative Log");
-    return [0, 0];
+  try {
+    const data = await fetchData(url);
+    if (!data) {
+      throw new Error("Error fetching Narrative Log");
+    }
+    return [
+      data.time_lost_to_weather,
+      data.time_lost_to_faults,
+      data.exposures,
+    ];
+  } catch (err) {
+    throw new Error("Error fetching Narrative Log: " + err.message);
   }
-  return [data.time_lost_to_weather, data.time_lost_to_faults, data.exposures];
 };
 
 /**
