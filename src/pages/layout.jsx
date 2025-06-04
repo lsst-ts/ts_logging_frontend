@@ -78,23 +78,10 @@ export default function Layout({ children }) {
         setExposuresLoading(false);
         if (exposuresNo === 0) {
           toast.warning("No exposures found for the selected date range.");
-        } else {
-          toast.info("Exposures loaded!");
         }
       })
       .catch((err) => {
         let msg = err?.message;
-        // if (err?.response && err.response.data && err.response.data.detail) {
-        //   msg = err.response.data.detail;
-        // } else if (err?.cause && err.cause.response && err.cause.response.data && err.cause.response.data.detail) {
-        //   msg = err.cause.response.data.detail;
-        // } else {
-        //   // Try to extract from the message string if it contains the backend JSON
-        //   const match = msg && msg.match(/\{"detail":"([^"]+)"\}/);
-        //   if (match && match[1]) {
-        //     msg = match[1];
-        //   }
-        // }
         toast.error("Error fetching exposures!", {
           description: msg,
           duration: Infinity,
@@ -108,8 +95,12 @@ export default function Layout({ children }) {
       .then((hours) => {
         setNightHours(hours);
       })
-      .catch(() => {
-        console.error("Error fetching Almanac data");
+      .catch((err) => {
+        let msg = err?.message;
+        toast.error("Error fetching almanac!", {
+          description: msg,
+          duration: Infinity,
+        });
       })
       .finally(() => {
         setAlmanacLoading(false);
@@ -119,9 +110,17 @@ export default function Layout({ children }) {
       .then(([weather, fault]) => {
         setWeatherLoss(weather);
         setFaultLoss(fault);
+        setNarrativeLoading(false);
+        if (weather === 0 && fault === 0) {
+          toast.warning("No time loss reported in the Narrative Log.");
+        }
       })
-      .catch(() => {
-        console.error("Error fetching Narrative Log data");
+      .catch((err) => {
+        let msg = err?.message;
+        toast.error("Error fetching narrative log!", {
+          description: msg,
+          duration: Infinity,
+        });
       })
       .finally(() => {
         setNarrativeLoading(false);
