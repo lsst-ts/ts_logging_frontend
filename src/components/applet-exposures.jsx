@@ -170,7 +170,7 @@ function AppletExposures({ exposureFields, exposureCount, sumExpTime }) {
 
       <CardContent className="flex gap-8 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 h-[320px] font-thin">
         {/* Plot display */}
-        <div className="flex-grow flex flex-col justify-between">
+        <div className="flex-grow flex flex-col justify-between gap-4">
           <div className="flex-grow overflow-y-auto">
             <div
               style={{
@@ -254,6 +254,7 @@ function AppletExposures({ exposureFields, exposureCount, sumExpTime }) {
             <Select value={plotBy} onValueChange={setPlotBy}>
               <SelectTrigger
                 id="plotBy"
+                size="sm"
                 className="w-[150px] bg-teal-800 justify-between font-normal text-[12px] text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50"
                 chevronDownIconClassName="text-white"
               >
@@ -262,7 +263,7 @@ function AppletExposures({ exposureFields, exposureCount, sumExpTime }) {
               <SelectContent className="bg-teal-800 border-2 border-white">
                 {plotByOptions.map((option) => (
                   <SelectItem
-                    className="text-white focus:bg-teal-700 focus:text-white"
+                    className="text-white text-[12px] focus:bg-teal-700 focus:text-white"
                     checkIconClassName="text-white"
                     key={option.value}
                     value={option.value}
@@ -280,6 +281,7 @@ function AppletExposures({ exposureFields, exposureCount, sumExpTime }) {
             <Select value={groupBy} onValueChange={setGroupBy}>
               <SelectTrigger
                 id="groupBy"
+                size="sm"
                 className="w-[150px] bg-teal-800 justify-between font-normal text-[12px] text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50"
                 chevronDownIconClassName="text-white"
               >
@@ -288,7 +290,7 @@ function AppletExposures({ exposureFields, exposureCount, sumExpTime }) {
               <SelectContent className="bg-teal-800 border-2 border-white">
                 {groupByOptions.map((option) => (
                   <SelectItem
-                    className="text-white focus:bg-teal-700 focus:text-white"
+                    className="text-white text-[12px] focus:bg-teal-700 focus:text-white"
                     checkIconClassName="text-white"
                     key={option.value}
                     value={option.value}
@@ -306,6 +308,7 @@ function AppletExposures({ exposureFields, exposureCount, sumExpTime }) {
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger
                 id="sortBy"
+                size="sm"
                 className="w-[150px] bg-teal-800 justify-between font-normal text-[12px] text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50"
                 chevronDownIconClassName="text-white"
               >
@@ -314,7 +317,7 @@ function AppletExposures({ exposureFields, exposureCount, sumExpTime }) {
               <SelectContent className="bg-teal-800 border-2 border-white">
                 {sortByOptions.map((option) => (
                   <SelectItem
-                    className="text-white focus:bg-teal-700 focus:text-white"
+                    className="text-white text-[12px] focus:bg-teal-700 focus:text-white"
                     checkIconClassName="text-white"
                     key={option.value}
                     value={option.value}
