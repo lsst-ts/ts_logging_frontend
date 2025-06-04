@@ -141,7 +141,7 @@ function AppletExposures({ exposureFields, exposureCount, sumExpTime }) {
             <PopoverTrigger className="self-end min-w-4">
               <img src={DownloadIcon} />
             </PopoverTrigger>
-            <PopoverContent>
+            <PopoverContent className="bg-black text-white text-sm border-yellow-700">
               This is a placeholder for the download/export button. Once
               implemented, clicking here will download this Applet's data to a
               .csv file.
@@ -151,11 +151,18 @@ function AppletExposures({ exposureFields, exposureCount, sumExpTime }) {
             <PopoverTrigger className="self-end min-w-4">
               <img src={InfoIcon} />
             </PopoverTrigger>
-            <PopoverContent>
-              This is a placeholder for the info button. Clicking here will
-              display detailed information on the data displayed in this Applet,
-              instructions on how to use any controls, and where the user will
-              be taken if they click on certain linked sections of the Applet.
+            <PopoverContent className="bg-black text-white text-sm border-yellow-700">
+              This applet displays a breakdown of the exposures taken during the
+              night, grouped by the selected criteria (e.g., observation reason,
+              image type, science program, or target name). The plot can be
+              configured to show either the total number of exposures or the
+              total exposure time in seconds. The data is sorted based on the
+              selected criteria, allowing for easy analysis of the exposure
+              distribution across different categories.
+              <br />
+              <br />
+              <strong>Note:</strong> If there are more categories than can fit
+              in the chart, you can scroll through the chart to see all of them.
             </PopoverContent>
           </Popover>
         </div>
