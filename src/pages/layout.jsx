@@ -74,8 +74,7 @@ export default function Layout({ children }) {
         setSumExpTime(exposureTime);
         setExposuresLoading(false);
       })
-      .catch((err) => {
-        console.error("Error fetching exposures:", err);
+      .catch(() => {
         setExposuresLoading(false);
       });
 
@@ -84,8 +83,7 @@ export default function Layout({ children }) {
         setNightHours(hours);
         setAlmanacLoading(false);
       })
-      .catch((err) => {
-        console.error("Error fetching almanac:", err);
+      .catch(() => {
         setAlmanacLoading(false);
       });
 
@@ -95,8 +93,7 @@ export default function Layout({ children }) {
         setFaultLoss(fault);
         setNarrativeLoading(false);
       })
-      .catch((err) => {
-        console.error("Error fetching narrative log:", err);
+      .catch(() => {
         setNarrativeLoading(false);
       });
   }, [dayobs, noOfNights, instrument]);
