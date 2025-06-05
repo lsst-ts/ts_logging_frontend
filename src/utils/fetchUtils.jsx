@@ -61,24 +61,21 @@ const backendLocation = `${httpProtocol}//${host}/nightlydigest/api`;
  * @throws Will log an error to the console if the fetch fails or the response is not OK.
  */
 const fetchData = async (url) => {
-  try {
-    const res = await fetch(url, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    if (!res.ok) {
-      const errorText = await res.text();
-      throw new Error(
-        `Fetch ${url} failed with status ${res.status}: ${errorText}`,
-      );
-    }
-    const data = await res.json();
-    return data;
-  } catch (error) {
-    throw new Error(`Error fetching data from ${url}: ${error.message}`);
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    const message = errBody.detail || `HTTP error ${res.status}`;
+    const error = new Error(message);
+    error.response = res;
+    throw error;
   }
+  const data = await res.json();
+  return data;
 };
 
 /**
@@ -94,15 +91,17 @@ const fetchData = async (url) => {
  *   [1]: sum_exposure_time (number) - The total exposure time.
  */
 const fetchExposures = async (start, end, instrument) => {
-  const url = `${backendLocation}/exposures?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
   try {
+    const url = `${backendLocation}/exposures?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
+
     const data = await fetchData(url);
     if (!data) {
       throw new Error("Error fetching exposures");
     }
     return [data.exposures_count, data.sum_exposure_time];
   } catch (err) {
-    throw new Error("Error fetching exposures: " + err.message);
+    console.error("Error fetching exposures:", err);
+    throw err;
   }
 };
 
@@ -124,7 +123,8 @@ const fetchAlmanac = async (start, end) => {
     }
     return data.night_hours;
   } catch (err) {
-    throw new Error("Error fetching Almanac: " + err.message);
+    console.error("Error fetching Almanac:", err);
+    throw err;
   }
 };
 
@@ -152,7 +152,8 @@ const fetchNarrativeLog = async (start, end, instrument) => {
       data.exposures,
     ];
   } catch (err) {
-    throw new Error("Error fetching Narrative Log: " + err.message);
+    console.error("Error fetching Narrative Log:", err);
+    throw err;
   }
 };
 
