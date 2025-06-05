@@ -29,7 +29,9 @@ export default function MetricsCard({ icon, data, label, metadata, tooltip }) {
             <PopoverTrigger className="self-end min-w-4">
               <img src={InfoIcon} />
             </PopoverTrigger>
-            <PopoverContent>{tooltip}</PopoverContent>
+            <PopoverContent className="bg-black text-white text-sm border-yellow-700">
+              {tooltip}
+            </PopoverContent>
           </Popover>
         )}
       </div>
