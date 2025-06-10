@@ -52,20 +52,40 @@ function AppletExposures({ exposureFields, exposureCount, sumExpTime }) {
     { value: "Lowest number first", label: "Lowest number first" },
   ];
 
-  // Aggregate exposure count/time based on plotBy and groupBy
-  const aggregatedMap = exposureFields.reduce((acc, row) => {
-    const groupKey = row[groupBy] ?? "Unknown";
-    const expTime = parseFloat(row.exp_time ?? 0); // seconds
+  // // Aggregate exposure count/time based on plotBy and groupBy
+  // const aggregatedMap = exposureFields.reduce((acc, row) => {
+  //   const groupKey = row[groupBy] ?? "Unknown";
+  //   const expTime = parseFloat(row.exp_time ?? 0); // seconds
 
-    if (!acc[groupKey]) {
-      acc[groupKey] = { groupKey, totalExpCount: 0, totalExpTime: 0 };
-    }
+  //   if (!acc[groupKey]) {
+  //     acc[groupKey] = { groupKey, totalExpCount: 0, totalExpTime: 0 };
+  //   }
 
-    acc[groupKey].totalExpCount += 1;
-    acc[groupKey].totalExpTime += isNaN(expTime) ? 0 : expTime;
+  //   acc[groupKey].totalExpCount += 1;
+  //   acc[groupKey].totalExpTime += isNaN(expTime) ? 0 : expTime;
 
-    return acc;
-  }, {});
+  //   return acc;
+  // }, {});
+
+  let aggregatedMap = {};
+
+  if (Array.isArray(exposureFields)) {
+    aggregatedMap = exposureFields.reduce((acc, row) => {
+      const groupKey = row[groupBy] ?? "Unknown";
+      const expTime = parseFloat(row.exp_time ?? 0); // seconds
+
+      if (!acc[groupKey]) {
+        acc[groupKey] = { groupKey, totalExpCount: 0, totalExpTime: 0 };
+      }
+
+      acc[groupKey].totalExpCount += 1;
+      acc[groupKey].totalExpTime += isNaN(expTime) ? 0 : expTime;
+
+      return acc;
+    }, {});
+  } else {
+    console.warn("exposureFields is not an array:", exposureFields);
+  }
 
   // Create array for chart data
   let chartData = Object.values(aggregatedMap).map((entry, index) => ({
@@ -106,29 +126,6 @@ function AppletExposures({ exposureFields, exposureCount, sumExpTime }) {
         : a.totalExpCount - b.totalExpCount,
     );
   }
-
-  // Custom bar shape (2 rounded corners)
-  const CustomBarShape = (props) => {
-    const { fill, x, y, width, height } = props;
-
-    const barWidth = width - 5;
-    const safeBarWidth = isNaN(barWidth) || barWidth < 0 ? 0 : barWidth;
-    const safeHeight = isNaN(height) || height < 10 ? 0 : height - 10;
-
-    return (
-      <path
-        d={`M${x},${y} 
-           h${safeBarWidth} 
-           a5,5 0 0 1 5,5 
-           v${safeHeight} 
-           a5,5 0 0 1 -5,5 
-           h-${safeBarWidth} 
-           z`}
-        fill={fill}
-        stroke="none"
-      />
-    );
-  };
 
   return (
     <Card className="border-none p-0 bg-stone-800 gap-2">
@@ -196,7 +193,7 @@ function AppletExposures({ exposureFields, exposureCount, sumExpTime }) {
                     layout="vertical"
                     barSize={20} // bar width
                     minPointSize={10} // make small bars visible
-                    shape={<CustomBarShape />}
+                    radius={[0, 4, 4, 0]}
                   />
                   <YAxis
                     dataKey="groupKey"
