@@ -11,7 +11,7 @@ import { DateTime } from "luxon";
 const calculateEfficiency = (nightHours, sumExpTime, weatherLoss) => {
   let eff = 0.0;
   if (nightHours !== 0) {
-    eff = sumExpTime / (nightHours * 60 * 60 - weatherLoss);
+    eff = (100 * sumExpTime) / (nightHours * 60 * 60 - weatherLoss);
   }
   return eff === 0 ? 0 : eff.toFixed(2);
 };

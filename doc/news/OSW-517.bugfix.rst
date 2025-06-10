@@ -1,0 +1,1 @@
+Update open shutter efficiency calculation.
