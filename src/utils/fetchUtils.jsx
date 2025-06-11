@@ -162,6 +162,31 @@ const fetchNarrativeLog = async (start, end, instrument) => {
 };
 
 /**
+ * Fetches exposure flags from the backend for a specified date range and instrument.
+ *
+ * @async
+ * @function fetchExposureFlags
+ * @param {string} start - The start date of the observation range (format: YYYY-MM-DD).
+ * @param {string} end - The end date of the observation range (format: YYYY-MM-DD).
+ * @param {string} instrument - The instrument to filter the exposure flags.
+ * @returns {Promise<Object[]>} A promise that resolves to an array of objects with:
+ *   - obs_id (string): The observation ID.
+ *   - exposure_flag (string): The flag associated with the observation.
+ *   Returns an empty array if fetching fails.
+ */
+const fetchExposureFlags = async (start, end, instrument) => {
+  const url = `${backendLocation}/exposure-flags?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
+  const data = await fetchData(url);
+
+  if (!data) {
+    console.error("Error fetching exposure flags");
+    return [];
+  }
+
+  return [data.exposure_flags];
+};
+
+/**
  * Formats a given JavaScript Date object into a string format 'yyyyLLdd' using luxon.
  *
  * @param {Date|null|undefined} date - The date to format. If null or undefined, returns an empty string.
@@ -215,6 +240,7 @@ export {
   fetchExposures,
   fetchAlmanac,
   fetchNarrativeLog,
+  fetchExposureFlags,
   getDayobsStr,
   getDatetimeFromDayobsStr,
   fetchJiraTickets,
