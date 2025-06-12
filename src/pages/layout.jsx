@@ -72,18 +72,16 @@ export default function Layout({ children }) {
       .then(([exposuresNo, exposureTime]) => {
         setExposureCount(exposuresNo);
         setSumExpTime(exposureTime);
-        setExposuresLoading(false);
       })
-      .catch(() => {
+      .finally(() => {
         setExposuresLoading(false);
       });
 
     fetchAlmanac(startDayobs, endDayobs)
       .then((hours) => {
         setNightHours(hours);
-        setAlmanacLoading(false);
       })
-      .catch(() => {
+      .finally(() => {
         setAlmanacLoading(false);
       });
 
@@ -91,9 +89,8 @@ export default function Layout({ children }) {
       .then(([weather, fault]) => {
         setWeatherLoss(weather);
         setFaultLoss(fault);
-        setNarrativeLoading(false);
       })
-      .catch(() => {
+      .finally(() => {
         setNarrativeLoading(false);
       });
   }, [dayobs, noOfNights, instrument]);
