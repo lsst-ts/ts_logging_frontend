@@ -73,6 +73,9 @@ export default function Layout({ children }) {
         setExposureCount(exposuresNo);
         setSumExpTime(exposureTime);
       })
+      .catch(() => {
+        console.error("Error fetching exposures");
+      })
       .finally(() => {
         setExposuresLoading(false);
       });
@@ -80,6 +83,9 @@ export default function Layout({ children }) {
     fetchAlmanac(startDayobs, endDayobs)
       .then((hours) => {
         setNightHours(hours);
+      })
+      .catch(() => {
+        console.error("Error fetching Almanac data");
       })
       .finally(() => {
         setAlmanacLoading(false);
@@ -89,6 +95,9 @@ export default function Layout({ children }) {
       .then(([weather, fault]) => {
         setWeatherLoss(weather);
         setFaultLoss(fault);
+      })
+      .catch(() => {
+        console.error("Error fetching Narrative Log data");
       })
       .finally(() => {
         setNarrativeLoading(false);
