@@ -18,16 +18,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Bar, BarChart, XAxis, YAxis } from "recharts";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
+import { Cell, Bar, BarChart, XAxis, YAxis } from "recharts";
+import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import InfoIcon from "../assets/InfoIcon.svg";
 import DownloadIcon from "../assets/DownloadIcon.svg";
 
-function AppletExposures({ exposureFields, exposureCount, sumExpTime }) {
+function AppletExposures({ exposureFields, exposureCount, sumExpTime, flags }) {
   const [plotBy, setPlotBy] = useState("Number");
   const [groupBy, setGroupBy] = useState("science_program");
   const [sortBy, setSortBy] = useState("Default");
@@ -52,57 +48,75 @@ function AppletExposures({ exposureFields, exposureCount, sumExpTime }) {
     { value: "Lowest number first", label: "Lowest number first" },
   ];
 
-  // // Aggregate exposure count/time based on plotBy and groupBy
-  // const aggregatedMap = exposureFields.reduce((acc, row) => {
-  //   const groupKey = row[groupBy] ?? "Unknown";
-  //   const expTime = parseFloat(row.exp_time ?? 0); // seconds
+  const flaggedObsIds = new Set(flags.map((f) => f.obs_id));
+  const aggregatedMap = {};
 
-  //   if (!acc[groupKey]) {
-  //     acc[groupKey] = { groupKey, totalExpCount: 0, totalExpTime: 0 };
-  //   }
-
-  //   acc[groupKey].totalExpCount += 1;
-  //   acc[groupKey].totalExpTime += isNaN(expTime) ? 0 : expTime;
-
-  //   return acc;
-  // }, {});
-
-  let aggregatedMap = {};
+  let totalFlaggedCount = 0;
+  let totalFlaggedTime = 0;
 
   if (Array.isArray(exposureFields)) {
-    aggregatedMap = exposureFields.reduce((acc, row) => {
-      const groupKey = row[groupBy] ?? "Unknown";
-      const expTime = parseFloat(row.exp_time ?? 0); // seconds
+    exposureFields.forEach((row) => {
+      const rawValue = row[groupBy];
+      const groupKey =
+        rawValue === null || rawValue === undefined || rawValue === ""
+          ? groupBy === "target_name"
+            ? "No target"
+            : "Unknown"
+          : rawValue;
+      const expTime = parseFloat(row.exp_time ?? 0);
+      const isFlagged = flaggedObsIds.has(row.exposure_name);
 
-      if (!acc[groupKey]) {
-        acc[groupKey] = { groupKey, totalExpCount: 0, totalExpTime: 0 };
+      if (!aggregatedMap[groupKey]) {
+        aggregatedMap[groupKey] = {
+          groupKey,
+          unflagged: 0,
+          flagged: 0,
+        };
       }
 
-      acc[groupKey].totalExpCount += 1;
-      acc[groupKey].totalExpTime += isNaN(expTime) ? 0 : expTime;
-
-      return acc;
-    }, {});
+      if (plotBy === "Time") {
+        if (isFlagged) {
+          const time = isNaN(expTime) ? 0 : expTime;
+          aggregatedMap[groupKey].flagged += time;
+          totalFlaggedTime += time;
+          totalFlaggedCount += 1;
+        } else {
+          aggregatedMap[groupKey].unflagged += isNaN(expTime) ? 0 : expTime;
+        }
+      } else {
+        if (isFlagged) {
+          aggregatedMap[groupKey].flagged += 1;
+          totalFlaggedCount += 1;
+        } else {
+          aggregatedMap[groupKey].unflagged += 1;
+        }
+      }
+    });
   } else {
     console.warn("exposureFields is not an array:", exposureFields);
   }
 
-  // Create array for chart data
-  let chartData = Object.values(aggregatedMap).map((entry, index) => ({
+  const flagCount = totalFlaggedCount;
+  const sumFlaggedTime = totalFlaggedTime;
+
+  const chartData = Object.values(aggregatedMap).map((entry, index) => ({
     groupKey: entry.groupKey,
-    totalExpCount: entry.totalExpCount,
-    totalExpTime: entry.totalExpTime,
-    fill: `hsl(${index * 40}, 70%, 50%)`, // generate unique colors
+    unflagged: entry.unflagged,
+    flagged: entry.flagged,
+    fill: `hsl(${index * 40}, 70%, 50%)`,
+    fill_flag: "#ffffff",
   }));
 
-  // Required for chartContainer
-  const chartConfig = chartData.reduce((config, entry) => {
-    config[entry.groupKey] = {
-      label: entry.groupKey,
-      color: entry.fill,
-    };
-    return config;
-  }, {});
+  const chartConfig = {
+    unflagged: {
+      label: "Unflagged",
+      color: "",
+    },
+    flagged: {
+      label: "Flagged",
+      color: "#ffffff",
+    },
+  };
 
   // Sort chartData based on sortBy
   if (sortBy === "Alphabetical asc.") {
@@ -149,17 +163,26 @@ function AppletExposures({ exposureFields, exposureCount, sumExpTime }) {
               <img src={InfoIcon} />
             </PopoverTrigger>
             <PopoverContent className="bg-black text-white text-sm border-yellow-700">
-              This applet displays a breakdown of the exposures taken during the
-              night, grouped by the selected criteria (e.g., observation reason,
-              image type, science program, or target name). The plot can be
-              configured to show either the total number of exposures or the
-              total exposure time in seconds. The data is sorted based on the
-              selected criteria, allowing for easy analysis of the exposure
-              distribution across different categories.
+              This applet displays a breakdown of exposures taken during the
+              night, grouped by a selected field (e.g., observation reason,
+              image type, science program, or target name).
               <br />
               <br />
-              <strong>Note:</strong> If there are more categories than can fit
-              in the chart, you can scroll through the chart to see all of them.
+              The chart can be configured to show either the{" "}
+              <strong>number of exposures</strong>
+              or the <strong>total exposure time (in seconds)</strong>. Groups
+              can also be sorted to better visualise the distribution across
+              categories.
+              <br />
+              <br />
+              If any exposures in a group have been flagged as "junk" or
+              "questionable", a white segment appears at the end of that group's
+              bar, stacked on top of the unflagged portion.
+              <br />
+              <br />
+              <strong>Tip:</strong> Hover over a bar to view flagged and
+              unflagged values. Scroll to see additional groups if all are not
+              visible.
             </PopoverContent>
           </Popover>
         </div>
@@ -186,28 +209,75 @@ function AppletExposures({ exposureFields, exposureCount, sumExpTime }) {
                     left: 30,
                   }}
                 >
+                  {/* Unflagged data stacked bar (bottom) */}
                   <Bar
-                    dataKey={
-                      plotBy === "Time" ? "totalExpTime" : "totalExpCount"
-                    }
-                    layout="vertical"
-                    barSize={20} // bar width
-                    minPointSize={10} // make small bars visible
-                    radius={[0, 4, 4, 0]}
-                  />
+                    dataKey="unflagged"
+                    stackId="a"
+                    barSize={20}
+                    minPointSize={1}
+                    isAnimationActive={false}
+                  >
+                    {/* Round corners when no flagged data */}
+                    {chartData.map((entry, index) => {
+                      const isOnlyUnflagged = entry.flagged === 0;
+                      return (
+                        <Cell
+                          key={`cell-unflagged-${index}`}
+                          fill={entry.fill}
+                          radius={isOnlyUnflagged ? [0, 4, 4, 0] : [0, 0, 0, 0]}
+                        />
+                      );
+                    })}
+                  </Bar>
+
+                  {/* Flagged data stacked bar (top) */}
+                  <Bar
+                    dataKey="flagged"
+                    stackId="a"
+                    barSize={20}
+                    isAnimationActive={false}
+                  >
+                    {chartData.map((entry, index) => (
+                      <Cell
+                        key={`cell-flagged-${index}`}
+                        fill="#ffffff"
+                        radius={[0, 4, 4, 0]}
+                      />
+                    ))}
+                  </Bar>
+
+                  {/* Axes, ticks, labels and styles */}
                   <YAxis
                     dataKey="groupKey"
                     type="category"
                     axisLine={{ stroke: "#ffffff", strokeWidth: 2 }}
                     tickLine={false}
-                    tick={{ fill: "#ffffff" }} // axis labels
-                    tickMargin={2} // space for labels
-                    tickFormatter={(value) => chartConfig[value]?.label}
+                    // Custom tick component for wrapping long labels
+                    tick={({ x, y, payload }) => (
+                      (<title>{payload.value}</title>),
+                      (
+                        <text
+                          x={x}
+                          y={y}
+                          dy={4}
+                          textAnchor="end"
+                          fill="#ffffff"
+                          fontSize={10}
+                        >
+                          {payload.value.length > 14
+                            ? `${payload.value.slice(0, 12)}...`
+                            : payload.value}
+                        </text>
+                      )
+                    )}
+                    tickMargin={2}
+                    tickFormatter={(value) =>
+                      value === "Unknown" && groupBy === "target_name"
+                        ? "No target"
+                        : value
+                    }
                   />
                   <XAxis
-                    dataKey={
-                      plotBy === "Time" ? "totalExpTime" : "totalExpCount"
-                    }
                     type="number"
                     orientation="top"
                     axisLine={{ stroke: "#ffffff", strokeWidth: 2 }}
@@ -224,20 +294,54 @@ function AppletExposures({ exposureFields, exposureCount, sumExpTime }) {
                       style: { fontSize: 12 },
                     }}
                   />
+
+                  {/* Tooltip content and styles  */}
                   <ChartTooltip
                     cursor={false}
-                    content={<ChartTooltipContent hideLabel />}
+                    content={({ active, payload }) => {
+                      if (!active || !payload || payload.length === 0)
+                        return null;
+
+                      const group = payload[0].payload.groupKey || "No target";
+                      const unflagged =
+                        payload.find((d) => d.dataKey === "unflagged")?.value ||
+                        0;
+                      const flagged =
+                        payload.find((d) => d.dataKey === "flagged")?.value ||
+                        0;
+
+                      return (
+                        <div className="bg-white text-black text-xs p-2 border border-white rounded">
+                          <div className="font-bold">
+                            {group}:{" "}
+                            <strong className="font-extra-bold">
+                              {unflagged + flagged}
+                            </strong>
+                          </div>
+                          {flagged > 0 && <div>Flagged: {flagged}</div>}
+                        </div>
+                      );
+                    }}
                   />
                 </BarChart>
               </ChartContainer>
             </div>
           </div>
-          {/* Total */}
-          <div className="text-[12px]">
+
+          {/* Totals */}
+          <div className="text-[12px] flex flex-row gap-4">
             {plotBy === "Time" ? (
-              <>Total exposure time: {sumExpTime} seconds</>
+              <>
+                <div>Total exposure time: {sumExpTime} s</div>
+                {sumFlaggedTime > 0 && (
+                  <div>Total flagged time: {sumFlaggedTime.toFixed(0)} s</div>
+                )}
+              </>
             ) : (
-              <>Total exposure count: {exposureCount}</>
+              <>
+                <div>Total exposure count: {exposureCount}</div>
+                {flagCount > 0 && <div>Total flagged: {flagCount}</div>}
+              </>
             )}
           </div>
         </div>
