@@ -14,7 +14,8 @@ Before running the project with Docker Compose, ensure you have the following in
 Steps to Run
 ============
 1. **Set Environment Variables**:
-   Ensure the `.env` file in the `docker/` directory is properly configured. For example, set the `FRONTEND_PATH` variable to the absolute path of the frontend source directory:
+   Create a `.env` file in the `docker/` directory and copy environment variables from the example env file `docker/example_env` to the new file. 
+   Make sure that the variables are properly configured. For example, set the `FRONTEND_PATH` variable to the absolute path of the frontend source directory:
    ::
       FRONTEND_PATH=/path/to/your/frontend
       BACKEND_PATH=/path/to/your/backend

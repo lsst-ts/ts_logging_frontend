@@ -23,3 +23,6 @@ pytest_session.txt
 # Node
 node_modules/
 dist/
+.env
+**/.env
+**/.env.*

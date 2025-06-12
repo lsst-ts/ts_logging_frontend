@@ -61,25 +61,21 @@ const backendLocation = `${httpProtocol}//${host}/nightlydigest/api`;
  * @throws Will log an error to the console if the fetch fails or the response is not OK.
  */
 const fetchData = async (url) => {
-  try {
-    const res = await fetch(url, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error(
-        `Fetch ${url} failed with status ${res.status}: ${errorText}`,
-      );
-      return;
-    }
-    const data = await res.json();
-    return data;
-  } catch (error) {
-    console.error(`Error fetching data from ${url}`, error);
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    const message = errBody.detail || `HTTP error ${res.status ?? "unknown"}`;
+    const error = new Error(message);
+    error.response = res;
+    throw error;
   }
+  const data = await res.json();
+  return data;
 };
 
 /**
@@ -95,14 +91,18 @@ const fetchData = async (url) => {
  *   [1]: sum_exposure_time (number) - The total exposure time.
  */
 const fetchExposures = async (start, end, instrument) => {
-  const url = `${backendLocation}/exposures?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
-  const data = await fetchData(url);
-  if (!data) {
-    console.error("Error fetching exposures");
-    return [0, 0];
-  }
+  try {
+    const url = `${backendLocation}/exposures?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
 
-  return [data.exposures_count, data.sum_exposure_time];
+    const data = await fetchData(url);
+    if (!data) {
+      throw new Error("Error fetching exposures");
+    }
+    return [data.exposures_count, data.sum_exposure_time];
+  } catch (err) {
+    console.error("Error fetching exposures:", err);
+    throw err;
+  }
 };
 
 /**
@@ -116,13 +116,16 @@ const fetchExposures = async (start, end, instrument) => {
  */
 const fetchAlmanac = async (start, end) => {
   const url = `${backendLocation}/almanac?dayObsStart=${start}&dayObsEnd=${end}`;
-  const data = await fetchData(url);
-
-  if (!data) {
-    console.error("Error fetching Almanac");
-    return 0.0;
+  try {
+    const data = await fetchData(url);
+    if (!data) {
+      throw new Error("Error fetching Almanac");
+    }
+    return data.night_hours;
+  } catch (err) {
+    console.error("Error fetching Almanac:", err);
+    throw err;
   }
-  return data.night_hours;
 };
 
 /**
@@ -138,13 +141,20 @@ const fetchAlmanac = async (start, end) => {
  */
 const fetchNarrativeLog = async (start, end, instrument) => {
   const url = `${backendLocation}/narrative-log?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
-  const data = await fetchData(url);
-
-  if (!data) {
-    console.error("Error fetching Narrative Log");
-    return [0, 0];
+  try {
+    const data = await fetchData(url);
+    if (!data) {
+      throw new Error("Error fetching Narrative Log");
+    }
+    return [
+      data.time_lost_to_weather,
+      data.time_lost_to_faults,
+      data.exposures,
+    ];
+  } catch (err) {
+    console.error("Error fetching Narrative Log:", err);
+    throw err;
   }
-  return [data.time_lost_to_weather, data.time_lost_to_faults, data.exposures];
 };
 
 /**
