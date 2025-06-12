@@ -69,7 +69,7 @@ const fetchData = async (url) => {
   });
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({}));
-    const message = errBody.detail || `HTTP error ${res.status}`;
+    const message = errBody.detail || `HTTP error ${res.status ?? "unknown"}`;
     const error = new Error(message);
     error.response = res;
     throw error;

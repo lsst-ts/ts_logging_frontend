@@ -6,7 +6,9 @@ vi.stubGlobal(
   "fetch",
   vi.fn(() =>
     Promise.resolve({
-      json: () => Promise.resolve([]), // Mocked response
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ detail: "Not found" }),
     }),
   ),
 );
