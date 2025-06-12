@@ -18,24 +18,25 @@ import {
   fetchExposures,
   fetchAlmanac,
   fetchNarrativeLog,
+  fetchExposureFlags,
   getDayobsStr,
   getDatetimeFromDayobsStr,
   fetchJiraTickets,
 } from "@/utils/fetchUtils";
 
 export default function Layout({ children }) {
-  const [exposureFields, setExposureFields] = useState([]);
-  const [exposureCount, setExposureCount] = useState(0);
   const [dayobs, setDayobs] = useState(
     DateTime.utc().minus({ days: 1 }).toJSDate(),
   );
   const [noOfNights, setNoOfNights] = useState(1);
   const [instrument, setInstrument] = useState("LSSTCam");
-
   const [nightHours, setNightHours] = useState(0.0);
   const [weatherLoss, setWeatherLoss] = useState(0.0);
-  const [sumExpTime, setSumExpTime] = useState(0.0);
   const [faultLoss, setFaultLoss] = useState(0.0);
+  const [exposureFields, setExposureFields] = useState([]);
+  const [exposureCount, setExposureCount] = useState(0);
+  const [sumExpTime, setSumExpTime] = useState(0.0);
+  const [flags, setFlags] = useState([]);
 
   const [exposuresLoading, setExposuresLoading] = useState(true);
   const [almanacLoading, setAlmanacLoading] = useState(true);
@@ -161,6 +162,10 @@ export default function Layout({ children }) {
       .finally(() => {
         setJiraLoading(false);
       });
+
+    fetchExposureFlags(startDayobs, endDayobs, instrument).then(([flags]) => {
+      setFlags(flags);
+    });
   }, [dayobs, noOfNights, instrument]);
 
   // calculate open shutter efficiency
@@ -225,6 +230,7 @@ export default function Layout({ children }) {
                   exposureFields={exposureFields}
                   exposureCount={exposureCount}
                   sumExpTime={sumExpTime}
+                  flags={flags}
                 />
                 <Applet />
               </div>
