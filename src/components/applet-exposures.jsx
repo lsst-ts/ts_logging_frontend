@@ -18,12 +18,22 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Cell, Bar, BarChart, XAxis, YAxis } from "recharts";
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
+import { Skeleton } from "@/components/ui/skeleton";
+
+import { Cell, Bar, BarChart, XAxis, YAxis } from "recharts";
+
 import InfoIcon from "../assets/InfoIcon.svg";
 import DownloadIcon from "../assets/DownloadIcon.svg";
 
-function AppletExposures({ exposureFields, exposureCount, sumExpTime, flags }) {
+function AppletExposures({
+  exposureFields,
+  exposureCount,
+  sumExpTime,
+  flags,
+  exposuresLoading = false,
+  flagsLoading = false,
+}) {
   const [plotBy, setPlotBy] = useState("Number");
   const [groupBy, setGroupBy] = useState("science_program");
   const [sortBy, setSortBy] = useState("Default");
@@ -189,247 +199,310 @@ function AppletExposures({ exposureFields, exposureCount, sumExpTime, flags }) {
       </CardHeader>
 
       <CardContent className="flex gap-8 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 h-[320px] font-thin">
-        {/* Plot display */}
-        <div className="flex-grow flex flex-col justify-between gap-4">
-          <div className="flex-grow overflow-y-auto">
-            <div
-              style={{
-                height: `${chartData.length * 35}px`,
-                minHeight: "180px",
-              }}
-            >
-              <ChartContainer
-                config={chartConfig}
-                className="w-full h-full !aspect-auto"
-              >
-                <BarChart
-                  data={chartData}
-                  layout="vertical"
-                  margin={{
-                    left: 30,
-                  }}
-                >
-                  {/* Unflagged data stacked bar (bottom) */}
-                  <Bar
-                    dataKey="unflagged"
-                    stackId="a"
-                    barSize={20}
-                    minPointSize={1}
-                    isAnimationActive={false}
-                  >
-                    {/* Round corners when no flagged data */}
-                    {chartData.map((entry, index) => {
-                      const isOnlyUnflagged = entry.flagged === 0;
-                      return (
-                        <Cell
-                          key={`cell-unflagged-${index}`}
-                          fill={entry.fill}
-                          radius={isOnlyUnflagged ? [0, 4, 4, 0] : [0, 0, 0, 0]}
-                        />
-                      );
-                    })}
-                  </Bar>
-
-                  {/* Flagged data stacked bar (top) */}
-                  <Bar
-                    dataKey="flagged"
-                    stackId="a"
-                    barSize={20}
-                    isAnimationActive={false}
-                  >
-                    {chartData.map((entry, index) => (
-                      <Cell
-                        key={`cell-flagged-${index}`}
-                        fill="#ffffff"
-                        radius={[0, 4, 4, 0]}
-                      />
-                    ))}
-                  </Bar>
-
-                  {/* Axes, ticks, labels and styles */}
-                  <YAxis
-                    dataKey="groupKey"
-                    type="category"
-                    axisLine={{ stroke: "#ffffff", strokeWidth: 2 }}
-                    tickLine={false}
-                    // Custom tick component for wrapping long labels
-                    tick={({ x, y, payload }) => (
-                      (<title>{payload.value}</title>),
-                      (
-                        <text
-                          x={x}
-                          y={y}
-                          dy={4}
-                          textAnchor="end"
-                          fill="#ffffff"
-                          fontSize={10}
-                        >
-                          {payload.value.length > 14
-                            ? `${payload.value.slice(0, 12)}...`
-                            : payload.value}
-                        </text>
-                      )
-                    )}
-                    tickMargin={2}
-                    tickFormatter={(value) =>
-                      value === "Unknown" && groupBy === "target_name"
-                        ? "No target"
-                        : value
-                    }
-                  />
-                  <XAxis
-                    type="number"
-                    orientation="top"
-                    axisLine={{ stroke: "#ffffff", strokeWidth: 2 }}
-                    tickLine={{ stroke: "#ffffff", strokeWidth: 2 }}
-                    tick={{ fill: "#ffffff", fontSize: 12 }}
-                    label={{
-                      value:
-                        plotBy === "Time"
-                          ? "Exposure time (s)"
-                          : "Number of exposures",
-                      position: "insideTop",
-                      offset: 0,
-                      fill: "#ffffff",
-                      style: { fontSize: 12 },
-                    }}
-                  />
-
-                  {/* Tooltip content and styles  */}
-                  <ChartTooltip
-                    cursor={false}
-                    content={({ active, payload }) => {
-                      if (!active || !payload || payload.length === 0)
-                        return null;
-
-                      const group = payload[0].payload.groupKey || "No target";
-                      const unflagged =
-                        payload.find((d) => d.dataKey === "unflagged")?.value ||
-                        0;
-                      const flagged =
-                        payload.find((d) => d.dataKey === "flagged")?.value ||
-                        0;
-
-                      return (
-                        <div className="bg-white text-black text-xs p-2 border border-white rounded">
-                          <div className="font-bold">
-                            {group}:{" "}
-                            <strong className="font-extra-bold">
-                              {unflagged + flagged}
-                            </strong>
-                          </div>
-                          {flagged > 0 && <div>Flagged: {flagged}</div>}
-                        </div>
-                      );
-                    }}
-                  />
-                </BarChart>
-              </ChartContainer>
+        {exposuresLoading ? (
+          <>
+            {/* Skeleton outline */}
+            <div className="flex-grow flex flex-col justify-between gap-4">
+              <div className="flex-grow overflow-y-auto">
+                <Skeleton className="w-full h-full min-h-[180px] bg-stone-900" />
+              </div>
+              <div className="text-[12px] flex flex-row gap-4">
+                <Skeleton className="h-4 w-full bg-stone-900" />
+                <Skeleton className="h-4 w-full bg-stone-900" />
+              </div>
             </div>
-          </div>
+            <div className="w-[160px] flex flex-col gap-4">
+              <div className="flex flex-col gap-1">
+                <Skeleton className="h-4 w-16 bg-stone-900" />
+                <Skeleton className="h-8 w-[150px] bg-stone-900 rounded-s" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Skeleton className="h-4 w-16 bg-stone-900" />
+                <Skeleton className="h-8 w-[150px] bg-stone-900 rounded-s" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Skeleton className="h-4 w-16 bg-stone-900" />
+                <Skeleton className="h-8 w-[150px] bg-stone-900 rounded-s" />
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Plot display */}
+            <div className="flex-grow flex flex-col justify-between gap-4">
+              {exposureCount === 0 ? (
+                <>
+                  <span>No exposures returned for selected dates.</span>
+                </>
+              ) : (
+                <>
+                  <div className="flex-grow overflow-y-auto">
+                    <div
+                      style={{
+                        height: `${chartData.length * 35}px`,
+                        minHeight: "180px",
+                      }}
+                    >
+                      <ChartContainer
+                        config={chartConfig}
+                        className="w-full h-full !aspect-auto"
+                      >
+                        <BarChart
+                          data={chartData}
+                          layout="vertical"
+                          margin={{
+                            left: 30,
+                          }}
+                        >
+                          {/* Unflagged data stacked bar (bottom) */}
+                          <Bar
+                            dataKey="unflagged"
+                            stackId="a"
+                            barSize={20}
+                            minPointSize={1}
+                            isAnimationActive={false}
+                          >
+                            {/* Round corners when no flagged data */}
+                            {chartData.map((entry, index) => {
+                              const isOnlyUnflagged = entry.flagged === 0;
+                              return (
+                                <Cell
+                                  key={`cell-unflagged-${index}`}
+                                  fill={entry.fill}
+                                  radius={
+                                    isOnlyUnflagged
+                                      ? [0, 4, 4, 0]
+                                      : [0, 0, 0, 0]
+                                  }
+                                />
+                              );
+                            })}
+                          </Bar>
 
-          {/* Totals */}
-          <div className="text-[12px] flex flex-row gap-4">
-            {plotBy === "Time" ? (
-              <>
-                <div>Total exposure time: {sumExpTime} s</div>
-                {sumFlaggedTime > 0 && (
-                  <div>Total flagged time: {sumFlaggedTime.toFixed(0)} s</div>
+                          {/* Flagged data stacked bar (top) */}
+                          <Bar
+                            dataKey="flagged"
+                            stackId="a"
+                            barSize={20}
+                            isAnimationActive={false}
+                          >
+                            {chartData.map((entry, index) => (
+                              <Cell
+                                key={`cell-flagged-${index}`}
+                                fill="#ffffff"
+                                radius={[0, 4, 4, 0]}
+                              />
+                            ))}
+                          </Bar>
+
+                          {/* Axes, ticks, labels and styles */}
+                          <YAxis
+                            dataKey="groupKey"
+                            type="category"
+                            axisLine={{ stroke: "#ffffff", strokeWidth: 2 }}
+                            tickLine={false}
+                            // Custom tick component for wrapping long labels
+                            tick={({ x, y, payload }) => (
+                              (<title>{payload.value}</title>),
+                              (
+                                <text
+                                  x={x}
+                                  y={y}
+                                  dy={4}
+                                  textAnchor="end"
+                                  fill="#ffffff"
+                                  fontSize={10}
+                                >
+                                  {payload.value.length > 14
+                                    ? `${payload.value.slice(0, 12)}...`
+                                    : payload.value}
+                                </text>
+                              )
+                            )}
+                            tickMargin={2}
+                            tickFormatter={(value) =>
+                              value === "Unknown" && groupBy === "target_name"
+                                ? "No target"
+                                : value
+                            }
+                          />
+                          <XAxis
+                            type="number"
+                            orientation="top"
+                            axisLine={{ stroke: "#ffffff", strokeWidth: 2 }}
+                            tickLine={{ stroke: "#ffffff", strokeWidth: 2 }}
+                            tick={{ fill: "#ffffff", fontSize: 12 }}
+                            label={{
+                              value:
+                                plotBy === "Time"
+                                  ? "Exposure time (s)"
+                                  : "Number of exposures",
+                              position: "insideTop",
+                              offset: 0,
+                              fill: "#ffffff",
+                              style: { fontSize: 12 },
+                            }}
+                          />
+
+                          {/* Tooltip content and styles  */}
+                          <ChartTooltip
+                            cursor={false}
+                            content={({ active, payload }) => {
+                              if (!active || !payload || payload.length === 0)
+                                return null;
+
+                              const group =
+                                payload[0].payload.groupKey || "No target";
+                              const unflagged =
+                                payload.find((d) => d.dataKey === "unflagged")
+                                  ?.value || 0;
+                              const flagged =
+                                payload.find((d) => d.dataKey === "flagged")
+                                  ?.value || 0;
+
+                              return (
+                                <div className="bg-white text-black text-xs p-2 border border-white rounded">
+                                  <div className="font-bold">
+                                    {group}:{" "}
+                                    <strong className="font-extra-bold">
+                                      {unflagged + flagged}
+                                    </strong>
+                                  </div>
+                                  {flagged > 0 && <div>Flagged: {flagged}</div>}
+                                </div>
+                              );
+                            }}
+                          />
+                        </BarChart>
+                      </ChartContainer>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Totals */}
+              <div className="text-[12px] flex flex-row gap-4">
+                {plotBy === "Time" ? (
+                  <>
+                    <div className="w-full">
+                      Total exposure time: {sumExpTime} s
+                    </div>
+                    <div className="w-full flex">
+                      <span>Total flagged time:&nbsp;</span>
+                      {flagsLoading ? (
+                        <Skeleton className="h-4 w-12 bg-stone-900 inline-block" />
+                      ) : (
+                        <span>{sumFlaggedTime} s</span>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-full">
+                      Total exposure count: {exposureCount}
+                    </div>
+                    <div className="w-full flex">
+                      <span>Total flagged:&nbsp;</span>
+                      {flagsLoading ? (
+                        <Skeleton className="h-4 w-12 bg-stone-900 inline-block" />
+                      ) : (
+                        <span>{flagCount}</span>
+                      )}
+                    </div>
+                  </>
                 )}
-              </>
-            ) : (
-              <>
-                <div>Total exposure count: {exposureCount}</div>
-                {flagCount > 0 && <div>Total flagged: {flagCount}</div>}
-              </>
-            )}
-          </div>
-        </div>
+              </div>
+            </div>
 
-        {/* Plot controls */}
-        <div className="w-[160px] flex flex-col gap-4">
-          <div>
-            <Label htmlFor="plotBy" className="text-white text-[12px] pb-1">
-              Plot by:
-            </Label>
-            <Select value={plotBy} onValueChange={setPlotBy}>
-              <SelectTrigger
-                id="plotBy"
-                size="sm"
-                className="w-[150px] bg-teal-800 justify-between font-normal text-[12px] text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50"
-                chevronDownIconClassName="text-white"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-teal-800 border-2 border-white">
-                {plotByOptions.map((option) => (
-                  <SelectItem
-                    className="text-white text-[12px] focus:bg-teal-700 focus:text-white"
-                    checkIconClassName="text-white"
-                    key={option.value}
-                    value={option.value}
+            {/* Plot controls */}
+            <div className="w-[160px] flex flex-col gap-4">
+              <div>
+                <Label htmlFor="plotBy" className="text-white text-[12px] pb-1">
+                  Plot by:
+                </Label>
+                <Select value={plotBy} onValueChange={setPlotBy}>
+                  <SelectTrigger
+                    id="plotBy"
+                    size="sm"
+                    className="w-[150px] bg-teal-800 justify-between font-normal text-[12px] text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50"
+                    chevronDownIconClassName="text-white"
                   >
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor="groupBy" className="text-white text-[12px] pb-1">
-              Group by:
-            </Label>
-            <Select value={groupBy} onValueChange={setGroupBy}>
-              <SelectTrigger
-                id="groupBy"
-                size="sm"
-                className="w-[150px] bg-teal-800 justify-between font-normal text-[12px] text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50"
-                chevronDownIconClassName="text-white"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-teal-800 border-2 border-white">
-                {groupByOptions.map((option) => (
-                  <SelectItem
-                    className="text-white text-[12px] focus:bg-teal-700 focus:text-white"
-                    checkIconClassName="text-white"
-                    key={option.value}
-                    value={option.value}
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-teal-800 border-2 border-white">
+                    {plotByOptions.map((option) => (
+                      <SelectItem
+                        className="text-white text-[12px] focus:bg-teal-700 focus:text-white"
+                        checkIconClassName="text-white"
+                        key={option.value}
+                        value={option.value}
+                      >
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label
+                  htmlFor="groupBy"
+                  className="text-white text-[12px] pb-1"
+                >
+                  Group by:
+                </Label>
+                <Select value={groupBy} onValueChange={setGroupBy}>
+                  <SelectTrigger
+                    id="groupBy"
+                    size="sm"
+                    className="w-[150px] bg-teal-800 justify-between font-normal text-[12px] text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50"
+                    chevronDownIconClassName="text-white"
                   >
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor="sortBy" className="text-white text-[12px] pb-1">
-              Sort by:
-            </Label>
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger
-                id="sortBy"
-                size="sm"
-                className="w-[150px] bg-teal-800 justify-between font-normal text-[12px] text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50"
-                chevronDownIconClassName="text-white"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-teal-800 border-2 border-white">
-                {sortByOptions.map((option) => (
-                  <SelectItem
-                    className="text-white text-[12px] focus:bg-teal-700 focus:text-white"
-                    checkIconClassName="text-white"
-                    key={option.value}
-                    value={option.value}
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-teal-800 border-2 border-white">
+                    {groupByOptions.map((option) => (
+                      <SelectItem
+                        className="text-white text-[12px] focus:bg-teal-700 focus:text-white"
+                        checkIconClassName="text-white"
+                        key={option.value}
+                        value={option.value}
+                      >
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="sortBy" className="text-white text-[12px] pb-1">
+                  Sort by:
+                </Label>
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger
+                    id="sortBy"
+                    size="sm"
+                    className="w-[150px] bg-teal-800 justify-between font-normal text-[12px] text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50"
+                    chevronDownIconClassName="text-white"
                   >
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-teal-800 border-2 border-white">
+                    {sortByOptions.map((option) => (
+                      <SelectItem
+                        className="text-white text-[12px] focus:bg-teal-700 focus:text-white"
+                        checkIconClassName="text-white"
+                        key={option.value}
+                        value={option.value}
+                      >
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </>
+        )}
       </CardContent>
     </Card>
   );
