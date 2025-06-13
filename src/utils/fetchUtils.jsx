@@ -180,6 +180,20 @@ const getDatetimeFromDayobsStr = (dayObsStr) => {
   }).set({ hour: 12, minute: 0, second: 0 });
 };
 
+const fetchJiraTickets = async (start, end, instrument) => {
+  const url = `${backendLocation}/jira-tickets?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
+  try {
+    const data = await fetchData(url);
+    if (!data) {
+      throw new Error("Error fetching Jira Tickets");
+    }
+    return data.issues;
+  } catch (err) {
+    console.error("Error fetching Jira tickets", err);
+    throw err;
+  }
+};
+
 export {
   calculateEfficiency,
   calculateTimeLoss,
@@ -188,4 +202,5 @@ export {
   fetchNarrativeLog,
   getDayobsStr,
   getDatetimeFromDayobsStr,
+  fetchJiraTickets,
 };
