@@ -21,6 +21,8 @@ services:
     image: nightlydigest-backend-local
     environment:
       - ACCESS_TOKEN=${ACCESS_TOKEN}
+      - JIRA_API_TOKEN=${JIRA_API_TOKEN}
+      - JIRA_API_HOSTNAME=${JIRA_API_HOSTNAME}
     ports:
       - "8080:8080"
     volumes:
