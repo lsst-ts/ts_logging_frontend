@@ -41,9 +41,13 @@ export default function Layout({ children }) {
   const [exposuresLoading, setExposuresLoading] = useState(true);
   const [almanacLoading, setAlmanacLoading] = useState(true);
   const [narrativeLoading, setNarrativeLoading] = useState(true);
+
   const [jiraTickets, setJiraTickets] = useState([]);
   const [jiraLoading, setJiraLoading] = useState(true);
   const [jiraQueryUrl, setJiraQueryUrl] = useState(null);
+
+  const [flagsLoading, setFlagsLoading] = useState(true);
+
 
   const handleDayobsChange = (date) => {
     setDayobs(date);
@@ -62,6 +66,7 @@ export default function Layout({ children }) {
     setAlmanacLoading(true);
     setNarrativeLoading(true);
     setJiraLoading(true);
+    setFlagsLoading(true);
 
     let dayobsStr = getDayobsStr(dayobs);
     if (!dayobsStr) {
@@ -71,6 +76,8 @@ export default function Layout({ children }) {
       setNarrativeLoading(false);
       setJiraLoading(false);
       setJiraQueryUrl(null);
+      setFlagsLoading(false);
+
       return;
     }
     let dateFromDayobs = getDatetimeFromDayobsStr(dayobsStr);
@@ -163,9 +170,16 @@ export default function Layout({ children }) {
         setJiraLoading(false);
       });
 
-    fetchExposureFlags(startDayobs, endDayobs, instrument).then(([flags]) => {
-      setFlags(flags);
-    });
+    fetchExposureFlags(startDayobs, endDayobs, instrument)
+      .then(([flags]) => {
+        setFlags(flags);
+      })
+      .catch(() => {
+        console.error("Error fetching exposure flags");
+      })
+      .finally(() => {
+        setFlagsLoading(false);
+      });
   }, [dayobs, noOfNights, instrument]);
 
   // calculate open shutter efficiency
@@ -231,6 +245,8 @@ export default function Layout({ children }) {
                   exposureCount={exposureCount}
                   sumExpTime={sumExpTime}
                   flags={flags}
+                  exposuresLoading={exposuresLoading}
+                  flagsLoading={flagsLoading}
                 />
                 <Applet />
               </div>
