@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { Toaster } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar.jsx";
 import { AppSidebar } from "@/components/app-sidebar.jsx";
 import EfficiencyIcon from "../assets/EfficiencyIcon.svg";
@@ -56,7 +58,7 @@ export default function Layout({ children }) {
 
     let dayobsStr = getDayobsStr(dayobs);
     if (!dayobsStr) {
-      console.error("No Date Selected!");
+      toast.error("No Date Selected! Please select a valid date.");
       setExposuresLoading(false);
       setAlmanacLoading(false);
       setNarrativeLoading(false);
@@ -72,9 +74,17 @@ export default function Layout({ children }) {
       .then(([exposuresNo, exposureTime]) => {
         setExposureCount(exposuresNo);
         setSumExpTime(exposureTime);
+        setExposuresLoading(false);
+        if (exposuresNo === 0) {
+          toast.warning("No exposures found for the selected date range.");
+        }
       })
-      .catch(() => {
-        console.error("Error fetching exposures");
+      .catch((err) => {
+        const msg = err?.message;
+        toast.error("Error fetching exposures!", {
+          description: msg,
+          duration: Infinity,
+        });
       })
       .finally(() => {
         setExposuresLoading(false);
@@ -84,8 +94,12 @@ export default function Layout({ children }) {
       .then((hours) => {
         setNightHours(hours);
       })
-      .catch(() => {
-        console.error("Error fetching Almanac data");
+      .catch((err) => {
+        const msg = err?.message;
+        toast.error("Error fetching almanac!", {
+          description: msg,
+          duration: Infinity,
+        });
       })
       .finally(() => {
         setAlmanacLoading(false);
@@ -95,9 +109,17 @@ export default function Layout({ children }) {
       .then(([weather, fault]) => {
         setWeatherLoss(weather);
         setFaultLoss(fault);
+        setNarrativeLoading(false);
+        if (weather === 0 && fault === 0) {
+          toast.warning("No time loss reported in the Narrative Log.");
+        }
       })
-      .catch(() => {
-        console.error("Error fetching Narrative Log data");
+      .catch((err) => {
+        const msg = err?.message;
+        toast.error("Error fetching narrative log!", {
+          description: msg,
+          duration: Infinity,
+        });
       })
       .finally(() => {
         setNarrativeLoading(false);
@@ -171,6 +193,7 @@ export default function Layout({ children }) {
               </div>
             </div>
           </div>
+          <Toaster expand={true} richColors closeButton />
         </main>
       </SidebarProvider>
     </>
