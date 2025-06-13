@@ -58,7 +58,6 @@ export default function Layout({ children }) {
 
     let dayobsStr = getDayobsStr(dayobs);
     if (!dayobsStr) {
-      console.error("No Date Selected!");
       toast.error("No Date Selected! Please select a valid date.");
       setExposuresLoading(false);
       setAlmanacLoading(false);
@@ -81,7 +80,7 @@ export default function Layout({ children }) {
         }
       })
       .catch((err) => {
-        let msg = err?.message;
+        const msg = err?.message;
         toast.error("Error fetching exposures!", {
           description: msg,
           duration: Infinity,
@@ -96,7 +95,7 @@ export default function Layout({ children }) {
         setNightHours(hours);
       })
       .catch((err) => {
-        let msg = err?.message;
+        const msg = err?.message;
         toast.error("Error fetching almanac!", {
           description: msg,
           duration: Infinity,
@@ -116,7 +115,7 @@ export default function Layout({ children }) {
         }
       })
       .catch((err) => {
-        let msg = err?.message;
+        const msg = err?.message;
         toast.error("Error fetching narrative log!", {
           description: msg,
           duration: Infinity,
