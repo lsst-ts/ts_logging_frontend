@@ -52,13 +52,13 @@ const host = window.location.host;
 const backendLocation = `${httpProtocol}//${host}/nightlydigest/api`;
 
 /**
- * Asynchronously fetches JSON data from the specified URL using a GET request.
+ * Fetches JSON data from the specified URL using a GET request.
  *
  * @async
  * @function fetchData
  * @param {string} url - The endpoint URL to fetch data from.
- * @returns {Promise<Object|undefined>} The parsed JSON data if the request is successful, otherwise undefined.
- * @throws Will log an error to the console if the fetch fails or the response is not OK.
+ * @returns {Promise<any>} Resolves with the parsed JSON response data.
+ * @throws {Error} Throws an error if the response is not OK, with the error message from the response or a generic HTTP error message.
  */
 const fetchData = async (url) => {
   const res = await fetch(url, {
@@ -79,7 +79,7 @@ const fetchData = async (url) => {
 };
 
 /**
- * Fetches the count of exposures and total exposure time for a given instrument within a date range.
+ * Fetches exposure data for a given date range and instrument.
  *
  * @async
  * @function fetchExposures
@@ -87,8 +87,9 @@ const fetchData = async (url) => {
  * @param {string} end - The end date for the observation range (format: YYYY-MM-DD).
  * @param {string} instrument - The name of the instrument to filter exposures.
  * @returns {Promise<[number, number]>} A promise that resolves to an array containing:
- *   [0]: exposures_count (number) - The number of exposures.
+ *   [0]: exposures_count (number) - The number of exposures,
  *   [1]: sum_exposure_time (number) - The total exposure time.
+ * @throws Will throw an error if the fetch operation fails or returns invalid data.
  */
 const fetchExposures = async (start, end, instrument) => {
   try {
@@ -106,13 +107,14 @@ const fetchExposures = async (start, end, instrument) => {
 };
 
 /**
- * Fetches the number of night hours from the Almanac API for a given date range.
+ * Fetches night hours data from the Almanac API for a given date range.
  *
  * @async
  * @function fetchAlmanac
- * @param {string} start - The start date of the observation period (in YYYY-MM-DD format).
- * @param {string} end - The end date of the observation period (in YYYY-MM-DD format).
- * @returns {Promise<number>} The number of night hours for the specified range, or 0.0 if an error occurs.
+ * @param {string} start - The start date in YYYY-MM-DD format.
+ * @param {string} end - The end date in YYYY-MM-DD format.
+ * @returns {Promise<any>} Resolves with the night_hours data from the Almanac API.
+ * @throws {Error} Throws an error if the fetch fails or the response is invalid.
  */
 const fetchAlmanac = async (start, end) => {
   const url = `${backendLocation}/almanac?dayObsStart=${start}&dayObsEnd=${end}`;
@@ -129,15 +131,16 @@ const fetchAlmanac = async (start, end) => {
 };
 
 /**
- * Fetches the narrative log data for a given date range and instrument.
+ * Fetches the narrative log data for a specified date range and instrument.
  *
  * @async
  * @function fetchNarrativeLog
- * @param {string} start - The start date of the observation range (format: YYYY-MM-DD).
- * @param {string} end - The end date of the observation range (format: YYYY-MM-DD).
+ * @param {string} start - The start date for the observation range (format: YYYY-MM-DD).
+ * @param {string} end - The end date for the observation range (format: YYYY-MM-DD).
  * @param {string} instrument - The instrument identifier to filter the narrative log.
- * @returns {Promise<[number, number]>} A promise that resolves to an array containing:
- *   [time_lost_to_weather, time_lost_to_faults]. Returns [0, 0] if fetching fails.
+ * @returns {Promise<Array>} A promise that resolves to an array containing:
+ *   [time_lost_to_weather, time_lost_to_faults, exposures].
+ * @throws {Error} Throws an error if the narrative log cannot be fetched.
  */
 const fetchNarrativeLog = async (start, end, instrument) => {
   const url = `${backendLocation}/narrative-log?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
@@ -180,6 +183,17 @@ const getDatetimeFromDayobsStr = (dayObsStr) => {
   }).set({ hour: 12, minute: 0, second: 0 });
 };
 
+/**
+ * Fetches Jira tickets from the backend API for a specified date range and instrument.
+ *
+ * @async
+ * @function fetchJiraTickets
+ * @param {string} start - The start date for the observation range (format: YYYY-MM-DD).
+ * @param {string} end - The end date for the observation range (format: YYYY-MM-DD).
+ * @param {string} instrument - The instrument name to filter Jira tickets.
+ * @returns {Promise<Array>} A promise that resolves to an array of Jira ticket issues.
+ * @throws {Error} Throws an error if fetching Jira tickets fails.
+ */
 const fetchJiraTickets = async (start, end, instrument) => {
   const url = `${backendLocation}/jira-tickets?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
   try {
