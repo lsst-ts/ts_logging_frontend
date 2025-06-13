@@ -198,44 +198,47 @@ function AppletExposures({
         </div>
       </CardHeader>
 
-      <CardContent className="flex gap-8 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 h-[320px] font-thin">
+      <CardContent className="flex flex-col gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 h-[320px] font-thin">
         {exposuresLoading ? (
           <>
             {/* Skeleton outline */}
-            <div className="flex-grow flex flex-col justify-between gap-4">
-              <div className="flex-grow overflow-y-auto">
-                <Skeleton className="w-full h-full min-h-[180px] bg-stone-900" />
+            {/* Plot display and controls */}
+            <div className="flex-grow flex flex-row gap-8 overflow-hidden">
+              {/* Plot display */}
+              <div className="flex-grow flex flex-col overflow-hidden">
+                <div className="flex-grow overflow-y-auto">
+                  <Skeleton className="w-full h-full min-h-[180px] bg-stone-900" />
+                </div>
               </div>
-              <div className="text-[12px] flex flex-row gap-4">
-                <Skeleton className="h-4 w-full bg-stone-900" />
-                <Skeleton className="h-4 w-full bg-stone-900" />
+
+              {/* Controls */}
+              <div className="w-[160px] flex flex-col gap-4">
+                {[...Array(3)].map((_, idx) => (
+                  <div className="flex flex-col gap-1" key={idx}>
+                    <Skeleton className="h-4 w-16 bg-stone-900" />
+                    <Skeleton className="h-8 w-[150px] bg-stone-900 rounded-s" />
+                  </div>
+                ))}
               </div>
             </div>
-            <div className="w-[160px] flex flex-col gap-4">
-              <div className="flex flex-col gap-1">
-                <Skeleton className="h-4 w-16 bg-stone-900" />
-                <Skeleton className="h-8 w-[150px] bg-stone-900 rounded-s" />
-              </div>
-              <div className="flex flex-col gap-1">
-                <Skeleton className="h-4 w-16 bg-stone-900" />
-                <Skeleton className="h-8 w-[150px] bg-stone-900 rounded-s" />
-              </div>
-              <div className="flex flex-col gap-1">
-                <Skeleton className="h-4 w-16 bg-stone-900" />
-                <Skeleton className="h-8 w-[150px] bg-stone-900 rounded-s" />
-              </div>
+
+            {/* Totals */}
+            <div className="text-[12px] flex flex-row gap-4 pt-2">
+              <Skeleton className="h-4 w-full bg-stone-900" />
+              <Skeleton className="h-4 w-full bg-stone-900" />
             </div>
           </>
         ) : (
           <>
-            {/* Plot display */}
-            <div className="flex-grow flex flex-col justify-between gap-4">
+            {/* Plot display and controls */}
+            <div className="flex-grow flex flex-row gap-8 overflow-hidden">
               {exposureCount === 0 ? (
-                <>
-                  <span>No exposures returned for selected dates.</span>
-                </>
+                <span className="w-full">
+                  No exposures returned for selected dates.
+                </span>
               ) : (
                 <>
+                  {/* Plot display */}
                   <div className="flex-grow overflow-y-auto">
                     <div
                       style={{
@@ -380,126 +383,133 @@ function AppletExposures({
                 </>
               )}
 
-              {/* Totals */}
-              <div className="text-[12px] flex flex-row gap-4">
-                {plotBy === "Time" ? (
-                  <>
-                    <div className="w-full">
-                      Total exposure time: {sumExpTime} s
-                    </div>
-                    <div className="w-full flex">
-                      <span>Total flagged time:&nbsp;</span>
-                      {flagsLoading ? (
-                        <Skeleton className="h-4 w-12 bg-stone-900 inline-block" />
-                      ) : (
-                        <span>{sumFlaggedTime} s</span>
-                      )}
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="w-full">
-                      Total exposure count: {exposureCount}
-                    </div>
-                    <div className="w-full flex">
-                      <span>Total flagged:&nbsp;</span>
-                      {flagsLoading ? (
-                        <Skeleton className="h-4 w-12 bg-stone-900 inline-block" />
-                      ) : (
-                        <span>{flagCount}</span>
-                      )}
-                    </div>
-                  </>
-                )}
+              {/* Plot controls */}
+              <div className="w-[160px] flex flex-col gap-4">
+                {/* Plot by */}
+                <div>
+                  <Label
+                    htmlFor="plotBy"
+                    className="text-white text-[12px] pb-1"
+                  >
+                    Plot by:
+                  </Label>
+                  <Select value={plotBy} onValueChange={setPlotBy}>
+                    <SelectTrigger
+                      id="plotBy"
+                      size="sm"
+                      className="w-[150px] bg-teal-800 justify-between font-normal text-[12px] text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50"
+                      chevronDownIconClassName="text-white"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-teal-800 border-2 border-white">
+                      {plotByOptions.map((option) => (
+                        <SelectItem
+                          className="text-white text-[12px] focus:bg-teal-700 focus:text-white"
+                          checkIconClassName="text-white"
+                          key={option.value}
+                          value={option.value}
+                        >
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Group by */}
+                <div>
+                  <Label
+                    htmlFor="groupBy"
+                    className="text-white text-[12px] pb-1"
+                  >
+                    Group by:
+                  </Label>
+                  <Select value={groupBy} onValueChange={setGroupBy}>
+                    <SelectTrigger
+                      id="groupBy"
+                      size="sm"
+                      className="w-[150px] bg-teal-800 justify-between font-normal text-[12px] text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50"
+                      chevronDownIconClassName="text-white"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-teal-800 border-2 border-white">
+                      {groupByOptions.map((option) => (
+                        <SelectItem
+                          className="text-white text-[12px] focus:bg-teal-700 focus:text-white"
+                          checkIconClassName="text-white"
+                          key={option.value}
+                          value={option.value}
+                        >
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Sort by */}
+                <div>
+                  <Label
+                    htmlFor="sortBy"
+                    className="text-white text-[12px] pb-1"
+                  >
+                    Sort by:
+                  </Label>
+                  <Select value={sortBy} onValueChange={setSortBy}>
+                    <SelectTrigger
+                      id="sortBy"
+                      size="sm"
+                      className="w-[150px] bg-teal-800 justify-between font-normal text-[12px] text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50"
+                      chevronDownIconClassName="text-white"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-teal-800 border-2 border-white">
+                      {sortByOptions.map((option) => (
+                        <SelectItem
+                          className="text-white text-[12px] focus:bg-teal-700 focus:text-white"
+                          checkIconClassName="text-white"
+                          key={option.value}
+                          value={option.value}
+                        >
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
 
-            {/* Plot controls */}
-            <div className="w-[160px] flex flex-col gap-4">
-              <div>
-                <Label htmlFor="plotBy" className="text-white text-[12px] pb-1">
-                  Plot by:
-                </Label>
-                <Select value={plotBy} onValueChange={setPlotBy}>
-                  <SelectTrigger
-                    id="plotBy"
-                    size="sm"
-                    className="w-[150px] bg-teal-800 justify-between font-normal text-[12px] text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50"
-                    chevronDownIconClassName="text-white"
-                  >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-teal-800 border-2 border-white">
-                    {plotByOptions.map((option) => (
-                      <SelectItem
-                        className="text-white text-[12px] focus:bg-teal-700 focus:text-white"
-                        checkIconClassName="text-white"
-                        key={option.value}
-                        value={option.value}
-                      >
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label
-                  htmlFor="groupBy"
-                  className="text-white text-[12px] pb-1"
-                >
-                  Group by:
-                </Label>
-                <Select value={groupBy} onValueChange={setGroupBy}>
-                  <SelectTrigger
-                    id="groupBy"
-                    size="sm"
-                    className="w-[150px] bg-teal-800 justify-between font-normal text-[12px] text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50"
-                    chevronDownIconClassName="text-white"
-                  >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-teal-800 border-2 border-white">
-                    {groupByOptions.map((option) => (
-                      <SelectItem
-                        className="text-white text-[12px] focus:bg-teal-700 focus:text-white"
-                        checkIconClassName="text-white"
-                        key={option.value}
-                        value={option.value}
-                      >
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="sortBy" className="text-white text-[12px] pb-1">
-                  Sort by:
-                </Label>
-                <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger
-                    id="sortBy"
-                    size="sm"
-                    className="w-[150px] bg-teal-800 justify-between font-normal text-[12px] text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50"
-                    chevronDownIconClassName="text-white"
-                  >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-teal-800 border-2 border-white">
-                    {sortByOptions.map((option) => (
-                      <SelectItem
-                        className="text-white text-[12px] focus:bg-teal-700 focus:text-white"
-                        checkIconClassName="text-white"
-                        key={option.value}
-                        value={option.value}
-                      >
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            {/* Totals */}
+            <div className="text-[12px] flex flex-row gap-8 items-end">
+              {plotBy === "Time" ? (
+                <>
+                  <div>Total exposure time: {sumExpTime} s</div>
+                  <div className="flex flex-row items-end">
+                    <span>Total flagged time:&nbsp;</span>
+                    {flagsLoading ? (
+                      <Skeleton className="h-4 w-12 bg-stone-900 inline-block" />
+                    ) : (
+                      <span>{sumFlaggedTime} s</span>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>Total exposure count: {exposureCount}</div>
+                  <div className="flex flex-row items-end">
+                    <span>Total flagged:&nbsp;</span>
+                    {flagsLoading ? (
+                      <Skeleton className="h-4 w-12 bg-stone-900 inline-block" />
+                    ) : (
+                      <span>{flagCount}</span>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           </>
         )}
