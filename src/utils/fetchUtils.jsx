@@ -139,7 +139,7 @@ const fetchAlmanac = async (start, end) => {
  * @param {string} end - The end date for the observation range (format: YYYY-MM-DD).
  * @param {string} instrument - The instrument identifier to filter the narrative log.
  * @returns {Promise<Array>} A promise that resolves to an array containing:
- *   [time_lost_to_weather, time_lost_to_faults, exposures].
+ *   [time_lost_to_weather, time_lost_to_faults, narrative_log].
  * @throws {Error} Throws an error if the narrative log cannot be fetched.
  */
 const fetchNarrativeLog = async (start, end, instrument) => {
@@ -152,7 +152,7 @@ const fetchNarrativeLog = async (start, end, instrument) => {
     return [
       data.time_lost_to_weather,
       data.time_lost_to_faults,
-      data.exposures,
+      data.narrative_log,
     ];
   } catch (err) {
     console.error("Error fetching Narrative Log:", err);

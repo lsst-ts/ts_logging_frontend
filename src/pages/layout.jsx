@@ -80,7 +80,7 @@ export default function Layout({ children }) {
     // Note: Jira expects dates in 'yyyy-LL-dd' format
     let jiraStartDate = startDate.toFormat("yyyy-LL-dd");
     let jiraEndDate = endDate.toFormat("yyyy-LL-dd");
-    let jiraQuery = `jql=project%20%3D%20OBS%20AND%20%28created%20%3E%3D%20%22${jiraStartDate}%2009%3A00%22%20AND%20created%20%3C%20%22${jiraEndDate}%2009%3A00%22%29&fields=key,summary,updated,created,status,system,customfield_10476`;
+    let jiraQuery = `jql=project = OBS AND (created >= "${jiraStartDate} 9:00" AND created < "${jiraEndDate} 09:00") &fields=key,summary,updated,created,status,system,customfield_10476`;
 
     fetchExposures(startDayobs, endDayobs, instrument)
       .then(([exposuresNo, exposureTime]) => {
@@ -140,7 +140,9 @@ export default function Layout({ children }) {
       .then((issues) => {
         setJiraTickets(issues);
         setJiraQueryUrl(
-          `https://rubinobs.atlassian.net/issues/?filter=-1&${jiraQuery}`,
+          encodeURI(
+            `https://rubinobs.atlassian.net/issues/?filter=-1&${jiraQuery}`,
+          ),
         );
         if (issues.length === 0) {
           toast.warning("No Jira tickets reported.");
