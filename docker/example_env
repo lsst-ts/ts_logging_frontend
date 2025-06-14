@@ -1,2 +1,6 @@
 FRONTEND_PATH=../../ts_logging_frontend
 BACKEND_PATH=../../ts_logging_and_reporting
+JIRA_API_TOKEN=your-jira-api-token
+JIRA_API_HOSTNAME=jira-api-host
+EXTERNAL_INSTANCE_URL=server-url
+ACCESS_TOKEN=your-server-access-token

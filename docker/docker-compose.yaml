@@ -23,6 +23,7 @@ services:
       - ACCESS_TOKEN=${ACCESS_TOKEN}
       - JIRA_API_TOKEN=${JIRA_API_TOKEN}
       - JIRA_API_HOSTNAME=${JIRA_API_HOSTNAME}
+      - EXTERNAL_INSTANCE_URL=${EXTERNAL_INSTANCE_URL}
     ports:
       - "8080:8080"
     volumes:
