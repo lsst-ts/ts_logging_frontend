@@ -171,7 +171,7 @@ export default function Layout({ children }) {
       });
 
     fetchExposureFlags(startDayobs, endDayobs, instrument)
-      .then(([flags]) => {
+      .then((flags) => {
         setFlags(flags);
       })
       .catch(() => {
