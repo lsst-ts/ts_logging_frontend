@@ -349,14 +349,13 @@ function AppletExposures({
                               if (!active || !payload || payload.length === 0)
                                 return null;
 
-                              const group =
-                                payload[0].payload.groupKey || "No target";
-                              const unflagged =
-                                payload.find((d) => d.dataKey === "unflagged")
-                                  ?.value || 0;
-                              const flagged =
-                                payload.find((d) => d.dataKey === "flagged")
-                                  ?.value || 0;
+                              const group = payload[0].payload.groupKey;
+                              const unflagged = payload.find(
+                                (d) => d.dataKey === "unflagged",
+                              ).value;
+                              const flagged = payload.find(
+                                (d) => d.dataKey === "flagged",
+                              ).value;
 
                               return (
                                 <div className="bg-white text-black text-xs p-2 border border-white rounded">
