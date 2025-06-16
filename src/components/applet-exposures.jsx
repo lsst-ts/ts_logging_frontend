@@ -108,16 +108,17 @@ function AppletExposures({
     console.warn("exposureFields is not an array:", exposureFields);
   }
 
-  const flagCount = totalFlaggedCount;
-  const sumFlaggedTime = totalFlaggedTime;
-
-  const chartData = Object.values(aggregatedMap).map((entry, index) => ({
-    groupKey: entry.groupKey,
-    unflagged: entry.unflagged,
-    flagged: entry.flagged,
-    fill: `hsl(${index * 40}, 70%, 50%)`,
-    fill_flag: "#ffffff",
-  }));
+  const chartData = Object.values(aggregatedMap).map((entry, index) => {
+    const totalValue = entry.unflagged + entry.flagged;
+    return {
+      groupKey: entry.groupKey,
+      unflagged: entry.unflagged,
+      flagged: entry.flagged,
+      totalValue,
+      fill: `hsl(${index * 40}, 70%, 50%)`,
+      fill_flag: "#ffffff",
+    };
+  });
 
   const chartConfig = {
     unflagged: {
@@ -498,7 +499,7 @@ function AppletExposures({
                     {flagsLoading ? (
                       <Skeleton className="h-4 w-12 bg-stone-900 inline-block" />
                     ) : (
-                      <span>{sumFlaggedTime} s</span>
+                      <span>{totalFlaggedTime} s</span>
                     )}
                   </div>
                 </>
@@ -510,7 +511,7 @@ function AppletExposures({
                     {flagsLoading ? (
                       <Skeleton className="h-4 w-12 bg-stone-900 inline-block" />
                     ) : (
-                      <span>{flagCount}</span>
+                      <span>{totalFlaggedCount}</span>
                     )}
                   </div>
                 </>
