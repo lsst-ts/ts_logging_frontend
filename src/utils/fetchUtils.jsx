@@ -59,11 +59,7 @@ const fetchData = async (url, abortController) => {
 const fetchExposures = async (start, end, instrument, abortController) => {
   try {
     const url = `${backendLocation}/exposures?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
-
     const data = await fetchData(url, abortController);
-    if (!data) {
-      throw new Error("Error fetching exposures");
-    }
     return [data.exposures, data.exposures_count, data.sum_exposure_time];
   } catch (err) {
     if (err.name !== "AbortError") {
@@ -88,9 +84,6 @@ const fetchAlmanac = async (start, end, abortController) => {
   const url = `${backendLocation}/almanac?dayObsStart=${start}&dayObsEnd=${end}`;
   try {
     const data = await fetchData(url, abortController);
-    if (!data) {
-      throw new Error("Error fetching Almanac");
-    }
     return data.night_hours;
   } catch (err) {
     if (err.name !== "AbortError") {
@@ -119,10 +112,7 @@ const fetchNarrativeLog = async (start, end, instrument, abortController) => {
   const url = `${backendLocation}/narrative-log?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
   try {
     const data = await fetchData(url, abortController);
-    if (!data) {
-      throw new Error("Error fetching Narrative Log");
-    }
-    return [
+        return [
       data.time_lost_to_weather,
       data.time_lost_to_faults,
       data.narrative_log,
@@ -183,9 +173,6 @@ const fetchJiraTickets = async (start, end, instrument, abortController) => {
   const url = `${backendLocation}/jira-tickets?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
   try {
     const data = await fetchData(url, abortController);
-    if (!data) {
-      throw new Error("Error fetching Jira Tickets");
-    }
     return data.issues;
   } catch (err) {
     if (err.name !== "AbortError") {
