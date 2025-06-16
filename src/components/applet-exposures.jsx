@@ -26,6 +26,8 @@ import { Cell, Bar, BarChart, XAxis, YAxis } from "recharts";
 import InfoIcon from "../assets/InfoIcon.svg";
 import DownloadIcon from "../assets/DownloadIcon.svg";
 
+const PLOT_YLABELS_MAXSIZE = 14;
+
 function AppletExposures({
   exposureFields,
   exposureCount,
@@ -316,8 +318,11 @@ function AppletExposures({
                                   fill="#ffffff"
                                   fontSize={10}
                                 >
-                                  {payload.value.length > 14
-                                    ? `${payload.value.slice(0, 12)}...`
+                                  {payload.value.length > PLOT_YLABELS_MAXSIZE
+                                    ? `${payload.value.slice(
+                                        0,
+                                        PLOT_YLABELS_MAXSIZE - 2,
+                                      )}...`
                                     : payload.value}
                                 </text>
                               )
