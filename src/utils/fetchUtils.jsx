@@ -176,14 +176,16 @@ const fetchNarrativeLog = async (start, end, instrument) => {
  */
 const fetchExposureFlags = async (start, end, instrument) => {
   const url = `${backendLocation}/exposure-flags?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
-  const data = await fetchData(url);
-
-  if (!data) {
-    console.error("Error fetching exposure flags");
-    return [];
+  try {
+    const data = await fetchData(url);
+    if (!data) {
+      throw new Error("No data returned for exposure flags");
+    }
+    return data.exposure_flags;
+  } catch (err) {
+    console.error("Error fetching exposure flags:", err);
+    throw err;
   }
-
-  return data.exposure_flags;
 };
 
 /**
