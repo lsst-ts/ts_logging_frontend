@@ -132,26 +132,15 @@ function AppletExposures({
   };
 
   // Sort chartData based on sortBy
-  if (sortBy === "Alphabetical asc.") {
-    chartData.sort((a, b) =>
-      (a.groupKey || "").localeCompare(b.groupKey || ""),
-    );
-  } else if (sortBy === "Alphabetical desc.") {
-    chartData.sort((a, b) =>
-      (b.groupKey || "").localeCompare(a.groupKey || ""),
-    );
-  } else if (sortBy === "Highest number first") {
-    chartData.sort((a, b) =>
-      plotBy === "Time"
-        ? b.totalExpTime - a.totalExpTime
-        : b.totalExpCount - a.totalExpCount,
-    );
-  } else if (sortBy === "Lowest number first") {
-    chartData.sort((a, b) =>
-      plotBy === "Time"
-        ? a.totalExpTime - b.totalExpTime
-        : a.totalExpCount - b.totalExpCount,
-    );
+  const sorters = {
+    "Alphabetical asc.": (a, b) => a.groupKey.localeCompare(b.groupKey),
+    "Alphabetical desc.": (a, b) => b.groupKey.localeCompare(a.groupKey),
+    "Highest number first": (a, b) => b.totalValue - a.totalValue,
+    "Lowest number first": (a, b) => a.totalValue - b.totalValue,
+  };
+
+  if (sortBy !== "Default") {
+    chartData.sort(sorters[sortBy]);
   }
 
   return (
