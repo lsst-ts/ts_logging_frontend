@@ -183,7 +183,7 @@ const fetchExposureFlags = async (start, end, instrument) => {
     return [];
   }
 
-  return [data.exposure_flags];
+  return data.exposure_flags;
 };
 
 /**
