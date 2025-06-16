@@ -20,7 +20,6 @@ import {
   fetchNarrativeLog,
   getDayobsStr,
   getDatetimeFromDayobsStr,
-  fetchJiraTickets,
 } from "@/utils/fetchUtils";
 
 export default function Layout({ children }) {
@@ -39,9 +38,6 @@ export default function Layout({ children }) {
   const [exposuresLoading, setExposuresLoading] = useState(true);
   const [almanacLoading, setAlmanacLoading] = useState(true);
   const [narrativeLoading, setNarrativeLoading] = useState(true);
-  const [jiraTickets, setJiraTickets] = useState([]);
-  const [jiraLoading, setJiraLoading] = useState(true);
-  const [jiraQueryUrl, setJiraQueryUrl] = useState(null);
 
   const handleDayobsChange = (date) => {
     setDayobs(date);
@@ -59,7 +55,6 @@ export default function Layout({ children }) {
     setExposuresLoading(true);
     setAlmanacLoading(true);
     setNarrativeLoading(true);
-    setJiraLoading(true);
 
     let dayobsStr = getDayobsStr(dayobs);
     if (!dayobsStr) {
@@ -67,8 +62,6 @@ export default function Layout({ children }) {
       setExposuresLoading(false);
       setAlmanacLoading(false);
       setNarrativeLoading(false);
-      setJiraLoading(false);
-      setJiraQueryUrl(null);
       return;
     }
     let dateFromDayobs = getDatetimeFromDayobsStr(dayobsStr);
@@ -76,11 +69,6 @@ export default function Layout({ children }) {
     let startDayobs = startDate.toFormat("yyyyLLdd");
     let endDate = dateFromDayobs.plus({ days: 1 });
     let endDayobs = endDate.toFormat("yyyyLLdd");
-    // format dates for Jira query
-    // Note: Jira expects dates in 'yyyy-LL-dd' format
-    let jiraStartDate = startDate.toFormat("yyyy-LL-dd");
-    let jiraEndDate = endDate.toFormat("yyyy-LL-dd");
-    let jiraQuery = `jql=project = OBS AND (created >= "${jiraStartDate} 9:00" AND created < "${jiraEndDate} 09:00") &fields=key,summary,updated,created,status,system,customfield_10476`;
 
     fetchExposures(startDayobs, endDayobs, instrument)
       .then(([exposuresNo, exposureTime]) => {
@@ -121,6 +109,7 @@ export default function Layout({ children }) {
       .then(([weather, fault]) => {
         setWeatherLoss(weather);
         setFaultLoss(fault);
+        setNarrativeLoading(false);
         if (weather === 0 && fault === 0) {
           toast.warning("No time loss reported in the Narrative Log.");
         }
@@ -134,30 +123,6 @@ export default function Layout({ children }) {
       })
       .finally(() => {
         setNarrativeLoading(false);
-      });
-
-    fetchJiraTickets(startDayobs, endDayobs, instrument)
-      .then((issues) => {
-        setJiraTickets(issues);
-        setJiraQueryUrl(
-          encodeURI(
-            `https://rubinobs.atlassian.net/issues/?filter=-1&${jiraQuery}`,
-          ),
-        );
-        if (issues.length === 0) {
-          toast.warning("No Jira tickets reported.");
-        }
-      })
-      .catch((err) => {
-        setJiraQueryUrl(null);
-        const msg = err?.message;
-        toast.error("Error fetching Jira!", {
-          description: msg,
-          duration: Infinity,
-        });
-      })
-      .finally(() => {
-        setJiraLoading(false);
       });
   }, [dayobs, noOfNights, instrument]);
 
@@ -210,10 +175,9 @@ export default function Layout({ children }) {
               />
               <MetricsCard
                 icon={JiraIcon}
-                data={jiraTickets.length}
+                data="TBD"
                 label="Jira tickets"
-                loading={jiraLoading}
-                url={jiraQueryUrl}
+                loading={false}
               />
             </div>
             {/* Applets */}

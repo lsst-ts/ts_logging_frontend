@@ -20,10 +20,9 @@ Steps to Run
       FRONTEND_PATH=/path/to/your/frontend
       BACKEND_PATH=/path/to/your/backend
    
-   If connecting to remote sources such as consdb, exposurelog, narrativelog and nightreport you will need to set extra environment variables to access the services and provide authentication before running the services:
+   If connecting to remote sources such as consdb, exposurelog, narrativelog and nightreport you will need to set an extra environment variable to provide authentication before running the services:
    ::
       export ACCESS_TOKEN=your_authentication_key
-      export EXTERNAL_INSTANCE_URL=server-url
    
    The token must be manually retrieved from the RSP platform you are connecting to. The scope of the token must be set to at least:
 
