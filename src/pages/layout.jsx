@@ -48,7 +48,6 @@ export default function Layout({ children }) {
 
   const [flagsLoading, setFlagsLoading] = useState(true);
 
-
   const handleDayobsChange = (date) => {
     setDayobs(date);
   };
@@ -173,9 +172,16 @@ export default function Layout({ children }) {
     fetchExposureFlags(startDayobs, endDayobs, instrument)
       .then((flags) => {
         setFlags(flags);
+        if (flags.length === 0) {
+          toast.warning("No exposures flagged for the selected date range.");
+        }
       })
-      .catch(() => {
-        console.error("Error fetching exposure flags");
+      .catch((err) => {
+        const msg = err?.message;
+        toast.error("Error fetching exposure flags!", {
+          description: msg,
+          duration: Infinity,
+        });
       })
       .finally(() => {
         setFlagsLoading(false);
