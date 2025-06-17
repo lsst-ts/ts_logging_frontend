@@ -26,6 +26,26 @@ import { Cell, Bar, BarChart, XAxis, YAxis } from "recharts";
 import InfoIcon from "../assets/InfoIcon.svg";
 import DownloadIcon from "../assets/DownloadIcon.svg";
 
+const PlotByValues = Object.freeze({
+  NUMBER: "Number",
+  TIME: "Time",
+});
+
+const GroupByValues = Object.freeze({
+  OBSERVATION_REASON: "observation_reason",
+  IMG_TYPE: "img_type",
+  SCIENCE_PROGRAM: "science_program",
+  TARGET_NAME: "target_name",
+});
+
+const SortByValues = Object.freeze({
+  DEFAULT: "Default",
+  ALPHABETICAL_ASC: "Alphabetical asc.",
+  ALPHABETICAL_DESC: "Alphabetical desc.",
+  HIGHEST_FIRST: "Highest number first",
+  LOWEST_FIRST: "Lowest number first",
+});
+
 const PLOT_YLABELS_MAXSIZE = 14;
 
 function AppletExposures({
@@ -36,28 +56,28 @@ function AppletExposures({
   exposuresLoading = false,
   flagsLoading = false,
 }) {
-  const [plotBy, setPlotBy] = useState("Number");
-  const [groupBy, setGroupBy] = useState("science_program");
-  const [sortBy, setSortBy] = useState("Default");
+  const [plotBy, setPlotBy] = useState(PlotByValues.NUMBER);
+  const [groupBy, setGroupBy] = useState(GroupByValues.SCIENCE_PROGRAM);
+  const [sortBy, setSortBy] = useState(SortByValues.DEFAULT);
 
   const plotByOptions = [
-    { value: "Number", label: "Number" },
-    { value: "Time", label: "Time (s)" },
+    { value: PlotByValues.NUMBER, label: "Number" },
+    { value: PlotByValues.TIME, label: "Time (s)" },
   ];
 
   const groupByOptions = [
-    { value: "observation_reason", label: "Obs. reason" },
-    { value: "img_type", label: "Img. type" },
-    { value: "science_program", label: "Science program" },
-    { value: "target_name", label: "Target name" },
+    { value: GroupByValues.OBSERVATION_REASON, label: "Obs. reason" },
+    { value: GroupByValues.IMG_TYPE, label: "Img. type" },
+    { value: GroupByValues.SCIENCE_PROGRAM, label: "Science program" },
+    { value: GroupByValues.TARGET_NAME, label: "Target name" },
   ];
 
   const sortByOptions = [
-    { value: "Default", label: "Default" },
-    { value: "Alphabetical asc.", label: "Alphabetical asc." },
-    { value: "Alphabetical desc.", label: "Alphabetical desc." },
-    { value: "Highest number first", label: "Highest number first" },
-    { value: "Lowest number first", label: "Lowest number first" },
+    { value: SortByValues.DEFAULT, label: "Default" },
+    { value: SortByValues.ALPHABETICAL_ASC, label: "Alphabetical asc." },
+    { value: SortByValues.ALPHABETICAL_DESC, label: "Alphabetical desc." },
+    { value: SortByValues.HIGHEST_FIRST, label: "Highest number first" },
+    { value: SortByValues.LOWEST_FIRST, label: "Lowest number first" },
   ];
 
   const flaggedObsIds = new Set(flags.map((f) => f.obs_id));
@@ -71,7 +91,7 @@ function AppletExposures({
       const rawValue = row[groupBy];
       const groupKey =
         rawValue === null || rawValue === undefined || rawValue === ""
-          ? groupBy === "target_name"
+          ? groupBy === GroupByValues.TARGET_NAME
             ? "No target"
             : "Unknown"
           : rawValue;
@@ -86,7 +106,7 @@ function AppletExposures({
         };
       }
 
-      if (plotBy === "Time") {
+      if (plotBy === PlotByValues.TIME) {
         if (isFlagged) {
           const time = isNaN(expTime) ? 0 : expTime;
           aggregatedMap[groupKey].flagged += time;
@@ -133,13 +153,15 @@ function AppletExposures({
 
   // Sort chartData based on sortBy
   const sorters = {
-    "Alphabetical asc.": (a, b) => a.groupKey.localeCompare(b.groupKey),
-    "Alphabetical desc.": (a, b) => b.groupKey.localeCompare(a.groupKey),
-    "Highest number first": (a, b) => b.totalValue - a.totalValue,
-    "Lowest number first": (a, b) => a.totalValue - b.totalValue,
+    [SortByValues.ALPHABETICAL_ASC]: (a, b) =>
+      a.groupKey.localeCompare(b.groupKey),
+    [SortByValues.ALPHABETICAL_DESC]: (a, b) =>
+      b.groupKey.localeCompare(a.groupKey),
+    [SortByValues.HIGHEST_FIRST]: (a, b) => b.totalValue - a.totalValue,
+    [SortByValues.LOWEST_FIRST]: (a, b) => a.totalValue - b.totalValue,
   };
 
-  if (sortBy !== "Default") {
+  if (sortBy !== SortByValues.DEFAULT) {
     chartData.sort(sorters[sortBy]);
   }
 
