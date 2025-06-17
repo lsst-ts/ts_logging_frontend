@@ -3,8 +3,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar.jsx";
 import { AppSidebar } from "@/components/app-sidebar.jsx";
-import EfficiencyIcon from "../assets/EfficiencyIcon.svg";
 import Applet from "@/components/applet.jsx";
+import AppletExposures from "@/components/applet-exposures.jsx";
 import MetricsCard from "@/components/metrics-card.jsx";
 import { DateTime } from "luxon";
 
@@ -18,30 +18,35 @@ import {
   fetchExposures,
   fetchAlmanac,
   fetchNarrativeLog,
+  fetchExposureFlags,
   getDayobsStr,
   getDatetimeFromDayobsStr,
   fetchJiraTickets,
 } from "@/utils/fetchUtils";
 
 export default function Layout({ children }) {
-  const [exposureCount, setExposureCount] = useState(0);
   const [dayobs, setDayobs] = useState(
     DateTime.utc().minus({ days: 1 }).toJSDate(),
   );
   const [noOfNights, setNoOfNights] = useState(1);
   const [instrument, setInstrument] = useState("LSSTCam");
-
   const [nightHours, setNightHours] = useState(0.0);
   const [weatherLoss, setWeatherLoss] = useState(0.0);
-  const [sumExpTime, setSumExpTime] = useState(0.0);
   const [faultLoss, setFaultLoss] = useState(0.0);
+  const [exposureFields, setExposureFields] = useState([]);
+  const [exposureCount, setExposureCount] = useState(0);
+  const [sumExpTime, setSumExpTime] = useState(0.0);
+  const [flags, setFlags] = useState([]);
 
   const [exposuresLoading, setExposuresLoading] = useState(true);
   const [almanacLoading, setAlmanacLoading] = useState(true);
   const [narrativeLoading, setNarrativeLoading] = useState(true);
+
   const [jiraTickets, setJiraTickets] = useState([]);
   const [jiraLoading, setJiraLoading] = useState(true);
   const [jiraQueryUrl, setJiraQueryUrl] = useState(null);
+
+  const [flagsLoading, setFlagsLoading] = useState(true);
 
   const handleDayobsChange = (date) => {
     setDayobs(date);
@@ -60,6 +65,7 @@ export default function Layout({ children }) {
     setAlmanacLoading(true);
     setNarrativeLoading(true);
     setJiraLoading(true);
+    setFlagsLoading(true);
 
     let dayobsStr = getDayobsStr(dayobs);
     if (!dayobsStr) {
@@ -69,6 +75,8 @@ export default function Layout({ children }) {
       setNarrativeLoading(false);
       setJiraLoading(false);
       setJiraQueryUrl(null);
+      setFlagsLoading(false);
+
       return;
     }
     let dateFromDayobs = getDatetimeFromDayobsStr(dayobsStr);
@@ -83,7 +91,8 @@ export default function Layout({ children }) {
     let jiraQuery = `jql=project = OBS AND (created >= "${jiraStartDate} 9:00" AND created < "${jiraEndDate} 09:00") &fields=key,summary,updated,created,status,system,customfield_10476`;
 
     fetchExposures(startDayobs, endDayobs, instrument)
-      .then(([exposuresNo, exposureTime]) => {
+      .then(([exposureFields, exposuresNo, exposureTime]) => {
+        setExposureFields(exposureFields);
         setExposureCount(exposuresNo);
         setSumExpTime(exposureTime);
         setExposuresLoading(false);
@@ -159,6 +168,24 @@ export default function Layout({ children }) {
       .finally(() => {
         setJiraLoading(false);
       });
+
+    fetchExposureFlags(startDayobs, endDayobs, instrument)
+      .then((flags) => {
+        setFlags(flags);
+        if (flags.length === 0) {
+          toast.warning("No exposures flagged for the selected date range.");
+        }
+      })
+      .catch((err) => {
+        const msg = err?.message;
+        toast.error("Error fetching exposure flags!", {
+          description: msg,
+          duration: Infinity,
+        });
+      })
+      .finally(() => {
+        setFlagsLoading(false);
+      });
   }, [dayobs, noOfNights, instrument]);
 
   // calculate open shutter efficiency
@@ -179,7 +206,7 @@ export default function Layout({ children }) {
         />
         <main className="w-full bg-stone-800">
           {/* Show/Hide Sidebar button */}
-          <SidebarTrigger className="color-teal-500" />
+          <SidebarTrigger className="color-teal-500 fixed hover:bg-sky-900 transition-colors duration-200" />
           {children}
           {/* Main content */}
           <div className="flex flex-col w-full p-8 gap-8">
@@ -219,7 +246,14 @@ export default function Layout({ children }) {
             {/* Applets */}
             <div className="flex flex-col gap-4">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <Applet />
+                <AppletExposures
+                  exposureFields={exposureFields}
+                  exposureCount={exposureCount}
+                  sumExpTime={sumExpTime}
+                  flags={flags}
+                  exposuresLoading={exposuresLoading}
+                  flagsLoading={flagsLoading}
+                />
                 <Applet />
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

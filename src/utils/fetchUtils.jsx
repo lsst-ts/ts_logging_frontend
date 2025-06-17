@@ -86,9 +86,10 @@ const fetchData = async (url) => {
  * @param {string} start - The start date for the observation range (format: YYYY-MM-DD).
  * @param {string} end - The end date for the observation range (format: YYYY-MM-DD).
  * @param {string} instrument - The name of the instrument to filter exposures.
- * @returns {Promise<[number, number]>} A promise that resolves to an array containing:
- *   [0]: exposures_count (number) - The number of exposures,
- *   [1]: sum_exposure_time (number) - The total exposure time.
+ * @returns {Promise<[Object[], number, number]>} A promise that resolves to an array containing:
+ *   [0]: exposures (Object[]) - An array of exposure records with selected fields,
+ *   [1]: exposures_count (number) - The number of exposures,
+ *   [2]: sum_exposure_time (number) - The total exposure time.
  * @throws Will throw an error if the fetch operation fails or returns invalid data.
  */
 const fetchExposures = async (start, end, instrument) => {
@@ -99,7 +100,7 @@ const fetchExposures = async (start, end, instrument) => {
     if (!data) {
       throw new Error("Error fetching exposures");
     }
-    return [data.exposures_count, data.sum_exposure_time];
+    return [data.exposures, data.exposures_count, data.sum_exposure_time];
   } catch (err) {
     console.error("Error fetching exposures:", err);
     throw err;
@@ -161,6 +162,33 @@ const fetchNarrativeLog = async (start, end, instrument) => {
 };
 
 /**
+ * Fetches exposure flags from the backend for a specified date range and instrument.
+ *
+ * @async
+ * @function fetchExposureFlags
+ * @param {string} start - The start date of the observation range (format: YYYY-MM-DD).
+ * @param {string} end - The end date of the observation range (format: YYYY-MM-DD).
+ * @param {string} instrument - The instrument to filter the exposure flags.
+ * @returns {Promise<Object[]>} A promise that resolves to an array of objects with:
+ *   - obs_id (string): The observation ID.
+ *   - exposure_flag (string): The flag associated with the observation.
+ *   Returns an empty array if fetching fails.
+ */
+const fetchExposureFlags = async (start, end, instrument) => {
+  const url = `${backendLocation}/exposure-flags?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
+  try {
+    const data = await fetchData(url);
+    if (!data) {
+      throw new Error("No data returned for exposure flags");
+    }
+    return data.exposure_flags;
+  } catch (err) {
+    console.error("Error fetching exposure flags:", err);
+    throw err;
+  }
+};
+
+/**
  * Formats a given JavaScript Date object into a string format 'yyyyLLdd' using luxon.
  *
  * @param {Date|null|undefined} date - The date to format. If null or undefined, returns an empty string.
@@ -214,6 +242,7 @@ export {
   fetchExposures,
   fetchAlmanac,
   fetchNarrativeLog,
+  fetchExposureFlags,
   getDayobsStr,
   getDatetimeFromDayobsStr,
   fetchJiraTickets,
