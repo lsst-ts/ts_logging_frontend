@@ -14,14 +14,22 @@ export default function MetricsCard({
   metadata,
   tooltip,
   loading = false,
-  url = null,
+  onClick = null,
 }) {
-  const CardContent = (
-    <div className="flex flex-col justify-between bg-teal-900 text-white font-light p-4 rounded-lg shadow-[4px_4px_4px_0px_#0369A1]">
+  const isClickable = onClick && !loading;
+
+  return (
+    <div
+      onClick={isClickable ? onClick : undefined}
+      className={`flex flex-col justify-between bg-teal-900 text-white font-light p-4 rounded-lg shadow-[4px_4px_4px_0px_#0369A1] transition hover:opacity-90 ${
+        isClickable ? "cursor-pointer" : ""
+      }`}
+    >
       <div className="flex flex-row justify-between h-12">
         <div className="text-2xl">
           {loading ? <Skeleton className="h-6 w-20 bg-teal-700" /> : data}
         </div>
+        {/* Render dynamic component and static icons */}
         {loading ? (
           <Skeleton className="h-8 w-8 rounded-full bg-teal-700" />
         ) : typeof icon === "string" ? (
@@ -53,18 +61,5 @@ export default function MetricsCard({
         )}
       </div>
     </div>
-  );
-
-  return !loading && url ? (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="block hover:opacity-90"
-    >
-      {CardContent}
-    </a>
-  ) : (
-    CardContent
   );
 }
