@@ -83,16 +83,16 @@ export default function Layout({ children }) {
 
       return;
     }
-    let dateFromDayobs = getDatetimeFromDayobsStr(dayobsStr);
-    let startDate = dateFromDayobs.minus({ days: noOfNights - 1 });
-    let startDayobs = startDate.toFormat("yyyyLLdd");
-    let endDate = dateFromDayobs.plus({ days: 1 });
-    let endDayobs = endDate.toFormat("yyyyLLdd");
+    const dateFromDayobs = getDatetimeFromDayobsStr(dayobsStr);
+    const startDate = dateFromDayobs.minus({ days: noOfNights - 1 });
+    const startDayobs = startDate.toFormat("yyyyLLdd");
+    const endDate = dateFromDayobs.plus({ days: 1 });
+    const endDayobs = endDate.toFormat("yyyyLLdd");
     // format dates for Jira query
     // Note: Jira expects dates in 'yyyy-LL-dd' format
-    let jiraStartDate = startDate.toFormat("yyyy-LL-dd");
-    let jiraEndDate = endDate.toFormat("yyyy-LL-dd");
-    let jiraQuery = `jql=project = OBS AND (created >= "${jiraStartDate} 9:00" AND created < "${jiraEndDate} 09:00") &fields=key,summary,updated,created,status,system,customfield_10476`;
+    const jiraStartDate = startDate.toFormat("yyyy-LL-dd");
+    const jiraEndDate = endDate.toFormat("yyyy-LL-dd");
+    const jiraQuery = `jql=project = OBS AND (created >= "${jiraStartDate} 9:00" AND created < "${jiraEndDate} 09:00") &fields=key,summary,updated,created,status,system,customfield_10476`;
 
     fetchExposures(startDayobs, endDayobs, instrument, abortController)
       .then(([exposureFields, exposuresNo, exposureTime]) => {
