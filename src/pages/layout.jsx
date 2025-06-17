@@ -25,6 +25,7 @@ import {
   getDayobsStr,
   getDatetimeFromDayobsStr,
 } from "@/utils/utils";
+import DialogMetricsCard from "@/components/dialog-metrics-card";
 
 export default function Layout({ children }) {
   const [dayobs, setDayobs] = useState(
@@ -46,7 +47,6 @@ export default function Layout({ children }) {
 
   const [jiraTickets, setJiraTickets] = useState([]);
   const [jiraLoading, setJiraLoading] = useState(true);
-  const [jiraQueryUrl, setJiraQueryUrl] = useState(null);
 
   const [flagsLoading, setFlagsLoading] = useState(true);
 
@@ -78,9 +78,7 @@ export default function Layout({ children }) {
       setAlmanacLoading(false);
       setNarrativeLoading(false);
       setJiraLoading(false);
-      setJiraQueryUrl(null);
       setFlagsLoading(false);
-
       return;
     }
     const dateFromDayobs = getDatetimeFromDayobsStr(dayobsStr);
@@ -88,11 +86,6 @@ export default function Layout({ children }) {
     const startDayobs = startDate.toFormat("yyyyLLdd");
     const endDate = dateFromDayobs.plus({ days: 1 });
     const endDayobs = endDate.toFormat("yyyyLLdd");
-    // format dates for Jira query
-    // Note: Jira expects dates in 'yyyy-LL-dd' format
-    const jiraStartDate = startDate.toFormat("yyyy-LL-dd");
-    const jiraEndDate = endDate.toFormat("yyyy-LL-dd");
-    const jiraQuery = `jql=project = OBS AND (created >= "${jiraStartDate} 9:00" AND created < "${jiraEndDate} 09:00") &fields=key,summary,updated,created,status,system,customfield_10476`;
 
     fetchExposures(startDayobs, endDayobs, instrument, abortController)
       .then(([exposureFields, exposuresNo, exposureTime]) => {
@@ -164,18 +157,12 @@ export default function Layout({ children }) {
     fetchJiraTickets(startDayobs, endDayobs, instrument, abortController)
       .then((issues) => {
         setJiraTickets(issues);
-        setJiraQueryUrl(
-          encodeURI(
-            `https://rubinobs.atlassian.net/issues/?filter=-1&${jiraQuery}`,
-          ),
-        );
         if (issues.length === 0) {
           toast.warning("No Jira tickets reported.");
         }
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          setJiraQueryUrl(null);
           const msg = err?.message;
           toast.error("Error fetching Jira!", {
             description: msg,
@@ -263,13 +250,19 @@ export default function Layout({ children }) {
                 tooltip="Time loss as reported in the Narrative Log."
                 loading={narrativeLoading}
               />
-              <MetricsCard
+              <DialogMetricsCard
                 icon={JiraIcon}
                 data={jiraTickets.length}
                 label="Jira tickets"
+                tooltip="Jira tickets created during the night."
                 loading={jiraLoading}
-                url={jiraQueryUrl}
-              />
+                dialogContent={
+                  <div>
+                    <h2 className="text-xl font-bold">User Analytics</h2>
+                    <p>Details about active users today.</p>
+                  </div>
+                }
+              ></DialogMetricsCard>
             </div>
             {/* Applets */}
             <div className="flex flex-col gap-4">
