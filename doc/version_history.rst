@@ -1,3 +1,27 @@
+v0.4.0 (2025-06-17)
+===================
+
+New Features
+------------
+
+- Add ACCESS_TOKEN, JIRA_API_TOKEN, JIRA_API_HOSTNAME to backend service environment in docker compose (`OSW-500 <https://rubinobs.atlassian.net//browse/OSW-500>`_)
+- Fetch jira tickets created between start and end days for the selected instrument/telescope and display no of tickets in the Jira metrics card. Clicking on the card open Jira to explore queried tickets. (`OSW-500 <https://rubinobs.atlassian.net//browse/OSW-500>`_)
+- Log HTTP exceptions and other error to console and show toasts to notify users of errors (`OSW-501 <https://rubinobs.atlassian.net//browse/OSW-501>`_)
+- Implement an Exposure Breakdown applet. (`OSW-504 <https://rubinobs.atlassian.net//browse/OSW-504>`_)
+
+
+Bug Fixes
+---------
+
+- Update open shutter efficiency calculation. (`OSW-517 <https://rubinobs.atlassian.net//browse/OSW-517>`_)
+
+
+Other Changes and Additions
+---------------------------
+
+- Add loading state for each data source and use them to show skeleton in the metrics cards while data is being fetched (`DM-51148 <https://rubinobs.atlassian.net//browse/DM-51148>`_)
+
+
 v0.3.0 (2025-06-05)
 ===================
 
