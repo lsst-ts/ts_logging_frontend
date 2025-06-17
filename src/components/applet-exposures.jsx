@@ -186,27 +186,22 @@ function AppletExposures({
             <PopoverTrigger className="self-end min-w-4">
               <img src={InfoIcon} />
             </PopoverTrigger>
-            <PopoverContent className="bg-black text-white text-sm border-yellow-700">
+            <PopoverContent className="bg-black text-white text-sm border-yellow-700 w-[300px]">
               This applet displays a breakdown of exposures taken during the
-              night, grouped by a selected field (e.g., observation reason,
-              image type, science program, or target name).
+              night, grouped by a selected field.
               <br />
               <br />
               The chart can be configured to show either the{" "}
-              <strong>number of exposures</strong>
-              or the <strong>total exposure time (in seconds)</strong>. Groups
-              can also be sorted to better visualise the distribution across
-              categories.
+              <strong>number of exposures</strong> or the{" "}
+              <strong>total exposure time (in seconds)</strong>.
               <br />
               <br />
-              If any exposures in a group have been flagged as "junk" or
-              "questionable", a white segment appears at the end of that group's
-              bar, stacked on top of the unflagged portion.
+              When exposures are flagged as "junk" or "questionable", they are
+              shown in white at the end of the group’s bar.
               <br />
               <br />
-              <strong>Tip:</strong> Hover over a bar to view flagged and
-              unflagged values. Scroll to see additional groups if all are not
-              visible.
+              <strong>Tips:</strong> Hover over a bar to view total and flagged
+              values. Scroll to see additional groups if all are not visible.
             </PopoverContent>
           </Popover>
         </div>
