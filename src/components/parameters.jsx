@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { DatePicker } from "@/components/ui/datepicker.jsx";
 import { Input } from "@/components/ui/input";
 
+import { getDayobsStr, getDatetimeFromDayobsStr } from "@/utils/fetchUtils";
+
 const TELESCOPES = Object.freeze({
   AuxTel: "LATISS",
   Simonyi: "LSSTCam",
@@ -34,8 +36,7 @@ function Parameters({
     <>
       <div className="pt-3">
         <Label htmlFor="instrument" className="text-white text-base pb-1">
-          {" "}
-          Telescope:{" "}
+          Telescope
         </Label>
         <Select value={instrument} onValueChange={onInstrumentChange}>
           <SelectTrigger
@@ -55,8 +56,7 @@ function Parameters({
       </div>
       <div className="pt-8">
         <Label htmlFor="dayobs" className="text-white text-base pb-1">
-          {" "}
-          Night (dayobs){" "}
+          Night (dayobs)
         </Label>
         <DatePicker
           id="dayobs"
@@ -75,6 +75,23 @@ function Parameters({
           value={noOfNights}
           onValueChange={onNoOfNightsChange}
         />
+      </div>
+
+      {/* Date range */}
+      <div className="pt-12">
+        <span className="text-[14px] font-extralight text-white bg-green-500/20 px-2 py-2 rounded-md whitespace-nowrap">
+          <span className="font-semibold text-[12px]">dayobs: </span>
+          {(() => {
+            const dayobsDate = getDatetimeFromDayobsStr(getDayobsStr(dayobs));
+            const startDate = dayobsDate.minus({ days: noOfNights - 1 });
+            const startStr = startDate.toFormat("yyyyLLdd");
+            const endStr = dayobsDate.toFormat("yyyyLLdd");
+
+            return noOfNights === 1 || startStr === endStr
+              ? endStr
+              : `${startStr} - ${endStr}`;
+          })()}
+        </span>
       </div>
     </>
   );
