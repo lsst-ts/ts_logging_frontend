@@ -61,11 +61,23 @@ export default function Layout({ children }) {
   };
 
   useEffect(() => {
+    const abortController = new AbortController();
+
     setExposuresLoading(true);
     setAlmanacLoading(true);
     setNarrativeLoading(true);
     setJiraLoading(true);
     setFlagsLoading(true);
+
+    setExposureFields([]);
+    setExposureCount(0);
+    setSumExpTime(0.0);
+    setNightHours(0.0);
+    setWeatherLoss(0.0);
+    setFaultLoss(0.0);
+    setJiraTickets([]);
+    setJiraQueryUrl(null);
+    setFlags([]);
 
     let dayobsStr = getDayobsStr(dayobs);
     if (!dayobsStr) {
@@ -90,8 +102,11 @@ export default function Layout({ children }) {
     let jiraEndDate = endDate.toFormat("yyyy-LL-dd");
     let jiraQuery = `jql=project = OBS AND (created >= "${jiraStartDate} 9:00" AND created < "${jiraEndDate} 09:00") &fields=key,summary,updated,created,status,system,customfield_10476`;
 
-    fetchExposures(startDayobs, endDayobs, instrument)
-      .then(([exposureFields, exposuresNo, exposureTime]) => {
+    fetchExposures(startDayobs, endDayobs, instrument, abortController)
+      .then((result) => {
+        if (!result) return;
+        const [exposureFields, exposuresNo, exposureTime] = result;
+
         setExposureFields(exposureFields);
         setExposureCount(exposuresNo);
         setSumExpTime(exposureTime);
@@ -108,10 +123,12 @@ export default function Layout({ children }) {
         });
       })
       .finally(() => {
-        setExposuresLoading(false);
+        if (!abortController.signal.aborted) {
+          setExposuresLoading(false);
+        }
       });
 
-    fetchAlmanac(startDayobs, endDayobs)
+    fetchAlmanac(startDayobs, endDayobs, abortController)
       .then((hours) => {
         setNightHours(hours);
       })
@@ -123,11 +140,16 @@ export default function Layout({ children }) {
         });
       })
       .finally(() => {
-        setAlmanacLoading(false);
+        if (!abortController.signal.aborted) {
+          setAlmanacLoading(false);
+        }
       });
 
-    fetchNarrativeLog(startDayobs, endDayobs, instrument)
-      .then(([weather, fault]) => {
+    fetchNarrativeLog(startDayobs, endDayobs, instrument, abortController)
+      .then((result) => {
+        if (!result) return;
+        const [weather, fault] = result;
+
         setWeatherLoss(weather);
         setFaultLoss(fault);
         if (weather === 0 && fault === 0) {
@@ -142,11 +164,14 @@ export default function Layout({ children }) {
         });
       })
       .finally(() => {
-        setNarrativeLoading(false);
+        if (!abortController.signal.aborted) {
+          setNarrativeLoading(false);
+        }
       });
 
-    fetchJiraTickets(startDayobs, endDayobs, instrument)
+    fetchJiraTickets(startDayobs, endDayobs, instrument, abortController)
       .then((issues) => {
+        if (!issues) return;
         setJiraTickets(issues);
         setJiraQueryUrl(
           encodeURI(
@@ -166,11 +191,14 @@ export default function Layout({ children }) {
         });
       })
       .finally(() => {
-        setJiraLoading(false);
+        if (!abortController.signal.aborted) {
+          setJiraLoading(false);
+        }
       });
 
-    fetchExposureFlags(startDayobs, endDayobs, instrument)
+    fetchExposureFlags(startDayobs, endDayobs, instrument, abortController)
       .then((flags) => {
+        if (!flags) return;
         setFlags(flags);
         if (flags.length === 0) {
           toast.warning("No exposures flagged for the selected date range.");
@@ -184,8 +212,14 @@ export default function Layout({ children }) {
         });
       })
       .finally(() => {
-        setFlagsLoading(false);
+        if (!abortController.signal.aborted) {
+          setFlagsLoading(false);
+        }
       });
+
+    return () => {
+      abortController.abort();
+    };
   }, [dayobs, noOfNights, instrument]);
 
   // calculate open shutter efficiency

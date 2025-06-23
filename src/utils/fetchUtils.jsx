@@ -60,12 +60,13 @@ const backendLocation = `${httpProtocol}//${host}/nightlydigest/api`;
  * @returns {Promise<any>} Resolves with the parsed JSON response data.
  * @throws {Error} Throws an error if the response is not OK, with the error message from the response or a generic HTTP error message.
  */
-const fetchData = async (url) => {
+const fetchData = async (url, abortController) => {
   const res = await fetch(url, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
     },
+    signal: abortController.signal,
   });
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({}));
@@ -92,18 +93,22 @@ const fetchData = async (url) => {
  *   [2]: sum_exposure_time (number) - The total exposure time.
  * @throws Will throw an error if the fetch operation fails or returns invalid data.
  */
-const fetchExposures = async (start, end, instrument) => {
+const fetchExposures = async (start, end, instrument, abortController) => {
   try {
     const url = `${backendLocation}/exposures?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
 
-    const data = await fetchData(url);
+    const data = await fetchData(url, abortController);
     if (!data) {
       throw new Error("Error fetching exposures");
     }
     return [data.exposures, data.exposures_count, data.sum_exposure_time];
   } catch (err) {
-    console.error("Error fetching exposures:", err);
-    throw err;
+    if (err.name === "AbortError") {
+      return null;
+    } else {
+      console.error("Error fetching exposures:", err);
+      throw err;
+    }
   }
 };
 
@@ -117,17 +122,21 @@ const fetchExposures = async (start, end, instrument) => {
  * @returns {Promise<any>} Resolves with the night_hours data from the Almanac API.
  * @throws {Error} Throws an error if the fetch fails or the response is invalid.
  */
-const fetchAlmanac = async (start, end) => {
+const fetchAlmanac = async (start, end, abortController) => {
   const url = `${backendLocation}/almanac?dayObsStart=${start}&dayObsEnd=${end}`;
   try {
-    const data = await fetchData(url);
+    const data = await fetchData(url, abortController);
     if (!data) {
       throw new Error("Error fetching Almanac");
     }
     return data.night_hours;
   } catch (err) {
-    console.error("Error fetching Almanac:", err);
-    throw err;
+    if (err.name === "AbortError") {
+      return null;
+    } else {
+      console.error("Error fetching Almanac:", err);
+      throw err;
+    }
   }
 };
 
@@ -143,10 +152,10 @@ const fetchAlmanac = async (start, end) => {
  *   [time_lost_to_weather, time_lost_to_faults, narrative_log].
  * @throws {Error} Throws an error if the narrative log cannot be fetched.
  */
-const fetchNarrativeLog = async (start, end, instrument) => {
+const fetchNarrativeLog = async (start, end, instrument, abortController) => {
   const url = `${backendLocation}/narrative-log?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
   try {
-    const data = await fetchData(url);
+    const data = await fetchData(url, abortController);
     if (!data) {
       throw new Error("Error fetching Narrative Log");
     }
@@ -156,8 +165,12 @@ const fetchNarrativeLog = async (start, end, instrument) => {
       data.narrative_log,
     ];
   } catch (err) {
-    console.error("Error fetching Narrative Log:", err);
-    throw err;
+    if (err.name === "AbortError") {
+      return null;
+    } else {
+      console.error("Error fetching Narrative Log:", err);
+      throw err;
+    }
   }
 };
 
@@ -174,17 +187,21 @@ const fetchNarrativeLog = async (start, end, instrument) => {
  *   - exposure_flag (string): The flag associated with the observation.
  *   Returns an empty array if fetching fails.
  */
-const fetchExposureFlags = async (start, end, instrument) => {
+const fetchExposureFlags = async (start, end, instrument, abortController) => {
   const url = `${backendLocation}/exposure-flags?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
   try {
-    const data = await fetchData(url);
+    const data = await fetchData(url, abortController);
     if (!data) {
       throw new Error("No data returned for exposure flags");
     }
     return data.exposure_flags;
   } catch (err) {
-    console.error("Error fetching exposure flags:", err);
-    throw err;
+    if (err.name === "AbortError") {
+      return null;
+    } else {
+      console.error("Error fetching exposure flags:", err);
+      throw err;
+    }
   }
 };
 
@@ -222,17 +239,21 @@ const getDatetimeFromDayobsStr = (dayObsStr) => {
  * @returns {Promise<Array>} A promise that resolves to an array of Jira ticket issues.
  * @throws {Error} Throws an error if fetching Jira tickets fails.
  */
-const fetchJiraTickets = async (start, end, instrument) => {
+const fetchJiraTickets = async (start, end, instrument, abortController) => {
   const url = `${backendLocation}/jira-tickets?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
   try {
-    const data = await fetchData(url);
+    const data = await fetchData(url, abortController);
     if (!data) {
       throw new Error("Error fetching Jira Tickets");
     }
     return data.issues;
   } catch (err) {
-    console.error("Error fetching Jira tickets", err);
-    throw err;
+    if (err.name === "AbortError") {
+      return null;
+    } else {
+      console.error("Error fetching Jira tickets", err);
+      throw err;
+    }
   }
 };
 
