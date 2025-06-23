@@ -57,8 +57,9 @@ const backendLocation = `${httpProtocol}//${host}/nightlydigest/api`;
  * @async
  * @function fetchData
  * @param {string} url - The endpoint URL to fetch data from.
- * @returns {Promise<any>} Resolves with the parsed JSON response data.
- * @throws {Error} Throws an error if the response is not OK, with the error message from the response or a generic HTTP error message.
+ * @param {AbortController} abortController - The AbortController used to signal cancellation of the fetch.
+ * @returns {Promise<any>} Resolves with the parsed JSON response data if successful.
+ * @throws {Error} Throws an error if the response is not OK, with the error message from the response or a generic HTTP error message. If the fetch was aborted, an `AbortError` is thrown and should be handled by the caller.
  */
 const fetchData = async (url, abortController) => {
   const res = await fetch(url, {
@@ -87,11 +88,13 @@ const fetchData = async (url, abortController) => {
  * @param {string} start - The start date for the observation range (format: YYYY-MM-DD).
  * @param {string} end - The end date for the observation range (format: YYYY-MM-DD).
  * @param {string} instrument - The name of the instrument to filter exposures.
- * @returns {Promise<[Object[], number, number]>} A promise that resolves to an array containing:
+ * @param {AbortController} abortController - The AbortController used to cancel the request if needed.
+ * @returns {Promise<[Object[], number, number] | null>} A promise that resolves to an array containing:
  *   [0]: exposures (Object[]) - An array of exposure records with selected fields,
  *   [1]: exposures_count (number) - The number of exposures,
  *   [2]: sum_exposure_time (number) - The total exposure time.
- * @throws Will throw an error if the fetch operation fails or returns invalid data.
+ *   Returns `null` if the request was aborted.
+ * @throws Will throw an error if the fetch operation fails (for reasons other than an abort) or returns invalid data.
  */
 const fetchExposures = async (start, end, instrument, abortController) => {
   try {
@@ -119,7 +122,8 @@ const fetchExposures = async (start, end, instrument, abortController) => {
  * @function fetchAlmanac
  * @param {string} start - The start date in YYYY-MM-DD format.
  * @param {string} end - The end date in YYYY-MM-DD format.
- * @returns {Promise<any>} Resolves with the night_hours data from the Almanac API.
+ * @param {AbortController} abortController - The AbortController used to cancel the request if needed.
+ * @returns {Promise<any | null>} Resolves with the night_hours data from the Almanac API, , or `null` if the request was aborted.
  * @throws {Error} Throws an error if the fetch fails or the response is invalid.
  */
 const fetchAlmanac = async (start, end, abortController) => {
@@ -148,9 +152,13 @@ const fetchAlmanac = async (start, end, abortController) => {
  * @param {string} start - The start date for the observation range (format: YYYY-MM-DD).
  * @param {string} end - The end date for the observation range (format: YYYY-MM-DD).
  * @param {string} instrument - The instrument identifier to filter the narrative log.
- * @returns {Promise<Array>} A promise that resolves to an array containing:
- *   [time_lost_to_weather, time_lost_to_faults, narrative_log].
- * @throws {Error} Throws an error if the narrative log cannot be fetched.
+ * @param {AbortController} abortController - The AbortController used to cancel the request if needed.
+ * @returns {Promise<[number, number, any] | null>} A promise that resolves to an array:
+ *   [0]: time_lost_to_weather (number),
+ *   [1]: time_lost_to_faults (number),
+ *   [2]: narrative_log (any).
+ *   Returns `null` if the request was aborted.
+ * @throws {Error} Throws an error if the narrative log cannot be fetched and the request was not aborted.
  */
 const fetchNarrativeLog = async (start, end, instrument, abortController) => {
   const url = `${backendLocation}/narrative-log?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
@@ -182,10 +190,12 @@ const fetchNarrativeLog = async (start, end, instrument, abortController) => {
  * @param {string} start - The start date of the observation range (format: YYYY-MM-DD).
  * @param {string} end - The end date of the observation range (format: YYYY-MM-DD).
  * @param {string} instrument - The instrument to filter the exposure flags.
- * @returns {Promise<Object[]>} A promise that resolves to an array of objects with:
+ * @param {AbortController} abortController - The AbortController used to cancel the request if needed.
+ * @returns {Promise<Object[] | null>} A promise that resolves to an array of objects with:
  *   - obs_id (string): The observation ID.
  *   - exposure_flag (string): The flag associated with the observation.
- *   Returns an empty array if fetching fails.
+ *   Returns an empty array if fetching fails or `null` if the request was aborted.
+ * @throws {Error} Throws an error if fetching fails and the request was not aborted.
  */
 const fetchExposureFlags = async (start, end, instrument, abortController) => {
   const url = `${backendLocation}/exposure-flags?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
@@ -236,8 +246,9 @@ const getDatetimeFromDayobsStr = (dayObsStr) => {
  * @param {string} start - The start date for the observation range (format: YYYY-MM-DD).
  * @param {string} end - The end date for the observation range (format: YYYY-MM-DD).
  * @param {string} instrument - The instrument name to filter Jira tickets.
- * @returns {Promise<Array>} A promise that resolves to an array of Jira ticket issues.
- * @throws {Error} Throws an error if fetching Jira tickets fails.
+ * @param {AbortController} abortController - The AbortController used to cancel the request if needed.
+ * @returns {Promise<Array | null>} A promise that resolves to an array of Jira ticket issues, or `null` if the request was aborted.
+ * @throws {Error} Throws an error if fetching Jira tickets fails for reasons other than an abort.
  */
 const fetchJiraTickets = async (start, end, instrument, abortController) => {
   const url = `${backendLocation}/jira-tickets?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
