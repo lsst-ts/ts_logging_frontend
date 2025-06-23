@@ -238,22 +238,6 @@ export default function Layout({ children }) {
           {children}
           {/* Main content */}
           <div className="flex flex-col w-full p-8 gap-8">
-            {/* Date range */}
-            {/* <span className="text-right text-lg font-extralight text-stone-400">
-              Observing {noOfNights === 1 ? "night" : "nights"}:{" "}
-              {noOfNights === 1 ? (
-                getDatetimeFromDayobsStr(getDayobsStr(dayobs)).toFormat("yyyy-LL-dd")
-              ) : (
-                <>
-                  {getDatetimeFromDayobsStr(getDayobsStr(dayobs))
-                    .minus({ days: noOfNights - 1 })
-                    .toFormat("yyyy-LL-dd")}{" "}
-                  to{" "}
-                  {getDatetimeFromDayobsStr(getDayobsStr(dayobs)).toFormat("yyyy-LL-dd")}
-                </>
-              )}
-            </span> */}
-
             {/* Metrics */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
               <MetricsCard
