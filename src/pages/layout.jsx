@@ -120,6 +120,7 @@ export default function Layout({ children }) {
 
     fetchAlmanac(startDayobs, endDayobs, abortController)
       .then((hours) => {
+        if (!hours) return;
         setNightHours(hours);
       })
       .catch((err) => {
