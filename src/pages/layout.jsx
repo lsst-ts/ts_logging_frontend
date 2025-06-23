@@ -69,16 +69,6 @@ export default function Layout({ children }) {
     setJiraLoading(true);
     setFlagsLoading(true);
 
-    setExposureFields([]);
-    setExposureCount(0);
-    setSumExpTime(0.0);
-    setNightHours(0.0);
-    setWeatherLoss(0.0);
-    setFaultLoss(0.0);
-    setJiraTickets([]);
-    setJiraQueryUrl(null);
-    setFlags([]);
-
     let dayobsStr = getDayobsStr(dayobs);
     if (!dayobsStr) {
       toast.error("No Date Selected! Please select a valid date.");
