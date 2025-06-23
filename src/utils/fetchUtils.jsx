@@ -59,7 +59,8 @@ const backendLocation = `${httpProtocol}//${host}/nightlydigest/api`;
  * @param {string} url - The endpoint URL to fetch data from.
  * @param {AbortController} abortController - The AbortController used to signal cancellation of the fetch.
  * @returns {Promise<any>} Resolves with the parsed JSON response data if successful.
- * @throws {Error} Throws an error if the response is not OK, with the error message from the response or a generic HTTP error message. If the fetch was aborted, an `AbortError` is thrown and should be handled by the caller.
+ * @throws {Error} Throws if the response is not OK. If aborted, an `AbortError` is thrown
+ * and should be handled by the caller.
  */
 const fetchData = async (url, abortController) => {
   const res = await fetch(url, {
@@ -94,7 +95,8 @@ const fetchData = async (url, abortController) => {
  *   [1]: exposures_count (number) - The number of exposures,
  *   [2]: sum_exposure_time (number) - The total exposure time.
  *   Returns `null` if the request was aborted.
- * @throws Will throw an error if the fetch operation fails (for reasons other than an abort) or returns invalid data.
+ * @throws Will throw an error if the fetch operation fails (for reasons other than an abort)
+ * or returns invalid data.
  */
 const fetchExposures = async (start, end, instrument, abortController) => {
   try {
@@ -123,7 +125,8 @@ const fetchExposures = async (start, end, instrument, abortController) => {
  * @param {string} start - The start date in YYYY-MM-DD format.
  * @param {string} end - The end date in YYYY-MM-DD format.
  * @param {AbortController} abortController - The AbortController used to cancel the request if needed.
- * @returns {Promise<any | null>} Resolves with the night_hours data from the Almanac API, , or `null` if the request was aborted.
+ * @returns {Promise<any | null>} Resolves with the night_hours data from the Almanac API,
+ * or `null` if the request was aborted.
  * @throws {Error} Throws an error if the fetch fails or the response is invalid.
  */
 const fetchAlmanac = async (start, end, abortController) => {
@@ -247,7 +250,8 @@ const getDatetimeFromDayobsStr = (dayObsStr) => {
  * @param {string} end - The end date for the observation range (format: YYYY-MM-DD).
  * @param {string} instrument - The instrument name to filter Jira tickets.
  * @param {AbortController} abortController - The AbortController used to cancel the request if needed.
- * @returns {Promise<Array | null>} A promise that resolves to an array of Jira ticket issues, or `null` if the request was aborted.
+ * @returns {Promise<Array | null>} A promise that resolves to an array of Jira ticket issues,
+ * or `null` if the request was aborted.
  * @throws {Error} Throws an error if fetching Jira tickets fails for reasons other than an abort.
  */
 const fetchJiraTickets = async (start, end, instrument, abortController) => {
