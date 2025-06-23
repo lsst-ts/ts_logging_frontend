@@ -25,7 +25,6 @@ export function AppSidebar({ ...props }) {
           </h1>
         </div>
       </SidebarHeader>
-
       <SidebarContent className="px-7">
         <SidebarGroup>
           <SidebarGroupContent>
@@ -39,7 +38,6 @@ export function AppSidebar({ ...props }) {
             />
           </SidebarGroupContent>
         </SidebarGroup>
-
         <SidebarGroup className="pt-10">
           <SidebarGroupContent>
             <NavMenu activeKey="digest" />
