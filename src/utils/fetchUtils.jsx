@@ -57,15 +57,18 @@ const backendLocation = `${httpProtocol}//${host}/nightlydigest/api`;
  * @async
  * @function fetchData
  * @param {string} url - The endpoint URL to fetch data from.
- * @returns {Promise<any>} Resolves with the parsed JSON response data.
- * @throws {Error} Throws an error if the response is not OK, with the error message from the response or a generic HTTP error message.
+ * @param {AbortController} abortController - The AbortController used to signal cancellation of the fetch.
+ * @returns {Promise<any>} Resolves with the parsed JSON response data if successful.
+ * @throws {Error} Throws if the response is not OK. If aborted, an `AbortError` is thrown
+ * and should be handled by the caller.
  */
-const fetchData = async (url) => {
+const fetchData = async (url, abortController) => {
   const res = await fetch(url, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
     },
+    signal: abortController.signal,
   });
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({}));
@@ -86,23 +89,27 @@ const fetchData = async (url) => {
  * @param {string} start - The start date for the observation range (format: YYYY-MM-DD).
  * @param {string} end - The end date for the observation range (format: YYYY-MM-DD).
  * @param {string} instrument - The name of the instrument to filter exposures.
+ * @param {AbortController} abortController - The AbortController used to cancel the request if needed.
  * @returns {Promise<[Object[], number, number]>} A promise that resolves to an array containing:
  *   [0]: exposures (Object[]) - An array of exposure records with selected fields,
  *   [1]: exposures_count (number) - The number of exposures,
  *   [2]: sum_exposure_time (number) - The total exposure time.
- * @throws Will throw an error if the fetch operation fails or returns invalid data.
+ * @throws Will throw an error if the fetch operation fails (for reasons other than an abort)
+ * or returns invalid data.
  */
-const fetchExposures = async (start, end, instrument) => {
+const fetchExposures = async (start, end, instrument, abortController) => {
   try {
     const url = `${backendLocation}/exposures?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
 
-    const data = await fetchData(url);
+    const data = await fetchData(url, abortController);
     if (!data) {
       throw new Error("Error fetching exposures");
     }
     return [data.exposures, data.exposures_count, data.sum_exposure_time];
   } catch (err) {
-    console.error("Error fetching exposures:", err);
+    if (err.name !== "AbortError") {
+      console.error("Error fetching exposures:", err);
+    }
     throw err;
   }
 };
@@ -114,19 +121,22 @@ const fetchExposures = async (start, end, instrument) => {
  * @function fetchAlmanac
  * @param {string} start - The start date in YYYY-MM-DD format.
  * @param {string} end - The end date in YYYY-MM-DD format.
- * @returns {Promise<any>} Resolves with the night_hours data from the Almanac API.
+ * @param {AbortController} abortController - The AbortController used to cancel the request if needed.
+ * @returns {Promise<any>} Resolves with the night_hours data from the Almanac API,
  * @throws {Error} Throws an error if the fetch fails or the response is invalid.
  */
-const fetchAlmanac = async (start, end) => {
+const fetchAlmanac = async (start, end, abortController) => {
   const url = `${backendLocation}/almanac?dayObsStart=${start}&dayObsEnd=${end}`;
   try {
-    const data = await fetchData(url);
+    const data = await fetchData(url, abortController);
     if (!data) {
       throw new Error("Error fetching Almanac");
     }
     return data.night_hours;
   } catch (err) {
-    console.error("Error fetching Almanac:", err);
+    if (err.name !== "AbortError") {
+      console.error("Error fetching Almanac:", err);
+    }
     throw err;
   }
 };
@@ -139,14 +149,17 @@ const fetchAlmanac = async (start, end) => {
  * @param {string} start - The start date for the observation range (format: YYYY-MM-DD).
  * @param {string} end - The end date for the observation range (format: YYYY-MM-DD).
  * @param {string} instrument - The instrument identifier to filter the narrative log.
- * @returns {Promise<Array>} A promise that resolves to an array containing:
- *   [time_lost_to_weather, time_lost_to_faults, narrative_log].
- * @throws {Error} Throws an error if the narrative log cannot be fetched.
+ * @param {AbortController} abortController - The AbortController used to cancel the request if needed.
+ * @returns {Promise<[number, number, any] | null>} A promise that resolves to an array:
+ *   [0]: time_lost_to_weather (number),
+ *   [1]: time_lost_to_faults (number),
+ *   [2]: narrative_log (any).
+ * @throws {Error} Throws an error if the narrative log cannot be fetched and the request was not aborted.
  */
-const fetchNarrativeLog = async (start, end, instrument) => {
+const fetchNarrativeLog = async (start, end, instrument, abortController) => {
   const url = `${backendLocation}/narrative-log?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
   try {
-    const data = await fetchData(url);
+    const data = await fetchData(url, abortController);
     if (!data) {
       throw new Error("Error fetching Narrative Log");
     }
@@ -156,7 +169,9 @@ const fetchNarrativeLog = async (start, end, instrument) => {
       data.narrative_log,
     ];
   } catch (err) {
-    console.error("Error fetching Narrative Log:", err);
+    if (err.name !== "AbortError") {
+      console.error("Error fetching Narrative Log:", err);
+    }
     throw err;
   }
 };
@@ -169,21 +184,25 @@ const fetchNarrativeLog = async (start, end, instrument) => {
  * @param {string} start - The start date of the observation range (format: YYYY-MM-DD).
  * @param {string} end - The end date of the observation range (format: YYYY-MM-DD).
  * @param {string} instrument - The instrument to filter the exposure flags.
- * @returns {Promise<Object[]>} A promise that resolves to an array of objects with:
+ * @param {AbortController} abortController - The AbortController used to cancel the request if needed.
+ * @returns {Promise<Object[] | null>} A promise that resolves to an array of objects with:
  *   - obs_id (string): The observation ID.
  *   - exposure_flag (string): The flag associated with the observation.
- *   Returns an empty array if fetching fails.
+ *   Returns an empty array if fetching fails or `null` if the request was aborted.
+ * @throws {Error} Throws an error if fetching fails and the request was not aborted.
  */
-const fetchExposureFlags = async (start, end, instrument) => {
+const fetchExposureFlags = async (start, end, instrument, abortController) => {
   const url = `${backendLocation}/exposure-flags?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
   try {
-    const data = await fetchData(url);
+    const data = await fetchData(url, abortController);
     if (!data) {
       throw new Error("No data returned for exposure flags");
     }
     return data.exposure_flags;
   } catch (err) {
-    console.error("Error fetching exposure flags:", err);
+    if (err.name !== "AbortError") {
+      console.error("Error fetching exposure flags:", err);
+    }
     throw err;
   }
 };
@@ -219,19 +238,23 @@ const getDatetimeFromDayobsStr = (dayObsStr) => {
  * @param {string} start - The start date for the observation range (format: YYYY-MM-DD).
  * @param {string} end - The end date for the observation range (format: YYYY-MM-DD).
  * @param {string} instrument - The instrument name to filter Jira tickets.
- * @returns {Promise<Array>} A promise that resolves to an array of Jira ticket issues.
- * @throws {Error} Throws an error if fetching Jira tickets fails.
+ * @param {AbortController} abortController - The AbortController used to cancel the request if needed.
+ * @returns {Promise<Array | null>} A promise that resolves to an array of Jira ticket issues,
+ * or `null` if the request was aborted.
+ * @throws {Error} Throws an error if fetching Jira tickets fails for reasons other than an abort.
  */
-const fetchJiraTickets = async (start, end, instrument) => {
+const fetchJiraTickets = async (start, end, instrument, abortController) => {
   const url = `${backendLocation}/jira-tickets?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
   try {
-    const data = await fetchData(url);
+    const data = await fetchData(url, abortController);
     if (!data) {
       throw new Error("Error fetching Jira Tickets");
     }
     return data.issues;
   } catch (err) {
-    console.error("Error fetching Jira tickets", err);
+    if (err.name !== "AbortError") {
+      console.error("Error fetching Jira tickets", err);
+    }
     throw err;
   }
 };

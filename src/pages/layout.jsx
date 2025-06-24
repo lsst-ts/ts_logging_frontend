@@ -61,6 +61,8 @@ export default function Layout({ children }) {
   };
 
   useEffect(() => {
+    const abortController = new AbortController();
+
     setExposuresLoading(true);
     setAlmanacLoading(true);
     setNarrativeLoading(true);
@@ -90,7 +92,7 @@ export default function Layout({ children }) {
     let jiraEndDate = endDate.toFormat("yyyy-LL-dd");
     let jiraQuery = `jql=project = OBS AND (created >= "${jiraStartDate} 9:00" AND created < "${jiraEndDate} 09:00") &fields=key,summary,updated,created,status,system,customfield_10476`;
 
-    fetchExposures(startDayobs, endDayobs, instrument)
+    fetchExposures(startDayobs, endDayobs, instrument, abortController)
       .then(([exposureFields, exposuresNo, exposureTime]) => {
         setExposureFields(exposureFields);
         setExposureCount(exposuresNo);
@@ -101,32 +103,40 @@ export default function Layout({ children }) {
         }
       })
       .catch((err) => {
-        const msg = err?.message;
-        toast.error("Error fetching exposures!", {
-          description: msg,
-          duration: Infinity,
-        });
+        if (!abortController.signal.aborted) {
+          const msg = err?.message;
+          toast.error("Error fetching exposures!", {
+            description: msg,
+            duration: Infinity,
+          });
+        }
       })
       .finally(() => {
-        setExposuresLoading(false);
+        if (!abortController.signal.aborted) {
+          setExposuresLoading(false);
+        }
       });
 
-    fetchAlmanac(startDayobs, endDayobs)
+    fetchAlmanac(startDayobs, endDayobs, abortController)
       .then((hours) => {
         setNightHours(hours);
       })
       .catch((err) => {
-        const msg = err?.message;
-        toast.error("Error fetching almanac!", {
-          description: msg,
-          duration: Infinity,
-        });
+        if (!abortController.signal.aborted) {
+          const msg = err?.message;
+          toast.error("Error fetching almanac!", {
+            description: msg,
+            duration: Infinity,
+          });
+        }
       })
       .finally(() => {
-        setAlmanacLoading(false);
+        if (!abortController.signal.aborted) {
+          setAlmanacLoading(false);
+        }
       });
 
-    fetchNarrativeLog(startDayobs, endDayobs, instrument)
+    fetchNarrativeLog(startDayobs, endDayobs, instrument, abortController)
       .then(([weather, fault]) => {
         setWeatherLoss(weather);
         setFaultLoss(fault);
@@ -135,17 +145,21 @@ export default function Layout({ children }) {
         }
       })
       .catch((err) => {
-        const msg = err?.message;
-        toast.error("Error fetching narrative log!", {
-          description: msg,
-          duration: Infinity,
-        });
+        if (!abortController.signal.aborted) {
+          const msg = err?.message;
+          toast.error("Error fetching narrative log!", {
+            description: msg,
+            duration: Infinity,
+          });
+        }
       })
       .finally(() => {
-        setNarrativeLoading(false);
+        if (!abortController.signal.aborted) {
+          setNarrativeLoading(false);
+        }
       });
 
-    fetchJiraTickets(startDayobs, endDayobs, instrument)
+    fetchJiraTickets(startDayobs, endDayobs, instrument, abortController)
       .then((issues) => {
         setJiraTickets(issues);
         setJiraQueryUrl(
@@ -158,18 +172,22 @@ export default function Layout({ children }) {
         }
       })
       .catch((err) => {
-        setJiraQueryUrl(null);
-        const msg = err?.message;
-        toast.error("Error fetching Jira!", {
-          description: msg,
-          duration: Infinity,
-        });
+        if (!abortController.signal.aborted) {
+          setJiraQueryUrl(null);
+          const msg = err?.message;
+          toast.error("Error fetching Jira!", {
+            description: msg,
+            duration: Infinity,
+          });
+        }
       })
       .finally(() => {
-        setJiraLoading(false);
+        if (!abortController.signal.aborted) {
+          setJiraLoading(false);
+        }
       });
 
-    fetchExposureFlags(startDayobs, endDayobs, instrument)
+    fetchExposureFlags(startDayobs, endDayobs, instrument, abortController)
       .then((flags) => {
         setFlags(flags);
         if (flags.length === 0) {
@@ -177,15 +195,23 @@ export default function Layout({ children }) {
         }
       })
       .catch((err) => {
-        const msg = err?.message;
-        toast.error("Error fetching exposure flags!", {
-          description: msg,
-          duration: Infinity,
-        });
+        if (!abortController.signal.aborted) {
+          const msg = err?.message;
+          toast.error("Error fetching exposure flags!", {
+            description: msg,
+            duration: Infinity,
+          });
+        }
       })
       .finally(() => {
-        setFlagsLoading(false);
+        if (!abortController.signal.aborted) {
+          setFlagsLoading(false);
+        }
       });
+
+    return () => {
+      abortController.abort();
+    };
   }, [dayobs, noOfNights, instrument]);
 
   // calculate open shutter efficiency
