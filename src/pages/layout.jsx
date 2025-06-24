@@ -93,10 +93,7 @@ export default function Layout({ children }) {
     let jiraQuery = `jql=project = OBS AND (created >= "${jiraStartDate} 9:00" AND created < "${jiraEndDate} 09:00") &fields=key,summary,updated,created,status,system,customfield_10476`;
 
     fetchExposures(startDayobs, endDayobs, instrument, abortController)
-      .then((result) => {
-        if (!result) return;
-        const [exposureFields, exposuresNo, exposureTime] = result;
-
+      .then(([exposureFields, exposuresNo, exposureTime]) => {
         setExposureFields(exposureFields);
         setExposureCount(exposuresNo);
         setSumExpTime(exposureTime);
@@ -106,11 +103,13 @@ export default function Layout({ children }) {
         }
       })
       .catch((err) => {
-        const msg = err?.message;
-        toast.error("Error fetching exposures!", {
-          description: msg,
-          duration: Infinity,
-        });
+        if (!abortController.signal.aborted) {
+          const msg = err?.message;
+          toast.error("Error fetching exposures!", {
+            description: msg,
+            duration: Infinity,
+          });
+        }
       })
       .finally(() => {
         if (!abortController.signal.aborted) {
@@ -120,15 +119,16 @@ export default function Layout({ children }) {
 
     fetchAlmanac(startDayobs, endDayobs, abortController)
       .then((hours) => {
-        if (!hours) return;
         setNightHours(hours);
       })
       .catch((err) => {
-        const msg = err?.message;
-        toast.error("Error fetching almanac!", {
-          description: msg,
-          duration: Infinity,
-        });
+        if (!abortController.signal.aborted) {
+          const msg = err?.message;
+          toast.error("Error fetching almanac!", {
+            description: msg,
+            duration: Infinity,
+          });
+        }
       })
       .finally(() => {
         if (!abortController.signal.aborted) {
@@ -137,10 +137,7 @@ export default function Layout({ children }) {
       });
 
     fetchNarrativeLog(startDayobs, endDayobs, instrument, abortController)
-      .then((result) => {
-        if (!result) return;
-        const [weather, fault] = result;
-
+      .then(([weather, fault]) => {
         setWeatherLoss(weather);
         setFaultLoss(fault);
         if (weather === 0 && fault === 0) {
@@ -148,11 +145,13 @@ export default function Layout({ children }) {
         }
       })
       .catch((err) => {
-        const msg = err?.message;
-        toast.error("Error fetching narrative log!", {
-          description: msg,
-          duration: Infinity,
-        });
+        if (!abortController.signal.aborted) {
+          const msg = err?.message;
+          toast.error("Error fetching narrative log!", {
+            description: msg,
+            duration: Infinity,
+          });
+        }
       })
       .finally(() => {
         if (!abortController.signal.aborted) {
@@ -162,7 +161,6 @@ export default function Layout({ children }) {
 
     fetchJiraTickets(startDayobs, endDayobs, instrument, abortController)
       .then((issues) => {
-        if (!issues) return;
         setJiraTickets(issues);
         setJiraQueryUrl(
           encodeURI(
@@ -174,12 +172,14 @@ export default function Layout({ children }) {
         }
       })
       .catch((err) => {
-        setJiraQueryUrl(null);
-        const msg = err?.message;
-        toast.error("Error fetching Jira!", {
-          description: msg,
-          duration: Infinity,
-        });
+        if (!abortController.signal.aborted) {
+          setJiraQueryUrl(null);
+          const msg = err?.message;
+          toast.error("Error fetching Jira!", {
+            description: msg,
+            duration: Infinity,
+          });
+        }
       })
       .finally(() => {
         if (!abortController.signal.aborted) {
@@ -189,18 +189,19 @@ export default function Layout({ children }) {
 
     fetchExposureFlags(startDayobs, endDayobs, instrument, abortController)
       .then((flags) => {
-        if (!flags) return;
         setFlags(flags);
         if (flags.length === 0) {
           toast.warning("No exposures flagged for the selected date range.");
         }
       })
       .catch((err) => {
-        const msg = err?.message;
-        toast.error("Error fetching exposure flags!", {
-          description: msg,
-          duration: Infinity,
-        });
+        if (!abortController.signal.aborted) {
+          const msg = err?.message;
+          toast.error("Error fetching exposure flags!", {
+            description: msg,
+            duration: Infinity,
+          });
+        }
       })
       .finally(() => {
         if (!abortController.signal.aborted) {

@@ -90,11 +90,10 @@ const fetchData = async (url, abortController) => {
  * @param {string} end - The end date for the observation range (format: YYYY-MM-DD).
  * @param {string} instrument - The name of the instrument to filter exposures.
  * @param {AbortController} abortController - The AbortController used to cancel the request if needed.
- * @returns {Promise<[Object[], number, number] | null>} A promise that resolves to an array containing:
+ * @returns {Promise<[Object[], number, number]>} A promise that resolves to an array containing:
  *   [0]: exposures (Object[]) - An array of exposure records with selected fields,
  *   [1]: exposures_count (number) - The number of exposures,
  *   [2]: sum_exposure_time (number) - The total exposure time.
- *   Returns `null` if the request was aborted.
  * @throws Will throw an error if the fetch operation fails (for reasons other than an abort)
  * or returns invalid data.
  */
@@ -108,12 +107,10 @@ const fetchExposures = async (start, end, instrument, abortController) => {
     }
     return [data.exposures, data.exposures_count, data.sum_exposure_time];
   } catch (err) {
-    if (err.name === "AbortError") {
-      return null;
-    } else {
+    if (err.name !== "AbortError") {
       console.error("Error fetching exposures:", err);
-      throw err;
     }
+    throw err;
   }
 };
 
@@ -125,8 +122,7 @@ const fetchExposures = async (start, end, instrument, abortController) => {
  * @param {string} start - The start date in YYYY-MM-DD format.
  * @param {string} end - The end date in YYYY-MM-DD format.
  * @param {AbortController} abortController - The AbortController used to cancel the request if needed.
- * @returns {Promise<any | null>} Resolves with the night_hours data from the Almanac API,
- * or `null` if the request was aborted.
+ * @returns {Promise<any>} Resolves with the night_hours data from the Almanac API,
  * @throws {Error} Throws an error if the fetch fails or the response is invalid.
  */
 const fetchAlmanac = async (start, end, abortController) => {
@@ -138,12 +134,10 @@ const fetchAlmanac = async (start, end, abortController) => {
     }
     return data.night_hours;
   } catch (err) {
-    if (err.name === "AbortError") {
-      return null;
-    } else {
+    if (err.name !== "AbortError") {
       console.error("Error fetching Almanac:", err);
-      throw err;
     }
+    throw err;
   }
 };
 
@@ -160,7 +154,6 @@ const fetchAlmanac = async (start, end, abortController) => {
  *   [0]: time_lost_to_weather (number),
  *   [1]: time_lost_to_faults (number),
  *   [2]: narrative_log (any).
- *   Returns `null` if the request was aborted.
  * @throws {Error} Throws an error if the narrative log cannot be fetched and the request was not aborted.
  */
 const fetchNarrativeLog = async (start, end, instrument, abortController) => {
@@ -176,12 +169,10 @@ const fetchNarrativeLog = async (start, end, instrument, abortController) => {
       data.narrative_log,
     ];
   } catch (err) {
-    if (err.name === "AbortError") {
-      return null;
-    } else {
+    if (err.name !== "AbortError") {
       console.error("Error fetching Narrative Log:", err);
-      throw err;
     }
+    throw err;
   }
 };
 
@@ -209,12 +200,10 @@ const fetchExposureFlags = async (start, end, instrument, abortController) => {
     }
     return data.exposure_flags;
   } catch (err) {
-    if (err.name === "AbortError") {
-      return null;
-    } else {
+    if (err.name !== "AbortError") {
       console.error("Error fetching exposure flags:", err);
-      throw err;
     }
+    throw err;
   }
 };
 
@@ -263,12 +252,10 @@ const fetchJiraTickets = async (start, end, instrument, abortController) => {
     }
     return data.issues;
   } catch (err) {
-    if (err.name === "AbortError") {
-      return null;
-    } else {
+    if (err.name !== "AbortError") {
       console.error("Error fetching Jira tickets", err);
-      throw err;
     }
+    throw err;
   }
 };
 
