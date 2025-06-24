@@ -13,16 +13,18 @@ import ShutterIcon from "../assets/ShutterIcon.svg";
 import TimeLossIcon from "../assets/TimeLossIcon.svg";
 import JiraIcon from "../assets/JiraIcon.svg";
 import {
-  calculateEfficiency,
-  calculateTimeLoss,
   fetchExposures,
   fetchAlmanac,
   fetchNarrativeLog,
   fetchExposureFlags,
-  getDayobsStr,
-  getDatetimeFromDayobsStr,
   fetchJiraTickets,
 } from "@/utils/fetchUtils";
+import {
+  calculateEfficiency,
+  calculateTimeLoss,
+  getDayobsStr,
+  getDatetimeFromDayobsStr,
+} from "@/utils/utils";
 
 export default function Layout({ children }) {
   const [dayobs, setDayobs] = useState(

@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { DatePicker } from "@/components/ui/datepicker.jsx";
 import { Input } from "@/components/ui/input";
 
+import { getDisplayDateRange } from "@/utils/utils";
+
 const TELESCOPES = Object.freeze({
   AuxTel: "LATISS",
   Simonyi: "LSSTCam",
@@ -30,12 +32,14 @@ function Parameters({
   instrument,
   onInstrumentChange,
 }) {
+  const displayRange = getDisplayDateRange(dayobs, noOfNights);
+
   return (
     <>
+      {/* Inputs */}
       <div className="pt-3">
         <Label htmlFor="instrument" className="text-white text-base pb-1">
-          {" "}
-          Telescope:{" "}
+          Telescope
         </Label>
         <Select value={instrument} onValueChange={onInstrumentChange}>
           <SelectTrigger
@@ -55,8 +59,7 @@ function Parameters({
       </div>
       <div className="pt-8">
         <Label htmlFor="dayobs" className="text-white text-base pb-1">
-          {" "}
-          Night (dayobs){" "}
+          Night (dayobs)
         </Label>
         <DatePicker
           id="dayobs"
@@ -65,16 +68,31 @@ function Parameters({
         />
       </div>
       <div className="pt-8">
-        <Label htmlFor="dayobsend" className="text-white text-base pb-1">
+        <Label htmlFor="noOfNights" className="text-white text-base pb-1">
           Number of Nights
         </Label>
+        <small
+          id="noOfNights-description"
+          className="text-xs text-white font-extralight block pb-1"
+        >
+          *up to and including selected dayobs
+        </small>
         <Input
           type="number"
           id="noOfNights"
           min="1"
           value={noOfNights}
           onValueChange={onNoOfNightsChange}
+          aria-describedby="noOfNights-description"
         />
+      </div>
+
+      {/* Date range display */}
+      <div className="pt-12">
+        <span className="text-[14px] font-extralight text-white bg-green-500/20 px-2 py-2 rounded-md whitespace-nowrap">
+          <span className="font-semibold text-[12px]">dayobs: </span>
+          {displayRange}
+        </span>
       </div>
     </>
   );
