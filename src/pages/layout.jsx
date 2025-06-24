@@ -24,7 +24,7 @@ import {
   calculateTimeLoss,
   getDayobsStr,
   getDatetimeFromDayobsStr,
-} from "@/utils/calcUtils";
+} from "@/utils/utils";
 
 export default function Layout({ children }) {
   const [dayobs, setDayobs] = useState(
