@@ -208,6 +208,7 @@ export default function Layout({ children }) {
   const efficiency = calculateEfficiency(nightHours, sumExpTime, weatherLoss);
   const efficiencyText = `${efficiency} %`;
   const [timeLoss, timeLossDetails] = calculateTimeLoss(weatherLoss, faultLoss);
+  const newTicketsCount = jiraTickets.filter((tix) => tix.isNew).length;
 
   return (
     <>
@@ -253,8 +254,9 @@ export default function Layout({ children }) {
               />
               <DialogMetricsCard
                 icon={JiraIcon}
-                data={jiraTickets.length}
-                label="Jira tickets"
+                data={newTicketsCount}
+                label="Jira tickets created"
+                metadata={`(${jiraTickets.length - newTicketsCount} updated)`}
                 tooltip="Jira tickets created during the night."
                 loading={jiraLoading}
                 dialogContent={
