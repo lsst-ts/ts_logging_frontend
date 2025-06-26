@@ -51,7 +51,12 @@ export default function MetricsCard({
         </div>
         {tooltip && !loading && (
           <Popover>
-            <PopoverTrigger className="self-end min-w-4">
+            <PopoverTrigger
+              className="self-end min-w-4"
+              /* Prevents click from propagating to the card 
+              to show the tooltip rather than open the dialog*/
+              onClick={(e) => e.stopPropagation()}
+            >
               <img src={InfoIcon} />
             </PopoverTrigger>
             <PopoverContent className="bg-black text-white text-sm border-yellow-700">
