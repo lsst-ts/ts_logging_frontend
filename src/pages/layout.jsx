@@ -26,6 +26,7 @@ import {
   getDatetimeFromDayobsStr,
 } from "@/utils/utils";
 import DialogMetricsCard from "@/components/dialog-metrics-card";
+import JiraTicketsTable from "@/components/jira-tickets-table";
 
 export default function Layout({ children }) {
   const [dayobs, setDayobs] = useState(
@@ -257,10 +258,10 @@ export default function Layout({ children }) {
                 tooltip="Jira tickets created during the night."
                 loading={jiraLoading}
                 dialogContent={
-                  <div>
-                    <h2 className="text-xl font-bold">User Analytics</h2>
-                    <p>Details about active users today.</p>
-                  </div>
+                  <JiraTicketsTable
+                    loading={jiraLoading}
+                    tickets={jiraTickets}
+                  />
                 }
               ></DialogMetricsCard>
             </div>
