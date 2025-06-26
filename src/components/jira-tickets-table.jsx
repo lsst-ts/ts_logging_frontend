@@ -42,7 +42,7 @@ function JiraTicketsTable({ tickets, loading = false }) {
                 <TableCell className="font-medium">
                   <span>{ticket.key}</span>
                   {ticket.isNew && (
-                    <span className=" text-lime-400 text-xs px-2 py-1 rounded-full">
+                    <span className="ml-1 bg-amber-500 text-black text-xs p-1 rounded-full">
                       New
                     </span>
                   )}
