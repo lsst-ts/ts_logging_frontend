@@ -199,17 +199,43 @@ const fetchJiraTickets = async (start, end, instrument, abortController) => {
  * @returns {Promise<Object[]>} A promise that resolves to an array containing data log records.
  * @throws {Error} Throws an error if the fetch fails or the response is invalid.
  */
-const fetchDataLog = async (start, end, instrument, abortController) => {
+const fetchDataLogEntriesFromConsDB = async (
+  start,
+  end,
+  instrument,
+  abortController,
+) => {
   const url = `${backendLocation}/data-log?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
   try {
     const data = await fetchData(url, abortController);
     if (!data) {
       throw new Error("Error fetching Data Log");
     }
-    return data.issues;
+    return data;
   } catch (err) {
     if (err.name !== "AbortError") {
       console.error("Error fetching Data Log", err);
+    }
+    throw err;
+  }
+};
+
+const fetchDataLogEntriesFromExposureLog = async (
+  start,
+  end,
+  instrument,
+  abortController,
+) => {
+  const url = `${backendLocation}/exposure-entries?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
+  try {
+    const data = await fetchData(url, abortController);
+    if (!data) {
+      throw new Error("No data returned for exposure entries");
+    }
+    return data.exposure_entries;
+  } catch (err) {
+    if (err.name !== "AbortError") {
+      console.error("Error fetching exposure entries:", err);
     }
     throw err;
   }
@@ -221,5 +247,6 @@ export {
   fetchNarrativeLog,
   fetchExposureFlags,
   fetchJiraTickets,
-  fetchDataLog,
+  fetchDataLogEntriesFromConsDB,
+  fetchDataLogEntriesFromExposureLog,
 };
