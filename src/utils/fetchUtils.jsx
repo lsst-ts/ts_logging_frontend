@@ -112,7 +112,7 @@ const fetchNarrativeLog = async (start, end, instrument, abortController) => {
   const url = `${backendLocation}/narrative-log?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
   try {
     const data = await fetchData(url, abortController);
-        return [
+    return [
       data.time_lost_to_weather,
       data.time_lost_to_faults,
       data.narrative_log,
