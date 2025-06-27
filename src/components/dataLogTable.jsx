@@ -260,9 +260,11 @@ function DataLogTable({ data, dataLogLoading }) {
                             header.column.columnDef.header,
                             header.getContext(),
                           )}
+                          {header.column.getIsSorted() === "asc" && " 🔼"}
+                          {header.column.getIsSorted() === "desc" && " 🔽"}
                         </span>
 
-                        {/* Dropdown Menu for Sorting/Grouping */}
+                        {/* Dropdown menus against each header for sorting/grouping */}
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <button className="ml-2 text-xs text-teal-400 hover:underline">
@@ -270,16 +272,31 @@ function DataLogTable({ data, dataLogLoading }) {
                             </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent>
+                            {/* Sorting */}
                             <DropdownMenuItem
                               onClick={() => {
-                                const isAsc =
-                                  header.column.getIsSorted() === "asc";
-                                header.column.toggleSorting(isAsc); // toggle between asc and desc
+                                const currentSort = header.column.getIsSorted();
+                                if (currentSort === false) {
+                                  header.column.toggleSorting(false); // set to asc
+                                } else if (currentSort === "asc") {
+                                  header.column.toggleSorting(true); // set to desc
+                                } else {
+                                  header.column.clearSorting(); // unsort
+                                }
                               }}
                             >
-                              {header.column.getIsSorted() ? "Unsort" : "Sort"}
+                              {(() => {
+                                const currentSort = header.column.getIsSorted();
+                                if (currentSort === false)
+                                  return "Sort by asc.";
+                                if (currentSort === "asc")
+                                  return "Sort by desc.";
+                                if (currentSort === "desc") return "Unsort";
+                                return "Sort"; // fallback, shouldn't happen
+                              })()}
                             </DropdownMenuItem>
 
+                            {/* Grouping */}
                             <DropdownMenuItem
                               onClick={() => {
                                 header.column.toggleGrouping();
@@ -290,6 +307,7 @@ function DataLogTable({ data, dataLogLoading }) {
                                 : "Group by"}
                             </DropdownMenuItem>
 
+                            {/* Column Visibility */}
                             <DropdownMenuItem
                               onClick={() => {
                                 header.column.toggleVisibility();
