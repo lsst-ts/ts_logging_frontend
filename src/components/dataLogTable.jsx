@@ -205,12 +205,6 @@ function DataLogTable({ data, dataLogLoading }) {
     }),
   ];
 
-  //   const { rows } = useVirtual({
-  //     parentRef,
-  //     size: dataLogEntries.length,
-  //     overscan: 10,
-  //   });
-
   const table = useReactTable({
     data,
     columns,
@@ -244,6 +238,7 @@ function DataLogTable({ data, dataLogLoading }) {
           Reset Table
         </button>
       </div>
+
       {/* Table */}
       <div className="rounded-md border overflow-auto max-h-[70vh] text-white">
         <Table className="text-white">
@@ -252,9 +247,14 @@ function DataLogTable({ data, dataLogLoading }) {
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="relative text-white">
+                  <TableHead
+                    key={header.id}
+                    colSpan={header.colSpan}
+                    rowSpan={header.rowSpan}
+                    className="text-white bg-teal-700 sticky left-0 shadow-md"
+                  >
                     {header.isPlaceholder ? null : (
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between w-full">
                         <span>
                           {flexRender(
                             header.column.columnDef.header,
@@ -265,58 +265,62 @@ function DataLogTable({ data, dataLogLoading }) {
                         </span>
 
                         {/* Dropdown menus against each header for sorting/grouping */}
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button className="ml-2 text-xs text-teal-400 hover:underline">
-                              ⋮
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent>
-                            {/* Sorting */}
-                            <DropdownMenuItem
-                              onClick={() => {
-                                const currentSort = header.column.getIsSorted();
-                                if (currentSort === false) {
-                                  header.column.toggleSorting(false); // set to asc
-                                } else if (currentSort === "asc") {
-                                  header.column.toggleSorting(true); // set to desc
-                                } else {
-                                  header.column.clearSorting(); // unsort
-                                }
-                              }}
-                            >
-                              {(() => {
-                                const currentSort = header.column.getIsSorted();
-                                if (currentSort === false)
-                                  return "Sort by asc.";
-                                if (currentSort === "asc")
-                                  return "Sort by desc.";
-                                if (currentSort === "desc") return "Unsort";
-                                return "Sort"; // fallback, shouldn't happen
-                              })()}
-                            </DropdownMenuItem>
+                        {!header.column.columnDef.columns && ( // Only show dropdown on leaf columns
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button className="ml-2 text-s text-teal-400 hover:underline">
+                                ⋮
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                              {/* Sorting */}
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  const currentSort =
+                                    header.column.getIsSorted();
+                                  if (currentSort === false) {
+                                    header.column.toggleSorting(false); // set to asc
+                                  } else if (currentSort === "asc") {
+                                    header.column.toggleSorting(true); // set to desc
+                                  } else {
+                                    header.column.clearSorting(); // unsort
+                                  }
+                                }}
+                              >
+                                {(() => {
+                                  const currentSort =
+                                    header.column.getIsSorted();
+                                  if (currentSort === false)
+                                    return "Sort by asc.";
+                                  if (currentSort === "asc")
+                                    return "Sort by desc.";
+                                  if (currentSort === "desc") return "Unsort";
+                                  return "Sort"; // fallback, shouldn't happen
+                                })()}
+                              </DropdownMenuItem>
 
-                            {/* Grouping */}
-                            <DropdownMenuItem
-                              onClick={() => {
-                                header.column.toggleGrouping();
-                              }}
-                            >
-                              {header.column.getIsGrouped()
-                                ? "Ungroup"
-                                : "Group by"}
-                            </DropdownMenuItem>
+                              {/* Row Grouping */}
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  header.column.toggleGrouping();
+                                }}
+                              >
+                                {header.column.getIsGrouped()
+                                  ? "Ungroup"
+                                  : "Group by"}
+                              </DropdownMenuItem>
 
-                            {/* Column Visibility */}
-                            <DropdownMenuItem
-                              onClick={() => {
-                                header.column.toggleVisibility();
-                              }}
-                            >
-                              Hide Column
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                              {/* Column Visibility */}
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  header.column.toggleVisibility();
+                                }}
+                              >
+                                Hide Column
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
                       </div>
                     )}
                   </TableHead>
