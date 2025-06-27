@@ -39,22 +39,52 @@ import {
 import { formatCellValue } from "@/utils/utils";
 
 function ColumnVisibilityPopover({ table }) {
+  const allColumns = table.getAllLeafColumns(); // Only leaf columns, no groups
+
+  const handleSelectAll = () => {
+    allColumns.forEach((column) => {
+      if (!column.getIsVisible()) column.toggleVisibility(true);
+    });
+  };
+
+  const handleDeselectAll = () => {
+    allColumns.forEach((column) => {
+      if (column.getIsVisible()) column.toggleVisibility(false);
+    });
+  };
+
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button className="btn bg-white text-black p-2 rounded-sm shadow-[4px_4px_4px_0px_#3CAE3F]">
+        <button className="btn bg-white text-black p-2 rounded-sm shadow-[4px_4px_4px_0px_#3CAE3F] hover:bg-green-100">
           Toggle Columns
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-48">
-        <div className="space-y-2">
-          {table.getAllColumns().map((column) => (
+      <PopoverContent className="w-56">
+        <div className="flex justify-between mb-2">
+          <button
+            onClick={handleSelectAll}
+            className="text-xs text-blue-600 hover:underline"
+          >
+            Select All
+          </button>
+          <button
+            onClick={handleDeselectAll}
+            className="text-xs text-red-600 hover:underline"
+          >
+            Deselect All
+          </button>
+        </div>
+        <div className="space-y-2 max-h-60 overflow-y-auto">
+          {allColumns.map((column) => (
             <div key={column.id} className="flex items-center space-x-2">
               <Checkbox
                 checked={column.getIsVisible()}
-                onCheckedChange={(checked) => column.toggleVisibility(checked)}
+                onCheckedChange={(checked) =>
+                  column.toggleVisibility(!!checked)
+                }
               />
-              <span>{column.id}</span>
+              <span className="text-sm">{column.columnDef.header}</span>
             </div>
           ))}
         </div>
@@ -69,6 +99,14 @@ function DataLogTable({ data, dataLogLoading }) {
   const [sorting, setSorting] = useState([]);
   const [grouping, setGrouping] = useState([]);
   const [expanded, setExpanded] = useState({});
+
+  // Reset function
+  const resetTable = () => {
+    setColumnVisibility({});
+    setColumnOrder([]);
+    setSorting([]);
+    setGrouping([]);
+  };
 
   // How many skeleton rows to show when loading
   const skeletonRowCount = 10;
@@ -199,6 +237,12 @@ function DataLogTable({ data, dataLogLoading }) {
       {/* Show/hide columns */}
       <div className="flex justify-between items-center mb-4">
         <ColumnVisibilityPopover table={table} />
+        <button
+          onClick={resetTable}
+          className="btn bg-white text-black p-2 rounded-sm shadow-[4px_4px_4px_0px_#3CAE3F] hover:bg-green-100"
+        >
+          Reset Table
+        </button>
       </div>
       {/* Table */}
       <div className="rounded-md border overflow-auto max-h-[70vh] text-white">
