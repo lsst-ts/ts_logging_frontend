@@ -53,10 +53,12 @@ export default function Layout({ children }) {
     {
       accessorKey: "exposure id",
       header: "Exposure Id",
+      cell: ({ getValue }) => formatCellValue(getValue()),
     },
     {
       accessorKey: "exposure name",
       header: "Exposure Name",
+      cell: ({ getValue }) => formatCellValue(getValue()),
     },
     {
       accessorKey: "s ra",
@@ -116,39 +118,48 @@ export default function Layout({ children }) {
     {
       accessorKey: "img type",
       header: "Obs Type",
+      cell: ({ getValue }) => formatCellValue(getValue()),
     },
     {
       accessorKey: "instrument",
       header: "Instrument",
+      cell: ({ getValue }) => formatCellValue(getValue()),
     },
     {
       accessorKey: "exposure_flag",
       header: "Flags",
+      cell: ({ getValue }) => formatCellValue(getValue()),
     },
     {
       accessorKey: "message_text",
       header: "Comments",
+      cell: ({ getValue }) => formatCellValue(getValue()),
     },
     // Extras:
     {
       accessorKey: "science program",
       header: "Science Program",
+      cell: ({ getValue }) => formatCellValue(getValue()),
     },
     {
       accessorKey: "observation reason",
       header: "Obs Reason",
+      cell: ({ getValue }) => formatCellValue(getValue()),
     },
     {
       accessorKey: "target name",
       header: "Target Name",
+      cell: ({ getValue }) => formatCellValue(getValue()),
     },
     {
       accessorKey: "obs start",
       header: "Obs Start",
+      cell: ({ getValue }) => formatCellValue(getValue()),
     },
     {
       accessorKey: "day obs",
       header: "Day Obs",
+      cell: ({ getValue }) => formatCellValue(getValue()),
     },
   ];
 
@@ -256,7 +267,7 @@ export default function Layout({ children }) {
           <div className="flex flex-col w-full p-8 gap-8">
             {/* Panel of info, user controls? */}
             <h1 className="text-white text-[100px] font-thin text-center">
-              Data Log.{" "}
+              Data Log.
             </h1>
             {/* Table */}
             <DataLogTable
