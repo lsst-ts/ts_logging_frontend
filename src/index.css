@@ -44,6 +44,7 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-teal-900: #0c4a47;
+  --color-sky-750: oklch(51.37% 0.124 243) /* #006DA8 */;
 }
 /*---break---*/
 :root {
