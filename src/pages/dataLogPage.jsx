@@ -14,13 +14,11 @@ import {
 import {
   getDayobsStr,
   getDatetimeFromDayobsStr,
-  formatCellValue,
   mergeDataLogSources,
 } from "@/utils/utils";
 
 export default function Layout({ children }) {
   // Inputs
-
   const [instrument, setInstrument] = useState("LSSTCam");
   const [dayobs, setDayobs] = useState(
     DateTime.utc().minus({ days: 1 }).toJSDate(),
@@ -44,124 +42,6 @@ export default function Layout({ children }) {
   const handleNoOfNightsChange = (nightsCount) => {
     setNoOfNights(nightsCount);
   };
-
-  // Columns for Data Log Table
-  const columns = [
-    // Missing fields:
-    //      "dome_temp",
-    //      "test case it was scheduled in",
-    {
-      accessorKey: "exposure id",
-      header: "Exposure Id",
-      cell: ({ getValue }) => formatCellValue(getValue()),
-    },
-    {
-      accessorKey: "exposure name",
-      header: "Exposure Name",
-      cell: ({ getValue }) => formatCellValue(getValue()),
-    },
-    {
-      accessorKey: "s ra",
-      header: "RA",
-      cell: ({ getValue }) => formatCellValue(getValue()),
-    },
-    {
-      accessorKey: "s dec",
-      header: "Dec",
-      cell: ({ getValue }) => formatCellValue(getValue()),
-    },
-    {
-      accessorKey: "altitude",
-      header: "Alt",
-      cell: ({ getValue }) => formatCellValue(getValue()),
-    },
-    {
-      accessorKey: "azimuth",
-      header: "Az",
-      cell: ({ getValue }) => formatCellValue(getValue()),
-    },
-    {
-      accessorKey: "sky rotation",
-      header: "Sky Rotation",
-      cell: ({ getValue }) => formatCellValue(getValue()),
-    },
-    {
-      accessorKey: "airmass",
-      header: "Airmass",
-      cell: ({ getValue }) => formatCellValue(getValue()),
-    },
-    {
-      accessorKey: "psf trace radius delta median",
-      header: "PSF/Seeing",
-      cell: ({ getValue }) => formatCellValue(getValue()),
-    },
-    {
-      accessorKey: "sky bg median",
-      header: "Sky Brightness",
-      cell: ({ getValue }) => formatCellValue(getValue()),
-    },
-    {
-      accessorKey: "zero point median",
-      header: "Photometric ZP",
-      cell: ({ getValue }) => formatCellValue(getValue()),
-    },
-    {
-      accessorKey: "high snr source count median",
-      header: "Source Counts",
-      cell: ({ getValue }) => formatCellValue(getValue()),
-    },
-    {
-      accessorKey: "air temp",
-      header: "Outside Air Temp",
-      cell: ({ getValue }) => formatCellValue(getValue()),
-    },
-    {
-      accessorKey: "img type",
-      header: "Obs Type",
-      cell: ({ getValue }) => formatCellValue(getValue()),
-    },
-    {
-      accessorKey: "instrument",
-      header: "Instrument",
-      cell: ({ getValue }) => formatCellValue(getValue()),
-    },
-    {
-      accessorKey: "exposure_flag",
-      header: "Flags",
-      cell: ({ getValue }) => formatCellValue(getValue()),
-    },
-    {
-      accessorKey: "message_text",
-      header: "Comments",
-      cell: ({ getValue }) => formatCellValue(getValue()),
-    },
-    // Extras:
-    {
-      accessorKey: "science program",
-      header: "Science Program",
-      cell: ({ getValue }) => formatCellValue(getValue()),
-    },
-    {
-      accessorKey: "observation reason",
-      header: "Obs Reason",
-      cell: ({ getValue }) => formatCellValue(getValue()),
-    },
-    {
-      accessorKey: "target name",
-      header: "Target Name",
-      cell: ({ getValue }) => formatCellValue(getValue()),
-    },
-    {
-      accessorKey: "obs start",
-      header: "Obs Start",
-      cell: ({ getValue }) => formatCellValue(getValue()),
-    },
-    {
-      accessorKey: "day obs",
-      header: "Day Obs",
-      cell: ({ getValue }) => formatCellValue(getValue()),
-    },
-  ];
 
   // On Change Handlers
   useEffect(() => {
@@ -271,7 +151,6 @@ export default function Layout({ children }) {
             </h1>
             {/* Table */}
             <DataLogTable
-              columns={columns}
               data={dataLogEntries}
               dataLogLoading={dataLogLoading}
             />
