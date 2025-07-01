@@ -1,1 +1,0 @@
-Use the new metric card component for the jira tickets metrics card and show the modal with the list of tickets created or updated within the selected dayobs range.

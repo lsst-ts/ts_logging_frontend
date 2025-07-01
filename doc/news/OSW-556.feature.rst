@@ -1,1 +1,0 @@
-Add a metric card component that could be clicked to open a modal with more details about the metric.
