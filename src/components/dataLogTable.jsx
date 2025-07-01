@@ -406,10 +406,11 @@ function DataLogTable({ data, dataLogLoading }) {
                         // Display rows grouped by category
                         <TableCell
                           colSpan={columns.length}
-                          className="bg-stone-900 font-bold text-teal-400"
+                          className="bg-stone-900 font-light text-teal-400"
                         >
                           <div
                             className="cursor-pointer"
+                            style={{ paddingLeft: `${row.depth * 1.5}rem` }}
                             onClick={row.getToggleExpandedHandler()}
                           >
                             {row.getIsExpanded() ? "▾" : "▸"}{" "}
