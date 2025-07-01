@@ -12,8 +12,6 @@ import {
   flexRender,
 } from "@tanstack/react-table";
 
-// import { useVirtual } from '@tanstack/react-virtual';
-
 import {
   Table,
   TableHeader,
@@ -38,6 +36,8 @@ import {
 
 import { formatCellValue } from "@/utils/utils";
 
+// Popover component for column hiding
+// Should move to own file and use ShadCN's component
 function ColumnVisibilityPopover({ table }) {
   const allColumns = table.getAllLeafColumns(); // Only leaf columns, no groups
 
@@ -57,7 +57,7 @@ function ColumnVisibilityPopover({ table }) {
     <Popover>
       <PopoverTrigger asChild>
         <button className="btn bg-white text-black p-2 rounded-sm shadow-[4px_4px_4px_0px_#3CAE3F] hover:bg-green-100">
-          Toggle Columns
+          Show/Hide Columns
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-56">
@@ -118,90 +118,112 @@ function DataLogTable({ data, dataLogLoading }) {
     columnHelper.accessor("exposure id", {
       header: "Exposure Id",
       cell: (info) => formatCellValue(info.getValue()),
+      size: 140,
     }),
     columnHelper.accessor("exposure name", {
       header: "Exposure Name",
       cell: (info) => formatCellValue(info.getValue()),
+      size: 200,
     }),
     columnHelper.accessor("science program", {
       header: "Science Program",
       cell: (info) => formatCellValue(info.getValue()),
+      size: 150,
     }),
     columnHelper.accessor("s ra", {
       header: "RA",
       cell: (info) => formatCellValue(info.getValue()),
+      size: 60,
     }),
     columnHelper.accessor("s dec", {
       header: "Dec",
       cell: (info) => formatCellValue(info.getValue()),
+      size: 70,
     }),
     columnHelper.accessor("altitude", {
       header: "Alt",
       cell: (info) => formatCellValue(info.getValue()),
+      size: 70,
     }),
     columnHelper.accessor("azimuth", {
       header: "Az",
       cell: (info) => formatCellValue(info.getValue()),
+      size: 60,
     }),
     columnHelper.accessor("sky rotation", {
       header: "Sky Rotation",
       cell: (info) => formatCellValue(info.getValue()),
+      size: 120,
     }),
     columnHelper.accessor("airmass", {
       header: "Airmass",
       cell: (info) => formatCellValue(info.getValue()),
+      size: 90,
     }),
     columnHelper.accessor("psf trace radius delta median", {
       header: "PSF/Seeing",
       cell: (info) => formatCellValue(info.getValue()),
+      size: 115,
     }),
     columnHelper.accessor("sky bg median", {
       header: "Sky Brightness",
       cell: (info) => formatCellValue(info.getValue()),
+      size: 140,
     }),
     columnHelper.accessor("zero point median", {
       header: "Photometric ZP",
       cell: (info) => formatCellValue(info.getValue()),
+      size: 140,
     }),
     columnHelper.accessor("high snr source count median", {
       header: "Source Counts",
       cell: (info) => formatCellValue(info.getValue()),
+      size: 140,
     }),
     columnHelper.accessor("air temp", {
       header: "Outside Air Temp",
       cell: (info) => formatCellValue(info.getValue()),
+      size: 150,
     }),
     columnHelper.accessor("img type", {
       header: "Obs Type",
       cell: (info) => formatCellValue(info.getValue()),
+      size: 100,
     }),
     columnHelper.accessor("instrument", {
       header: "Instrument",
       cell: (info) => formatCellValue(info.getValue()),
+      size: 110,
     }),
     columnHelper.accessor("exposure_flag", {
       header: "Flags",
       cell: (info) => formatCellValue(info.getValue()),
+      size: 100,
     }),
     columnHelper.accessor("message_text", {
       header: "Comments",
       cell: (info) => formatCellValue(info.getValue()),
+      size: 120,
     }),
     columnHelper.accessor("observation reason", {
       header: "Obs Reason",
       cell: (info) => formatCellValue(info.getValue()),
+      size: 160,
     }),
     columnHelper.accessor("target name", {
       header: "Target Name",
       cell: (info) => formatCellValue(info.getValue()),
+      size: 160,
     }),
     columnHelper.accessor("obs start", {
       header: "Obs Start",
       cell: (info) => formatCellValue(info.getValue()),
+      size: 240,
     }),
     columnHelper.accessor("day obs", {
       header: "Day Obs",
       cell: (info) => formatCellValue(info.getValue()),
+      size: 100,
     }),
   ];
 
@@ -224,11 +246,15 @@ function DataLogTable({ data, dataLogLoading }) {
     getSortedRowModel: getSortedRowModel(),
     getGroupedRowModel: getGroupedRowModel(),
     getExpandedRowModel: getExpandedRowModel(),
+    columnResizeMode: "onChange",
+    debugTable: true,
+    debugHeaders: true,
+    debugColumns: true,
   });
 
   return (
     <div>
-      {/* Show/hide columns */}
+      {/* Buttons to show/hide columns and reset table */}
       <div className="flex justify-between items-center mb-4">
         <ColumnVisibilityPopover table={table} />
         <button
@@ -241,7 +267,7 @@ function DataLogTable({ data, dataLogLoading }) {
 
       {/* Table */}
       <div className="rounded-md border overflow-auto max-h-[70vh] text-white">
-        <Table className="text-white">
+        <Table className="text-white table-fixed">
           {/* Headers */}
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -251,15 +277,30 @@ function DataLogTable({ data, dataLogLoading }) {
                     key={header.id}
                     colSpan={header.colSpan}
                     rowSpan={header.rowSpan}
+                    style={{
+                      width: header.getSize(),
+                      minWidth: header.column.columnDef.minSize ?? 60,
+                      maxWidth: header.column.columnDef.maxSize ?? 500,
+                    }}
                     className="text-white bg-teal-700 sticky left-0 shadow-md"
                   >
                     {header.isPlaceholder ? null : (
-                      <div className="flex items-center justify-between w-full">
+                      // Resizable columns
+                      <div
+                        className="flex items-center justify-between relative group"
+                        style={{
+                          width: header.getSize(),
+                          minWidth: header.column.columnDef.minSize ?? 60,
+                          maxWidth: header.column.columnDef.maxSize ?? 500,
+                        }}
+                      >
+                        {/* Header content */}
                         <span>
                           {flexRender(
                             header.column.columnDef.header,
                             header.getContext(),
                           )}
+                          {/* Active sorting icon */}
                           {header.column.getIsSorted() === "asc" && " 🔼"}
                           {header.column.getIsSorted() === "desc" && " 🔽"}
                         </span>
@@ -268,7 +309,7 @@ function DataLogTable({ data, dataLogLoading }) {
                         {!header.column.columnDef.columns && ( // Only show dropdown on leaf columns
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <button className="ml-2 text-s text-teal-400 hover:underline">
+                              <button className="mx-4 text-s text-teal-400 hover:underline">
                                 ⋮
                               </button>
                             </DropdownMenuTrigger>
@@ -321,6 +362,21 @@ function DataLogTable({ data, dataLogLoading }) {
                             </DropdownMenuContent>
                           </DropdownMenu>
                         )}
+
+                        {/* Resize handle */}
+                        {header.column.getCanResize() && (
+                          <div
+                            // onDoubleClick={header.column.resetSize()} // causes infinite loop
+                            onMouseDown={header.getResizeHandler()}
+                            onTouchStart={header.getResizeHandler()}
+                            className="absolute right-2 top-0 h-full w-1 bg-teal-400 cursor-col-resize select-none"
+                            style={{
+                              transform: header.column.getIsResizing()
+                                ? "scaleX(2)"
+                                : "",
+                            }}
+                          />
+                        )}
                       </div>
                     )}
                   </TableHead>
@@ -328,6 +384,7 @@ function DataLogTable({ data, dataLogLoading }) {
               </TableRow>
             ))}
           </TableHeader>
+
           {/* Rows */}
           <TableBody>
             {dataLogLoading
@@ -346,7 +403,7 @@ function DataLogTable({ data, dataLogLoading }) {
                   return (
                     <TableRow key={row.id}>
                       {isGroupedRow ? (
-                        // Only one cell for grouped row
+                        // Display rows grouped by category
                         <TableCell
                           colSpan={columns.length}
                           className="bg-stone-900 font-bold text-teal-400"
@@ -362,17 +419,19 @@ function DataLogTable({ data, dataLogLoading }) {
                           </div>
                         </TableCell>
                       ) : (
-                        // Normal row cells
-                        row
-                          .getVisibleCells()
-                          .map((cell) => (
-                            <TableCell key={cell.id}>
-                              {flexRender(
-                                cell.column.columnDef.cell,
-                                cell.getContext(),
-                              )}
-                            </TableCell>
-                          ))
+                        // Display rows normally (ungrouped)
+                        row.getVisibleCells().map((cell) => (
+                          <TableCell
+                            key={cell.id}
+                            style={{ width: cell.column.getSize() }}
+                            className="truncate"
+                          >
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext(),
+                            )}
+                          </TableCell>
+                        ))
                       )}
                     </TableRow>
                   );
