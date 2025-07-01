@@ -234,7 +234,7 @@ export default function Layout({ children }) {
                 data={exposureCount}
                 label="Nighttime exposures taken"
                 metadata="(TBD expected)"
-                tooltip="On-sky exposures taken during the night."
+                tooltip="On-sky exposures taken during the specified date range."
                 loading={exposuresLoading}
               />
               <MetricsCard
@@ -257,8 +257,10 @@ export default function Layout({ children }) {
                 data={newTicketsCount}
                 label="Jira tickets created"
                 metadata={`(${jiraTickets.length - newTicketsCount} updated)`}
-                tooltip="Jira tickets created during the night."
+                tooltip="Jira tickets created or updated within the specified date range."
                 loading={jiraLoading}
+                dialogTitle="Jira Tickets"
+                dialogDescription="List of Jira tickets created or updated within the specified date range."
                 dialogContent={
                   <JiraTicketsTable
                     loading={jiraLoading}

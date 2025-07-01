@@ -18,6 +18,8 @@ function DialogMetricsCard({
   tooltip,
   loading = false,
   dialogContent,
+  dialogTitle = "Details",
+  dialogDescription = "Description goes here",
 }) {
   const [isOpen, setIsOpen] = React.useState(false);
 
@@ -43,13 +45,13 @@ function DialogMetricsCard({
         >
           <DialogHeader>
             <DialogTitle className="flex flex-row text-2xl justify-between">
-              <div>{label}</div>
+              <div className="uppercase">{dialogTitle}</div>
               <div>
-                <img src={icon} alt={label} />
+                <img src={icon} alt={dialogTitle} />
               </div>
             </DialogTitle>
             <DialogDescription className="sr-only">
-              Description goes here
+              {dialogDescription}
             </DialogDescription>
           </DialogHeader>
           {dialogContent ?? (

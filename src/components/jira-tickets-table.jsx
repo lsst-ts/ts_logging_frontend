@@ -26,13 +26,13 @@ function JiraTicketsTable({ tickets, loading = false }) {
         <TableBody>
           {loading ? (
             <TableRow>
-              <TableCell colSpan={5} className="text-center">
+              <TableCell colSpan={8} className="text-center">
                 Loading tickets...
               </TableCell>
             </TableRow>
           ) : tickets.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="text-center">
+              <TableCell colSpan={8} className="text-center">
                 No tickets found.
               </TableCell>
             </TableRow>
@@ -42,10 +42,6 @@ function JiraTicketsTable({ tickets, loading = false }) {
                 <TableCell className="font-medium">
                   <span>{ticket.key}</span>
                   {ticket.isNew && (
-                    /* Display a badge for new tickets 
-                    other combos: 
-                    bg-blue-100 text-[#004B75]
-                    bg-white text-[#006DA8]*/
                     <span className="ml-1 bg-amber-500 text-black text-xs p-1 rounded-full">
                       New
                     </span>
