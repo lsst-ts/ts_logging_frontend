@@ -25,6 +25,8 @@ import {
   getDayobsStr,
   getDatetimeFromDayobsStr,
 } from "@/utils/utils";
+import DialogMetricsCard from "@/components/dialog-metrics-card";
+import JiraTicketsTable from "@/components/jira-tickets-table";
 
 export default function Layout({ children }) {
   const [dayobs, setDayobs] = useState(
@@ -46,7 +48,6 @@ export default function Layout({ children }) {
 
   const [jiraTickets, setJiraTickets] = useState([]);
   const [jiraLoading, setJiraLoading] = useState(true);
-  const [jiraQueryUrl, setJiraQueryUrl] = useState(null);
 
   const [flagsLoading, setFlagsLoading] = useState(true);
 
@@ -78,21 +79,14 @@ export default function Layout({ children }) {
       setAlmanacLoading(false);
       setNarrativeLoading(false);
       setJiraLoading(false);
-      setJiraQueryUrl(null);
       setFlagsLoading(false);
-
       return;
     }
-    let dateFromDayobs = getDatetimeFromDayobsStr(dayobsStr);
-    let startDate = dateFromDayobs.minus({ days: noOfNights - 1 });
-    let startDayobs = startDate.toFormat("yyyyLLdd");
-    let endDate = dateFromDayobs.plus({ days: 1 });
-    let endDayobs = endDate.toFormat("yyyyLLdd");
-    // format dates for Jira query
-    // Note: Jira expects dates in 'yyyy-LL-dd' format
-    let jiraStartDate = startDate.toFormat("yyyy-LL-dd");
-    let jiraEndDate = endDate.toFormat("yyyy-LL-dd");
-    let jiraQuery = `jql=project = OBS AND (created >= "${jiraStartDate} 9:00" AND created < "${jiraEndDate} 09:00") &fields=key,summary,updated,created,status,system,customfield_10476`;
+    const dateFromDayobs = getDatetimeFromDayobsStr(dayobsStr);
+    const startDate = dateFromDayobs.minus({ days: noOfNights - 1 });
+    const startDayobs = startDate.toFormat("yyyyLLdd");
+    const endDate = dateFromDayobs.plus({ days: 1 });
+    const endDayobs = endDate.toFormat("yyyyLLdd");
 
     fetchExposures(startDayobs, endDayobs, instrument, abortController)
       .then(([exposureFields, exposuresNo, exposureTime]) => {
@@ -164,18 +158,12 @@ export default function Layout({ children }) {
     fetchJiraTickets(startDayobs, endDayobs, instrument, abortController)
       .then((issues) => {
         setJiraTickets(issues);
-        setJiraQueryUrl(
-          encodeURI(
-            `https://rubinobs.atlassian.net/issues/?filter=-1&${jiraQuery}`,
-          ),
-        );
         if (issues.length === 0) {
           toast.warning("No Jira tickets reported.");
         }
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          setJiraQueryUrl(null);
           const msg = err?.message;
           toast.error("Error fetching Jira!", {
             description: msg,
@@ -220,6 +208,7 @@ export default function Layout({ children }) {
   const efficiency = calculateEfficiency(nightHours, sumExpTime, weatherLoss);
   const efficiencyText = `${efficiency} %`;
   const [timeLoss, timeLossDetails] = calculateTimeLoss(weatherLoss, faultLoss);
+  const newTicketsCount = jiraTickets.filter((tix) => tix.isNew).length;
 
   return (
     <>
@@ -245,7 +234,7 @@ export default function Layout({ children }) {
                 data={exposureCount}
                 label="Nighttime exposures taken"
                 metadata="(TBD expected)"
-                tooltip="On-sky exposures taken during the night."
+                tooltip="On-sky exposures taken during the specified date range."
                 loading={exposuresLoading}
               />
               <MetricsCard
@@ -263,13 +252,22 @@ export default function Layout({ children }) {
                 tooltip="Time loss as reported in the Narrative Log."
                 loading={narrativeLoading}
               />
-              <MetricsCard
+              <DialogMetricsCard
                 icon={JiraIcon}
-                data={jiraTickets.length}
-                label="Jira tickets"
+                data={newTicketsCount}
+                label="Jira tickets created"
+                metadata={`(${jiraTickets.length - newTicketsCount} updated)`}
+                tooltip="Jira tickets created or updated within the specified date range."
                 loading={jiraLoading}
-                url={jiraQueryUrl}
-              />
+                dialogTitle="Jira Tickets"
+                dialogDescription="List of Jira tickets created or updated within the specified date range."
+                dialogContent={
+                  <JiraTicketsTable
+                    loading={jiraLoading}
+                    tickets={jiraTickets}
+                  />
+                }
+              ></DialogMetricsCard>
             </div>
             {/* Applets */}
             <div className="flex flex-col gap-4">
