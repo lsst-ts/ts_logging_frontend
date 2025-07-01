@@ -95,6 +95,7 @@ export default function Layout({ children }) {
         // Merge the two data sources
         const mergedData = mergeDataLogSources(dataLog, exposureLogData);
 
+        // TODO: Remove before PR merge
         // Check merged data sample after merging
         console.log("Merged Data Log sample entries:", mergedData.slice(0, 3));
 
