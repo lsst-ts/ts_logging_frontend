@@ -167,6 +167,79 @@ function ColumnSelectFilter({ column }) {
   );
 }
 
+function ColumnMultiSelectFilter({ column, closeDropdown }) {
+  const columnFilterValue = column.getFilterValue() ?? [];
+
+  const sortedUniqueValues = Array.from(
+    column.getFacetedUniqueValues()?.keys() ?? [],
+  ).sort();
+
+  // Local checkbox state
+  const [selected, setSelected] = useState(() => new Set(columnFilterValue));
+
+  const toggleValue = (val) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(val) ? next.delete(val) : next.add(val);
+      return next;
+    });
+  };
+
+  const apply = () => {
+    column.setFilterValue(selected.size > 0 ? Array.from(selected) : undefined);
+    closeDropdown(); // Close the dropdown manually
+  };
+
+  const clear = () => {
+    setSelected(new Set());
+    column.setFilterValue(undefined);
+    closeDropdown(); // Close the dropdown manually
+  };
+
+  return (
+    <div
+      className="p-2 space-y-2 text-black"
+      onClick={(e) => e.stopPropagation()} // Don't close dropdown on click
+    >
+      <div className="max-h-40 overflow-y-auto pr-1 space-y-1">
+        {sortedUniqueValues.map((value) => (
+          <label
+            key={value}
+            className="flex items-center space-x-2 text-sm cursor-pointer"
+          >
+            <Checkbox
+              checked={selected.has(value)}
+              onCheckedChange={() => toggleValue(value)}
+            />
+            <span>{String(value)}</span>
+          </label>
+        ))}
+      </div>
+
+      <div className="flex justify-between items-center border-t pt-2 text-xs">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            clear();
+          }}
+          className="text-red-600 hover:underline"
+        >
+          Clear
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            apply();
+          }}
+          className="text-blue-600 hover:underline"
+        >
+          Apply
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function DataLogTable({ data, dataLogLoading }) {
   const [columnVisibility, setColumnVisibility] = useState({});
   const [columnOrder, setColumnOrder] = useState([]);
@@ -186,6 +259,18 @@ function DataLogTable({ data, dataLogLoading }) {
   // Exact match filter function
   const equalsFilterFn = (row, columnId, filterValue) => {
     return row.getValue(columnId) === filterValue;
+  };
+
+  // Exact (multple) match(es) filter function
+  const matchValueOrInList = (row, columnId, filterValue) => {
+    const rowValue = row.getValue(columnId);
+    console.log({ rowValue, filterValue });
+
+    if (Array.isArray(filterValue)) {
+      return filterValue.includes(rowValue);
+    }
+
+    return rowValue === filterValue;
   };
 
   // How many skeleton rows to show when loading
@@ -209,7 +294,7 @@ function DataLogTable({ data, dataLogLoading }) {
       header: "Science Program",
       cell: (info) => formatCellValue(info.getValue()),
       size: 150,
-      filterFn: equalsFilterFn,
+      filterFn: matchValueOrInList,
     }),
     columnHelper.accessor("s ra", {
       header: "RA",
@@ -321,6 +406,7 @@ function DataLogTable({ data, dataLogLoading }) {
     },
     filterFns: {
       equals: equalsFilterFn,
+      multiEquals: matchValueOrInList,
     },
     onColumnVisibilityChange: setColumnVisibility,
     onColumnOrderChange: setColumnOrder,
@@ -497,10 +583,20 @@ function DataLogTable({ data, dataLogLoading }) {
                                 </DropdownMenuItem>
 
                                 {/* Column Filtering */}
-                                {header.column.id === "science program" && (
+                                {/* {header.column.id === "science program" && (
                                   <div className="p-2">
                                     <ColumnSelectFilter
                                       column={header.column}
+                                    />
+                                  </div>
+                                )} */}
+                                {header.column.id === "science program" && (
+                                  <div onClick={(e) => e.stopPropagation()}>
+                                    <ColumnMultiSelectFilter
+                                      column={header.column}
+                                      closeDropdown={() =>
+                                        document.activeElement?.blur()
+                                      } // closes dropdown
                                     />
                                   </div>
                                 )}
