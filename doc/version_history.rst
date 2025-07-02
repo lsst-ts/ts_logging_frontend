@@ -1,3 +1,21 @@
+v0.5.0 (2025-07-01)
+===================
+
+New Features
+------------
+
+- Add a metric card component that could be clicked to open a modal with more details about the metric. (`OSW-556 <https://rubinobs.atlassian.net//browse/OSW-556>`_)
+- Use the new metric card component for the jira tickets metrics card and show the modal with the list of tickets created or updated within the selected dayobs range. (`OSW-556 <https://rubinobs.atlassian.net//browse/OSW-556>`_)
+- Show the number of tickets updated within the selected dayobs range in the jira tickets metrics card. (`OSW-556 <https://rubinobs.atlassian.net//browse/OSW-556>`_)
+- Display dayobs range on sidebar (`OSW-581 <https://rubinobs.atlassian.net//browse/OSW-581>`_)
+
+
+Performance Enhancement
+-----------------------
+
+- Add AbortController to clean up useEffect. (`OSW-550 <https://rubinobs.atlassian.net//browse/OSW-550>`_)
+
+
 v0.4.0 (2025-06-17)
 ===================
 
