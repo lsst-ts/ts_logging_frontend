@@ -10,6 +10,10 @@ import {
   getGroupedRowModel,
   getExpandedRowModel,
   flexRender,
+  getFacetedMinMaxValues,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  getFilteredRowModel,
 } from "@tanstack/react-table";
 
 import {
@@ -33,6 +37,16 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+// import {
+//   Checkbox
+// } from "@/components/ui/checkbox";
 
 import { formatCellValue } from "@/utils/utils";
 
@@ -93,12 +107,73 @@ function ColumnVisibilityPopover({ table }) {
   );
 }
 
+// Select Filter option to add to column drop-downs.
+// Doesn't use ShadCN
+// function ColumnSelectFilter({ column }) {
+//   const columnFilterValue = column.getFilterValue();
+
+//   const sortedUniqueValues = Array.from(
+//     column.getFacetedUniqueValues()?.keys() ?? []
+//   ).sort();
+
+//   return (
+//     <select
+//       className="w-full bg-white text-black p-1 border rounded text-sm"
+//       value={columnFilterValue ?? ""}
+//       onChange={(e) => column.setFilterValue(e.target.value || undefined)}
+//     >
+//       <option value="">All</option>
+//       {sortedUniqueValues.map((value) => (
+//         <option key={value} value={value}>
+//           {value}
+//         </option>
+//       ))}
+//     </select>
+//   );
+// }
+
+// Select Filter option to add to column drop-downs.
+// Uses ShadCN
+function ColumnSelectFilter({ column }) {
+  const columnFilterValue = column.getFilterValue();
+
+  const sortedUniqueValues = Array.from(
+    column.getFacetedUniqueValues()?.keys() ?? [],
+  ).sort();
+
+  return (
+    <Select
+      value={columnFilterValue ?? "__all__"}
+      onValueChange={(value) => {
+        if (value === "__all__") {
+          column.setFilterValue(undefined); // clear filter
+        } else {
+          column.setFilterValue(value);
+        }
+      }}
+    >
+      <SelectTrigger className="w-full">
+        <SelectValue placeholder="All" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="__all__">All</SelectItem>
+        {sortedUniqueValues.map((value) => (
+          <SelectItem key={value} value={value}>
+            {value}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
 function DataLogTable({ data, dataLogLoading }) {
   const [columnVisibility, setColumnVisibility] = useState({});
   const [columnOrder, setColumnOrder] = useState([]);
   const [sorting, setSorting] = useState([]);
   const [grouping, setGrouping] = useState([]);
   const [expanded, setExpanded] = useState({});
+  const [columnFilters, setColumnFilters] = useState([]);
 
   // Reset function
   const resetTable = () => {
@@ -106,6 +181,11 @@ function DataLogTable({ data, dataLogLoading }) {
     setColumnOrder([]);
     setSorting([]);
     setGrouping([]);
+  };
+
+  // Exact match filter function
+  const equalsFilterFn = (row, columnId, filterValue) => {
+    return row.getValue(columnId) === filterValue;
   };
 
   // How many skeleton rows to show when loading
@@ -129,6 +209,7 @@ function DataLogTable({ data, dataLogLoading }) {
       header: "Science Program",
       cell: (info) => formatCellValue(info.getValue()),
       size: 150,
+      filterFn: equalsFilterFn,
     }),
     columnHelper.accessor("s ra", {
       header: "RA",
@@ -236,16 +317,25 @@ function DataLogTable({ data, dataLogLoading }) {
       sorting,
       grouping,
       expanded,
+      columnFilters,
+    },
+    filterFns: {
+      equals: equalsFilterFn,
     },
     onColumnVisibilityChange: setColumnVisibility,
     onColumnOrderChange: setColumnOrder,
     onSortingChange: setSorting,
     onGroupingChange: setGrouping,
     onExpandedChange: setExpanded,
+    onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getGroupedRowModel: getGroupedRowModel(),
     getExpandedRowModel: getExpandedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+    getFacetedMinMaxValues: getFacetedMinMaxValues(),
     columnResizeMode: "onChange",
     debugTable: true,
     debugHeaders: true,
@@ -405,6 +495,15 @@ function DataLogTable({ data, dataLogLoading }) {
                                 >
                                   Hide Column
                                 </DropdownMenuItem>
+
+                                {/* Column Filtering */}
+                                {header.column.id === "science program" && (
+                                  <div className="p-2">
+                                    <ColumnSelectFilter
+                                      column={header.column}
+                                    />
+                                  </div>
+                                )}
                               </DropdownMenuContent>
                             </DropdownMenu>
                           )}
