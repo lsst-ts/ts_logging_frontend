@@ -111,10 +111,6 @@ function DataLogTable({ data, dataLogLoading }) {
   // How many skeleton rows to show when loading
   const skeletonRowCount = 10;
 
-  // Check if all rows are expanded
-  // const allExpanded = Object.values(expanded).every(Boolean);
-  // const toggleLabel = allExpanded ? "Collapse All" : "Expand All";
-
   // Columns for Data Log Table
   const columnHelper = createColumnHelper();
   const columns = [
@@ -315,178 +311,181 @@ function DataLogTable({ data, dataLogLoading }) {
 
       {/* Table */}
       <div className="rounded-md border overflow-auto max-h-[70vh] text-white">
-        <Table className="text-white table-fixed [&_[data-slot=table-container]]:!overflow-visible">
-          {/* Headers */}
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="sticky top-0 z-10">
-                {headerGroup.headers.map((header) => (
-                  <TableHead
-                    key={header.id}
-                    colSpan={header.colSpan}
-                    rowSpan={header.rowSpan}
-                    style={{
-                      width: header.getSize(),
-                      minWidth: header.column.columnDef.minSize ?? 60,
-                      maxWidth: header.column.columnDef.maxSize ?? 500,
-                    }}
-                    className="text-white bg-teal-700 sticky left-0 shadow-md"
-                  >
-                    {header.isPlaceholder ? null : (
-                      // Resizable columns
-                      <div
-                        className="flex items-center justify-between relative group"
-                        style={{
-                          width: header.getSize(),
-                          minWidth: header.column.columnDef.minSize ?? 60,
-                          maxWidth: header.column.columnDef.maxSize ?? 500,
-                        }}
-                      >
-                        {/* Header content */}
-                        <span>
-                          {flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
-                          {/* Active sorting icon */}
-                          {header.column.getIsSorted() === "asc" && " 🔼"}
-                          {header.column.getIsSorted() === "desc" && " 🔽"}
-                        </span>
-
-                        {/* Dropdown menus against each header for sorting/grouping */}
-                        {!header.column.columnDef.columns && ( // Only show dropdown on leaf columns
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <button className="mx-4 text-s text-teal-400 hover:underline">
-                                ⋮
-                              </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                              {/* Sorting */}
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  const currentSort =
-                                    header.column.getIsSorted();
-                                  if (currentSort === false) {
-                                    header.column.toggleSorting(false); // set to asc
-                                  } else if (currentSort === "asc") {
-                                    header.column.toggleSorting(true); // set to desc
-                                  } else {
-                                    header.column.clearSorting(); // unsort
-                                  }
-                                }}
-                              >
-                                {(() => {
-                                  const currentSort =
-                                    header.column.getIsSorted();
-                                  if (currentSort === false)
-                                    return "Sort by asc.";
-                                  if (currentSort === "asc")
-                                    return "Sort by desc.";
-                                  if (currentSort === "desc") return "Unsort";
-                                  return "Sort"; // fallback, shouldn't happen
-                                })()}
-                              </DropdownMenuItem>
-
-                              {/* Row Grouping */}
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  header.column.toggleGrouping();
-                                }}
-                              >
-                                {header.column.getIsGrouped()
-                                  ? "Ungroup"
-                                  : "Group by"}
-                              </DropdownMenuItem>
-
-                              {/* Column Visibility */}
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  header.column.toggleVisibility();
-                                }}
-                              >
-                                Hide Column
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        )}
-
-                        {/* Resize handle */}
-                        {header.column.getCanResize() && (
-                          <div
-                            // onDoubleClick={header.column.resetSize()} // causes infinite loop
-                            onMouseDown={header.getResizeHandler()}
-                            onTouchStart={header.getResizeHandler()}
-                            className="absolute right-2 top-0 h-full w-1 bg-teal-400 cursor-col-resize select-none"
-                            style={{
-                              transform: header.column.getIsResizing()
-                                ? "scaleX(2)"
-                                : "",
-                            }}
-                          />
-                        )}
-                      </div>
-                    )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-
-          {/* Rows */}
-          <TableBody>
-            {dataLogLoading
-              ? Array.from({ length: skeletonRowCount }).map((_, rowIdx) => (
-                  <TableRow key={`skeleton-${rowIdx}`}>
-                    {columns.map((_, colIdx) => (
-                      <TableCell key={`skeleton-cell-${rowIdx}-${colIdx}`}>
-                        <Skeleton className="h-4 w-full bg-teal-700" />
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              : table.getRowModel().rows.map((row) => {
-                  const isGroupedRow = row.getIsGrouped();
-
-                  return (
-                    <TableRow key={row.id}>
-                      {isGroupedRow ? (
-                        // Display rows grouped by category
-                        <TableCell
-                          colSpan={columns.length}
-                          className="bg-stone-900 font-light text-teal-400"
+        {/* For sticky header */}
+        <div className="[&_[data-slot=table-container]]:!overflow-visible">
+          <Table className="text-white table-fixed">
+            {/* Headers */}
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id} className="sticky top-0 z-10">
+                  {headerGroup.headers.map((header) => (
+                    <TableHead
+                      key={header.id}
+                      colSpan={header.colSpan}
+                      rowSpan={header.rowSpan}
+                      style={{
+                        width: header.getSize(),
+                        minWidth: header.column.columnDef.minSize ?? 60,
+                        maxWidth: header.column.columnDef.maxSize ?? 500,
+                      }}
+                      className="text-white bg-teal-700 sticky left-0 shadow-md"
+                    >
+                      {header.isPlaceholder ? null : (
+                        // Resizable columns
+                        <div
+                          className="flex items-center justify-between relative group"
+                          style={{
+                            width: header.getSize(),
+                            minWidth: header.column.columnDef.minSize ?? 60,
+                            maxWidth: header.column.columnDef.maxSize ?? 500,
+                          }}
                         >
-                          <div
-                            className="cursor-pointer"
-                            style={{ paddingLeft: `${row.depth * 1.5}rem` }}
-                            onClick={row.getToggleExpandedHandler()}
-                          >
-                            {row.getIsExpanded() ? "▾" : "▸"}{" "}
-                            {row.groupingColumnId}:{" "}
-                            {row.getValue(row.groupingColumnId)} (
-                            {row.subRows?.length})
-                          </div>
-                        </TableCell>
-                      ) : (
-                        // Display rows normally (ungrouped)
-                        row.getVisibleCells().map((cell) => (
-                          <TableCell
-                            key={cell.id}
-                            style={{ width: cell.column.getSize() }}
-                            className="truncate"
-                          >
+                          {/* Header content */}
+                          <span>
                             {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext(),
+                              header.column.columnDef.header,
+                              header.getContext(),
                             )}
-                          </TableCell>
-                        ))
+                            {/* Active sorting icon */}
+                            {header.column.getIsSorted() === "asc" && " 🔼"}
+                            {header.column.getIsSorted() === "desc" && " 🔽"}
+                          </span>
+
+                          {/* Dropdown menus against each header for sorting/grouping */}
+                          {!header.column.columnDef.columns && ( // Only show dropdown on leaf columns
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button className="mx-4 text-s text-teal-400 hover:underline">
+                                  ⋮
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent>
+                                {/* Sorting */}
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    const currentSort =
+                                      header.column.getIsSorted();
+                                    if (currentSort === false) {
+                                      header.column.toggleSorting(false); // set to asc
+                                    } else if (currentSort === "asc") {
+                                      header.column.toggleSorting(true); // set to desc
+                                    } else {
+                                      header.column.clearSorting(); // unsort
+                                    }
+                                  }}
+                                >
+                                  {(() => {
+                                    const currentSort =
+                                      header.column.getIsSorted();
+                                    if (currentSort === false)
+                                      return "Sort by asc.";
+                                    if (currentSort === "asc")
+                                      return "Sort by desc.";
+                                    if (currentSort === "desc") return "Unsort";
+                                    return "Sort"; // fallback, shouldn't happen
+                                  })()}
+                                </DropdownMenuItem>
+
+                                {/* Row Grouping */}
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    header.column.toggleGrouping();
+                                  }}
+                                >
+                                  {header.column.getIsGrouped()
+                                    ? "Ungroup"
+                                    : "Group by"}
+                                </DropdownMenuItem>
+
+                                {/* Column Visibility */}
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    header.column.toggleVisibility();
+                                  }}
+                                >
+                                  Hide Column
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+
+                          {/* Resize handle */}
+                          {header.column.getCanResize() && (
+                            <div
+                              // onDoubleClick={header.column.resetSize()} // causes infinite loop
+                              onMouseDown={header.getResizeHandler()}
+                              onTouchStart={header.getResizeHandler()}
+                              className="absolute right-2 top-0 h-full w-1 bg-teal-400 cursor-col-resize select-none"
+                              style={{
+                                transform: header.column.getIsResizing()
+                                  ? "scaleX(2)"
+                                  : "",
+                              }}
+                            />
+                          )}
+                        </div>
                       )}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              ))}
+            </TableHeader>
+
+            {/* Rows */}
+            <TableBody>
+              {dataLogLoading
+                ? Array.from({ length: skeletonRowCount }).map((_, rowIdx) => (
+                    <TableRow key={`skeleton-${rowIdx}`}>
+                      {columns.map((_, colIdx) => (
+                        <TableCell key={`skeleton-cell-${rowIdx}-${colIdx}`}>
+                          <Skeleton className="h-4 w-full bg-teal-700" />
+                        </TableCell>
+                      ))}
                     </TableRow>
-                  );
-                })}
-          </TableBody>
-        </Table>
+                  ))
+                : table.getRowModel().rows.map((row) => {
+                    const isGroupedRow = row.getIsGrouped();
+
+                    return (
+                      <TableRow key={row.id}>
+                        {isGroupedRow ? (
+                          // Display rows grouped by category
+                          <TableCell
+                            colSpan={columns.length}
+                            className="bg-stone-900 font-light text-teal-400"
+                          >
+                            <div
+                              className="cursor-pointer"
+                              style={{ paddingLeft: `${row.depth * 1.5}rem` }}
+                              onClick={row.getToggleExpandedHandler()}
+                            >
+                              {row.getIsExpanded() ? "▾" : "▸"}{" "}
+                              {row.groupingColumnId}:{" "}
+                              {row.getValue(row.groupingColumnId)} (
+                              {row.subRows?.length})
+                            </div>
+                          </TableCell>
+                        ) : (
+                          // Display rows normally (ungrouped)
+                          row.getVisibleCells().map((cell) => (
+                            <TableCell
+                              key={cell.id}
+                              style={{ width: cell.column.getSize() }}
+                              className="truncate"
+                            >
+                              {flexRender(
+                                cell.column.columnDef.cell,
+                                cell.getContext(),
+                              )}
+                            </TableCell>
+                          ))
+                        )}
+                      </TableRow>
+                    );
+                  })}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   );
