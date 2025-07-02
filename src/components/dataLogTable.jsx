@@ -315,11 +315,11 @@ function DataLogTable({ data, dataLogLoading }) {
 
       {/* Table */}
       <div className="rounded-md border overflow-auto max-h-[70vh] text-white">
-        <Table className="text-white table-fixed">
+        <Table className="text-white table-fixed [&_[data-slot=table-container]]:!overflow-visible">
           {/* Headers */}
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
+              <TableRow key={headerGroup.id} className="sticky top-0 z-10">
                 {headerGroup.headers.map((header) => (
                   <TableHead
                     key={header.id}
