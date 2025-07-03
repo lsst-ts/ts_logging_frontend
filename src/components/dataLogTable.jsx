@@ -46,7 +46,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 
-import { formatCellValue } from "@/utils/utils";
+import { formatCellValue, getRubinTVUrl } from "@/utils/utils";
 
 // Popover component for column hiding
 // Should move to own file and use ShadCN's component
@@ -222,13 +222,42 @@ function DataLogTable({ data, dataLogLoading }) {
     return rowValue === filterValue;
   };
 
+  const RubinTVLink = ({ dayObs, seqNum }) => {
+    const url = getRubinTVUrl(dayObs, seqNum);
+    if (!url) return null;
+
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-sky-400 underline hover:text-sky-700"
+      >
+        calexp
+      </a>
+    );
+  };
+
   // How many skeleton rows to show when loading
   const skeletonRowCount = 10;
 
   // Columns for Data Log Table
   const columnHelper = createColumnHelper();
   const columns = [
-    // Missing field(s): "dome_temp"
+    // Missing field: "dome_temp"
+
+    // Link to RubinTV
+    columnHelper.display({
+      header: "RubinTV",
+      id: "externalLink",
+      cell: ({ row }) => (
+        <RubinTVLink
+          dayObs={row.original["day obs"]}
+          seqNum={row.original["seq num"]}
+        />
+      ),
+      size: 100,
+    }),
 
     // Identifying data
     columnHelper.accessor("exposure id", {
@@ -256,11 +285,6 @@ function DataLogTable({ data, dataLogLoading }) {
     }),
 
     // Observation Categories
-    // columnHelper.accessor("instrument", {
-    //   header: "Instrument",
-    //   cell: (info) => formatCellValue(info.getValue()),
-    //   size: 110,
-    // }),
     columnHelper.accessor("science program", {
       header: "Science Program",
       cell: (info) => formatCellValue(info.getValue()),
