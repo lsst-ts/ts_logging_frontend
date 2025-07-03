@@ -44,9 +44,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-// import {
-//   Checkbox
-// } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
 
 import { formatCellValue } from "@/utils/utils";
 
@@ -198,10 +196,18 @@ function ColumnMultiSelectFilter({ column, closeDropdown }) {
 
   return (
     <div
-      className="p-2 space-y-2 text-black"
-      onClick={(e) => e.stopPropagation()} // Don't close dropdown on click
+      // Don't close dropdown on click
+      onClick={(e) => e.stopPropagation()}
+      className="p-2 mt-2 space-y-2 text-black"
     >
-      <div className="max-h-40 overflow-y-auto pr-1 space-y-1">
+      {/* TODO: make rounded? */}
+      {/* <div className="p-2 border-t border-teal-700"> */}
+      <Separator className="mb-4 bg-stone-300" />
+      {/* Filter label */}
+      <p className="text-sm">Filter:</p>
+
+      {/* Scrollable Multi-select checkboxes */}
+      <div className="max-h-40 overflow-y-auto pt-2 pr-4 pr-1 space-y-1">
         {sortedUniqueValues.map((value) => (
           <label
             key={value}
@@ -216,7 +222,9 @@ function ColumnMultiSelectFilter({ column, closeDropdown }) {
         ))}
       </div>
 
-      <div className="flex justify-between items-center border-t pt-2 text-xs">
+      {/* TODO: Only show once data has loaded? */}
+      {/* Clear and Apply buttons */}
+      <div className="flex justify-between items-center pt-2 text-xs">
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -236,6 +244,7 @@ function ColumnMultiSelectFilter({ column, closeDropdown }) {
           Apply
         </button>
       </div>
+      {/* </div> */}
     </div>
   );
 }
@@ -254,6 +263,7 @@ function DataLogTable({ data, dataLogLoading }) {
     setColumnOrder([]);
     setSorting([]);
     setGrouping([]);
+    setColumnFilters([]);
   };
 
   // Exact match filter function
@@ -280,6 +290,8 @@ function DataLogTable({ data, dataLogLoading }) {
   const columnHelper = createColumnHelper();
   const columns = [
     // Missing field(s): "dome_temp"
+
+    // Identifying data
     columnHelper.accessor("exposure id", {
       header: "Exposure Id",
       cell: (info) => formatCellValue(info.getValue()),
@@ -290,12 +302,60 @@ function DataLogTable({ data, dataLogLoading }) {
       cell: (info) => formatCellValue(info.getValue()),
       size: 200,
     }),
+
+    // Dayobs and timestamp
+    columnHelper.accessor("day obs", {
+      header: "Day Obs",
+      cell: (info) => formatCellValue(info.getValue()),
+      size: 100,
+    }),
+    columnHelper.accessor("obs start", {
+      header: "Obs Start",
+      cell: (info) => formatCellValue(info.getValue()),
+      size: 240,
+    }),
+
+    // Obseervation Categories
+    // columnHelper.accessor("instrument", {
+    //   header: "Instrument",
+    //   cell: (info) => formatCellValue(info.getValue()),
+    //   size: 110,
+    // }),
     columnHelper.accessor("science program", {
       header: "Science Program",
       cell: (info) => formatCellValue(info.getValue()),
       size: 150,
       filterFn: matchValueOrInList,
     }),
+    columnHelper.accessor("img type", {
+      header: "Obs Type",
+      cell: (info) => formatCellValue(info.getValue()),
+      size: 100,
+    }),
+    columnHelper.accessor("observation reason", {
+      header: "Obs Reason",
+      cell: (info) => formatCellValue(info.getValue()),
+      size: 160,
+    }),
+    columnHelper.accessor("target name", {
+      header: "Target Name",
+      cell: (info) => formatCellValue(info.getValue()),
+      size: 160,
+    }),
+
+    // Flag Info
+    columnHelper.accessor("exposure_flag", {
+      header: "Flags",
+      cell: (info) => formatCellValue(info.getValue()),
+      size: 100,
+    }),
+    columnHelper.accessor("message_text", {
+      header: "Comments",
+      cell: (info) => formatCellValue(info.getValue()),
+      size: 120,
+    }),
+
+    // Instrument config and environment
     columnHelper.accessor("s ra", {
       header: "RA",
       cell: (info) => formatCellValue(info.getValue()),
@@ -350,46 +410,6 @@ function DataLogTable({ data, dataLogLoading }) {
       header: "Outside Air Temp",
       cell: (info) => formatCellValue(info.getValue()),
       size: 150,
-    }),
-    columnHelper.accessor("img type", {
-      header: "Obs Type",
-      cell: (info) => formatCellValue(info.getValue()),
-      size: 100,
-    }),
-    columnHelper.accessor("instrument", {
-      header: "Instrument",
-      cell: (info) => formatCellValue(info.getValue()),
-      size: 110,
-    }),
-    columnHelper.accessor("exposure_flag", {
-      header: "Flags",
-      cell: (info) => formatCellValue(info.getValue()),
-      size: 100,
-    }),
-    columnHelper.accessor("message_text", {
-      header: "Comments",
-      cell: (info) => formatCellValue(info.getValue()),
-      size: 120,
-    }),
-    columnHelper.accessor("observation reason", {
-      header: "Obs Reason",
-      cell: (info) => formatCellValue(info.getValue()),
-      size: 160,
-    }),
-    columnHelper.accessor("target name", {
-      header: "Target Name",
-      cell: (info) => formatCellValue(info.getValue()),
-      size: 160,
-    }),
-    columnHelper.accessor("obs start", {
-      header: "Obs Start",
-      cell: (info) => formatCellValue(info.getValue()),
-      size: 240,
-    }),
-    columnHelper.accessor("day obs", {
-      header: "Day Obs",
-      cell: (info) => formatCellValue(info.getValue()),
-      size: 100,
     }),
   ];
 
@@ -493,7 +513,7 @@ function DataLogTable({ data, dataLogLoading }) {
             {/* Headers */}
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id} className="sticky top-0 z-10">
+                <TableRow key={headerGroup.id} className="sticky top-0">
                   {headerGroup.headers.map((header) => (
                     <TableHead
                       key={header.id}
