@@ -257,6 +257,7 @@ function DataLogTable({ data, dataLogLoading }) {
         />
       ),
       size: 100,
+      filterType: null,
     }),
 
     // Identifying data
@@ -264,11 +265,13 @@ function DataLogTable({ data, dataLogLoading }) {
       header: "Exposure Id",
       cell: (info) => formatCellValue(info.getValue()),
       size: 140,
+      filterType: null,
     }),
     columnHelper.accessor("exposure name", {
       header: "Exposure Name",
       cell: (info) => formatCellValue(info.getValue()),
       size: 200,
+      filterType: null,
     }),
 
     // Dayobs and timestamp
@@ -277,11 +280,13 @@ function DataLogTable({ data, dataLogLoading }) {
       cell: (info) => formatCellValue(info.getValue()),
       size: 100,
       filterFn: matchValueOrInList,
+      filterType: "string",
     }),
     columnHelper.accessor("obs start", {
       header: "Obs Start",
       cell: (info) => formatCellValue(info.getValue()),
       size: 240,
+      filterType: "number-range",
     }),
 
     // Observation Categories
@@ -290,24 +295,28 @@ function DataLogTable({ data, dataLogLoading }) {
       cell: (info) => formatCellValue(info.getValue()),
       size: 150,
       filterFn: matchValueOrInList,
+      filterType: "string",
     }),
     columnHelper.accessor("img type", {
       header: "Obs Type",
       cell: (info) => formatCellValue(info.getValue()),
       size: 100,
       filterFn: matchValueOrInList,
+      filterType: "string",
     }),
     columnHelper.accessor("observation reason", {
       header: "Obs Reason",
       cell: (info) => formatCellValue(info.getValue()),
       size: 160,
       filterFn: matchValueOrInList,
+      filterType: "string",
     }),
     columnHelper.accessor("target name", {
       header: "Target Name",
       cell: (info) => formatCellValue(info.getValue()),
       size: 160,
       filterFn: matchValueOrInList,
+      filterType: "string",
     }),
 
     // Flag Info
@@ -316,11 +325,13 @@ function DataLogTable({ data, dataLogLoading }) {
       cell: (info) => formatCellValue(info.getValue()),
       size: 100,
       filterFn: matchValueOrInList,
+      filterType: "string",
     }),
     columnHelper.accessor("message_text", {
       header: "Comments",
       cell: (info) => formatCellValue(info.getValue()),
       size: 120,
+      filterType: null,
     }),
 
     // Instrument config and environment
@@ -328,56 +339,67 @@ function DataLogTable({ data, dataLogLoading }) {
       header: "RA",
       cell: (info) => formatCellValue(info.getValue()),
       size: 60,
+      filterType: "number-range",
     }),
     columnHelper.accessor("s dec", {
       header: "Dec",
       cell: (info) => formatCellValue(info.getValue()),
       size: 70,
+      filterType: "number-range",
     }),
     columnHelper.accessor("altitude", {
       header: "Alt",
       cell: (info) => formatCellValue(info.getValue()),
       size: 70,
+      filterType: "number-range",
     }),
     columnHelper.accessor("azimuth", {
       header: "Az",
       cell: (info) => formatCellValue(info.getValue()),
       size: 60,
+      filterType: "number-range",
     }),
     columnHelper.accessor("sky rotation", {
       header: "Sky Rotation",
       cell: (info) => formatCellValue(info.getValue()),
       size: 120,
+      filterType: "number-range",
     }),
     columnHelper.accessor("airmass", {
       header: "Airmass",
       cell: (info) => formatCellValue(info.getValue()),
       size: 90,
+      filterType: "number-range",
     }),
     columnHelper.accessor("psf trace radius delta median", {
       header: "PSF/Seeing",
       cell: (info) => formatCellValue(info.getValue()),
       size: 115,
+      filterType: "number-range",
     }),
     columnHelper.accessor("sky bg median", {
       header: "Sky Brightness",
       cell: (info) => formatCellValue(info.getValue()),
       size: 140,
+      filterType: "number-range",
     }),
     columnHelper.accessor("zero point median", {
       header: "Photometric ZP",
       cell: (info) => formatCellValue(info.getValue()),
       size: 140,
+      filterType: "number-range",
     }),
     columnHelper.accessor("high snr source count median", {
       header: "High Source Counts",
       cell: (info) => formatCellValue(info.getValue()),
       size: 170,
+      filterType: "number-range",
     }),
     columnHelper.accessor("air temp", {
       header: "Outside Air Temp",
       cell: (info) => formatCellValue(info.getValue()),
       size: 150,
+      filterType: "number-range",
     }),
   ];
 
@@ -571,7 +593,8 @@ function DataLogTable({ data, dataLogLoading }) {
                                 </DropdownMenuItem>
 
                                 {/* Column Filtering */}
-                                {header.column.id === "science program" && (
+                                {header.column.columnDef.filterType ===
+                                  "string" && (
                                   <div onClick={(e) => e.stopPropagation()}>
                                     <ColumnMultiSelectFilter
                                       column={header.column}
