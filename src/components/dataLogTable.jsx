@@ -594,16 +594,18 @@ function DataLogTable({ data, dataLogLoading }) {
 
                                 {/* Column Filtering */}
                                 {header.column.columnDef.filterType ===
-                                  "string" && (
-                                  <div onClick={(e) => e.stopPropagation()}>
-                                    <ColumnMultiSelectFilter
-                                      column={header.column}
-                                      closeDropdown={() =>
-                                        document.activeElement?.blur()
-                                      }
-                                    />
-                                  </div>
-                                )}
+                                  "string" &&
+                                  header.column.getFacetedUniqueValues().size >
+                                    1 && (
+                                    <div onClick={(e) => e.stopPropagation()}>
+                                      <ColumnMultiSelectFilter
+                                        column={header.column}
+                                        closeDropdown={() =>
+                                          document.activeElement?.blur()
+                                        }
+                                      />
+                                    </div>
+                                  )}
                               </DropdownMenuContent>
                             </DropdownMenu>
                           )}
