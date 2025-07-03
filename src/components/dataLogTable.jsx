@@ -105,66 +105,6 @@ function ColumnVisibilityPopover({ table }) {
   );
 }
 
-// Select Filter option to add to column drop-downs.
-// Doesn't use ShadCN
-// function ColumnSelectFilter({ column }) {
-//   const columnFilterValue = column.getFilterValue();
-
-//   const sortedUniqueValues = Array.from(
-//     column.getFacetedUniqueValues()?.keys() ?? []
-//   ).sort();
-
-//   return (
-//     <select
-//       className="w-full bg-white text-black p-1 border rounded text-sm"
-//       value={columnFilterValue ?? ""}
-//       onChange={(e) => column.setFilterValue(e.target.value || undefined)}
-//     >
-//       <option value="">All</option>
-//       {sortedUniqueValues.map((value) => (
-//         <option key={value} value={value}>
-//           {value}
-//         </option>
-//       ))}
-//     </select>
-//   );
-// }
-
-// Select Filter option to add to column drop-downs.
-// Uses ShadCN
-function ColumnSelectFilter({ column }) {
-  const columnFilterValue = column.getFilterValue();
-
-  const sortedUniqueValues = Array.from(
-    column.getFacetedUniqueValues()?.keys() ?? [],
-  ).sort();
-
-  return (
-    <Select
-      value={columnFilterValue ?? "__all__"}
-      onValueChange={(value) => {
-        if (value === "__all__") {
-          column.setFilterValue(undefined); // clear filter
-        } else {
-          column.setFilterValue(value);
-        }
-      }}
-    >
-      <SelectTrigger className="w-full">
-        <SelectValue placeholder="All" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="__all__">All</SelectItem>
-        {sortedUniqueValues.map((value) => (
-          <SelectItem key={value} value={value}>
-            {value}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-}
-
 function ColumnMultiSelectFilter({ column, closeDropdown }) {
   const columnFilterValue = column.getFilterValue() ?? [];
 
@@ -183,15 +123,16 @@ function ColumnMultiSelectFilter({ column, closeDropdown }) {
     });
   };
 
+  // Buttons
   const apply = () => {
     column.setFilterValue(selected.size > 0 ? Array.from(selected) : undefined);
-    closeDropdown(); // Close the dropdown manually
+    closeDropdown();
   };
 
   const clear = () => {
     setSelected(new Set());
     column.setFilterValue(undefined);
-    closeDropdown(); // Close the dropdown manually
+    closeDropdown();
   };
 
   return (
@@ -200,14 +141,13 @@ function ColumnMultiSelectFilter({ column, closeDropdown }) {
       onClick={(e) => e.stopPropagation()}
       className="p-2 mt-2 space-y-2 text-black"
     >
-      {/* TODO: make rounded? */}
       {/* <div className="p-2 border-t border-teal-700"> */}
       <Separator className="mb-4 bg-stone-300" />
       {/* Filter label */}
       <p className="text-sm">Filter:</p>
 
       {/* Scrollable Multi-select checkboxes */}
-      <div className="max-h-40 overflow-y-auto pt-2 pr-4 pr-1 space-y-1">
+      <div className="max-h-40 overflow-y-auto pr-6 space-y-1">
         {sortedUniqueValues.map((value) => (
           <label
             key={value}
@@ -274,7 +214,6 @@ function DataLogTable({ data, dataLogLoading }) {
   // Exact (multple) match(es) filter function
   const matchValueOrInList = (row, columnId, filterValue) => {
     const rowValue = row.getValue(columnId);
-    console.log({ rowValue, filterValue });
 
     if (Array.isArray(filterValue)) {
       return filterValue.includes(rowValue);
@@ -308,6 +247,7 @@ function DataLogTable({ data, dataLogLoading }) {
       header: "Day Obs",
       cell: (info) => formatCellValue(info.getValue()),
       size: 100,
+      filterFn: matchValueOrInList,
     }),
     columnHelper.accessor("obs start", {
       header: "Obs Start",
@@ -315,7 +255,7 @@ function DataLogTable({ data, dataLogLoading }) {
       size: 240,
     }),
 
-    // Obseervation Categories
+    // Observation Categories
     // columnHelper.accessor("instrument", {
     //   header: "Instrument",
     //   cell: (info) => formatCellValue(info.getValue()),
@@ -331,16 +271,19 @@ function DataLogTable({ data, dataLogLoading }) {
       header: "Obs Type",
       cell: (info) => formatCellValue(info.getValue()),
       size: 100,
+      filterFn: matchValueOrInList,
     }),
     columnHelper.accessor("observation reason", {
       header: "Obs Reason",
       cell: (info) => formatCellValue(info.getValue()),
       size: 160,
+      filterFn: matchValueOrInList,
     }),
     columnHelper.accessor("target name", {
       header: "Target Name",
       cell: (info) => formatCellValue(info.getValue()),
       size: 160,
+      filterFn: matchValueOrInList,
     }),
 
     // Flag Info
@@ -348,6 +291,7 @@ function DataLogTable({ data, dataLogLoading }) {
       header: "Flags",
       cell: (info) => formatCellValue(info.getValue()),
       size: 100,
+      filterFn: matchValueOrInList,
     }),
     columnHelper.accessor("message_text", {
       header: "Comments",
@@ -402,9 +346,9 @@ function DataLogTable({ data, dataLogLoading }) {
       size: 140,
     }),
     columnHelper.accessor("high snr source count median", {
-      header: "Source Counts",
+      header: "High Source Counts",
       cell: (info) => formatCellValue(info.getValue()),
-      size: 140,
+      size: 170,
     }),
     columnHelper.accessor("air temp", {
       header: "Outside Air Temp",
@@ -443,9 +387,9 @@ function DataLogTable({ data, dataLogLoading }) {
     getFacetedUniqueValues: getFacetedUniqueValues(),
     getFacetedMinMaxValues: getFacetedMinMaxValues(),
     columnResizeMode: "onChange",
-    debugTable: true,
-    debugHeaders: true,
-    debugColumns: true,
+    // debugTable: true,
+    // debugHeaders: true,
+    // debugColumns: true,
   });
 
   // Walk grouped row model recursively to collect
@@ -603,20 +547,13 @@ function DataLogTable({ data, dataLogLoading }) {
                                 </DropdownMenuItem>
 
                                 {/* Column Filtering */}
-                                {/* {header.column.id === "science program" && (
-                                  <div className="p-2">
-                                    <ColumnSelectFilter
-                                      column={header.column}
-                                    />
-                                  </div>
-                                )} */}
                                 {header.column.id === "science program" && (
                                   <div onClick={(e) => e.stopPropagation()}>
                                     <ColumnMultiSelectFilter
                                       column={header.column}
                                       closeDropdown={() =>
                                         document.activeElement?.blur()
-                                      } // closes dropdown
+                                      }
                                     />
                                   </div>
                                 )}
