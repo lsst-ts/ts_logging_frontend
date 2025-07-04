@@ -390,7 +390,7 @@ function DataLogTable({ data, dataLogLoading }) {
       filterType: "number-range",
     }),
     columnHelper.accessor("high snr source count median", {
-      header: "High Source Counts",
+      header: "High SNR Source Counts",
       cell: (info) => formatCellValue(info.getValue()),
       size: 170,
       filterType: "number-range",
