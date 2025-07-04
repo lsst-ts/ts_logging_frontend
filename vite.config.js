@@ -3,13 +3,24 @@ import { fileURLToPath } from "url";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { tanstackRouter } from "@tanstack/router-plugin/vite";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // https://vite.dev/config/
 export default defineConfig({
   base: "/nightlydigest/",
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    tanstackRouter({
+      // routesFolder: path.resolve(__dirname, "./src/routes"),
+      // rootRouteId: "root",
+      // notFoundRouteId: "not-found",
+      tailwindcssarget: "react",
+      autoCodeSplitting: true,
+    }),
+    react(),
+    tailwindcss(),
+  ],
   test: {
     globals: true,
     environment: "jsdom",
