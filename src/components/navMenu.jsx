@@ -6,9 +6,9 @@ import {
 } from "@/components/ui/navigation-menu";
 
 const items = [
-  { name: "digest", title: "Nightly Digest", url: "#" },
+  { name: "digest", title: "Nightly Digest", url: "/nightlydigest/" },
   { name: "plots", title: "Plots", url: "#" },
-  { name: "data-log", title: "Data Log", url: "#" },
+  { name: "data-log", title: "Data Log", url: "/nightlydigest/data-log" },
   { name: "context-feed", title: "Context Feed", url: "#" },
 ];
 
