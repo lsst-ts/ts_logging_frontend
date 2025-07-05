@@ -38,6 +38,11 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -371,29 +376,48 @@ function DataLogTable({ data, dataLogLoading }) {
       size: 90,
       filterType: "number-range",
     }),
-    columnHelper.accessor("psf trace radius delta median", {
-      header: "PSF/Seeing",
+    columnHelper.accessor("dimm seeing", {
+      header: "DIMM seeing",
+      cell: (info) => formatCellValue(info.getValue()),
+      size: 130,
+      filterType: "number-range",
+    }),
+    columnHelper.accessor("psf_sigma_median", {
+      header: "Median PSF",
       cell: (info) => formatCellValue(info.getValue()),
       size: 115,
       filterType: "number-range",
+      meta: {
+        tooltip: "psf_sigma_median",
+        // tooltip: "Median PSF (FWHM) = psf_sigma_median * 2.355"
+      },
     }),
     columnHelper.accessor("sky bg median", {
       header: "Sky Brightness",
       cell: (info) => formatCellValue(info.getValue()),
       size: 140,
       filterType: "number-range",
+      meta: {
+        tooltip: "sky bg median",
+      },
     }),
     columnHelper.accessor("zero point median", {
       header: "Photometric ZP",
       cell: (info) => formatCellValue(info.getValue()),
       size: 140,
       filterType: "number-range",
+      meta: {
+        tooltip: "zero point median",
+      },
     }),
     columnHelper.accessor("high snr source count median", {
       header: "High SNR Source Counts",
       cell: (info) => formatCellValue(info.getValue()),
-      size: 170,
+      size: 200,
       filterType: "number-range",
+      meta: {
+        tooltip: "high snr source count median",
+      },
     }),
     columnHelper.accessor("air temp", {
       header: "Outside Air Temp",
@@ -527,15 +551,43 @@ function DataLogTable({ data, dataLogLoading }) {
                           }}
                         >
                           {/* Header content */}
-                          <span>
-                            {flexRender(
-                              header.column.columnDef.header,
-                              header.getContext(),
-                            )}
-                            {/* Active sorting icon */}
-                            {header.column.getIsSorted() === "asc" && " 🔼"}
-                            {header.column.getIsSorted() === "desc" && " 🔽"}
-                          </span>
+                          {(() => {
+                            const tooltipText =
+                              header.column.columnDef.meta?.tooltip;
+                            const headerContent = (
+                              <>
+                                {flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext(),
+                                )}
+                                {/* Active sorting icons */}
+                                {header.column.getIsSorted() === "asc" && " 🔼"}
+                                {header.column.getIsSorted() === "desc" &&
+                                  " 🔽"}
+                              </>
+                            );
+
+                            return tooltipText ? (
+                              <div className="relative">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="cursor-help">
+                                      {headerContent}
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent
+                                    side="top"
+                                    align="center"
+                                    className="max-w-xs break-words text-sm text-white bg-black p-2 rounded-md shadow-md z-50"
+                                  >
+                                    {tooltipText}
+                                  </TooltipContent>
+                                </Tooltip>
+                              </div>
+                            ) : (
+                              headerContent
+                            );
+                          })()}
 
                           {/* Dropdown menus against each header for sorting/grouping */}
                           {!header.column.columnDef.columns && ( // Only show dropdown on leaf columns
