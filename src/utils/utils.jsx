@@ -158,6 +158,28 @@ const mergeDataLogSources = (consDbRows, exposureLogRows) => {
   });
 };
 
+/**
+ * Generates a RubinTV URL based on dayObs and seqNum values.
+ *
+ * @param {string|number} dayObs - The observation date in YYYYMMDD format.
+ * @param {string|number} seqNum - The sequence number of the observation.
+ * @returns {string|null} A formatted RubinTV URL, or null if inputs are invalid.
+ */
+const getRubinTVUrl = (dayObs, seqNum) => {
+  if (!dayObs || !seqNum) return null;
+
+  const httpProtocol = window.location.protocol;
+  const host = window.location.host;
+  const dateStr = getDatetimeFromDayobsStr(`${dayObs}`).toFormat("yyyy-MM-dd");
+
+  const prod_or_dev = 1;
+
+  const url_prod = `${httpProtocol}//${host}/rubintv/summit-usdf/lsstcam/event?channel_name=calexp_mosaic&date_str=${dateStr}&seq_num=${seqNum}`;
+  const url_dev = `https://usdf-rsp-dev.slac.stanford.edu/rubintv/summit-usdf/lsstcam/event?channel_name=calexp_mosaic&date_str=${dateStr}&seq_num=${seqNum}`;
+
+  return prod_or_dev === 1 ? url_dev : url_prod;
+};
+
 export {
   calculateEfficiency,
   calculateTimeLoss,
@@ -167,4 +189,5 @@ export {
   getKeyByValue,
   formatCellValue,
   mergeDataLogSources,
+  getRubinTVUrl,
 };
