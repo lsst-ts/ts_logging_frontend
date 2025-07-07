@@ -12,9 +12,6 @@ export default defineConfig({
   base: "/nightlydigest/",
   plugins: [
     tanstackRouter({
-      // routesFolder: path.resolve(__dirname, "./src/routes"),
-      // rootRouteId: "root",
-      // notFoundRouteId: "not-found",
       tailwindcssarget: "react",
       autoCodeSplitting: true,
     }),
