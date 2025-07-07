@@ -15,7 +15,6 @@ const rootRoute = createRootRoute({
 });
 
 const searchParamsSchema = z.object({
-  noOfNights: z.number().int().min(1).max(30).default(1),
   startDayobs: z
     .number()
     .int()
