@@ -1,9 +1,11 @@
-import { useRouter } from "@tanstack/react-router";
+// import { useRouter } from "@tanstack/react-router";
 import React from "react";
+import { useSearch } from "@tanstack/react-router";
 
 function ContextFeed({ loading = false }) {
-  const { params } = useRouter().options.context;
-  const { dayobs, noOfNights, instrument } = params;
+  // const { params } = useRouter().options.context;
+  // const { dayobs, noOfNights, instrument } = params;
+  const { dayObs, noOfNights, instrument } = useSearch({ from: "__root__" });
 
   return (
     <div>
@@ -16,7 +18,7 @@ function ContextFeed({ loading = false }) {
             This is a placeholder for the ContextFeed
           </div>
           <div className="text-sm text-gray-500">
-            Day Observed: {dayobs.toLocaleDateString()}
+            Day Observed: {dayObs}
             <br />
             Number of Nights: {noOfNights}
             <br />
