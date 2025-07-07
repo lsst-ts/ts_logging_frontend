@@ -1,3 +1,4 @@
+import React from "react";
 import {
   NavigationMenu,
   NavigationMenuList,
@@ -17,10 +18,10 @@ const items = [
   },
 ];
 
-export default function NavMenu({ activeKey }) {
+export default function NavMenu() {
   const { state } = useRouter();
   const search = state.location.search;
-  // If search is an object, convert to query string
+  const pathname = state.location.pathname;
   const searchString =
     search && typeof search === "object" && Object.keys(search).length > 0
       ? new URLSearchParams(search).toString()
@@ -29,8 +30,10 @@ export default function NavMenu({ activeKey }) {
     <NavigationMenu className="flex flex-col items-start">
       <NavigationMenuList className="flex flex-col gap-2">
         {items.map((item) => {
-          const isActive = item.name === activeKey;
-          // Only append search params if not navigating to '#'
+          // Remove trailing slash for comparison if needed
+          const itemPath = item.url.replace(/\/$/, "");
+          const currentPath = pathname.replace(/\/$/, "");
+          const isActive = itemPath === currentPath;
           const url =
             item.url === "#"
               ? "#"
