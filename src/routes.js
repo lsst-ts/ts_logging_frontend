@@ -41,7 +41,7 @@ const searchParamsSchema = z
     endDayobs: dayobsInt.default(() =>
       DateTime.utc().minus({ days: 1 }).toFormat("yyyyMMdd"),
     ),
-    instrument: z.enum(["LSSTCam", "LATISS"]).default("LSSTCam"),
+    instrument: z.string().default("LSSTCam"),
   })
   .refine((obj) => obj.startDayobs < obj.endDayobs, {
     message: "startDayobs must be less than endDayobs",
