@@ -10,39 +10,50 @@ import Summary from "./pages/summary";
 import { z } from "zod";
 import { DateTime } from "luxon";
 
+import SearchParamErrorComponent from "./components/search-param-error-component";
+
 const rootRoute = createRootRoute({
   component: Layout,
 });
 
-const searchParamsSchema = z.object({
-  startDayobs: z
-    .number()
-    .int()
-    .positive()
-    .gte(10000101)
-    .lte(99991231)
-    .default(() => {
-      // Default to yesterday in yyyyMMdd format
-      return parseInt(DateTime.utc().minus({ days: 2 }).toFormat("yyyyMMdd"));
-    }),
-  endDayobs: z
-    .number()
-    .int()
-    .positive()
-    .gte(10000101)
-    .lte(99991231)
-    .default(() => {
-      // Default to yesterday in yyyyMMdd format
-      return parseInt(DateTime.utc().minus({ days: 1 }).toFormat("yyyyMMdd"));
-    }),
-  instrument: z.string().default("LSSTCam"),
-});
+const yyyymmddRegex = /^\d{8}$/;
+
+const dayobsInt = z.coerce
+  .string()
+  .regex(yyyymmddRegex, "Must be in yyyyLLdd format")
+  .refine(
+    (val) => {
+      const y = parseInt(val.slice(0, 4));
+      const m = parseInt(val.slice(4, 6));
+      const d = parseInt(val.slice(6, 8));
+      const dt = DateTime.fromObject({ year: y, month: m, day: d });
+      return dt.isValid;
+    },
+    { message: "Not a valid calendar date" },
+  )
+  .transform((val) => parseInt(val, 10));
+
+const searchParamsSchema = z
+  .object({
+    startDayobs: dayobsInt.default(() =>
+      DateTime.utc().minus({ days: 2 }).toFormat("yyyyMMdd"),
+    ),
+    endDayobs: dayobsInt.default(() =>
+      DateTime.utc().minus({ days: 1 }).toFormat("yyyyMMdd"),
+    ),
+    instrument: z.enum(["LSSTCam", "LATISS"]).default("LSSTCam"),
+  })
+  .refine((obj) => obj.startDayobs < obj.endDayobs, {
+    message: "startDayobs must be less than endDayobs",
+    path: ["startDayobs"],
+  });
 
 const dashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
   component: Summary,
   validateSearch: searchParamsSchema,
+  errorComponent: SearchParamErrorComponent,
 });
 
 const dataLogRoute = createRoute({
@@ -50,6 +61,7 @@ const dataLogRoute = createRoute({
   path: "/data-log",
   component: DataLog,
   validateSearch: searchParamsSchema,
+  errorComponent: SearchParamErrorComponent,
 });
 
 const contextFeedRoute = createRoute({
@@ -57,6 +69,7 @@ const contextFeedRoute = createRoute({
   path: "/context-feed",
   component: ContextFeed,
   validateSearch: searchParamsSchema,
+  errorComponent: SearchParamErrorComponent,
 });
 
 const router = createRouter({
