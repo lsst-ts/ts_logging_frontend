@@ -22,11 +22,9 @@ import JiraTicketsTable from "@/components/jira-tickets-table";
 import { useSearch } from "@tanstack/react-router";
 
 export default function Summary() {
-  // const router = useRouter();
   const { startDayobs, endDayobs, instrument } = useSearch({
     from: "__root__",
   });
-  // const dayobs = DateTime.fromFormat(dayObs.toString(), "yyyyLLdd").toJSDate();
   const [nightHours, setNightHours] = useState(0.0);
   const [weatherLoss, setWeatherLoss] = useState(0.0);
   const [faultLoss, setFaultLoss] = useState(0.0);
@@ -44,18 +42,6 @@ export default function Summary() {
 
   const [flagsLoading, setFlagsLoading] = useState(true);
 
-  // const handleDayobsChange = (date) => {
-  //   setDayobs(date);
-  // };
-
-  // const handleNoOfNightsChange = (nightsCount) => {
-  //   setNoOfNights(nightsCount);
-  // };
-
-  // const handleInstrumentChange = (inst) => {
-  //   setInstrument(inst);
-  // };
-
   useEffect(() => {
     const abortController = new AbortController();
 
@@ -64,28 +50,6 @@ export default function Summary() {
     setNarrativeLoading(true);
     setJiraLoading(true);
     setFlagsLoading(true);
-
-    // // Validate url param dayObs
-    // if (!dayObs || isNaN(dayObs)) {
-    //   toast.error("Invalid Date Selected! Please select a valid date.");
-    // }
-    // const dayobs = DateTime.fromFormat(dayObs.toString(), "yyyyLLdd");
-    // const dayobsStr = `${dayObs}`;
-    // let dayobsStr = getDayobsStr(dayobs);
-    // if (!dayobsStr) {
-    //   toast.error("No Date Selected! Please select a valid date.");
-    //   setExposuresLoading(false);
-    //   setAlmanacLoading(false);
-    //   setNarrativeLoading(false);
-    //   setJiraLoading(false);
-    //   setFlagsLoading(false);
-    //   return;
-    // }
-    // const dateFromDayobs = getDatetimeFromDayobsStr(dayobsStr);
-    // const startDate = dateFromDayobs.minus({ days: noOfNights - 1 });
-    // const startDayobs = startDate.toFormat("yyyyLLdd");
-    // const endDate = dateFromDayobs.plus({ days: 1 });
-    // const endDayobs = endDate.toFormat("yyyyLLdd");
 
     fetchExposures(startDayobs, endDayobs, instrument, abortController)
       .then(([exposureFields, exposuresNo, exposureTime]) => {
