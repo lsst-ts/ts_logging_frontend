@@ -2,13 +2,13 @@ import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar.jsx";
 import { AppSidebar } from "@/components/app-sidebar.jsx";
 import { DateTime } from "luxon";
-
-import { getDayobsStr } from "@/utils/utils";
 import { Outlet, useRouter, useSearch } from "@tanstack/react-router";
 
 export default function Layout({ children }) {
   const router = useRouter();
-  const { startDayobs, endDayobs, instrument } = useSearch({ strict: true });
+  const { startDayobs, endDayobs, instrument } = useSearch({
+    from: "__root__",
+  });
 
   const setQuery = (key, value) => {
     router.navigate({
@@ -19,7 +19,7 @@ export default function Layout({ children }) {
     });
   };
   const dayObsDefault = endDayobs
-    ? DateTime.fromFormat(endDayobs.toString(), "yyyyLLdd")
+    ? DateTime.fromFormat(endDayobs.toString(), "yyyyLLdd").minus({ days: 1 })
     : null;
   const startDayobsDate = startDayobs
     ? DateTime.fromFormat(startDayobs.toString(), "yyyyLLdd")
@@ -31,11 +31,11 @@ export default function Layout({ children }) {
   const setInstrument = (inst) => {
     setQuery("instrument", inst);
   };
-  const [noOfNights, setNoOfNights] = useState(nightsDefault || 1);
+  const [noOfNights, setNoOfNights] = useState(nightsDefault);
 
   const setDayObsRange = (start, end) => {
-    setQuery("startDayobs", parseInt(getDayobsStr(start)));
-    setQuery("endDayobs", parseInt(getDayobsStr(end)));
+    setQuery("startDayobs", parseInt(start));
+    setQuery("endDayobs", parseInt(end));
   };
 
   const calculateDayObsRange = (dayobs, noOfNights) => {
