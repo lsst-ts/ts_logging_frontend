@@ -14,21 +14,8 @@ const rootRoute = createRootRoute({
   component: Layout,
 });
 
-// const dateFormatRegex = /^\d{8}$/; // yyyyMMdd
-// const dateFormatInt = z.number().int().gte(10000101).lte(99991231);
-
 const searchParamsSchema = z.object({
   noOfNights: z.number().int().min(1).max(30).default(1),
-  // dayObs: z
-  //   .number()
-  //   .int()
-  //   .positive()
-  //   .gte(10000101)
-  //   .lte(99991231)
-  //   .default(() => {
-  //     // Default to yesterday in yyyyMMdd format
-  //     return parseInt(DateTime.utc().minus({ days: 1 }).toFormat("yyyyMMdd"));
-  //   }),
   startDayobs: z
     .number()
     .int()
@@ -49,14 +36,6 @@ const searchParamsSchema = z.object({
       // Default to yesterday in yyyyMMdd format
       return parseInt(DateTime.utc().minus({ days: 1 }).toFormat("yyyyMMdd"));
     }),
-  // dayObs: z.coerce.date().default(() => new Date(Date.now() - 24 * 60 * 60 * 1000)), // Default to yesterday
-  // dayObs: dateFormatInt.transform((val) => {
-  //   const valStr = val.toString();
-  //   const y = valStr.slice(0, 4);
-  //   const m = valStr.slice(4, 6);
-  //   const d = valStr.slice(6);
-  //   return new Date(`${y}-${m}-${d}`);
-  // }),
   instrument: z.string().default("LSSTCam"),
 });
 
@@ -87,13 +66,6 @@ const router = createRouter({
     dataLogRoute,
     contextFeedRoute,
   ]),
-  // context: {
-  //   params: {
-  //     noOfNights: 1,
-  //     dayobs: new Date(),
-  //     instrument: "LSSTCam",
-  //   },
-  // },
   basepath: "/nightlydigest",
 });
 

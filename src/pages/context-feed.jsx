@@ -3,8 +3,6 @@ import React from "react";
 import { useSearch } from "@tanstack/react-router";
 
 function ContextFeed({ loading = false }) {
-  // const { params } = useRouter().options.context;
-  // const { dayobs, noOfNights, instrument } = params;
   const { startDayobs, endDayobs, instrument } = useSearch({
     from: "__root__",
   });
