@@ -8,7 +8,7 @@ import { Outlet, useRouter, useSearch } from "@tanstack/react-router";
 
 export default function Layout({ children }) {
   const router = useRouter();
-  const { dayObs, noOfNights, instrument } = useSearch({ strict: true });
+  const { startDayobs, endDayobs, instrument } = useSearch({ strict: true });
 
   const setQuery = (key, value) => {
     router.navigate({
@@ -18,24 +18,31 @@ export default function Layout({ children }) {
       }),
     });
   };
+  const dayObsDefault = endDayobs
+    ? DateTime.fromFormat(endDayobs.toString(), "yyyyLLdd")
+    : null;
+  const startDayobsDate = startDayobs
+    ? DateTime.fromFormat(startDayobs.toString(), "yyyyLLdd")
+    : dayObsDefault;
+  const nightsDefault = dayObsDefault.diff(startDayobsDate).as("days") + 1;
 
   const [dayobs, setDayobs] = useState(
-    // DateTime.utc().minus({ days: 1 }).toJSDate(),
+    dayObsDefault.toJSDate(),
     // (typeof dayObs === "number" && dayObs > 0) ?
-    DateTime.fromFormat(dayObs.toString(), "yyyyLLdd").toJSDate(),
+    // DateTime.fromFormat(dayObs.toString(), "yyyyLLdd").toJSDate(),
     // :
     // // Default to yesterday if no dayObs is provided
     // DateTime.utc().minus({ days: 1 }).toJSDate(),
   );
 
-  const setNoOfNights = (nightsCount) => {
-    setQuery("noOfNights", parseInt(nightsCount));
-  };
+  // const setNoOfNights = (nightsCount) => {
+  //   setQuery("noOfNights", parseInt(nightsCount));
+  // };
 
   const setInstrument = (inst) => {
     setQuery("instrument", inst);
   };
-  // const [noOfNights, setNoOfNights] = useState(1);
+  const [noOfNights, setNoOfNights] = useState(nightsDefault || 1);
   // const [instrument, setInstrument] = useState("LSSTCam");
   // const [nightHours, setNightHours] = useState(0.0);
   // const [weatherLoss, setWeatherLoss] = useState(0.0);
@@ -54,14 +61,32 @@ export default function Layout({ children }) {
 
   // const [flagsLoading, setFlagsLoading] = useState(true);
 
+  const setDayObsRange = (start, end) => {
+    setQuery("startDayobs", parseInt(getDayobsStr(start)));
+    setQuery("endDayobs", parseInt(getDayobsStr(end)));
+  };
+
+  const calculateDayObsRange = (dayobs, noOfNights) => {
+    const dateFromDayobs = DateTime.fromJSDate(dayobs);
+    const startDate = dateFromDayobs.minus({ days: noOfNights - 1 });
+    const startDayobs = startDate.toFormat("yyyyLLdd");
+    const endDate = dateFromDayobs.plus({ days: 1 });
+    const endDayobs = endDate.toFormat("yyyyLLdd");
+    return [startDayobs, endDayobs];
+  };
+
   const handleDayobsChange = (date) => {
     setDayobs(date);
-    setQuery("dayObs", parseInt(getDayobsStr(date)));
+    const [start, end] = calculateDayObsRange(date, noOfNights);
+    setDayObsRange(start, end);
+    // setQuery("dayObs", parseInt(getDayobsStr(date)));
   };
 
   const handleNoOfNightsChange = (nightsCount) => {
     setNoOfNights(nightsCount);
-    setQuery("noOfNights", parseInt(nightsCount));
+    const [start, end] = calculateDayObsRange(dayobs, nightsCount);
+    setDayObsRange(start, end);
+    // setQuery("noOfNights", parseInt(nightsCount));
   };
 
   const handleInstrumentChange = (inst) => {
