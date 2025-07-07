@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import Applet from "@/components/applet.jsx";
 import AppletExposures from "@/components/applet-exposures.jsx";
 import MetricsCard from "@/components/metrics-card.jsx";
-import { DateTime } from "luxon";
 
 import { EfficiencyChart } from "@/components/ui/RadialChart.jsx";
 import ShutterIcon from "../assets/ShutterIcon.svg";
@@ -17,20 +16,17 @@ import {
   fetchExposureFlags,
   fetchJiraTickets,
 } from "@/utils/fetchUtils";
-import {
-  calculateEfficiency,
-  calculateTimeLoss,
-  getDayobsStr,
-  getDatetimeFromDayobsStr,
-} from "@/utils/utils";
+import { calculateEfficiency, calculateTimeLoss } from "@/utils/utils";
 import DialogMetricsCard from "@/components/dialog-metrics-card";
 import JiraTicketsTable from "@/components/jira-tickets-table";
 import { useSearch } from "@tanstack/react-router";
 
 export default function Summary() {
   // const router = useRouter();
-  const { dayObs, noOfNights, instrument } = useSearch({ from: "__root__" });
-  const dayobs = DateTime.fromFormat(dayObs.toString(), "yyyyLLdd").toJSDate();
+  const { startDayobs, endDayobs, instrument } = useSearch({
+    from: "__root__",
+  });
+  // const dayobs = DateTime.fromFormat(dayObs.toString(), "yyyyLLdd").toJSDate();
   const [nightHours, setNightHours] = useState(0.0);
   const [weatherLoss, setWeatherLoss] = useState(0.0);
   const [faultLoss, setFaultLoss] = useState(0.0);
@@ -69,26 +65,27 @@ export default function Summary() {
     setJiraLoading(true);
     setFlagsLoading(true);
 
-    if (!dayObs || isNaN(dayObs)) {
-      toast.error("Invalid Date Selected! Please select a valid date.");
-    }
+    // // Validate url param dayObs
+    // if (!dayObs || isNaN(dayObs)) {
+    //   toast.error("Invalid Date Selected! Please select a valid date.");
+    // }
     // const dayobs = DateTime.fromFormat(dayObs.toString(), "yyyyLLdd");
     // const dayobsStr = `${dayObs}`;
-    let dayobsStr = getDayobsStr(dayobs);
-    if (!dayobsStr) {
-      toast.error("No Date Selected! Please select a valid date.");
-      setExposuresLoading(false);
-      setAlmanacLoading(false);
-      setNarrativeLoading(false);
-      setJiraLoading(false);
-      setFlagsLoading(false);
-      return;
-    }
-    const dateFromDayobs = getDatetimeFromDayobsStr(dayobsStr);
-    const startDate = dateFromDayobs.minus({ days: noOfNights - 1 });
-    const startDayobs = startDate.toFormat("yyyyLLdd");
-    const endDate = dateFromDayobs.plus({ days: 1 });
-    const endDayobs = endDate.toFormat("yyyyLLdd");
+    // let dayobsStr = getDayobsStr(dayobs);
+    // if (!dayobsStr) {
+    //   toast.error("No Date Selected! Please select a valid date.");
+    //   setExposuresLoading(false);
+    //   setAlmanacLoading(false);
+    //   setNarrativeLoading(false);
+    //   setJiraLoading(false);
+    //   setFlagsLoading(false);
+    //   return;
+    // }
+    // const dateFromDayobs = getDatetimeFromDayobsStr(dayobsStr);
+    // const startDate = dateFromDayobs.minus({ days: noOfNights - 1 });
+    // const startDayobs = startDate.toFormat("yyyyLLdd");
+    // const endDate = dateFromDayobs.plus({ days: 1 });
+    // const endDayobs = endDate.toFormat("yyyyLLdd");
 
     fetchExposures(startDayobs, endDayobs, instrument, abortController)
       .then(([exposureFields, exposuresNo, exposureTime]) => {
@@ -204,7 +201,7 @@ export default function Summary() {
     return () => {
       abortController.abort();
     };
-  }, [dayObs, dayobs, noOfNights, instrument]);
+  }, [startDayobs, endDayobs, instrument]);
 
   // calculate open shutter efficiency
   const efficiency = calculateEfficiency(nightHours, sumExpTime, weatherLoss);

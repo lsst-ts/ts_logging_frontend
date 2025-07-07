@@ -19,7 +19,27 @@ const rootRoute = createRootRoute({
 
 const searchParamsSchema = z.object({
   noOfNights: z.number().int().min(1).max(30).default(1),
-  dayObs: z
+  // dayObs: z
+  //   .number()
+  //   .int()
+  //   .positive()
+  //   .gte(10000101)
+  //   .lte(99991231)
+  //   .default(() => {
+  //     // Default to yesterday in yyyyMMdd format
+  //     return parseInt(DateTime.utc().minus({ days: 1 }).toFormat("yyyyMMdd"));
+  //   }),
+  startDayobs: z
+    .number()
+    .int()
+    .positive()
+    .gte(10000101)
+    .lte(99991231)
+    .default(() => {
+      // Default to yesterday in yyyyMMdd format
+      return parseInt(DateTime.utc().minus({ days: 2 }).toFormat("yyyyMMdd"));
+    }),
+  endDayobs: z
     .number()
     .int()
     .positive()
