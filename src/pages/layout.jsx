@@ -19,12 +19,12 @@ export default function Layout({ children }) {
     });
   };
   const dayObsDefault = endDayobs
-    ? DateTime.fromFormat(endDayobs.toString(), "yyyyLLdd").minus({ days: 1 })
+    ? DateTime.fromFormat(endDayobs.toString(), "yyyyLLdd")
     : null;
   const startDayobsDate = startDayobs
     ? DateTime.fromFormat(startDayobs.toString(), "yyyyLLdd")
     : dayObsDefault;
-  const nightsDefault = dayObsDefault.diff(startDayobsDate).as("days") + 1;
+  const nightsDefault = dayObsDefault.diff(startDayobsDate).as("days") + 1; // +2 to include both start and end days
 
   const [dayobs, setDayobs] = useState(dayObsDefault.toJSDate());
 
@@ -42,8 +42,8 @@ export default function Layout({ children }) {
     const dateFromDayobs = DateTime.fromJSDate(dayobs);
     const startDate = dateFromDayobs.minus({ days: noOfNights - 1 });
     const startDayobs = startDate.toFormat("yyyyLLdd");
-    const endDate = dateFromDayobs.plus({ days: 1 });
-    const endDayobs = endDate.toFormat("yyyyLLdd");
+    // const endDate = dateFromDayobs.plus({ days: 1 });
+    const endDayobs = dateFromDayobs.toFormat("yyyyLLdd");
     return [startDayobs, endDayobs];
   };
 
