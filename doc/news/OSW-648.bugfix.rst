@@ -1,0 +1,1 @@
+Make the jira tickets table scrollable and use sticky headers. Also make the popup wider to stop columns from running into each other. 
