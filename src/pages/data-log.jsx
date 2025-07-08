@@ -1,10 +1,16 @@
 import React from "react";
 import { useSearch } from "@tanstack/react-router";
+import { TELESCOPES } from "@/components/parameters";
+import { getDatetimeFromDayobsStr } from "@/utils/utils";
 
 function DataLog({ loading = false }) {
-  const { startDayobs, endDayobs, instrument } = useSearch({
+  const { startDayobs, endDayobs, telescope } = useSearch({
     from: "__root__",
   });
+  const queryEndDayobs = getDatetimeFromDayobsStr(endDayobs.toString())
+    .plus({ days: 1 })
+    .toFormat("yyyyMMdd");
+  const instrument = TELESCOPES[telescope];
 
   return (
     <div>
@@ -19,7 +25,11 @@ function DataLog({ loading = false }) {
           <div className="text-sm text-gray-500">
             Nights Observed: {startDayobs} - {endDayobs}
             <br />
+            Query: {startDayobs} - {queryEndDayobs}
+            <br />
             Instrument: {instrument}
+            <br />
+            Telescope: {telescope}
           </div>
         </div>
       )}
