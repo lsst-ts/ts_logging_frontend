@@ -13,7 +13,7 @@ const calculateEfficiency = (nightHours, sumExpTime, weatherLoss) => {
   if (nightHours !== 0) {
     eff = (100 * sumExpTime) / (nightHours * 60 * 60 - weatherLoss);
   }
-  return eff === 0 ? 0 : eff.toFixed(2);
+  return eff === 0 ? 0 : Math.round(eff);
 };
 
 /**
@@ -30,8 +30,8 @@ const calculateTimeLoss = (weatherLoss, faultLoss) => {
   let timeLossDetails = "(- weather; - fault)";
 
   if (loss > 0) {
-    let weatherPercent = (weatherLoss / loss) * 100;
-    let faultPercent = (faultLoss / loss) * 100;
+    let weatherPercent = Math.round((weatherLoss / loss) * 100);
+    let faultPercent = Math.round((faultLoss / loss) * 100);
     timeLoss = `${loss.toFixed(2)} hours`;
     timeLossDetails = `(${weatherPercent}% weather; ${faultPercent}% fault)`;
   }
