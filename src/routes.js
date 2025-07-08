@@ -11,6 +11,7 @@ import { z } from "zod";
 import { DateTime } from "luxon";
 
 import SearchParamErrorComponent from "./components/search-param-error-component";
+import { Telescope } from "lucide-react";
 
 const rootRoute = createRootRoute({
   component: Layout,
@@ -43,7 +44,8 @@ const searchParamsSchema = z
     endDayobs: dayobsInt.default(() =>
       DateTime.utc().minus({ days: 1 }).toFormat("yyyyMMdd"),
     ),
-    instrument: z.enum(["LSSTCam", "LATISS"]).default("LSSTCam"),
+    // instrument: z.enum(["LSSTCam", "LATISS"]).default("LSSTCam"),
+    telescope: z.enum(["Simonyi", "AuxTel"]).default("Simonyi"),
   })
   .refine((obj) => obj.startDayobs <= obj.endDayobs, {
     message: "startDayobs must be before or equal to endDayobs.",

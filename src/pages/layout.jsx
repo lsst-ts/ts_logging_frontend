@@ -3,10 +3,12 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar.jsx";
 import { AppSidebar } from "@/components/app-sidebar.jsx";
 import { DateTime } from "luxon";
 import { Outlet, useRouter, useSearch } from "@tanstack/react-router";
+import { TELESCOPES } from "@/components/parameters";
+import { getKeyByValue } from "@/utils/utils";
 
 export default function Layout({ children }) {
   const router = useRouter();
-  const { startDayobs, endDayobs, instrument } = useSearch({
+  const { startDayobs, endDayobs, telescope } = useSearch({
     from: "__root__",
   });
 
@@ -28,10 +30,10 @@ export default function Layout({ children }) {
 
   const [dayobs, setDayobs] = useState(dayObsDefault.toJSDate());
 
-  const setInstrument = (inst) => {
-    setQuery("instrument", inst);
-  };
   const [noOfNights, setNoOfNights] = useState(nightsDefault);
+  const [instrument, setInstrument] = useState(
+    telescope ? TELESCOPES[telescope] : "LSSTCam",
+  );
 
   const setDayObsRange = (start, end) => {
     setQuery("startDayobs", parseInt(start));
@@ -42,7 +44,6 @@ export default function Layout({ children }) {
     const dateFromDayobs = DateTime.fromJSDate(dayobs);
     const startDate = dateFromDayobs.minus({ days: noOfNights - 1 });
     const startDayobs = startDate.toFormat("yyyyLLdd");
-    // const endDate = dateFromDayobs.plus({ days: 1 });
     const endDayobs = dateFromDayobs.toFormat("yyyyLLdd");
     return [startDayobs, endDayobs];
   };
@@ -61,7 +62,7 @@ export default function Layout({ children }) {
 
   const handleInstrumentChange = (inst) => {
     setInstrument(inst);
-    setQuery("instrument", inst);
+    setQuery("telescope", getKeyByValue(TELESCOPES, inst));
   };
 
   return (

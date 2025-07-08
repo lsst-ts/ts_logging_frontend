@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 
 import { getDisplayDateRange } from "@/utils/utils";
 
-const TELESCOPES = Object.freeze({
+export const TELESCOPES = Object.freeze({
   AuxTel: "LATISS",
   Simonyi: "LSSTCam",
 });

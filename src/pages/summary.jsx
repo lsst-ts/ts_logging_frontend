@@ -24,9 +24,10 @@ import {
 import DialogMetricsCard from "@/components/dialog-metrics-card";
 import JiraTicketsTable from "@/components/jira-tickets-table";
 import { useSearch } from "@tanstack/react-router";
+import { TELESCOPES } from "@/components/parameters";
 
 export default function Summary() {
-  const { startDayobs, endDayobs, instrument } = useSearch({
+  const { startDayobs, endDayobs, telescope } = useSearch({
     from: "__root__",
   });
 
@@ -54,6 +55,7 @@ export default function Summary() {
     const queryEndDayobs = getDatetimeFromDayobsStr(endDayobs.toString())
       .plus({ days: 1 })
       .toFormat("yyyyMMdd");
+    const instrument = TELESCOPES[telescope];
     setExposuresLoading(true);
     setAlmanacLoading(true);
     setNarrativeLoading(true);
@@ -174,7 +176,7 @@ export default function Summary() {
     return () => {
       abortController.abort();
     };
-  }, [startDayobs, endDayobs, instrument]);
+  }, [startDayobs, endDayobs, telescope]);
 
   // calculate open shutter efficiency
   const efficiency = calculateEfficiency(nightHours, sumExpTime, weatherLoss);
