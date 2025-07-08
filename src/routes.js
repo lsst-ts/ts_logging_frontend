@@ -20,7 +20,7 @@ const yyyymmddRegex = /^\d{8}$/;
 
 const dayobsInt = z.coerce
   .string()
-  .regex(yyyymmddRegex, "Must be in yyyyLLdd format")
+  .regex(yyyymmddRegex, "Dayobs must be in yyyyMMdd format.")
   .refine(
     (val) => {
       const y = parseInt(val.slice(0, 4));
@@ -29,22 +29,24 @@ const dayobsInt = z.coerce
       const dt = DateTime.fromObject({ year: y, month: m, day: d });
       return dt.isValid;
     },
-    { message: "Not a valid calendar date" },
+    {
+      message: "Not a valid calendar date. Dayobs must be in yyyyMMdd format.",
+    },
   )
   .transform((val) => parseInt(val, 10));
 
 const searchParamsSchema = z
   .object({
     startDayobs: dayobsInt.default(() =>
-      DateTime.utc().minus({ days: 2 }).toFormat("yyyyMMdd"),
+      DateTime.utc().minus({ days: 1 }).toFormat("yyyyMMdd"),
     ),
     endDayobs: dayobsInt.default(() =>
       DateTime.utc().minus({ days: 1 }).toFormat("yyyyMMdd"),
     ),
     instrument: z.enum(["LSSTCam", "LATISS"]).default("LSSTCam"),
   })
-  .refine((obj) => obj.startDayobs < obj.endDayobs, {
-    message: "startDayobs must be less than endDayobs",
+  .refine((obj) => obj.startDayobs <= obj.endDayobs, {
+    message: "startDayobs must be before or equal to endDayobs.",
     path: ["startDayobs"],
   });
 

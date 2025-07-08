@@ -16,7 +16,11 @@ import {
   fetchExposureFlags,
   fetchJiraTickets,
 } from "@/utils/fetchUtils";
-import { calculateEfficiency, calculateTimeLoss } from "@/utils/utils";
+import {
+  calculateEfficiency,
+  calculateTimeLoss,
+  getDatetimeFromDayobsStr,
+} from "@/utils/utils";
 import DialogMetricsCard from "@/components/dialog-metrics-card";
 import JiraTicketsTable from "@/components/jira-tickets-table";
 import { useSearch } from "@tanstack/react-router";
@@ -25,6 +29,7 @@ export default function Summary() {
   const { startDayobs, endDayobs, instrument } = useSearch({
     from: "__root__",
   });
+
   const [nightHours, setNightHours] = useState(0.0);
   const [weatherLoss, setWeatherLoss] = useState(0.0);
   const [faultLoss, setFaultLoss] = useState(0.0);
@@ -44,14 +49,18 @@ export default function Summary() {
 
   useEffect(() => {
     const abortController = new AbortController();
-
+    // The end dayobs is inclusive, so we add one day to the
+    // endDayobs to get the correct range for the queries
+    const queryEndDayobs = getDatetimeFromDayobsStr(endDayobs.toString())
+      .plus({ days: 1 })
+      .toFormat("yyyyMMdd");
     setExposuresLoading(true);
     setAlmanacLoading(true);
     setNarrativeLoading(true);
     setJiraLoading(true);
     setFlagsLoading(true);
 
-    fetchExposures(startDayobs, endDayobs, instrument, abortController)
+    fetchExposures(startDayobs, queryEndDayobs, instrument, abortController)
       .then(([exposureFields, exposuresNo, exposureTime]) => {
         setExposureFields(exposureFields);
         setExposureCount(exposuresNo);
@@ -76,7 +85,7 @@ export default function Summary() {
         }
       });
 
-    fetchAlmanac(startDayobs, endDayobs, abortController)
+    fetchAlmanac(startDayobs, queryEndDayobs, abortController)
       .then((hours) => {
         setNightHours(hours);
       })
@@ -95,7 +104,7 @@ export default function Summary() {
         }
       });
 
-    fetchNarrativeLog(startDayobs, endDayobs, instrument, abortController)
+    fetchNarrativeLog(startDayobs, queryEndDayobs, instrument, abortController)
       .then(([weather, fault]) => {
         setWeatherLoss(weather);
         setFaultLoss(fault);
@@ -118,7 +127,7 @@ export default function Summary() {
         }
       });
 
-    fetchJiraTickets(startDayobs, endDayobs, instrument, abortController)
+    fetchJiraTickets(startDayobs, queryEndDayobs, instrument, abortController)
       .then((issues) => {
         setJiraTickets(issues);
         if (issues.length === 0) {
@@ -140,7 +149,7 @@ export default function Summary() {
         }
       });
 
-    fetchExposureFlags(startDayobs, endDayobs, instrument, abortController)
+    fetchExposureFlags(startDayobs, queryEndDayobs, instrument, abortController)
       .then((flags) => {
         setFlags(flags);
         if (flags.length === 0) {
