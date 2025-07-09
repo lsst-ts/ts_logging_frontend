@@ -13,6 +13,7 @@ function ColumnMultiSelectFilter({ column, closeDropdown }) {
   // Local checkbox state
   const [selected, setSelected] = useState(() => new Set(columnFilterValue));
 
+  // Handle check selections
   const toggleValue = (val) => {
     setSelected((prev) => {
       const next = new Set(prev);
@@ -39,12 +40,10 @@ function ColumnMultiSelectFilter({ column, closeDropdown }) {
       onClick={(e) => e.stopPropagation()}
       className="p-2 mt-2 space-y-2 text-black"
     >
-      {/* <div className="p-2 border-t border-teal-700"> */}
       <Separator className="mb-4 bg-stone-300" />
-      {/* Filter label */}
       <p className="text-sm">Filter:</p>
 
-      {/* Scrollable Multi-select checkboxes */}
+      {/* Scrollable multi-select checkboxes */}
       <div className="max-h-40 overflow-y-auto pr-6 space-y-1">
         {sortedUniqueValues.map((value) => (
           <label
@@ -82,7 +81,6 @@ function ColumnMultiSelectFilter({ column, closeDropdown }) {
           Apply
         </button>
       </div>
-      {/* </div> */}
     </div>
   );
 }
