@@ -26,12 +26,6 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from "@/components/ui/popover";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
@@ -42,157 +36,11 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 
+import ColumnVisibilityPopover from "@/components/column-visibility-popover";
+import ToggleExpandCollapseRows from "@/components/toggle-expand-collapse-rows";
+import ColumnMultiSelectFilter from "@/components/column-multi-select-filter";
 import { formatCellValue, getRubinTVUrl } from "@/utils/utils";
-
-// Popover component for column hiding
-// Should move to own file and use ShadCN's component
-function ColumnVisibilityPopover({ table }) {
-  const allColumns = table.getAllLeafColumns(); // Only leaf columns, no groups
-
-  const handleSelectAll = () => {
-    allColumns.forEach((column) => {
-      if (!column.getIsVisible()) column.toggleVisibility(true);
-    });
-  };
-
-  const handleDeselectAll = () => {
-    allColumns.forEach((column) => {
-      if (column.getIsVisible()) column.toggleVisibility(false);
-    });
-  };
-
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button className="btn bg-white font-light text-black p-2 rounded-sm shadow-[4px_4px_4px_0px_#3CAE3F] hover:bg-green-100">
-          Show / Hide Columns
-        </button>
-      </PopoverTrigger>
-      <PopoverContent className="w-56">
-        <div className="flex justify-between mb-2">
-          <button
-            onClick={handleSelectAll}
-            className="text-xs text-blue-600 hover:underline"
-          >
-            Select All
-          </button>
-          <button
-            onClick={handleDeselectAll}
-            className="text-xs text-red-600 hover:underline"
-          >
-            Deselect All
-          </button>
-        </div>
-        <div className="space-y-2 max-h-60 overflow-y-auto">
-          {allColumns.map((column) => (
-            <div key={column.id} className="flex items-center space-x-2">
-              <Checkbox
-                checked={column.getIsVisible()}
-                onCheckedChange={(checked) =>
-                  column.toggleVisibility(!!checked)
-                }
-              />
-              <span className="text-sm">{column.columnDef.header}</span>
-            </div>
-          ))}
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-function ColumnMultiSelectFilter({ column, closeDropdown }) {
-  const columnFilterValue = column.getFilterValue() ?? [];
-
-  const sortedUniqueValues = Array.from(
-    column.getFacetedUniqueValues()?.keys() ?? [],
-  ).sort();
-
-  // Local checkbox state
-  const [selected, setSelected] = useState(() => new Set(columnFilterValue));
-
-  const toggleValue = (val) => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      next.has(val) ? next.delete(val) : next.add(val);
-      return next;
-    });
-  };
-
-  // Buttons
-  const apply = () => {
-    column.setFilterValue(selected.size > 0 ? Array.from(selected) : undefined);
-    closeDropdown();
-  };
-
-  const clear = () => {
-    setSelected(new Set());
-    column.setFilterValue(undefined);
-    closeDropdown();
-  };
-
-  return (
-    <div
-      // Don't close dropdown on click
-      onClick={(e) => e.stopPropagation()}
-      className="p-2 mt-2 space-y-2 text-black"
-    >
-      {/* <div className="p-2 border-t border-teal-700"> */}
-      <Separator className="mb-4 bg-stone-300" />
-      {/* Filter label */}
-      <p className="text-sm">Filter:</p>
-
-      {/* Scrollable Multi-select checkboxes */}
-      <div className="max-h-40 overflow-y-auto pr-6 space-y-1">
-        {sortedUniqueValues.map((value) => (
-          <label
-            key={value}
-            className="flex items-center space-x-2 text-sm cursor-pointer"
-          >
-            <Checkbox
-              checked={selected.has(value)}
-              onCheckedChange={() => toggleValue(value)}
-            />
-            <span>{String(value)}</span>
-          </label>
-        ))}
-      </div>
-
-      {/* TODO: Only show once data has loaded? */}
-      {/* Clear and Apply buttons */}
-      <div className="flex justify-between items-center pt-2 text-xs">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            clear();
-          }}
-          className="text-red-600 hover:underline"
-        >
-          Clear
-        </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            apply();
-          }}
-          className="text-blue-600 hover:underline"
-        >
-          Apply
-        </button>
-      </div>
-      {/* </div> */}
-    </div>
-  );
-}
 
 function DataLogTable({ data, dataLogLoading }) {
   const [columnVisibility, setColumnVisibility] = useState({});
@@ -478,8 +326,8 @@ function DataLogTable({ data, dataLogLoading }) {
   }
 
   // Expand / Collapse helpers
+  // TODO: Do I need this since can also define in component?
   const allGroupRowIds = getAllGroupRowIds(table.getRowModel().rows);
-  const allExpanded = allGroupRowIds.every((id) => expanded[id]);
 
   return (
     <div className="font-light">
@@ -487,29 +335,12 @@ function DataLogTable({ data, dataLogLoading }) {
       <div className="flex justify-between items-center mb-4">
         <div className="flex gap-4">
           <ColumnVisibilityPopover table={table} />
-          {/* Expand/Collapse Toggle */}
-          <button
-            onClick={() => {
-              if (grouping.length === 0) return;
-              if (allExpanded) {
-                setExpanded({});
-              } else {
-                const newExpanded = {};
-                allGroupRowIds.forEach((id) => {
-                  newExpanded[id] = true;
-                });
-                setExpanded(newExpanded);
-              }
-            }}
-            disabled={grouping.length === 0}
-            className={`btn p-2 w-40 font-light justify-center rounded-sm shadow-[4px_4px_4px_0px_#3CAE3F] ${
-              grouping.length === 0
-                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                : "bg-white text-black hover:bg-green-100"
-            }`}
-          >
-            {allExpanded ? "Collapse All Groups" : "Expand All Groups"}
-          </button>
+          <ToggleExpandCollapseRows
+            table={table}
+            allGroupRowIds={allGroupRowIds}
+            expanded={expanded}
+            setExpanded={setExpanded}
+          />
         </div>
         <button
           onClick={resetTable}
