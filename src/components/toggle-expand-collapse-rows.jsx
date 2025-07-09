@@ -1,12 +1,24 @@
 import React from "react";
 
-function ToggleExpandCollapseRows({
-  table,
-  allGroupRowIds,
-  expanded,
-  setExpanded,
-}) {
+function ToggleExpandCollapseRows({ table, expanded, setExpanded }) {
   const grouping = table.getState().grouping;
+
+  // Walk grouped row model recursively to collect
+  // expandable group row ids
+  function getAllGroupRowIds(rows) {
+    const ids = [];
+    for (const row of rows) {
+      if (row.getIsGrouped()) {
+        ids.push(row.id);
+        if (row.subRows?.length) {
+          ids.push(...getAllGroupRowIds(row.subRows));
+        }
+      }
+    }
+    return ids;
+  }
+
+  const allGroupRowIds = getAllGroupRowIds(table.getRowModel().rows);
   const allExpanded = allGroupRowIds.every((id) => expanded[id]);
 
   return (
