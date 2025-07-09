@@ -310,25 +310,6 @@ function DataLogTable({ data, dataLogLoading }) {
     // debugColumns: true,
   });
 
-  // Walk grouped row model recursively to collect
-  // expandable group row ids
-  function getAllGroupRowIds(rows) {
-    const ids = [];
-    for (const row of rows) {
-      if (row.getIsGrouped()) {
-        ids.push(row.id);
-        if (row.subRows?.length) {
-          ids.push(...getAllGroupRowIds(row.subRows));
-        }
-      }
-    }
-    return ids;
-  }
-
-  // Expand / Collapse helpers
-  // TODO: Do I need this since can also define in component?
-  const allGroupRowIds = getAllGroupRowIds(table.getRowModel().rows);
-
   return (
     <div className="font-light">
       {/* Buttons to show/hide columns and reset table */}
@@ -337,7 +318,6 @@ function DataLogTable({ data, dataLogLoading }) {
           <ColumnVisibilityPopover table={table} />
           <ToggleExpandCollapseRows
             table={table}
-            allGroupRowIds={allGroupRowIds}
             expanded={expanded}
             setExpanded={setExpanded}
           />
