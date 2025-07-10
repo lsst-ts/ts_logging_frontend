@@ -36,16 +36,33 @@ const dayobsInt = z.coerce
   )
   .transform((val) => parseInt(val, 10));
 
-const searchParamsSchema = z
-  .object({
-    startDayobs: dayobsInt.default(() =>
-      DateTime.utc().minus({ days: 1 }).toFormat("yyyyMMdd"),
-    ),
-    endDayobs: dayobsInt.default(() =>
-      DateTime.utc().minus({ days: 1 }).toFormat("yyyyMMdd"),
-    ),
-    // instrument: z.enum(["LSSTCam", "LATISS"]).default("LSSTCam"),
-    telescope: z.enum(["Simonyi", "AuxTel"]).default("Simonyi"),
+// Create plain object schema
+const baseSearchParamsSchema = z.object({
+  startDayobs: dayobsInt.default(() =>
+    DateTime.utc().minus({ days: 1 }).toFormat("yyyyMMdd"),
+  ),
+  endDayobs: dayobsInt.default(() =>
+    DateTime.utc().minus({ days: 1 }).toFormat("yyyyMMdd"),
+  ),
+  telescope: z.enum(["Simonyi", "AuxTel"]).default("Simonyi"),
+});
+
+// Validate schema object for general use
+const searchParamsSchema = baseSearchParamsSchema.refine(
+  (obj) => obj.startDayobs <= obj.endDayobs,
+  {
+    message: "startDayobs must be before or equal to endDayobs.",
+    path: ["startDayobs"],
+  },
+);
+
+// Extend base schema object for individual pages
+const dataLogSearchSchema = baseSearchParamsSchema
+  .extend({
+    science_program: z.string().optional(),
+    img_type: z.string().optional(),
+    observation_reason: z.string().optional(),
+    target_name: z.string().optional(),
   })
   .refine((obj) => obj.startDayobs <= obj.endDayobs, {
     message: "startDayobs must be before or equal to endDayobs.",
@@ -64,7 +81,7 @@ const dataLogRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/data-log",
   component: DataLog,
-  validateSearch: searchParamsSchema,
+  validateSearch: dataLogSearchSchema,
   errorComponent: SearchParamErrorComponent,
 });
 
