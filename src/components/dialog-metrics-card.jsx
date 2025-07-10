@@ -41,7 +41,7 @@ function DialogMetricsCard({
           className="bg-sky-750 text-white font-light p-4 rounded-lg
                shadow-[0px_4px_4px_0px_#00000040,4px_4px_16px_4px_#006DA8B2]
                border-4 border-[#0C4A47] p-8
-               !w-[90vw] !max-w-5xl"
+               !w-[95vw] !max-w-7xl "
         >
           <DialogHeader>
             <DialogTitle className="flex flex-row text-2xl justify-between">

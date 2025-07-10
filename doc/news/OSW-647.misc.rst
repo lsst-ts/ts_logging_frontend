@@ -1,0 +1,1 @@
+Remove decimal points from time loss and efficiency cards
