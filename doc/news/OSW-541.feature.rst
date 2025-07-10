@@ -1,0 +1,1 @@
+Grab on-sky exposures count and total on-sky exposure time from response in fetchExposures and use them in the no of exposures and efficiency metric cards
