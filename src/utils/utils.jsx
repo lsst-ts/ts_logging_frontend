@@ -89,10 +89,16 @@ const getDisplayDateRange = (dayobs, noOfNights) => {
     : `${startStr} - ${endStr}`;
 };
 
+function getKeyByValue(obj, value) {
+  const key = Object.keys(obj).find((k) => obj[k] === value);
+  return key;
+}
+
 export {
   calculateEfficiency,
   calculateTimeLoss,
   getDayobsStr,
   getDatetimeFromDayobsStr,
   getDisplayDateRange,
+  getKeyByValue,
 };
