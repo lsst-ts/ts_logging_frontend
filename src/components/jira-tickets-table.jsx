@@ -70,7 +70,7 @@ function JiraTicketsTable({ tickets, loading = false }) {
                   </TableCell>
                   <TableCell>{ticket.status}</TableCell>
                   <TableCell className="!text-wrap">{ticket.created}</TableCell>
-                  <TableCell>{ticket.updated}</TableCell>
+                  <TableCell className="!text-wrap">{ticket.updated}</TableCell>
                   <TableCell className="text-right">
                     <a
                       href={ticket.url}
