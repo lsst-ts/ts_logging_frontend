@@ -14,9 +14,15 @@ import { getDatetimeFromDayobsStr, mergeDataLogSources } from "@/utils/utils";
 
 function DataLog() {
   // Routing and URL params
-  const { startDayobs, endDayobs, telescope } = useSearch({
-    from: "__root__",
-  });
+  const {
+    startDayobs,
+    endDayobs,
+    telescope,
+    science_program,
+    img_type,
+    observation_reason,
+    target_name,
+  } = useSearch({ from: "/data-log" });
 
   // The end dayobs is inclusive, so we add one day to the
   // endDayobs to get the correct range for the queries
@@ -24,6 +30,22 @@ function DataLog() {
     .plus({ days: 1 })
     .toFormat("yyyyMMdd");
   const instrument = TELESCOPES[telescope];
+
+  const filterKey = science_program
+    ? "science program"
+    : img_type
+      ? "img type"
+      : observation_reason
+        ? "observation reason"
+        : target_name
+          ? "target name"
+          : null;
+
+  const filterValue =
+    science_program || img_type || observation_reason || target_name;
+
+  const activeFilter =
+    filterKey && filterValue ? { id: filterKey, value: [filterValue] } : null;
 
   // Data
   const [dataLogEntries, setDataLogEntries] = useState([]);
@@ -93,15 +115,17 @@ function DataLog() {
   }, [startDayobs, endDayobs, telescope]);
 
   return (
-    <div>
-      <div className="flex flex-col w-full p-8 gap-8">
-        {/* Panel of info, user controls? */}
-        <h1 className="text-white text-[100px] font-thin text-center">
-          Data Log.
-        </h1>
-        {/* Table */}
-        <DataLogTable data={dataLogEntries} dataLogLoading={dataLogLoading} />
-      </div>
+    <div className="flex flex-col w-full p-8 gap-8">
+      {/* Panel of info, user controls? */}
+      <h1 className="text-white text-[100px] font-thin text-center">
+        Data Log.
+      </h1>
+      {/* Table */}
+      <DataLogTable
+        data={dataLogEntries}
+        dataLogLoading={dataLogLoading}
+        initialColumnFilter={activeFilter}
+      />
     </div>
   );
 }

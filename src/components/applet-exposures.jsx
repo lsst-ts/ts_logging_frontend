@@ -3,7 +3,7 @@
 "use client";
 
 import { useState } from "react";
-
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
   Select,
   SelectContent,
@@ -79,6 +79,25 @@ function AppletExposures({
     { value: SortByValues.HIGHEST_FIRST, label: "Highest number first" },
     { value: SortByValues.LOWEST_FIRST, label: "Lowest number first" },
   ];
+
+  const navigate = useNavigate();
+  const { startDayobs, endDayobs, telescope } = useSearch({ from: "/" }); // not sure if this is neccessary...
+
+  const handleBarClick = (data) => {
+    const filterField = groupBy;
+    const selectedValue = data.groupKey;
+
+    navigate({
+      to: "/data-log",
+      search: (prev) => ({
+        ...prev,
+        startDayobs,
+        endDayobs,
+        telescope,
+        [filterField]: selectedValue,
+      }),
+    });
+  };
 
   const flaggedObsIds = new Set(flags.map((f) => f.obs_id));
   const aggregatedMap = {};
@@ -273,6 +292,7 @@ function AppletExposures({
                             barSize={20}
                             minPointSize={1}
                             isAnimationActive={false}
+                            onClick={handleBarClick}
                           >
                             {/* Round corners when no flagged data */}
                             {chartData.map((entry, index) => {
@@ -286,6 +306,7 @@ function AppletExposures({
                                       ? [0, 4, 4, 0]
                                       : [0, 0, 0, 0]
                                   }
+                                  cursor="pointer"
                                 />
                               );
                             })}

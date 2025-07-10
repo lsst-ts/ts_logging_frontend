@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import {
   createColumnHelper,
@@ -42,7 +42,7 @@ import ToggleExpandCollapseRows from "@/components/toggle-expand-collapse-rows";
 import ColumnMultiSelectFilter from "@/components/column-multi-select-filter";
 import { formatCellValue, getRubinTVUrl } from "@/utils/utils";
 
-function DataLogTable({ data, dataLogLoading }) {
+function DataLogTable({ data, dataLogLoading, initialColumnFilter }) {
   const [columnVisibility, setColumnVisibility] = useState({});
   const [columnOrder, setColumnOrder] = useState([]);
   const [sorting, setSorting] = useState([]);
@@ -309,6 +309,16 @@ function DataLogTable({ data, dataLogLoading }) {
     // debugHeaders: true,
     // debugColumns: true,
   });
+
+  useEffect(() => {
+    if (initialColumnFilter) {
+      setColumnFilters((prev) => [
+        ...prev.filter((f) => f.id !== initialColumnFilter.id),
+        initialColumnFilter,
+      ]);
+    }
+    console.log("Applying filter from URL:", initialColumnFilter);
+  }, [initialColumnFilter]);
 
   return (
     <div className="font-light">
