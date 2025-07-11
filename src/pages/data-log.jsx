@@ -1,4 +1,3 @@
-// import React from "react";
 import { useState, useEffect } from "react";
 
 import { toast } from "sonner";
@@ -31,21 +30,19 @@ function DataLog() {
     .toFormat("yyyyMMdd");
   const instrument = TELESCOPES[telescope];
 
-  const filterKey = science_program
-    ? "science program"
-    : img_type
-      ? "img type"
-      : observation_reason
-        ? "observation reason"
-        : target_name
-          ? "target name"
-          : null;
-
-  const filterValue =
-    science_program || img_type || observation_reason || target_name;
-
-  const activeFilter =
-    filterKey && filterValue ? { id: filterKey, value: [filterValue] } : null;
+  const tableFilters = [];
+  if (science_program?.length) {
+    tableFilters.push({ id: "science program", value: science_program });
+  }
+  if (img_type?.length) {
+    tableFilters.push({ id: "img type", value: img_type });
+  }
+  if (observation_reason?.length) {
+    tableFilters.push({ id: "observation reason", value: observation_reason });
+  }
+  if (target_name?.length) {
+    tableFilters.push({ id: "target name", value: target_name });
+  }
 
   // Data
   const [dataLogEntries, setDataLogEntries] = useState([]);
@@ -121,7 +118,8 @@ function DataLog() {
     return () => {
       abortController.abort();
     };
-  }, [startDayobs, endDayobs, telescope]);
+  }, [startDayobs, endDayobs, telescope, instrument, queryEndDayobs]);
+  // TODO: remove endDayobs, telescope?
 
   return (
     <div className="flex flex-col w-full p-8 gap-8">
@@ -133,7 +131,7 @@ function DataLog() {
       <DataLogTable
         data={dataLogEntries}
         dataLogLoading={dataLogLoading}
-        initialColumnFilter={activeFilter}
+        tableFilters={tableFilters}
       />
     </div>
   );

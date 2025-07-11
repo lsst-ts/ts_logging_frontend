@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
-  createColumnHelper,
   useReactTable,
   getCoreRowModel,
   getSortedRowModel,
@@ -40,15 +39,32 @@ import {
 import ColumnVisibilityPopover from "@/components/column-visibility-popover";
 import ToggleExpandCollapseRows from "@/components/toggle-expand-collapse-rows";
 import ColumnMultiSelectFilter from "@/components/column-multi-select-filter";
-import { formatCellValue, getRubinTVUrl } from "@/utils/utils";
+import { dataLogColumns, matchValueOrInList } from "@/utils/dataLogColumns";
 
-function DataLogTable({ data, dataLogLoading, initialColumnFilter }) {
+function DataLogTable({ data, dataLogLoading, tableFilters }) {
   const [columnVisibility, setColumnVisibility] = useState({});
   const [columnOrder, setColumnOrder] = useState([]);
   const [sorting, setSorting] = useState([]);
   const [grouping, setGrouping] = useState([]);
   const [expanded, setExpanded] = useState({});
   const [columnFilters, setColumnFilters] = useState([]);
+
+  // Check if url filter params have been applied
+  const hasAppliedTableFilters = useRef(false);
+
+  // Apply url filters on first render
+  // Must be separate from general url-filter sync to avoid infinite renders.
+  useEffect(() => {
+    if (!hasAppliedTableFilters.current && tableFilters?.length) {
+      setColumnFilters((prev) => {
+        const existingIds = new Set(tableFilters.map((f) => f.id));
+        const remaining = prev.filter((f) => !existingIds.has(f.id));
+        return [...remaining, ...tableFilters];
+      });
+      hasAppliedTableFilters.current = true;
+      console.log("Applied filters from URL:", tableFilters);
+    }
+  }, [tableFilters]);
 
   // Reset function
   const resetTable = () => {
@@ -59,225 +75,12 @@ function DataLogTable({ data, dataLogLoading, initialColumnFilter }) {
     setColumnFilters([]);
   };
 
-  // Exact match filter function
-  const equalsFilterFn = (row, columnId, filterValue) => {
-    return row.getValue(columnId) === filterValue;
-  };
-
-  // Exact (multple) match(es) filter function
-  const matchValueOrInList = (row, columnId, filterValue) => {
-    const rowValue = row.getValue(columnId);
-
-    if (Array.isArray(filterValue)) {
-      return filterValue.includes(rowValue);
-    }
-
-    return rowValue === filterValue;
-  };
-
-  const RubinTVLink = ({ dayObs, seqNum }) => {
-    const url = getRubinTVUrl(dayObs, seqNum);
-    if (!url) return null;
-
-    return (
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-sky-400 underline hover:text-sky-700"
-      >
-        calexp
-      </a>
-    );
-  };
-
   // How many skeleton rows to show when loading
   const skeletonRowCount = 10;
 
-  // Columns for Data Log Table
-  const columnHelper = createColumnHelper();
-  const columns = [
-    // Missing field: "dome_temp"
-
-    // Link to RubinTV
-    columnHelper.display({
-      header: "RubinTV",
-      id: "externalLink",
-      cell: ({ row }) => (
-        <RubinTVLink
-          dayObs={row.original["day obs"]}
-          seqNum={row.original["seq num"]}
-        />
-      ),
-      size: 100,
-      filterType: null,
-    }),
-
-    // Identifying data
-    columnHelper.accessor("exposure id", {
-      header: "Exposure Id",
-      cell: (info) => formatCellValue(info.getValue()),
-      size: 140,
-      filterType: null,
-    }),
-    columnHelper.accessor("exposure name", {
-      header: "Exposure Name",
-      cell: (info) => formatCellValue(info.getValue()),
-      size: 200,
-      filterType: null,
-    }),
-
-    // Dayobs and timestamp
-    columnHelper.accessor("day obs", {
-      header: "Day Obs",
-      cell: (info) => formatCellValue(info.getValue()),
-      size: 100,
-      filterFn: matchValueOrInList,
-      filterType: "string",
-    }),
-    columnHelper.accessor("obs start", {
-      header: "Obs Start",
-      cell: (info) => formatCellValue(info.getValue()),
-      size: 240,
-      filterType: "number-range",
-    }),
-
-    // Observation Categories
-    columnHelper.accessor("science program", {
-      header: "Science Program",
-      cell: (info) => formatCellValue(info.getValue()),
-      size: 150,
-      filterFn: matchValueOrInList,
-      filterType: "string",
-    }),
-    columnHelper.accessor("img type", {
-      header: "Obs Type",
-      cell: (info) => formatCellValue(info.getValue()),
-      size: 100,
-      filterFn: matchValueOrInList,
-      filterType: "string",
-    }),
-    columnHelper.accessor("observation reason", {
-      header: "Obs Reason",
-      cell: (info) => formatCellValue(info.getValue()),
-      size: 160,
-      filterFn: matchValueOrInList,
-      filterType: "string",
-    }),
-    columnHelper.accessor("target name", {
-      header: "Target Name",
-      cell: (info) => formatCellValue(info.getValue()),
-      size: 160,
-      filterFn: matchValueOrInList,
-      filterType: "string",
-    }),
-
-    // Flag Info
-    columnHelper.accessor("exposure_flag", {
-      header: "Flags",
-      cell: (info) => formatCellValue(info.getValue()),
-      size: 100,
-      filterFn: matchValueOrInList,
-      filterType: "string",
-    }),
-    columnHelper.accessor("message_text", {
-      header: "Comments",
-      cell: (info) => formatCellValue(info.getValue()),
-      size: 120,
-      filterType: null,
-    }),
-
-    // Instrument config and environment
-    columnHelper.accessor("s ra", {
-      header: "RA",
-      cell: (info) => formatCellValue(info.getValue()),
-      size: 60,
-      filterType: "number-range",
-    }),
-    columnHelper.accessor("s dec", {
-      header: "Dec",
-      cell: (info) => formatCellValue(info.getValue()),
-      size: 70,
-      filterType: "number-range",
-    }),
-    columnHelper.accessor("altitude", {
-      header: "Alt",
-      cell: (info) => formatCellValue(info.getValue()),
-      size: 70,
-      filterType: "number-range",
-    }),
-    columnHelper.accessor("azimuth", {
-      header: "Az",
-      cell: (info) => formatCellValue(info.getValue()),
-      size: 60,
-      filterType: "number-range",
-    }),
-    columnHelper.accessor("sky rotation", {
-      header: "Sky Rotation",
-      cell: (info) => formatCellValue(info.getValue()),
-      size: 120,
-      filterType: "number-range",
-    }),
-    columnHelper.accessor("airmass", {
-      header: "Airmass",
-      cell: (info) => formatCellValue(info.getValue()),
-      size: 90,
-      filterType: "number-range",
-    }),
-    columnHelper.accessor("dimm seeing", {
-      header: "DIMM seeing",
-      cell: (info) => formatCellValue(info.getValue()),
-      size: 130,
-      filterType: "number-range",
-    }),
-    // psf sigma median * 2.355
-    columnHelper.accessor("psf median", {
-      header: "Median PSF",
-      cell: (info) => formatCellValue(info.getValue()),
-      size: 115,
-      filterType: "number-range",
-      meta: {
-        tooltip: "Median PSF (FWHM) = psf sigma median * 2.355",
-      },
-    }),
-    columnHelper.accessor("sky bg median", {
-      header: "Sky Brightness",
-      cell: (info) => formatCellValue(info.getValue()),
-      size: 140,
-      filterType: "number-range",
-      meta: {
-        tooltip: "sky bg median",
-      },
-    }),
-    columnHelper.accessor("zero point median", {
-      header: "Photometric ZP",
-      cell: (info) => formatCellValue(info.getValue()),
-      size: 140,
-      filterType: "number-range",
-      meta: {
-        tooltip: "zero point median",
-      },
-    }),
-    columnHelper.accessor("high snr source count median", {
-      header: "High SNR Source Counts",
-      cell: (info) => formatCellValue(info.getValue()),
-      size: 200,
-      filterType: "number-range",
-      meta: {
-        tooltip: "high snr source count median",
-      },
-    }),
-    columnHelper.accessor("air temp", {
-      header: "Outside Air Temp",
-      cell: (info) => formatCellValue(info.getValue()),
-      size: 150,
-      filterType: "number-range",
-    }),
-  ];
-
   const table = useReactTable({
     data,
-    columns,
+    columns: dataLogColumns,
     state: {
       columnVisibility,
       columnOrder,
@@ -287,7 +90,6 @@ function DataLogTable({ data, dataLogLoading, initialColumnFilter }) {
       columnFilters,
     },
     filterFns: {
-      equals: equalsFilterFn,
       multiEquals: matchValueOrInList,
     },
     onColumnVisibilityChange: setColumnVisibility,
@@ -305,20 +107,35 @@ function DataLogTable({ data, dataLogLoading, initialColumnFilter }) {
     getFacetedUniqueValues: getFacetedUniqueValues(),
     getFacetedMinMaxValues: getFacetedMinMaxValues(),
     columnResizeMode: "onChange",
-    // debugTable: true,
-    // debugHeaders: true,
-    // debugColumns: true,
   });
 
+  // Nav & search param hooks
+  const navigate = useNavigate({ from: "/data-log" });
+  const searchParams = useSearch({ from: "/data-log" });
+
   useEffect(() => {
-    if (initialColumnFilter) {
-      setColumnFilters((prev) => [
-        ...prev.filter((f) => f.id !== initialColumnFilter.id),
-        initialColumnFilter,
-      ]);
+    const newParams = { ...searchParams };
+
+    // Remove old filter params
+    for (const column of table.getAllColumns()) {
+      const urlParam = column.columnDef.meta?.urlParam;
+      if (urlParam && Object.hasOwn(newParams, urlParam)) {
+        delete newParams[urlParam];
+      }
     }
-    console.log("Applying filter from URL:", initialColumnFilter);
-  }, [initialColumnFilter]);
+
+    // Add current filters
+    for (const filter of columnFilters) {
+      const column = table.getColumn(filter.id);
+      const urlParam = column?.columnDef.meta?.urlParam;
+      if (urlParam) {
+        newParams[urlParam] = filter.value;
+      }
+    }
+
+    navigate({ to: "/data-log", search: newParams, replace: true });
+    // }, [columnFilters]);
+  }, [columnFilters, navigate, searchParams, table]);
 
   return (
     <div className="font-light">
@@ -510,7 +327,7 @@ function DataLogTable({ data, dataLogLoading, initialColumnFilter }) {
               {dataLogLoading
                 ? Array.from({ length: skeletonRowCount }).map((_, rowIdx) => (
                     <TableRow key={`skeleton-${rowIdx}`}>
-                      {columns.map((_, colIdx) => (
+                      {dataLogColumns.map((_, colIdx) => (
                         <TableCell key={`skeleton-cell-${rowIdx}-${colIdx}`}>
                           <Skeleton className="h-4 w-full bg-teal-700" />
                         </TableCell>
@@ -525,7 +342,7 @@ function DataLogTable({ data, dataLogLoading, initialColumnFilter }) {
                         {isGroupedRow ? (
                           // Display rows grouped by category
                           <TableCell
-                            colSpan={columns.length}
+                            colSpan={dataLogColumns.length}
                             className="bg-stone-900 font-light text-teal-400"
                           >
                             <div
