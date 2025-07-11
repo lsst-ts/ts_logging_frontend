@@ -230,14 +230,14 @@ function DataLogTable({ data, dataLogLoading, initialColumnFilter }) {
       size: 130,
       filterType: "number-range",
     }),
-    columnHelper.accessor("psf_sigma_median", {
+    // psf sigma median * 2.355
+    columnHelper.accessor("psf median", {
       header: "Median PSF",
       cell: (info) => formatCellValue(info.getValue()),
       size: 115,
       filterType: "number-range",
       meta: {
-        tooltip: "psf_sigma_median",
-        // tooltip: "Median PSF (FWHM) = psf_sigma_median * 2.355"
+        tooltip: "Median PSF (FWHM) = psf sigma median * 2.355",
       },
     }),
     columnHelper.accessor("sky bg median", {
