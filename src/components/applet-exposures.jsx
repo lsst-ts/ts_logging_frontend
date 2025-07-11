@@ -21,7 +21,7 @@ import {
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
 
-import { Cell, Bar, BarChart, XAxis, YAxis } from "recharts";
+import { Cell, Bar, BarChart, XAxis, YAxis, Customized } from "recharts";
 
 import InfoIcon from "../assets/InfoIcon.svg";
 import DownloadIcon from "../assets/DownloadIcon.svg";
@@ -47,6 +47,7 @@ const SortByValues = Object.freeze({
 });
 
 const PLOT_YLABELS_MAXSIZE = 14;
+const BAR_SIZE = 35;
 
 function AppletExposures({
   exposureFields,
@@ -59,6 +60,7 @@ function AppletExposures({
   const [plotBy, setPlotBy] = useState(PlotByValues.NUMBER);
   const [groupBy, setGroupBy] = useState(GroupByValues.SCIENCE_PROGRAM);
   const [sortBy, setSortBy] = useState(SortByValues.DEFAULT);
+  const [hovered, setHovered] = useState(null);
 
   const plotByOptions = [
     { value: PlotByValues.NUMBER, label: "Number" },
@@ -270,7 +272,7 @@ function AppletExposures({
                   <div className="flex-grow overflow-y-auto">
                     <div
                       style={{
-                        height: `${chartData.length * 35}px`,
+                        height: `${chartData.length * BAR_SIZE}px`,
                         minHeight: "180px",
                       }}
                     >
@@ -292,7 +294,6 @@ function AppletExposures({
                             barSize={20}
                             minPointSize={1}
                             isAnimationActive={false}
-                            onClick={handleBarClick}
                           >
                             {/* Round corners when no flagged data */}
                             {chartData.map((entry, index) => {
@@ -327,6 +328,48 @@ function AppletExposures({
                               />
                             ))}
                           </Bar>
+
+                          {/* Transparent/highlighted layer for visibility/clickability */}
+                          <Customized
+                            component={({ width, data, yAxisMap }) => {
+                              const yAxis = Object.values(yAxisMap)[0];
+                              const bandwidth =
+                                typeof yAxis.scale.bandwidth === "function"
+                                  ? yAxis.scale.bandwidth()
+                                  : BAR_SIZE;
+
+                              return (
+                                <g>
+                                  {data.map((entry, index) => {
+                                    const y = yAxis.scale(entry.groupKey);
+                                    const offsetY =
+                                      y + (bandwidth - BAR_SIZE) / 2;
+
+                                    return (
+                                      <rect
+                                        key={`overlay-${index}`}
+                                        x={0}
+                                        y={offsetY}
+                                        width={width}
+                                        height={BAR_SIZE}
+                                        fill={
+                                          hovered === entry.groupKey
+                                            ? "rgba(255,255,255,0.15)"
+                                            : "transparent"
+                                        }
+                                        onMouseEnter={() =>
+                                          setHovered(entry.groupKey)
+                                        }
+                                        onMouseLeave={() => setHovered(null)}
+                                        onClick={() => handleBarClick(entry)}
+                                        style={{ cursor: "pointer" }}
+                                      />
+                                    );
+                                  })}
+                                </g>
+                              );
+                            }}
+                          />
 
                           {/* Axes, ticks, labels and styles */}
                           <YAxis
