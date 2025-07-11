@@ -76,7 +76,7 @@ export default function Layout({ children }) {
           instrument={instrument}
           onInstrumentChange={handleInstrumentChange}
         />
-        <main className="w-full bg-stone-800">
+        <main className="flex-1 bg-stone-800 overflow-x-hidden">
           {/* Show/Hide Sidebar button */}
           <SidebarTrigger className="color-teal-500 fixed hover:bg-sky-900 transition-colors duration-200" />
           {children}
