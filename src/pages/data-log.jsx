@@ -83,7 +83,16 @@ function DataLog() {
         }
 
         // Merge the two data sources
-        const mergedData = mergeDataLogSources(dataLog, exposureLogData);
+        // and apply conversion to required row(s)
+        const mergedData = mergeDataLogSources(dataLog, exposureLogData).map(
+          (entry) => {
+            const psf = parseFloat(entry["psf sigma median"]);
+            return {
+              ...entry,
+              "psf median": !isNaN(psf) ? psf * 2.355 : null,
+            };
+          },
+        );
 
         // TODO: Remove before PR merge
         // Check merged data sample after merging
