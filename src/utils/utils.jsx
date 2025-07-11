@@ -180,6 +180,48 @@ const getRubinTVUrl = (dayObs, seqNum) => {
   return prod_or_dev === 1 ? url_dev : url_prod;
 };
 
+/**
+ * Builds a navigation URL, keeping only global params when leaving data-log.
+ *
+ * @param {string} itemUrl - The target navigation URL.
+ * @param {string} currentPath - The current pathname from router state.
+ * @param {object} currentSearch - The current search params object.
+ * @param {string[]} allowedParams - List of global param keys to keep.
+ * @returns {string} A valid URL with only global query parameters.
+ */
+const buildNavItemUrl = (
+  itemUrl,
+  currentPath,
+  currentSearch,
+  allowedParams,
+) => {
+  if (itemUrl === "#") return "#";
+
+  const isLeavingDataLog =
+    currentPath === "/nightlydigest/data-log" &&
+    itemUrl !== "/nightlydigest/data-log";
+
+  const searchParams = new URLSearchParams();
+
+  const keysToPreserve = isLeavingDataLog
+    ? allowedParams
+    : Object.keys(currentSearch);
+
+  for (const key of keysToPreserve) {
+    const value = currentSearch[key];
+    if (value !== undefined) {
+      if (Array.isArray(value)) {
+        value.forEach((v) => searchParams.append(key, v));
+      } else {
+        searchParams.set(key, value);
+      }
+    }
+  }
+
+  const query = searchParams.toString();
+  return query ? `${itemUrl}?${query}` : itemUrl;
+};
+
 export {
   calculateEfficiency,
   calculateTimeLoss,
@@ -190,4 +232,5 @@ export {
   formatCellValue,
   mergeDataLogSources,
   getRubinTVUrl,
+  buildNavItemUrl,
 };

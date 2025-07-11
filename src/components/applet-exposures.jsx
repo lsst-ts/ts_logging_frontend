@@ -83,7 +83,7 @@ function AppletExposures({
   ];
 
   const navigate = useNavigate();
-  const { startDayobs, endDayobs, telescope } = useSearch({ from: "/" }); // not sure if this is neccessary...
+  const { startDayobs, endDayobs, telescope } = useSearch({ from: "/" });
 
   const handleBarClick = (data) => {
     const filterField = groupBy;
@@ -96,7 +96,7 @@ function AppletExposures({
         startDayobs,
         endDayobs,
         telescope,
-        [filterField]: selectedValue,
+        [filterField]: [selectedValue],
       }),
     });
   };
