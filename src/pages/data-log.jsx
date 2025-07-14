@@ -122,8 +122,7 @@ function DataLog() {
     return () => {
       abortController.abort();
     };
-  }, [startDayobs, endDayobs, telescope, instrument, queryEndDayobs]);
-  // TODO: remove endDayobs, telescope?
+  }, [startDayobs, queryEndDayobs, instrument]);
 
   return (
     <div className="flex flex-col w-full p-8 gap-4">
