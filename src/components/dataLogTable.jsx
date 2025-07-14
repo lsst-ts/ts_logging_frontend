@@ -113,6 +113,7 @@ function DataLogTable({ data, dataLogLoading, tableFilters }) {
   const navigate = useNavigate({ from: "/data-log" });
   const searchParams = useSearch({ from: "/data-log" });
 
+  // Sync url with filters
   useEffect(() => {
     const newParams = { ...searchParams };
 
@@ -304,7 +305,6 @@ function DataLogTable({ data, dataLogLoading, tableFilters }) {
                           {/* Resize handle */}
                           {header.column.getCanResize() && (
                             <div
-                              // onDoubleClick={header.column.resetSize()} // causes infinite loop
                               onMouseDown={header.getResizeHandler()}
                               onTouchStart={header.getResizeHandler()}
                               className="absolute right-2 top-0 h-full w-1 bg-teal-400 cursor-col-resize select-none"
