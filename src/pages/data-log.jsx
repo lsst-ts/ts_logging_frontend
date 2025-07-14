@@ -99,10 +99,6 @@ function DataLog() {
           },
         );
 
-        // TODO: Remove before PR merge
-        // Check merged data sample after merging
-        console.log("Merged Data Log sample entries:", mergedData.slice(0, 3));
-
         // Set the merged data to state
         setDataLogEntries(mergedData);
         setDataLogLoading(false);
