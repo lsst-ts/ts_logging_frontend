@@ -1,7 +1,5 @@
 // Applet: Display a breakdown of the exposures into type, reason, and program.
 
-"use client";
-
 import { useState } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
