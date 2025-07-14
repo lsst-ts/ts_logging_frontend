@@ -37,6 +37,8 @@ export default function Digest() {
   const [exposureFields, setExposureFields] = useState([]);
   const [exposureCount, setExposureCount] = useState(0);
   const [sumExpTime, setSumExpTime] = useState(0.0);
+  const [onSkyExpCount, setOnSkyExpCount] = useState(0);
+  const [sumOnSkyExpTime, setSumOnSkyExpTime] = useState(0.0);
   const [flags, setFlags] = useState([]);
 
   const [exposuresLoading, setExposuresLoading] = useState(true);
@@ -63,15 +65,25 @@ export default function Digest() {
     setFlagsLoading(true);
 
     fetchExposures(startDayobs, queryEndDayobs, instrument, abortController)
-      .then(([exposureFields, exposuresNo, exposureTime]) => {
-        setExposureFields(exposureFields);
-        setExposureCount(exposuresNo);
-        setSumExpTime(exposureTime);
-        setExposuresLoading(false);
-        if (exposuresNo === 0) {
-          toast.warning("No exposures found for the selected date range.");
-        }
-      })
+      .then(
+        ([
+          exposureFields,
+          exposuresNo,
+          exposureTime,
+          onSkyExpNo,
+          totalOnSkyExpTime,
+        ]) => {
+          setExposureFields(exposureFields);
+          setExposureCount(exposuresNo);
+          setSumExpTime(exposureTime);
+          setOnSkyExpCount(onSkyExpNo);
+          setSumOnSkyExpTime(totalOnSkyExpTime);
+          setExposuresLoading(false);
+          if (exposuresNo === 0) {
+            toast.warning("No exposures found for the selected date range.");
+          }
+        },
+      )
       .catch((err) => {
         if (!abortController.signal.aborted) {
           const msg = err?.message;
@@ -179,7 +191,11 @@ export default function Digest() {
   }, [startDayobs, endDayobs, telescope]);
 
   // calculate open shutter efficiency
-  const efficiency = calculateEfficiency(nightHours, sumExpTime, weatherLoss);
+  const efficiency = calculateEfficiency(
+    nightHours,
+    sumOnSkyExpTime,
+    weatherLoss,
+  );
   const efficiencyText = `${efficiency} %`;
   const [timeLoss, timeLossDetails] = calculateTimeLoss(weatherLoss, faultLoss);
   const newTicketsCount = jiraTickets.filter((tix) => tix.isNew).length;
@@ -191,7 +207,7 @@ export default function Digest() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           <MetricsCard
             icon={ShutterIcon}
-            data={exposureCount}
+            data={onSkyExpCount}
             label="Nighttime exposures taken"
             metadata="(TBD expected)"
             tooltip="On-sky exposures taken during the specified date range."
@@ -201,7 +217,7 @@ export default function Digest() {
             icon={<EfficiencyChart value={efficiency} />}
             data={efficiencyText}
             label="Open-shutter (-weather) efficiency"
-            tooltip="Efficiency computed as total exposure time / (time between 18 degree twilights minus time lost to weather)"
+            tooltip="Efficiency computed as total on-sky exposure time / (time between 18 degree twilights minus time lost to weather)"
             loading={almanacLoading || exposuresLoading}
           />
           <MetricsCard
