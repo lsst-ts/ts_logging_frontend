@@ -65,18 +65,25 @@ export default function Digest() {
     setFlagsLoading(true);
 
     fetchExposures(startDayobs, queryEndDayobs, instrument, abortController)
-      .then(([exposureFields, exposuresNo, exposureTime, onSkyExpNo,
-          totalOnSkyExpTime]) => {
-        setExposureFields(exposureFields);
-        setExposureCount(exposuresNo);
-        setSumExpTime(exposureTime);
-        setOnSkyExpCount(onSkyExpNo);
-        setSumOnSkyExpTime(totalOnSkyExpTime);
-        setExposuresLoading(false);
-        if (exposuresNo === 0) {
-          toast.warning("No exposures found for the selected date range.");
-        }
-      })
+      .then(
+        ([
+          exposureFields,
+          exposuresNo,
+          exposureTime,
+          onSkyExpNo,
+          totalOnSkyExpTime,
+        ]) => {
+          setExposureFields(exposureFields);
+          setExposureCount(exposuresNo);
+          setSumExpTime(exposureTime);
+          setOnSkyExpCount(onSkyExpNo);
+          setSumOnSkyExpTime(totalOnSkyExpTime);
+          setExposuresLoading(false);
+          if (exposuresNo === 0) {
+            toast.warning("No exposures found for the selected date range.");
+          }
+        },
+      )
       .catch((err) => {
         if (!abortController.signal.aborted) {
           const msg = err?.message;
@@ -184,7 +191,11 @@ export default function Digest() {
   }, [startDayobs, endDayobs, telescope]);
 
   // calculate open shutter efficiency
-  const efficiency = calculateEfficiency(nightHours, sumOnSkyExpTime, weatherLoss);
+  const efficiency = calculateEfficiency(
+    nightHours,
+    sumOnSkyExpTime,
+    weatherLoss,
+  );
   const efficiencyText = `${efficiency} %`;
   const [timeLoss, timeLossDetails] = calculateTimeLoss(weatherLoss, faultLoss);
   const newTicketsCount = jiraTickets.filter((tix) => tix.isNew).length;
