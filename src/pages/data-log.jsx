@@ -30,6 +30,14 @@ function DataLog() {
     .toFormat("yyyyMMdd");
   const instrument = TELESCOPES[telescope];
 
+  // For display on page
+  const instrumentName = telescope;
+  const dateRangeString =
+    startDayobs === endDayobs
+      ? `on dayobs ${startDayobs}`
+      : `in dayobs range ${startDayobs}–${endDayobs}`;
+
+  // To pass url filter params to table
   const tableFilters = [];
   if (science_program?.length) {
     tableFilters.push({ id: "science program", value: science_program });
@@ -122,11 +130,35 @@ function DataLog() {
   // TODO: remove endDayobs, telescope?
 
   return (
-    <div className="flex flex-col w-full p-8 gap-8">
-      {/* Panel of info, user controls? */}
-      <h1 className="text-white text-[100px] font-thin text-center">
-        Data Log.
+    <div className="flex flex-col w-full p-8 gap-4">
+      {/* Page title */}
+      <h1 className="flex flex-row gap-3 text-white text-5xl uppercase justify-center">
+        <span className="font-extrabold">Data</span>
+        <span className="tracking-[2px]">Log</span>
       </h1>
+
+      {/* Info section */}
+      <div className="min-h-[4.5rem] text-white font-thin text-center pb-4 flex flex-col items-center justify-center gap-2">
+        {dataLogLoading ? (
+          <>
+            <Skeleton className="h-5 w-3/4 max-w-xl bg-stone-700" />
+            <Skeleton className="h-5 w-[90%] max-w-2xl bg-stone-700" />
+          </>
+        ) : (
+          <>
+            <p>
+              {dataLogEntries.length} exposures returned for {instrumentName}{" "}
+              {dateRangeString}.
+            </p>
+            <p>
+              <span className="font-bold">Note:</span> Filters persist across
+              queries. If you don't see data as expected, try resetting the
+              table.
+            </p>
+          </>
+        )}
+      </div>
+
       {/* Table */}
       <DataLogTable
         data={dataLogEntries}
