@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useSearch } from "@tanstack/react-router";
 
+import { Skeleton } from "@/components/ui/skeleton";
 import { TELESCOPES } from "@/components/parameters";
 import DataLogTable from "@/components/dataLogTable.jsx";
 import {
