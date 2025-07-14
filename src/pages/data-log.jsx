@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-
+import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { useSearch } from "@tanstack/react-router";
 
@@ -126,42 +126,45 @@ function DataLog() {
   }, [startDayobs, queryEndDayobs, instrument]);
 
   return (
-    <div className="flex flex-col w-full p-8 gap-4">
-      {/* Page title */}
-      <h1 className="flex flex-row gap-3 text-white text-5xl uppercase justify-center">
-        <span className="tracking-[2px] font-extralight">Data</span>
-        <span className="font-extrabold">Log</span>
-      </h1>
+    <>
+      <div className="flex flex-col w-full p-8 gap-4">
+        {/* Page title */}
+        <h1 className="flex flex-row gap-3 text-white text-5xl uppercase justify-center">
+          <span className="tracking-[2px] font-extralight">Data</span>
+          <span className="font-extrabold">Log</span>
+        </h1>
 
-      {/* Info section */}
-      <div className="min-h-[4.5rem] text-white font-thin text-center pb-4 flex flex-col items-center justify-center gap-2">
-        {dataLogLoading ? (
-          <>
-            <Skeleton className="h-5 w-3/4 max-w-xl bg-stone-700" />
-            <Skeleton className="h-5 w-[90%] max-w-2xl bg-stone-700" />
-          </>
-        ) : (
-          <>
-            <p>
-              {dataLogEntries.length} exposures returned for {instrumentName}{" "}
-              {dateRangeString}.
-            </p>
-            <p>
-              <span className="font-bold">Note:</span> Filters persist across
-              queries. If you don't see data as expected, try resetting the
-              table.
-            </p>
-          </>
-        )}
+        {/* Info section */}
+        <div className="min-h-[4.5rem] text-white font-thin text-center pb-4 flex flex-col items-center justify-center gap-2">
+          {dataLogLoading ? (
+            <>
+              <Skeleton className="h-5 w-3/4 max-w-xl bg-stone-700" />
+              <Skeleton className="h-5 w-[90%] max-w-2xl bg-stone-700" />
+            </>
+          ) : (
+            <>
+              <p>
+                {dataLogEntries.length} exposures returned for {instrumentName}{" "}
+                {dateRangeString}.
+              </p>
+              <p>
+                <span className="font-bold">Note:</span> Filters persist across
+                queries. If you don't see data as expected, try resetting the
+                table.
+              </p>
+            </>
+          )}
+        </div>
+
+        {/* Table */}
+        <DataLogTable
+          data={dataLogEntries}
+          dataLogLoading={dataLogLoading}
+          tableFilters={tableFilters}
+        />
       </div>
-
-      {/* Table */}
-      <DataLogTable
-        data={dataLogEntries}
-        dataLogLoading={dataLogLoading}
-        tableFilters={tableFilters}
-      />
-    </div>
+      <Toaster expand={true} richColors closeButton />
+    </>
   );
 }
 
