@@ -129,8 +129,8 @@ function DataLog() {
     <div className="flex flex-col w-full p-8 gap-4">
       {/* Page title */}
       <h1 className="flex flex-row gap-3 text-white text-5xl uppercase justify-center">
-        <span className="font-extrabold">Data</span>
-        <span className="tracking-[2px]">Log</span>
+        <span className="tracking-[2px] font-extralight">Data</span>
+        <span className="font-extrabold">Log</span>
       </h1>
 
       {/* Info section */}
