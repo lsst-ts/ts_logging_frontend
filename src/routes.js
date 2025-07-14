@@ -6,7 +6,7 @@ import {
 import Layout from "./pages/layout";
 import DataLog from "./pages/data-log";
 import ContextFeed from "./pages/context-feed";
-import Summary from "./pages/summary";
+import Digest from "./pages/digest";
 import { z } from "zod";
 import { DateTime } from "luxon";
 
@@ -55,7 +55,7 @@ const searchParamsSchema = z
 const dashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
-  component: Summary,
+  component: Digest,
   validateSearch: searchParamsSchema,
   errorComponent: SearchParamErrorComponent,
 });

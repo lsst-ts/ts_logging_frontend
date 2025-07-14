@@ -26,7 +26,7 @@ import JiraTicketsTable from "@/components/jira-tickets-table";
 import { useSearch } from "@tanstack/react-router";
 import { TELESCOPES } from "@/components/parameters";
 
-export default function Summary() {
+export default function Digest() {
   const { startDayobs, endDayobs, telescope } = useSearch({
     from: "__root__",
   });
