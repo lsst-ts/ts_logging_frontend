@@ -1,27 +1,47 @@
+import React from "react";
 import {
   NavigationMenu,
   NavigationMenuList,
   NavigationMenuItem,
   NavigationMenuLink,
 } from "@/components/ui/navigation-menu";
+import { useRouter } from "@tanstack/react-router";
 
 const items = [
-  { name: "digest", title: "Nightly Digest", url: "#" },
+  { name: "digest", title: "Nightly Digest", url: "/nightlydigest/" },
   { name: "plots", title: "Plots", url: "#" },
-  { name: "data-log", title: "Data Log", url: "#" },
-  { name: "context-feed", title: "Context Feed", url: "#" },
+  { name: "data-log", title: "Data Log", url: "/nightlydigest/data-log" },
+  {
+    name: "context-feed",
+    title: "Context Feed",
+    url: "/nightlydigest/context-feed",
+  },
 ];
 
-export default function NavMenu({ activeKey }) {
+export default function NavMenu() {
+  const { state } = useRouter();
+  const search = state.location.search;
+  const pathname = state.location.pathname;
+  const searchString =
+    search && typeof search === "object" && Object.keys(search).length > 0
+      ? new URLSearchParams(search).toString()
+      : "";
   return (
     <NavigationMenu className="flex flex-col items-start">
       <NavigationMenuList className="flex flex-col gap-2">
         {items.map((item) => {
-          const isActive = item.name === activeKey;
+          // Remove trailing slash for comparison if needed
+          const itemPath = item.url.replace(/\/$/, "");
+          const currentPath = pathname.replace(/\/$/, "");
+          const isActive = itemPath === currentPath;
+          const url =
+            item.url === "#"
+              ? "#"
+              : item.url + (searchString ? `?${searchString}` : "");
           return (
             <NavigationMenuItem key={item.name}>
               <NavigationMenuLink
-                href={item.url}
+                href={url}
                 className={`text-base text-white ${
                   isActive
                     ? "font-bold"
