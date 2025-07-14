@@ -89,6 +89,13 @@ const getDisplayDateRange = (dayobs, noOfNights) => {
     : `${startStr} - ${endStr}`;
 };
 
+/**
+ * Returns the key in the given object that corresponds to the specified value.
+ *
+ * @param {Object} obj - The object to search through.
+ * @param {*} value - The value to find the corresponding key for.
+ * @returns {string|undefined} The key associated with the value, or undefined if not found.
+ */
 function getKeyByValue(obj, value) {
   const key = Object.keys(obj).find((k) => obj[k] === value);
   return key;
