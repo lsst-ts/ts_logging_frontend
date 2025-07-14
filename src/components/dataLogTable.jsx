@@ -134,8 +134,7 @@ function DataLogTable({ data, dataLogLoading, tableFilters }) {
     }
 
     navigate({ to: "/data-log", search: newParams, replace: true });
-    // }, [columnFilters]);
-  }, [columnFilters, navigate, searchParams, table]);
+  }, [searchParams, table, columnFilters, navigate]);
 
   return (
     <div className="font-light">
