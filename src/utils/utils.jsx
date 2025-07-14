@@ -139,6 +139,16 @@ const inferDecimals = (value) => {
   return 2;
 };
 
+/**
+ * Merges rows from the consDB and exposure log sources.
+ *
+ * For each consDB row, attempts to enrich it with instrument, exposure flag,
+ * and message text from the exposure log (matched via `obs_id` and `exposure name`).
+ *
+ * @param {Object[]} consDbRows - The array of rows from the consDB source.
+ * @param {Object[]} exposureLogRows - The array of rows from the exposure log source.
+ * @returns {Object[]} A new array of merged row objects with added/enriched fields.
+ */
 const mergeDataLogSources = (consDbRows, exposureLogRows) => {
   const exposureLogMap = new Map();
   exposureLogRows.forEach((entry) => {

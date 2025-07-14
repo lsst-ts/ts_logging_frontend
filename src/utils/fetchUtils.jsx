@@ -220,6 +220,18 @@ const fetchDataLogEntriesFromConsDB = async (
   }
 };
 
+/**
+ * Fetches data log entries from the exposure log for a given date range and instrument.
+ *
+ * @async
+ * @function fetchDataLogEntriesFromExposureLog
+ * @param {string} start - The start date of the observation range (format: YYYY-MM-DD).
+ * @param {string} end - The end date of the observation range (format: YYYY-MM-DD).
+ * @param {string} instrument - The instrument to filter exposure entries.
+ * @param {AbortController} abortController - The AbortController used to cancel the request if needed.
+ * @returns {Promise<Object[]>} A promise that resolves to an array of exposure entry records.
+ * @throws {Error} Throws an error if the fetch fails or returns invalid data and the request was not aborted.
+ */
 const fetchDataLogEntriesFromExposureLog = async (
   start,
   end,
