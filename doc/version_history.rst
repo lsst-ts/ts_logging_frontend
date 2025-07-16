@@ -1,3 +1,26 @@
+v0.6.0 (2025-07-16)
+===================
+
+New Features
+------------
+
+- Grab on-sky exposures count and total on-sky exposure time from response in fetchExposures and use them in the no of exposures and efficiency metric cards (`OSW-541 <https://rubinobs.atlassian.net//browse/OSW-541>`_)
+- Implement Data Log page. (`OSW-572 <https://rubinobs.atlassian.net//browse/OSW-572>`_)
+- Introduce routing, using TanStack Router, to allow navigating to different pages. Also use URL parameters to hold common state/parameters across different pages. (`OSW-644 <https://rubinobs.atlassian.net//browse/OSW-644>`_)
+
+
+Bug Fixes
+---------
+
+- Make the jira tickets table scrollable and use sticky headers. Also make the popup wider to stop columns from running into each other. (`OSW-648 <https://rubinobs.atlassian.net//browse/OSW-648>`_)
+
+
+Other Changes and Additions
+---------------------------
+
+- Remove decimal points from time loss and efficiency cards (`OSW-647 <https://rubinobs.atlassian.net//browse/OSW-647>`_)
+
+
 v0.5.0 (2025-07-01)
 ===================
 
