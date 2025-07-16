@@ -32,6 +32,7 @@ function DataLog() {
   const instrument = TELESCOPES[telescope];
 
   // For display on page
+  const baseUrl = import.meta.env.VITE_EXTERNAL_INSTANCE_URL;
   const instrumentName = telescope;
   const dateRangeString =
     startDayobs === endDayobs
@@ -58,6 +59,10 @@ function DataLog() {
   const [dataLogLoading, setDataLogLoading] = useState(true);
 
   useEffect(() => {
+    if (telescope === "AuxTel") {
+      return;
+    }
+
     // To cancel previous fetch if still in progress
     const abortController = new AbortController();
 
@@ -124,6 +129,36 @@ function DataLog() {
       abortController.abort();
     };
   }, [startDayobs, queryEndDayobs, instrument]);
+
+  // Temporary display message for AuxTel queries
+  if (telescope === "AuxTel") {
+    return (
+      <div className="flex flex-col w-full p-8 gap-4">
+        <h1 className="flex flex-row gap-3 text-white text-5xl uppercase justify-center">
+          <span className="tracking-[2px] font-extralight">Data</span>
+          <span className="font-extrabold">Log</span>
+        </h1>
+        <div className="min-h-[4.5rem] text-white font-thin text-center pb-4 flex flex-col items-center justify-center gap-2">
+          <p>
+            <strong>AuxTel is currently not supported in this page.</strong>
+          </p>
+          <p>
+            Please refer to the{" "}
+            <a
+              href={`${baseUrl}/times-square/github/lsst-ts/ts_logging_and_reporting/ExposureDetail`}
+              className="underline text-blue-300 hover:text-blue-400"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Exposure Detail notebook
+            </a>{" "}
+            for AuxTel exposures.
+          </p>
+        </div>
+        <Toaster expand={true} richColors closeButton />
+      </div>
+    );
+  }
 
   return (
     <>
