@@ -178,16 +178,14 @@ const mergeDataLogSources = (consDbRows, exposureLogRows) => {
 const getRubinTVUrl = (dayObs, seqNum) => {
   if (!dayObs || !seqNum) return null;
 
-  const httpProtocol = window.location.protocol;
-  const host = window.location.host;
+  const baseUrl = import.meta.env.VITE_EXTERNAL_INSTANCE_URL;
+  if (!baseUrl) {
+    console.error("VITE_EXTERNAL_INSTANCE_URL is not defined");
+    return null;
+  }
+
   const dateStr = getDatetimeFromDayobsStr(`${dayObs}`).toFormat("yyyy-MM-dd");
-
-  const prod_or_dev = 1;
-
-  const url_prod = `${httpProtocol}//${host}/rubintv/summit-usdf/lsstcam/event?channel_name=calexp_mosaic&date_str=${dateStr}&seq_num=${seqNum}`;
-  const url_dev = `https://usdf-rsp-dev.slac.stanford.edu/rubintv/summit-usdf/lsstcam/event?channel_name=calexp_mosaic&date_str=${dateStr}&seq_num=${seqNum}`;
-
-  return prod_or_dev === 1 ? url_dev : url_prod;
+  return `${baseUrl}/rubintv/summit-usdf/lsstcam/event?channel_name=calexp_mosaic&date_str=${dateStr}&seq_num=${seqNum}`;
 };
 
 /**
