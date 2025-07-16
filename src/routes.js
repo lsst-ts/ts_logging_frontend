@@ -11,7 +11,7 @@ import { z } from "zod";
 import { DateTime } from "luxon";
 
 import SearchParamErrorComponent from "./components/search-param-error-component";
-import { dataLogColumns } from "@/utils/dataLogColumns";
+import { dataLogColumns } from "@/components/dataLogColumns";
 
 export const GLOBAL_SEARCH_PARAMS = ["startDayobs", "endDayobs", "telescope"];
 

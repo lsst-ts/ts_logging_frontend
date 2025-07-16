@@ -37,7 +37,10 @@ import {
 import ColumnVisibilityPopover from "@/components/column-visibility-popover";
 import ToggleExpandCollapseRows from "@/components/toggle-expand-collapse-rows";
 import ColumnMultiSelectFilter from "@/components/column-multi-select-filter";
-import { dataLogColumns, matchValueOrInList } from "@/utils/dataLogColumns";
+import {
+  dataLogColumns,
+  matchValueOrInList,
+} from "@/components/dataLogColumns";
 
 function DataLogTable({ data, dataLogLoading, tableFilters }) {
   const [columnVisibility, setColumnVisibility] = useState({});
