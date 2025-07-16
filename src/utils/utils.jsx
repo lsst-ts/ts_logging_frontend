@@ -101,6 +101,135 @@ function getKeyByValue(obj, value) {
   return key;
 }
 
+/**
+ * Formats a value for table display:
+ * - Returns "na" for null, undefined, or empty values.
+ * - For numbers, optionally limits decimal places (default is auto-inferred).
+ * - Other types are converted to strings.
+ *
+ * @param {*} value - The value to format.
+ * @param {Object} [options={}] - Optional configuration.
+ * @param {number} [options.decimals] - Fixed number of decimal places to display (overrides inference).
+ * @returns {string} A display-safe formatted value.
+ */
+const formatCellValue = (value, options = {}) => {
+  if (value === null || value === undefined || value === "") return "na";
+
+  const { decimals } = options;
+
+  if (typeof value === "number") {
+    const precision =
+      typeof decimals === "number" ? decimals : inferDecimals(value);
+    return value.toFixed(precision);
+  }
+
+  return value.toString();
+};
+
+/**
+ * Infers a reasonable number of decimal places for a numeric value.
+ * - If it's a large or whole number, round to 0.
+ * - If it's small or fractional, round to 2.
+ *
+ * @param {number} value - The number to evaluate.
+ * @returns {number} Inferred number of decimals.
+ */
+const inferDecimals = (value) => {
+  if (Number.isInteger(value) || Math.abs(value) >= 100) return 0;
+  return 2;
+};
+
+/**
+ * Merges rows from the consDB and exposure log sources.
+ *
+ * For each consDB row, attempts to enrich it with instrument, exposure flag,
+ * and message text from the exposure log (matched via `obs_id` and `exposure name`).
+ *
+ * @param {Object[]} consDbRows - The array of rows from the consDB source.
+ * @param {Object[]} exposureLogRows - The array of rows from the exposure log source.
+ * @returns {Object[]} A new array of merged row objects with added/enriched fields.
+ */
+const mergeDataLogSources = (consDbRows, exposureLogRows) => {
+  const exposureLogMap = new Map();
+  exposureLogRows.forEach((entry) => {
+    exposureLogMap.set(entry.obs_id, entry);
+  });
+
+  return consDbRows.map((row) => {
+    const exposureName = row["exposure name"];
+    const matchingRow = exposureLogMap.get(exposureName);
+
+    return {
+      ...row,
+      instrument: matchingRow?.instrument ?? row.instrument ?? "na",
+      exposure_flag: matchingRow?.exposure_flag ?? "none",
+      message_text: matchingRow?.message_text ?? "",
+    };
+  });
+};
+
+/**
+ * Generates a RubinTV URL based on dayObs and seqNum values.
+ *
+ * @param {string|number} dayObs - The observation date in YYYYMMDD format.
+ * @param {string|number} seqNum - The sequence number of the observation.
+ * @returns {string|null} A formatted RubinTV URL, or null if inputs are invalid.
+ */
+const getRubinTVUrl = (dayObs, seqNum) => {
+  if (!dayObs || !seqNum) return null;
+
+  const baseUrl = import.meta.env.VITE_EXTERNAL_INSTANCE_URL;
+  if (!baseUrl) {
+    console.error("VITE_EXTERNAL_INSTANCE_URL is not defined");
+    return null;
+  }
+
+  const dateStr = getDatetimeFromDayobsStr(`${dayObs}`).toFormat("yyyy-MM-dd");
+  return `${baseUrl}/rubintv/summit-usdf/lsstcam/event?channel_name=calexp_mosaic&date_str=${dateStr}&seq_num=${seqNum}`;
+};
+
+/**
+ * Builds a navigation URL, keeping only global params when leaving data-log.
+ *
+ * @param {string} itemUrl - The target navigation URL.
+ * @param {string} currentPath - The current pathname from router state.
+ * @param {object} currentSearch - The current search params object.
+ * @param {string[]} allowedParams - List of global param keys to keep.
+ * @returns {string} A valid URL with only global query parameters.
+ */
+const buildNavItemUrl = (
+  itemUrl,
+  currentPath,
+  currentSearch,
+  allowedParams,
+) => {
+  if (itemUrl === "#") return "#";
+
+  const isLeavingDataLog =
+    currentPath === "/nightlydigest/data-log" &&
+    itemUrl !== "/nightlydigest/data-log";
+
+  const searchParams = new URLSearchParams();
+
+  const keysToPreserve = isLeavingDataLog
+    ? allowedParams
+    : Object.keys(currentSearch);
+
+  for (const key of keysToPreserve) {
+    const value = currentSearch[key];
+    if (value !== undefined) {
+      if (Array.isArray(value)) {
+        value.forEach((v) => searchParams.append(key, v));
+      } else {
+        searchParams.set(key, value);
+      }
+    }
+  }
+
+  const query = searchParams.toString();
+  return query ? `${itemUrl}?${query}` : itemUrl;
+};
+
 export {
   calculateEfficiency,
   calculateTimeLoss,
@@ -108,4 +237,8 @@ export {
   getDatetimeFromDayobsStr,
   getDisplayDateRange,
   getKeyByValue,
+  formatCellValue,
+  mergeDataLogSources,
+  getRubinTVUrl,
+  buildNavItemUrl,
 };

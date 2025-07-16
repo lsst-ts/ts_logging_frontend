@@ -11,7 +11,9 @@ import { z } from "zod";
 import { DateTime } from "luxon";
 
 import SearchParamErrorComponent from "./components/search-param-error-component";
-import { Telescope } from "lucide-react";
+import { dataLogColumns } from "@/components/dataLogColumns";
+
+export const GLOBAL_SEARCH_PARAMS = ["startDayobs", "endDayobs", "telescope"];
 
 const rootRoute = createRootRoute({
   component: Layout,
@@ -36,17 +38,39 @@ const dayobsInt = z.coerce
   )
   .transform((val) => parseInt(val, 10));
 
-const searchParamsSchema = z
-  .object({
-    startDayobs: dayobsInt.default(() =>
-      DateTime.utc().minus({ days: 1 }).toFormat("yyyyMMdd"),
-    ),
-    endDayobs: dayobsInt.default(() =>
-      DateTime.utc().minus({ days: 1 }).toFormat("yyyyMMdd"),
-    ),
-    // instrument: z.enum(["LSSTCam", "LATISS"]).default("LSSTCam"),
-    telescope: z.enum(["Simonyi", "AuxTel"]).default("Simonyi"),
-  })
+// Create plain object schema
+const baseSearchParamsSchema = z.object({
+  startDayobs: dayobsInt.default(() =>
+    DateTime.utc().minus({ days: 1 }).toFormat("yyyyMMdd"),
+  ),
+  endDayobs: dayobsInt.default(() =>
+    DateTime.utc().minus({ days: 1 }).toFormat("yyyyMMdd"),
+  ),
+  telescope: z.enum(["Simonyi", "AuxTel"]).default("Simonyi"),
+});
+
+// Validate schema object for general use
+const searchParamsSchema = baseSearchParamsSchema.refine(
+  (obj) => obj.startDayobs <= obj.endDayobs,
+  {
+    message: "startDayobs must be before or equal to endDayobs.",
+    path: ["startDayobs"],
+  },
+);
+
+// Convert table columns to url filter keys
+const arrayKeys = dataLogColumns
+  .map((col) => col.meta?.urlParam)
+  .filter(Boolean);
+
+// Get schema for multi-valued search fields
+const filtersShape = Object.fromEntries(
+  arrayKeys.map((key) => [key, z.string().array().optional()]),
+);
+
+// Extend base schema object for individual pages
+const dataLogSearchSchema = baseSearchParamsSchema
+  .extend(filtersShape)
   .refine((obj) => obj.startDayobs <= obj.endDayobs, {
     message: "startDayobs must be before or equal to endDayobs.",
     path: ["startDayobs"],
@@ -64,7 +88,7 @@ const dataLogRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/data-log",
   component: DataLog,
-  validateSearch: searchParamsSchema,
+  validateSearch: dataLogSearchSchema,
   errorComponent: SearchParamErrorComponent,
 });
 
@@ -83,6 +107,41 @@ const router = createRouter({
     contextFeedRoute,
   ]),
   basepath: "/nightlydigest",
+
+  // Converts search object to query string
+  stringifySearch: (searchObj) => {
+    const searchParams = new URLSearchParams();
+
+    for (const [key, value] of Object.entries(searchObj)) {
+      if (Array.isArray(value)) {
+        for (const val of value) {
+          searchParams.append(key, val);
+        }
+      } else if (value != null && value !== "") {
+        searchParams.set(key, value);
+      }
+    }
+
+    const final = `?${searchParams.toString()}`;
+    return final;
+  },
+
+  // Parses query string into object
+  // Coerces single values to arrays for specified keys
+  parseSearch: (searchStr) => {
+    const raw = new URLSearchParams(searchStr);
+    const parsed = Object.fromEntries(raw.entries());
+
+    // Keys to be parsed as arrays
+    for (const key of arrayKeys) {
+      const values = raw.getAll(key);
+      if (values.length > 0) {
+        parsed[key] = values;
+      }
+    }
+
+    return parsed;
+  },
 });
 
 export default router;

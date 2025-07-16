@@ -53,7 +53,7 @@ const fetchData = async (url, abortController) => {
  *   [0]: exposures (Object[]) - An array of exposure records with selected fields,
  *   [1]: exposures_count (number) - The number of exposures,
  *   [2]: sum_exposure_time (number) - The total exposure time.
- * @throws Will throw an error if the fetch operation fails (for reasons other than an abort)
+ * @throws {error} Will throw an error if the fetch operation fails (for reasons other than an abort)
  * or returns invalid data.
  */
 const fetchExposures = async (start, end, instrument, abortController) => {
@@ -108,7 +108,7 @@ const fetchAlmanac = async (start, end, abortController) => {
  * @param {string} end - The end date for the observation range (format: YYYY-MM-DD).
  * @param {string} instrument - The instrument identifier to filter the narrative log.
  * @param {AbortController} abortController - The AbortController used to cancel the request if needed.
- * @returns {Promise<[number, number, any] | null>} A promise that resolves to an array:
+ * @returns {Promise<[number, number, any]>} A promise that resolves to an array:
  *   [0]: time_lost_to_weather (number),
  *   [1]: time_lost_to_faults (number),
  *   [2]: narrative_log (any).
@@ -140,10 +140,10 @@ const fetchNarrativeLog = async (start, end, instrument, abortController) => {
  * @param {string} end - The end date of the observation range (format: YYYY-MM-DD).
  * @param {string} instrument - The instrument to filter the exposure flags.
  * @param {AbortController} abortController - The AbortController used to cancel the request if needed.
- * @returns {Promise<Object[] | null>} A promise that resolves to an array of objects with:
+ * @returns {Promise<Object[]>} A promise that resolves to an array of objects with:
  *   - obs_id (string): The observation ID.
  *   - exposure_flag (string): The flag associated with the observation.
- *   Returns an empty array if fetching fails or `null` if the request was aborted.
+ *   Returns an empty array if fetching fails.
  * @throws {Error} Throws an error if fetching fails and the request was not aborted.
  */
 const fetchExposureFlags = async (start, end, instrument, abortController) => {
@@ -171,8 +171,7 @@ const fetchExposureFlags = async (start, end, instrument, abortController) => {
  * @param {string} end - The end date for the observation range (format: YYYY-MM-DD).
  * @param {string} instrument - The instrument name to filter Jira tickets.
  * @param {AbortController} abortController - The AbortController used to cancel the request if needed.
- * @returns {Promise<Array | null>} A promise that resolves to an array of Jira ticket issues,
- * or `null` if the request was aborted.
+ * @returns {Promise<Array>} A promise that resolves to an array of Jira ticket issues.
  * @throws {Error} Throws an error if fetching Jira tickets fails for reasons other than an abort.
  */
 const fetchJiraTickets = async (start, end, instrument, abortController) => {
@@ -188,10 +187,78 @@ const fetchJiraTickets = async (start, end, instrument, abortController) => {
   }
 };
 
+/**
+ * Fetches data log (exposures and related data) for a given date range and instrument.
+ *
+ * @async
+ * @function fetchDataLog
+ * @param {string} start - The start date for the observation range (format: YYYY-MM-DD).
+ * @param {string} end - The end date for the observation range (format: YYYY-MM-DD).
+ * @param {string} instrument - The name of the instrument to filter exposures.
+ * @param {AbortController} abortController - The AbortController used to cancel the request if needed.
+ * @returns {Promise<Object[]>} A promise that resolves to an array containing data log records.
+ * @throws {Error} Throws an error if the fetch fails or the response is invalid.
+ */
+const fetchDataLogEntriesFromConsDB = async (
+  start,
+  end,
+  instrument,
+  abortController,
+) => {
+  const url = `${backendLocation}/data-log?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
+  try {
+    const data = await fetchData(url, abortController);
+    if (!data) {
+      throw new Error("Error fetching Data Log");
+    }
+    return data;
+  } catch (err) {
+    if (err.name !== "AbortError") {
+      console.error("Error fetching Data Log", err);
+    }
+    throw err;
+  }
+};
+
+/**
+ * Fetches data log entries from the exposure log for a given date range and instrument.
+ *
+ * @async
+ * @function fetchDataLogEntriesFromExposureLog
+ * @param {string} start - The start date of the observation range (format: YYYY-MM-DD).
+ * @param {string} end - The end date of the observation range (format: YYYY-MM-DD).
+ * @param {string} instrument - The instrument to filter exposure entries.
+ * @param {AbortController} abortController - The AbortController used to cancel the request if needed.
+ * @returns {Promise<Object[]>} A promise that resolves to an array of exposure entry records.
+ * @throws {Error} Throws an error if the fetch fails or returns invalid data and the request was not aborted.
+ */
+const fetchDataLogEntriesFromExposureLog = async (
+  start,
+  end,
+  instrument,
+  abortController,
+) => {
+  const url = `${backendLocation}/exposure-entries?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
+  try {
+    const data = await fetchData(url, abortController);
+    if (!data) {
+      throw new Error("No data returned for exposure entries");
+    }
+    return data.exposure_entries;
+  } catch (err) {
+    if (err.name !== "AbortError") {
+      console.error("Error fetching exposure entries:", err);
+    }
+    throw err;
+  }
+};
+
 export {
   fetchExposures,
   fetchAlmanac,
   fetchNarrativeLog,
   fetchExposureFlags,
   fetchJiraTickets,
+  fetchDataLogEntriesFromConsDB,
+  fetchDataLogEntriesFromExposureLog,
 };

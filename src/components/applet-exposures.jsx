@@ -1,9 +1,7 @@
 // Applet: Display a breakdown of the exposures into type, reason, and program.
 
-"use client";
-
 import { useState } from "react";
-
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
   Select,
   SelectContent,
@@ -21,7 +19,7 @@ import {
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
 
-import { Cell, Bar, BarChart, XAxis, YAxis } from "recharts";
+import { Cell, Bar, BarChart, XAxis, YAxis, Customized } from "recharts";
 
 import InfoIcon from "../assets/InfoIcon.svg";
 import DownloadIcon from "../assets/DownloadIcon.svg";
@@ -47,6 +45,7 @@ const SortByValues = Object.freeze({
 });
 
 const PLOT_YLABELS_MAXSIZE = 14;
+const BAR_SIZE = 35;
 
 function AppletExposures({
   exposureFields,
@@ -59,6 +58,7 @@ function AppletExposures({
   const [plotBy, setPlotBy] = useState(PlotByValues.NUMBER);
   const [groupBy, setGroupBy] = useState(GroupByValues.SCIENCE_PROGRAM);
   const [sortBy, setSortBy] = useState(SortByValues.DEFAULT);
+  const [hovered, setHovered] = useState(null);
 
   const plotByOptions = [
     { value: PlotByValues.NUMBER, label: "Number" },
@@ -79,6 +79,25 @@ function AppletExposures({
     { value: SortByValues.HIGHEST_FIRST, label: "Highest number first" },
     { value: SortByValues.LOWEST_FIRST, label: "Lowest number first" },
   ];
+
+  const navigate = useNavigate();
+  const { startDayobs, endDayobs, telescope } = useSearch({ from: "/" });
+
+  const handleBarClick = (data) => {
+    const filterField = groupBy;
+    const selectedValue = data.groupKey;
+
+    navigate({
+      to: "/data-log",
+      search: (prev) => ({
+        ...prev,
+        startDayobs,
+        endDayobs,
+        telescope,
+        [filterField]: [selectedValue],
+      }),
+    });
+  };
 
   const flaggedObsIds = new Set(flags.map((f) => f.obs_id));
   const aggregatedMap = {};
@@ -200,8 +219,14 @@ function AppletExposures({
               shown in white at the end of the group’s bar.
               <br />
               <br />
-              <strong>Tips:</strong> Hover over a bar to view total and flagged
-              values. Scroll to see additional groups if all are not visible.
+              <strong>Tips:</strong>
+              <ul className="list-disc pl-4 mt-1 space-y-1">
+                <li>Hover over a bar to view total and flagged values.</li>
+                <li>
+                  Click a bar to open the Data Log, filtered by that group.
+                </li>
+                <li>Scroll to see additional groups if all are not visible.</li>
+              </ul>
             </PopoverContent>
           </Popover>
         </div>
@@ -251,7 +276,7 @@ function AppletExposures({
                   <div className="flex-grow overflow-y-auto">
                     <div
                       style={{
-                        height: `${chartData.length * 35}px`,
+                        height: `${chartData.length * BAR_SIZE}px`,
                         minHeight: "180px",
                       }}
                     >
@@ -286,6 +311,7 @@ function AppletExposures({
                                       ? [0, 4, 4, 0]
                                       : [0, 0, 0, 0]
                                   }
+                                  cursor="pointer"
                                 />
                               );
                             })}
@@ -306,6 +332,48 @@ function AppletExposures({
                               />
                             ))}
                           </Bar>
+
+                          {/* Transparent/highlighted layer for visibility/clickability */}
+                          <Customized
+                            component={({ width, data, yAxisMap }) => {
+                              const yAxis = Object.values(yAxisMap)[0];
+                              const bandwidth =
+                                typeof yAxis.scale.bandwidth === "function"
+                                  ? yAxis.scale.bandwidth()
+                                  : BAR_SIZE;
+
+                              return (
+                                <g>
+                                  {data.map((entry, index) => {
+                                    const y = yAxis.scale(entry.groupKey);
+                                    const offsetY =
+                                      y + (bandwidth - BAR_SIZE) / 2;
+
+                                    return (
+                                      <rect
+                                        key={`overlay-${index}`}
+                                        x={0}
+                                        y={offsetY}
+                                        width={width}
+                                        height={BAR_SIZE}
+                                        fill={
+                                          hovered === entry.groupKey
+                                            ? "rgba(255,255,255,0.15)"
+                                            : "transparent"
+                                        }
+                                        onMouseEnter={() =>
+                                          setHovered(entry.groupKey)
+                                        }
+                                        onMouseLeave={() => setHovered(null)}
+                                        onClick={() => handleBarClick(entry)}
+                                        style={{ cursor: "pointer" }}
+                                      />
+                                    );
+                                  })}
+                                </g>
+                              );
+                            }}
+                          />
 
                           {/* Axes, ticks, labels and styles */}
                           <YAxis
