@@ -219,8 +219,14 @@ function AppletExposures({
               shown in white at the end of the group’s bar.
               <br />
               <br />
-              <strong>Tips:</strong> Hover over a bar to view total and flagged
-              values. Scroll to see additional groups if all are not visible.
+              <strong>Tips:</strong>
+              <ul className="list-disc pl-4 mt-1 space-y-1">
+                <li>Hover over a bar to view total and flagged values.</li>
+                <li>
+                  Click a bar to open the Data Log, filtered by that group.
+                </li>
+                <li>Scroll to see additional groups if all are not visible.</li>
+              </ul>
             </PopoverContent>
           </Popover>
         </div>
