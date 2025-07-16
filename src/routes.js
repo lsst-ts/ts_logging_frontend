@@ -100,7 +100,7 @@ const contextFeedRoute = createRoute({
   errorComponent: SearchParamErrorComponent,
 });
 
-export const router = createRouter({
+const router = createRouter({
   routeTree: rootRoute.addChildren([
     dashboardRoute,
     dataLogRoute,
