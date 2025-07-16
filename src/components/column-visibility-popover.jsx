@@ -24,7 +24,6 @@ function ColumnVisibilityPopover({ table }) {
     <Popover>
       <PopoverTrigger asChild>
         <button
-          // className="btn bg-white font-light text-black p-2 rounded-sm shadow-[4px_4px_4px_0px_#3CAE3F] hover:bg-green-100"
           className="btn bg-white text-black mt-4 h-10 font-light rounded-md shadow-[4px_4px_4px_0px_#3CAE3F] 
                       flex justify-center items-center py-2 px-4 
                       hover:shadow-[6px_6px_8px_0px_#3CAE3F] hover:scale-[1.02] hover:bg-white transition-all duration-200"
