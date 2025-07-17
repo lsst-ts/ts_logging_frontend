@@ -6,9 +6,9 @@ services:
     build:
       context: ${FRONTEND_PATH}
       dockerfile: docker/Dockerfile
+      args:
+        - VITE_EXTERNAL_INSTANCE_URL=${EXTERNAL_INSTANCE_URL}
     image: nightlydigest-frontend-local
-    environment:
-      - VITE_EXTERNAL_INSTANCE_URL=${EXTERNAL_INSTANCE_URL}
     ports:
       - "5173:5173"
     volumes:
