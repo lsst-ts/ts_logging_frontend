@@ -1,0 +1,1 @@
+Move VITE_EXTERNAL_INSTANCE_URL to docker build args in compose
