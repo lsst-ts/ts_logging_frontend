@@ -1,1 +1,0 @@
-Introduce routing, using TanStack Router, to allow navigating to different pages. Also use URL parameters to hold common state/parameters across different pages.
