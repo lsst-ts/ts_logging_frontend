@@ -191,10 +191,15 @@ function Plots() {
     );
   }
 
-  const chartData = dataLogEntries.map((entry) => ({
-    ...entry,
-    obs_start_dt: DateTime.fromISO(entry["obs start"]).toMillis(),
-  }));
+  // Prepare data for charts
+  const chartData = dataLogEntries
+    .map((entry) => ({
+      ...entry,
+      // Convert observation start time to a number for Recharts
+      obs_start_dt: DateTime.fromISO(entry["obs start"]).toMillis(),
+    }))
+    // Chronological order
+    .sort((a, b) => a.obs_start_dt - b.obs_start_dt);
 
   return (
     <>
