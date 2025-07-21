@@ -25,6 +25,7 @@ import DialogMetricsCard from "@/components/dialog-metrics-card";
 import JiraTicketsTable from "@/components/jira-tickets-table";
 import { useSearch } from "@tanstack/react-router";
 import { TELESCOPES } from "@/components/parameters";
+import ObservingConditionsApplet from "@/components/ObservingConditionsApplet";
 
 export default function Digest() {
   const { startDayobs, endDayobs, telescope } = useSearch({
@@ -253,7 +254,10 @@ export default function Digest() {
               exposuresLoading={exposuresLoading}
               flagsLoading={flagsLoading}
             />
-            <Applet />
+            <ObservingConditionsApplet
+              exposuresLoading={exposuresLoading}
+              exposureFields={exposureFields}
+            />
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <Applet />
