@@ -23,9 +23,20 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const XShape = (props) => {
-  const { cx, cy, fill } = props;
+  const { cx, cy, fill, payload } = props;
   const size = 1.5;
   if (cx < size || cy < size) return null;
+  // {'u': '#3eb7ff', 'g': '#30c39f', 'r': '#ff7e00', 'i': '#2af5ff', 'z': '#a7f9c1', 'y': '#fdc900'}
+  let color = fill;
+  if (payload && payload.band) {
+    if (payload.band === "u") color = "#3eb7ff";
+    else if (payload.band === "g") color = "#30c39f";
+    else if (payload.band === "r") color = "#ff7e00";
+    else if (payload.band === "i") color = "#2af5ff";
+    else if (payload.band === "z") color = "#a7f9c1";
+    else if (payload.band === "y") color = "#fdc900";
+    // Add more as needed
+  }
   return (
     <g>
       <line
@@ -33,7 +44,7 @@ const XShape = (props) => {
         y1={cy - size}
         x2={cx + size}
         y2={cy + size}
-        stroke={fill}
+        stroke={color}
         strokeWidth={1}
       />
       <line
@@ -41,11 +52,119 @@ const XShape = (props) => {
         y1={cy + size}
         x2={cx + size}
         y2={cy - size}
-        stroke={fill}
+        stroke={color}
         strokeWidth={1}
       />
     </g>
   );
+};
+
+// Custom triangle shape (pointing up)
+const TriangleShape = (props) => {
+  const { cx, cy, fill = "#2af5ff", r = 2 } = props;
+  if (typeof cx !== "number" || typeof cy !== "number") return null;
+  // const height = r * 2;
+  // const width = r * 2;
+  return (
+    <polygon
+      points={`
+        ${cx},${cy - r}
+        ${cx - r},${cy + r}
+        ${cx + r},${cy + r}
+      `}
+      fill={fill}
+      stroke={fill}
+      strokeWidth={0.8}
+    />
+  );
+};
+
+// Custom triangle shape (pointing down)
+const FlippedTriangleShape = (props) => {
+  const { cx, cy, fill = "#a7f9c1", r = 2 } = props;
+  if (typeof cx !== "number" || typeof cy !== "number") return null;
+  return (
+    <polygon
+      points={`
+        ${cx},${cy + r}
+        ${cx - r},${cy - r}
+        ${cx + r},${cy - r}
+      `}
+      fill={fill}
+      stroke={fill}
+      strokeWidth={0.8}
+    />
+  );
+};
+
+const AsteriskShape = (props) => {
+  const { cx, cy, fill = "#fdc900", r = 4 } = props;
+  if (typeof cx !== "number" || typeof cy !== "number") return null;
+  const lines = [];
+  for (let i = 0; i < 6; i++) {
+    const angle = (Math.PI / 3) * i;
+    const x1 = cx + Math.cos(angle) * (r * 0.5);
+    const y1 = cy + Math.sin(angle) * (r * 0.5);
+    const x2 = cx + Math.cos(angle) * r;
+    const y2 = cy + Math.sin(angle) * r;
+    lines.push(
+      <line
+        key={i}
+        x1={x1}
+        y1={y1}
+        x2={x2}
+        y2={y2}
+        stroke={fill}
+        strokeWidth={1.2}
+        strokeLinecap="round"
+      />,
+    );
+  }
+  return <g>{lines}</g>;
+};
+
+const SquareShape = (props) => {
+  const { cx, cy, fill = "#ff7e00", r = 2 } = props;
+  if (typeof cx !== "number" || typeof cy !== "number") return null;
+  const size = r;
+  return (
+    <rect
+      x={cx - size}
+      y={cy - size}
+      width={size * 2}
+      height={size * 2}
+      fill={fill}
+      stroke={fill}
+      strokeWidth={0.8}
+      rx={0}
+    />
+  );
+};
+
+const StarShape = (props) => {
+  const { cx, cy, fill = "#30c39f", r = 4 } = props;
+  if (typeof cx !== "number" || typeof cy !== "number") return null;
+  // Simple 5-pointed star
+  const spikes = 5;
+  const outerRadius = r;
+  const innerRadius = r * 0.5;
+  let rot = (Math.PI / 2) * 3;
+  // let x = cx;
+  // let y = cy;
+  let step = Math.PI / spikes;
+  let path = "";
+  for (let i = 0; i < spikes; i++) {
+    let x1 = cx + Math.cos(rot) * outerRadius;
+    let y1 = cy + Math.sin(rot) * outerRadius;
+    path += i === 0 ? `M${x1},${y1}` : `L${x1},${y1}`;
+    rot += step;
+    let x2 = cx + Math.cos(rot) * innerRadius;
+    let y2 = cy + Math.sin(rot) * innerRadius;
+    path += `L${x2},${y2}`;
+    rot += step;
+  }
+  path += "Z";
+  return <path d={path} fill={fill} stroke={fill} strokeWidth={0.8} />;
 };
 
 const CustomTooltip = ({ active, payload, label }) => {
@@ -94,15 +213,15 @@ const CustomLegend = () => {
               <line
                 x1="2"
                 y1="2"
-                x2="18"
-                y2="14"
+                x2="10"
+                y2="10"
                 stroke="white"
                 strokeWidth="1"
               />
               <line
                 x1="2"
-                y1="14"
-                x2="18"
+                y1="10"
+                x2="10"
                 y2="2"
                 stroke="white"
                 strokeWidth="1"
@@ -127,23 +246,54 @@ const CustomLegend = () => {
 };
 
 const renderCustomLegend = () => (
-  <div className="flex flex-col gap-2 p-3 bg-neutral-700 rounded-lg text-white text-xxs ml-10 shrink-0">
+  <div className="flex flex-col gap-2 p-3 bg-black shadow-[4px_4px_4px_0px_#c27aff] border text-white text-xxs ml-10 shrink-0">
     <div className="flex items-center gap-2">
-      <svg width="16" height="12">
+      <svg width="16" height="16" style={{ display: "inline" }}>
         <g>
-          <line x1="0" y1="0" x2="12" y2="12" stroke="white" strokeWidth="1" />
-          <line x1="0" y1="12" x2="12" y2="0" stroke="white" strokeWidth="1" />
+          <XShape cx={8} cy={8} fill="#fff" />
         </g>
       </svg>
       <span>Seeing</span>
     </div>
     <div className="flex items-center gap-2">
-      <div className="w-4 h-1 bg-blue-500 rounded"></div>
-      <span>Zero Point</span>
+      <svg width="16" height="16" style={{ display: "inline" }}>
+        <g>
+          <StarShape cx={8} cy={8} fill="#30c39f" r={2} />
+        </g>
+      </svg>
+      <span>Zero Point (g)</span>
     </div>
     <div className="flex items-center gap-2">
-      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-      <span>Zero Point</span>
+      <svg width="16" height="16" style={{ display: "inline" }}>
+        <g>
+          <SquareShape cx={8} cy={8} fill="#ff7e00" r={2} />
+        </g>
+      </svg>
+      <span>Zero Point (r)</span>
+    </div>
+    <div className="flex items-center gap-2">
+      <svg width="16" height="16" style={{ display: "inline" }}>
+        <g>
+          <TriangleShape cx={8} cy={8} fill="#2af5ff" r={2} />
+        </g>
+      </svg>
+      <span>Zero Point (i)</span>
+    </div>
+    <div className="flex items-center gap-2">
+      <svg width="16" height="16" style={{ display: "inline" }}>
+        <g>
+          <FlippedTriangleShape cx={8} cy={8} fill="#2af5ff" r={2} />
+        </g>
+      </svg>
+      <span>Zero Point (z)</span>
+    </div>
+    <div className="flex items-center gap-2">
+      <svg width="16" height="16" style={{ display: "inline" }}>
+        <g>
+          <AsteriskShape cx={8} cy={8} fill="#fdc900" r={2} />
+        </g>
+      </svg>
+      <span>Zero Point (y)</span>
     </div>
   </div>
 );
@@ -264,7 +414,7 @@ function ObservingConditionsApplet({ exposuresLoading, exposureFields }) {
                       tick={{ fill: "white" }}
                       domain={["auto", "auto"]}
                       label={{
-                        value: "Zero Point Median",
+                        value: "Zero Points",
                         angle: 90,
                         position: "insideRight",
                         dx: 10,
@@ -273,30 +423,84 @@ function ObservingConditionsApplet({ exposuresLoading, exposureFields }) {
                     />
                     <Tooltip content={<CustomTooltip />} />
                     <Line
-                      name="zero_point_median"
+                      name="zero_point_median_u"
                       yAxisId="right"
                       type="monotone"
                       dataKey="zero_point_median"
-                      stroke="blue"
-                      dot={false}
+                      dot={{ r: 1, fill: "#3eb7ff", stroke: "#3eb7ff" }}
+                      data={chartData.filter((d) => d.band === "u")}
                       isAnimationActive={false}
                     />
-                    <Scatter
-                      name="zero_point_median"
+                    <Line
+                      name="zero_point_median_g"
                       yAxisId="right"
-                      fill="blue"
+                      type="monotone"
                       dataKey="zero_point_median"
+                      stroke="#30c39f"
+                      dot={(props) => (
+                        <StarShape {...props} fill="#30c39f" r={2} />
+                      )}
+                      data={chartData.filter((d) => d.band === "g")}
+                      isAnimationActive={false}
+                    />
+                    <Line
+                      name="zero_point_median_r"
+                      yAxisId="right"
+                      type="monotone"
+                      dataKey="zero_point_median"
+                      stroke="#ff7e00"
+                      dot={(props) => (
+                        <SquareShape {...props} fill="#ff7e00" r={2} />
+                      )}
+                      data={chartData.filter((d) => d.band === "r")}
+                      isAnimationActive={false}
+                    />
+                    <Line
+                      name="zero_point_median_i"
+                      yAxisId="right"
+                      type="monotone"
+                      dataKey="zero_point_median"
+                      stroke="#2af5ff"
+                      dot={(props) => (
+                        <TriangleShape {...props} fill="#2af5ff" r={2} />
+                      )}
+                      data={chartData.filter((d) => d.band === "i")}
+                      isAnimationActive={false}
+                    />
+                    <Line
+                      name="zero_point_median_z"
+                      yAxisId="right"
+                      type="monotone"
+                      dataKey="zero_point_median"
+                      stroke="#a7f9c1"
+                      dot={(props) => (
+                        <FlippedTriangleShape {...props} fill="#a7f9c1" r={2} />
+                      )}
+                      data={chartData.filter((d) => d.band === "z")}
+                      isAnimationActive={false}
+                    />
+                    <Line
+                      name="zero_point_median_y"
+                      yAxisId="right"
+                      type="monotone"
+                      dataKey="zero_point_median"
+                      stroke="#fdc900"
+                      dot={(props) => (
+                        <AsteriskShape {...props} fill="#fdc900" r={2} />
+                      )}
+                      data={chartData.filter((d) => d.band === "y")}
+                      isAnimationActive={false}
                     />
                     <Scatter
                       name="dimm_seeing"
                       dataKey="dimm_seeing"
                       fill="white"
-                      shape={<XShape />}
+                      shape={(props) => <XShape {...props} />}
                       yAxisId="left"
                     />
                     <ChartLegend
                       layout={isMobile ? "horizontal" : "vertical"}
-                      verticalAlign={isMobile ? "bottom" : "top"}
+                      verticalAlign={isMobile ? "bottom" : "middle"}
                       align={isMobile ? "center" : "right"}
                       content={renderCustomLegend}
                     />
