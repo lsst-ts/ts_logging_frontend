@@ -17,6 +17,7 @@ import {
   Line,
   Tooltip,
   ResponsiveContainer,
+  ReferenceLine,
 } from "recharts";
 import { DateTime } from "luxon";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -421,6 +422,21 @@ function ObservingConditionsApplet({ exposuresLoading, exposureFields }) {
                         fill: "white",
                       }}
                     />
+                    <ReferenceLine
+                      x={xMin + 2000000}
+                      stroke="#3eb7ff"
+                      label="twilight"
+                      yAxisId="left"
+                      strokeDasharray="5 5"
+                    />
+                    <ReferenceLine
+                      x={xMax - 2000000}
+                      stroke="#3eb7ff"
+                      label="twilight"
+                      yAxisId="left"
+                      strokeDasharray="5 5"
+                    />
+
                     <Tooltip content={<CustomTooltip />} />
                     <Line
                       name="zero_point_median_u"
@@ -462,7 +478,7 @@ function ObservingConditionsApplet({ exposuresLoading, exposureFields }) {
                       dataKey="zero_point_median"
                       stroke="#2af5ff"
                       dot={(props) => (
-                        <TriangleShape {...props} fill="#2af5ff" r={2} />
+                        <TriangleShape {...props} fill="#66ff2aff" r={2} />
                       )}
                       data={chartData.filter((d) => d.band === "i")}
                       isAnimationActive={false}
@@ -514,5 +530,11 @@ function ObservingConditionsApplet({ exposuresLoading, exposureFields }) {
     </Card>
   );
 }
-
+// TODO: Use different(multi) series for each band
+// TODO: check builtin shapes in recharts
+// TODO: Try connect nulls
+// TODO: try scatter with line rather than line with dots
+// Update tooltips to show band and value
+// update tooltip style
+// Add twilight reference lines for multiple nights
 export default ObservingConditionsApplet;
