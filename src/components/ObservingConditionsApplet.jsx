@@ -21,13 +21,16 @@ import {
   YAxis,
   Scatter,
   Line,
+  Tooltip,
 } from "recharts";
 import { DateTime } from "luxon";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const XShape = (props) => {
   const { cx, cy, fill } = props;
-  const size = 2; // Adjust size as needed
+  const size = 1.5;
+  // Don't render if too close to edges
+  if (cx < size || cy < size) return null;
   return (
     <g>
       <line
@@ -129,20 +132,42 @@ function ObservingConditionsApplet({ exposuresLoading, exposureFields }) {
           </>
         ) : (
           <>
-            <div className="flex-grow flex flex-row overflow-hidden">
-              {/* Plot display */}
-              <div className="flex-grow overflow-y-auto">
+            <div
+              className="flex flex-row items-stretch w-full h-[280px] gap-2"
+              style={{ overflow: "visible" }}
+            >
+              {/* Chart area */}
+              <div
+                className="flex-shrink-0"
+                style={{ width: 340, height: 280 }}
+              >
                 <ChartContainer
                   config={{}}
                   className="w-full h-full !aspect-auto"
                 >
                   <ComposedChart
                     data={chartData}
-                    margin={{ left: 20, right: 10 }}
+                    margin={{ left: 20, right: 10, top: 10 }}
+                    width={340}
+                    height={280}
                   >
+                    <Tooltip
+                      isAnimationActive={false}
+                      contentStyle={{
+                        background: "#222",
+                        border: "1px solid #888",
+                        color: "#fff",
+                        fontSize: "0.9em",
+                      }}
+                      labelStyle={{ color: "#fff" }}
+                      formatter={(value, name) => [
+                        typeof value === "number" ? value.toFixed(2) : value,
+                        name,
+                      ]}
+                    />
                     <defs>
                       <clipPath id="chart-area-clip">
-                        <rect x="0" y="0" width={400} height={300} />
+                        <rect x="0" y="0" width={340} height={280} />
                       </clipPath>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#555" />
@@ -192,72 +217,27 @@ function ObservingConditionsApplet({ exposuresLoading, exposureFields }) {
                         fill: "white",
                       }}
                     />
-                    <ChartTooltip
-                      content={(props) => {
-                        // Only show tooltip for the hovered item, avoid duplicate rendering
-                        if (
-                          !props.active ||
-                          !props.payload ||
-                          !props.payload.length
-                        )
-                          return null;
-                        const payload = props.payload[0].payload;
-                        return (
-                          <ChartTooltipContent
-                            {...props}
-                            formatter={() => (
-                              <>
-                                <div>
-                                  <span className="text-muted-foreground font-semibold">
-                                    seeing:{" "}
-                                  </span>
-                                  <span className="text-muted-foreground font-mono font-normal">
-                                    {Number(payload.dimm_seeing).toFixed(2)}
-                                  </span>
-                                </div>
-                                <div className="text-muted-foreground font-semibold">
-                                  Exposure:{" "}
-                                  <span className="font-normal">
-                                    {payload["exposure_id"]}{" "}
-                                  </span>
-                                </div>
-                                <div className="text-muted-foreground font-semibold">
-                                  Time:{" "}
-                                  <span className="font-normal">
-                                    {new Date(
-                                      payload["obs_start_dt"],
-                                    ).toLocaleTimeString("en-AU", {
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    })}{" "}
-                                  </span>
-                                </div>
-                                <div className="text-muted-foreground font-semibold">
-                                  Zero Point Median:{" "}
-                                  <span className="font-normal">
-                                    {payload["zero_point_median"]}{" "}
-                                  </span>
-                                </div>
-                              </>
-                            )}
-                            hideLabel
-                          />
-                        );
-                      }}
+                    <Line
+                      yAxisId="right"
+                      type="monotone"
+                      dataKey="zero_point_median"
+                      stroke="blue"
+                      dot={false}
+                      isAnimationActive={false}
                     />
                     <Scatter
                       yAxisId="right"
                       fill="blue"
                       dataKey="zero_point_median"
                       clipPath="url(#chart-area-clip)"
-                    ></Scatter>
+                    />
                     <Scatter
                       dataKey="dimm_seeing"
                       fill="white"
                       shape={<XShape />}
                       yAxisId="left"
                       clipPath="url(#chart-area-clip)"
-                    ></Scatter>
+                    />
                   </ComposedChart>
                 </ChartContainer>
               </div>
