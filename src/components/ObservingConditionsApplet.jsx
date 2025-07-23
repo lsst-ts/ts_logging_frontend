@@ -18,6 +18,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   ReferenceLine,
+  ZAxis,
 } from "recharts";
 import { DateTime } from "luxon";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -370,158 +371,205 @@ function ObservingConditionsApplet({ exposuresLoading, exposureFields }) {
           <div className="flex flex-col lg:flex-row items-stretch w-full h-full gap-2 overflow-hidden">
             <div className="flex-grow min-w-0 h-full">
               <ChartContainer config={chartConfig} className="w-full h-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart
-                    data={chartData}
-                    margin={{ left: 20, right: 10, top: 10 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#555" />
-                    <XAxis
-                      dataKey="obs_start_dt"
-                      type="number"
-                      domain={["auto", "auto"]}
-                      scale="time"
-                      ticks={xTicks}
-                      tickFormatter={(tick) =>
-                        new Date(tick).toLocaleTimeString("en-AU", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })
-                      }
-                      tick={{ fill: "white" }}
-                      label={{
-                        value: "Time (UTC)",
-                        position: "bottom",
-                        fill: "white",
-                        dy: 25,
-                      }}
-                    />
-                    <YAxis
-                      yAxisId="left"
-                      tick={{ fill: "white" }}
-                      domain={["auto", "auto"]}
-                      tickFormatter={(tick) => Number(tick).toFixed(2)}
-                      label={{
-                        value: "Seeing",
-                        angle: -90,
-                        position: "insideLeft",
-                        fill: "white",
-                        dx: -10,
-                      }}
-                    />
-                    <YAxis
-                      yAxisId="right"
-                      orientation="right"
-                      tick={{ fill: "white" }}
-                      domain={["auto", "auto"]}
-                      label={{
-                        value: "Zero Points",
-                        angle: 90,
-                        position: "insideRight",
-                        dx: 10,
-                        fill: "white",
-                      }}
-                    />
-                    <ReferenceLine
-                      x={xMin + 2000000}
-                      stroke="#3eb7ff"
-                      label="twilight"
-                      yAxisId="left"
-                      strokeDasharray="5 5"
-                    />
-                    <ReferenceLine
-                      x={xMax - 2000000}
-                      stroke="#3eb7ff"
-                      label="twilight"
-                      yAxisId="left"
-                      strokeDasharray="5 5"
-                    />
+                {/* <ResponsiveContainer width="100%" height="100%"> */}
+                <ComposedChart
+                  data={chartData}
+                  margin={{ left: 20, right: 10, top: 10 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#555" />
+                  <XAxis
+                    dataKey="obs_start_dt"
+                    type="number"
+                    domain={["auto", "auto"]}
+                    scale="time"
+                    ticks={xTicks}
+                    tickFormatter={(tick) =>
+                      new Date(tick).toLocaleTimeString("en-AU", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    }
+                    tick={{ fill: "white" }}
+                    label={{
+                      value: "Time (UTC)",
+                      position: "bottom",
+                      fill: "white",
+                      dy: 25,
+                    }}
+                  />
+                  <YAxis
+                    yAxisId="left"
+                    tick={{ fill: "white" }}
+                    domain={["auto", "auto"]}
+                    tickFormatter={(tick) => Number(tick).toFixed(2)}
+                    label={{
+                      value: "Seeing",
+                      angle: -90,
+                      position: "insideLeft",
+                      fill: "white",
+                      dx: -10,
+                    }}
+                  />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    tick={{ fill: "white" }}
+                    domain={["auto", "auto"]}
+                    label={{
+                      value: "Zero Points",
+                      angle: 90,
+                      position: "insideRight",
+                      dx: 10,
+                      fill: "white",
+                    }}
+                  />
+                  {/* <ZAxis dataKey="zero_point_median" range={[20, 20]} /> */}
+                  <ReferenceLine
+                    x={xMin + 2000000}
+                    stroke="#3eb7ff"
+                    label="twilight"
+                    yAxisId="left"
+                    strokeDasharray="5 5"
+                  />
+                  <ReferenceLine
+                    x={xMax - 2000000}
+                    stroke="#3eb7ff"
+                    label="twilight"
+                    yAxisId="left"
+                    strokeDasharray="5 5"
+                  />
 
-                    <Tooltip content={<CustomTooltip />} />
-                    <Line
-                      name="zero_point_median_u"
-                      yAxisId="right"
-                      type="monotone"
-                      dataKey="zero_point_median"
-                      dot={{ r: 1, fill: "#3eb7ff", stroke: "#3eb7ff" }}
-                      data={chartData.filter((d) => d.band === "u")}
-                      isAnimationActive={false}
-                    />
-                    <Line
-                      name="zero_point_median_g"
-                      yAxisId="right"
-                      type="monotone"
-                      dataKey="zero_point_median"
-                      stroke="#30c39f"
-                      dot={(props) => (
-                        <StarShape {...props} fill="#30c39f" r={2} />
-                      )}
-                      data={chartData.filter((d) => d.band === "g")}
-                      isAnimationActive={false}
-                    />
-                    <Line
+                  <Tooltip
+                    content={<CustomTooltip />}
+                    cursor={{ strokeDasharray: "3 3", stroke: "#ffffff" }}
+                  />
+                  <Line
+                    name="zero_point_median_u"
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="zero_point_median"
+                    dot={{ r: 1, fill: "#3eb7ff", stroke: "#3eb7ff" }}
+                    data={chartData.filter((d) => d.band === "u")}
+                    isAnimationActive={false}
+                  />
+                  <Line
+                    name="zero_point_median_g"
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="zero_point_median"
+                    stroke="#30c39f"
+                    dot={(props) => {
+                      const { key, ...rest } = props;
+                      return (
+                        <StarShape key={key} {...rest} fill="#30c39f" r={2} />
+                      );
+                    }}
+                    data={chartData.filter((d) => d.band === "g")}
+                    isAnimationActive={false}
+                  />
+                  <Line
+                    name="zero_point_median_r"
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="zero_point_median"
+                    stroke="#ff7e00"
+                    dot={(props) => {
+                      const { key, ...rest } = props;
+                      return (
+                        <SquareShape key={key} {...rest} fill="#ff7e00" r={2} />
+                      );
+                    }}
+                    data={chartData.filter((d) => d.band === "r")}
+                    isAnimationActive={false}
+                  />
+                  {/* <Scatter
                       name="zero_point_median_r"
                       yAxisId="right"
                       type="monotone"
                       dataKey="zero_point_median"
                       stroke="#ff7e00"
-                      dot={(props) => (
-                        <SquareShape {...props} fill="#ff7e00" r={2} />
-                      )}
+                      fill="#ff7e00"
+                      connectNulls="false"
+                      shape="square"
+                      line
                       data={chartData.filter((d) => d.band === "r")}
                       isAnimationActive={false}
-                    />
-                    <Line
-                      name="zero_point_median_i"
-                      yAxisId="right"
-                      type="monotone"
-                      dataKey="zero_point_median"
-                      stroke="#2af5ff"
-                      dot={(props) => (
-                        <TriangleShape {...props} fill="#66ff2aff" r={2} />
-                      )}
-                      data={chartData.filter((d) => d.band === "i")}
-                      isAnimationActive={false}
-                    />
-                    <Line
-                      name="zero_point_median_z"
-                      yAxisId="right"
-                      type="monotone"
-                      dataKey="zero_point_median"
-                      stroke="#a7f9c1"
-                      dot={(props) => (
-                        <FlippedTriangleShape {...props} fill="#a7f9c1" r={2} />
-                      )}
-                      data={chartData.filter((d) => d.band === "z")}
-                      isAnimationActive={false}
-                    />
-                    <Line
-                      name="zero_point_median_y"
-                      yAxisId="right"
-                      type="monotone"
-                      dataKey="zero_point_median"
-                      stroke="#fdc900"
-                      dot={(props) => (
-                        <AsteriskShape {...props} fill="#fdc900" r={2} />
-                      )}
-                      data={chartData.filter((d) => d.band === "y")}
-                      isAnimationActive={false}
-                    />
-                    <Scatter
-                      name="dimm_seeing"
-                      dataKey="dimm_seeing"
-                      fill="white"
-                      shape={(props) => <XShape {...props} />}
-                      yAxisId="left"
-                    />
-                    <ChartLegend
-                      layout={isMobile ? "horizontal" : "vertical"}
-                      verticalAlign={isMobile ? "bottom" : "middle"}
-                      align={isMobile ? "center" : "right"}
-                      content={renderCustomLegend}
-                    />
-                  </ComposedChart>
-                </ResponsiveContainer>
+                    /> */}
+                  <Line
+                    name="zero_point_median_i"
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="zero_point_median"
+                    stroke="#2af5ff"
+                    dot={(props) => {
+                      const { key, ...rest } = props;
+                      return (
+                        <TriangleShape
+                          key={key}
+                          {...rest}
+                          fill="#2af5ff"
+                          r={2}
+                        />
+                      );
+                    }}
+                    data={chartData.filter((d) => d.band === "i")}
+                    isAnimationActive={false}
+                  />
+                  <Line
+                    name="zero_point_median_z"
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="zero_point_median"
+                    stroke="#a7f9c1"
+                    dot={(props) => {
+                      const { key, ...rest } = props;
+                      return (
+                        <FlippedTriangleShape
+                          key={key}
+                          {...rest}
+                          fill="#a7f9c1"
+                          r={2}
+                        />
+                      );
+                    }}
+                    data={chartData.filter((d) => d.band === "z")}
+                    isAnimationActive={false}
+                  />
+                  <Line
+                    name="zero_point_median_y"
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="zero_point_median"
+                    stroke="#fdc900"
+                    dot={(props) => {
+                      const { key, ...rest } = props;
+                      return (
+                        <AsteriskShape
+                          key={key}
+                          {...rest}
+                          fill="#fdc900"
+                          r={2}
+                        />
+                      );
+                    }}
+                    data={chartData.filter((d) => d.band === "y")}
+                    isAnimationActive={false}
+                  />
+                  <Scatter
+                    name="dimm_seeing"
+                    dataKey="dimm_seeing"
+                    fill="white"
+                    shape={(props) => <XShape {...props} />}
+                    yAxisId="left"
+                  />
+                  <ChartLegend
+                    layout={isMobile ? "horizontal" : "vertical"}
+                    verticalAlign={isMobile ? "bottom" : "middle"}
+                    align={isMobile ? "center" : "right"}
+                    content={renderCustomLegend}
+                  />
+                </ComposedChart>
+                {/* </ResponsiveContainer> */}
               </ChartContainer>
             </div>
           </div>
@@ -531,10 +579,21 @@ function ObservingConditionsApplet({ exposuresLoading, exposureFields }) {
   );
 }
 // TODO: Use different(multi) series for each band
+// Use multi series for multi nights
 // TODO: check builtin shapes in recharts
 // TODO: Try connect nulls
 // TODO: try scatter with line rather than line with dots
 // Update tooltips to show band and value
 // update tooltip style
 // Add twilight reference lines for multiple nights
+// use segments to draw lines between points
+{
+  /* <Line
+  dataKey="value"
+  segments={[
+    { type: 'line', points: [point1, point2] },
+    { type: 'line', points: [point3, point4] },
+  ]}
+/> */
+}
 export default ObservingConditionsApplet;
