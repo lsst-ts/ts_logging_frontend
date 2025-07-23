@@ -182,10 +182,12 @@ function DataLog() {
                 {dataLogEntries.length} exposures returned for {instrumentName}{" "}
                 {dateRangeString}.
               </p>
-              <p>
-                <span className="font-bold">Note:</span> Filters persist across
-                queries. If you don't see data as expected, try resetting the
-                table.
+              <p className="max-w-2xl">
+                <span className="font-bold">Note:</span> Table customisations
+                (such as filtering, sorting, column hiding, and grouping) do not
+                persist across page navigations. However, they will persist
+                while querying different dates or date ranges on this page. If
+                data doesn't appear as expected, try resetting the table.
               </p>
             </>
           )}
