@@ -149,7 +149,7 @@ function DataLog() {
           <p>
             Please refer to the{" "}
             <a
-              href={`${baseUrl}/times-square/github/lsst-ts/ts_logging_and_reporting/ExposureDetail`}
+              href={`${baseUrl}/times-square/github/lsst-ts/ts_logging_and_reporting/ExposureDetail?instrument=LATISS`}
               className="underline text-blue-300 hover:text-blue-400"
               target="_blank"
               rel="noopener noreferrer"
