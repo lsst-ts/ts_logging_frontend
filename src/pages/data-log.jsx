@@ -10,7 +10,11 @@ import {
   fetchDataLogEntriesFromConsDB,
   fetchDataLogEntriesFromExposureLog,
 } from "@/utils/fetchUtils";
-import { getDatetimeFromDayobsStr, mergeDataLogSources } from "@/utils/utils";
+import {
+  getDatetimeFromDayobsStr,
+  mergeDataLogSources,
+  DEFAULT_EXTERNAL_INSTANCE_URL,
+} from "@/utils/utils";
 
 function DataLog() {
   // Routing and URL params
@@ -32,7 +36,7 @@ function DataLog() {
   const instrument = TELESCOPES[telescope];
 
   // For display on page
-  const baseUrl = import.meta.env.VITE_EXTERNAL_INSTANCE_URL;
+  const baseUrl = DEFAULT_EXTERNAL_INSTANCE_URL;
   const instrumentName = telescope;
   const dateRangeString =
     startDayobs === endDayobs
