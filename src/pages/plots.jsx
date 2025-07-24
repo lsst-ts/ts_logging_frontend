@@ -27,7 +27,23 @@ import {
 import { fetchDataLogEntriesFromConsDB } from "@/utils/fetchUtils";
 import { getDatetimeFromDayobsStr } from "@/utils/utils";
 
-function MetricLineChart({ title, dataKey, data }) {
+function MetricLineChart({ title, dataKey, data, preferredYDomain = null }) {
+  // Check if data is empty
+  const actualValues = data.map((d) => d[dataKey]).filter((v) => v != null);
+
+  // Check if all points are within preferred yDomain
+  const isWithinPreferredDomain =
+    preferredYDomain &&
+    actualValues.length > 0 &&
+    actualValues.every(
+      (val) => val >= preferredYDomain[0] && val <= preferredYDomain[1],
+    );
+
+  // If data overflows preferred domain, use "auto" for Y axis
+  const finalYDomain = isWithinPreferredDomain
+    ? preferredYDomain
+    : ["auto", "auto"];
+
   return (
     <ChartContainer title={title} config={{}}>
       <LineChart
@@ -53,6 +69,7 @@ function MetricLineChart({ title, dataKey, data }) {
         />
         <YAxis
           tick={{ fill: "white" }}
+          domain={finalYDomain}
           label={{
             value: title,
             angle: -90,
@@ -69,6 +86,11 @@ function MetricLineChart({ title, dataKey, data }) {
                 const obsStart = payload["obs start"];
                 const exposureId = payload["exposure id"];
 
+                const formattedValue =
+                  typeof value === "number" && !Number.isInteger(value)
+                    ? value.toFixed(4)
+                    : value;
+
                 return (
                   <div className="flex flex-col gap-1">
                     <div>
@@ -77,7 +99,7 @@ function MetricLineChart({ title, dataKey, data }) {
                     </div>
                     <div>
                       <span className="text-muted-foreground">{title}:</span>{" "}
-                      <span className="font-mono">{value}</span>
+                      <span className="font-mono">{formattedValue}</span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">
@@ -99,8 +121,8 @@ function MetricLineChart({ title, dataKey, data }) {
           stroke="#000000"
           strokeWidth={2}
           // dot={{ r: 1, fill: "#0C4A47", stroke: "#0C4A47" }} // sidebar teal
-          dot={{ r: 1, fill: "#3CAE3F", stroke: "#3CAE3F" }} // shadow green
-          activeDot={{ r: 6 }}
+          dot={{ r: 0.5, fill: "#3CAE3F", stroke: "#3CAE3F" }} // shadow green
+          activeDot={{ r: 4, fill: "#ffffff" }}
         />
       </LineChart>
     </ChartContainer>
@@ -240,21 +262,23 @@ function Plots() {
         {/* Plots */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <MetricLineChart
+            title="DIMM Seeing"
+            dataKey="dimm seeing"
+            data={chartData}
+            preferredYDomain={[0.6, 1.8]}
+          />
+          <MetricLineChart
             title="Photometric Zero Points"
             dataKey="zero point median"
             data={chartData}
+            preferredYDomain={[30, 36]}
           />
+          <MetricLineChart title="Airmass" dataKey="airmass" data={chartData} />
           <MetricLineChart
             title="Sky Brightness"
             dataKey="sky bg median"
             data={chartData}
           />
-          <MetricLineChart
-            title="DIMM Seeing"
-            dataKey="dimm seeing"
-            data={chartData}
-          />
-          <MetricLineChart title="Airmass" dataKey="airmass" data={chartData} />
         </div>
       </div>
       <Toaster expand={true} richColors closeButton />
