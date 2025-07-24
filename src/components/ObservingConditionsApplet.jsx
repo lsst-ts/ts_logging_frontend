@@ -260,6 +260,14 @@ const renderCustomLegend = () => (
     <div className="flex items-center gap-2">
       <svg width="16" height="16" style={{ display: "inline" }}>
         <g>
+          <circle cx="8" cy="8" r="2" fill="#3eb7ff" />
+        </g>
+      </svg>
+      <span>Zero Point (u)</span>
+    </div>
+    <div className="flex items-center gap-2">
+      <svg width="16" height="16" style={{ display: "inline" }}>
+        <g>
           <StarShape cx={8} cy={8} fill="#30c39f" r={2} />
         </g>
       </svg>
@@ -372,12 +380,10 @@ function ObservingConditionsApplet({ exposuresLoading, exposureFields }) {
             <div className="flex-grow min-w-0 h-full">
               <ChartContainer config={chartConfig} className="w-full h-full">
                 {/* <ResponsiveContainer width="100%" height="100%"> */}
-                <ComposedChart
-                  data={chartData}
-                  margin={{ left: 20, right: 10, top: 10 }}
-                >
+                <ComposedChart margin={{ left: 20, right: 10, top: 10 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#555" />
                   <XAxis
+                    data={chartData}
                     dataKey="obs_start_dt"
                     type="number"
                     domain={["auto", "auto"]}
@@ -449,7 +455,12 @@ function ObservingConditionsApplet({ exposuresLoading, exposureFields }) {
                     type="monotone"
                     dataKey="zero_point_median"
                     dot={{ r: 1, fill: "#3eb7ff", stroke: "#3eb7ff" }}
-                    data={chartData.filter((d) => d.band === "u")}
+                    data={chartData.map((d) => {
+                      if (d.band !== "u") {
+                        return { ...d, zero_point_median: null };
+                      }
+                      return d;
+                    })}
                     isAnimationActive={false}
                   />
                   <Line
@@ -464,7 +475,12 @@ function ObservingConditionsApplet({ exposuresLoading, exposureFields }) {
                         <StarShape key={key} {...rest} fill="#30c39f" r={2} />
                       );
                     }}
-                    data={chartData.filter((d) => d.band === "g")}
+                    data={chartData.map((d) => {
+                      if (d.band !== "g") {
+                        return { ...d, zero_point_median: null };
+                      }
+                      return d;
+                    })}
                     isAnimationActive={false}
                   />
                   <Line
@@ -479,7 +495,12 @@ function ObservingConditionsApplet({ exposuresLoading, exposureFields }) {
                         <SquareShape key={key} {...rest} fill="#ff7e00" r={2} />
                       );
                     }}
-                    data={chartData.filter((d) => d.band === "r")}
+                    data={chartData.map((d) => {
+                      if (d.band !== "r") {
+                        return { ...d, zero_point_median: null };
+                      }
+                      return d;
+                    })}
                     isAnimationActive={false}
                   />
                   {/* <Scatter
@@ -490,11 +511,13 @@ function ObservingConditionsApplet({ exposuresLoading, exposureFields }) {
                       stroke="#ff7e00"
                       fill="#ff7e00"
                       connectNulls="false"
-                      shape="square"
-                      line
-                      data={chartData.filter((d) => d.band === "r")}
+                      shape={<SquareShape />}
+                      // chartData={chartData}
+                      // line
+                      data={chartData.filter(d => d.band === 'y')}
                       isAnimationActive={false}
                     /> */}
+
                   <Line
                     name="zero_point_median_i"
                     yAxisId="right"
@@ -512,7 +535,12 @@ function ObservingConditionsApplet({ exposuresLoading, exposureFields }) {
                         />
                       );
                     }}
-                    data={chartData.filter((d) => d.band === "i")}
+                    data={chartData.map((d) => {
+                      if (d.band !== "i") {
+                        return { ...d, zero_point_median: null };
+                      }
+                      return d;
+                    })}
                     isAnimationActive={false}
                   />
                   <Line
@@ -532,7 +560,12 @@ function ObservingConditionsApplet({ exposuresLoading, exposureFields }) {
                         />
                       );
                     }}
-                    data={chartData.filter((d) => d.band === "z")}
+                    data={chartData.map((d) => {
+                      if (d.band !== "z") {
+                        return { ...d, zero_point_median: null };
+                      }
+                      return d;
+                    })}
                     isAnimationActive={false}
                   />
                   <Line
@@ -552,7 +585,12 @@ function ObservingConditionsApplet({ exposuresLoading, exposureFields }) {
                         />
                       );
                     }}
-                    data={chartData.filter((d) => d.band === "y")}
+                    data={chartData.map((d) => {
+                      if (d.band !== "y") {
+                        return { ...d, zero_point_median: null };
+                      }
+                      return d;
+                    })}
                     isAnimationActive={false}
                   />
                   <Scatter
@@ -561,6 +599,7 @@ function ObservingConditionsApplet({ exposuresLoading, exposureFields }) {
                     fill="white"
                     shape={(props) => <XShape {...props} />}
                     yAxisId="left"
+                    data={chartData}
                   />
                   <ChartLegend
                     layout={isMobile ? "horizontal" : "vertical"}
