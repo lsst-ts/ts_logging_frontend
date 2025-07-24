@@ -42,15 +42,10 @@ function MetricLineChart({ title, dataKey, data }) {
           type="number"
           domain={["auto", "auto"]}
           scale="time"
-          tickFormatter={(tick) =>
-            new Date(tick).toLocaleTimeString("en-AU", {
-              hour: "2-digit",
-              minute: "2-digit",
-            })
-          }
+          tickFormatter={(tick) => DateTime.fromMillis(tick).toFormat("HH:mm")}
           tick={{ fill: "white" }}
           label={{
-            value: "Time (UTC)",
+            value: "Time (TAI)",
             position: "bottom",
             fill: "white",
             dy: 25,
@@ -70,15 +65,29 @@ function MetricLineChart({ title, dataKey, data }) {
           content={(props) => (
             <ChartTooltipContent
               {...props}
-              formatter={(value, name, item, index, payload) => (
-                <>
-                  <span className="text-muted-foreground">{title}</span>
-                  <span className="font-mono">{value}</span>
-                  <div className="text-muted-foreground">
-                    Exposure: {payload["exposure id"]}
+              formatter={(value, name, item, index, payload) => {
+                const obsStart = payload["obs start"];
+                const exposureId = payload["exposure id"];
+
+                return (
+                  <div className="flex flex-col gap-1">
+                    <div>
+                      <span className="text-muted-foreground">Exposure:</span>{" "}
+                      <span className="font-mono">{exposureId}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">{title}:</span>{" "}
+                      <span className="font-mono">{value}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">
+                        obs_start (TAI):
+                      </span>{" "}
+                      <span className="font-mono">{obsStart}</span>
+                    </div>
                   </div>
-                </>
-              )}
+                );
+              }}
               hideLabel
             />
           )}
