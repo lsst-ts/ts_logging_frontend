@@ -19,10 +19,14 @@ import {
   ResponsiveContainer,
   ReferenceLine,
   ZAxis,
+  ReferenceArea,
 } from "recharts";
 import { DateTime } from "luxon";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
+
+const GAP_THRESHOLD = 5 * 60 * 1000;
+const GAP_MAX_THRESHOLD = 60 * 60 * 1000;
 
 const XShape = (props) => {
   const { cx, cy, fill, payload } = props;
@@ -366,15 +370,34 @@ function ObservingConditionsApplet({
     zero_point_median: { label: "Zero Point Median", color: "#3b82f6" },
   };
 
-  almanacInfo.forEach((dayobsAlm, i) => {
-    const eveRaw = dayobsAlm.twilight_evening;
-    const morRaw = dayobsAlm.twilight_morning;
-    const eve = DateTime.fromFormat(eveRaw, "yyyy-MM-dd HH:mm:ss");
-    const mor = DateTime.fromFormat(morRaw, "yyyy-MM-dd HH:mm:ss");
-    console.log(
-      `Day ${i}: evening=${eveRaw} - ${eve} (${eve.isValid}), morning=${morRaw} ${mor}(${mor.isValid})`,
-    );
-  });
+  // almanacInfo.forEach((dayobsAlm, i) => {
+  //   const eveRaw = dayobsAlm.twilight_evening;
+  //   const morRaw = dayobsAlm.twilight_morning;
+  //   const eve = DateTime.fromFormat(eveRaw, "yyyy-MM-dd HH:mm:ss");
+  //   const mor = DateTime.fromFormat(morRaw, "yyyy-MM-dd HH:mm:ss");
+  //   console.log(
+  //     `Day ${i}: evening=${eveRaw} - ${eve} (${eve.isValid}), morning=${morRaw} ${mor}(${mor.isValid})`,
+  //   );
+  // });
+
+  // Calculate open/close shutter time or observing gaps
+  const sortedData = chartData
+    .filter((d) => typeof d.obs_start_dt === "number" && !isNaN(d.obs_start_dt))
+    .sort((a, b) => a.obs_start_dt - b.obs_start_dt);
+
+  const gapAreas = [];
+  for (let i = 0; i < sortedData.length - 1; i++) {
+    const curr = sortedData[i];
+    const next = sortedData[i + 1];
+    const delta = next.obs_start_dt - curr.obs_start_dt;
+
+    if (GAP_THRESHOLD < delta && delta < GAP_MAX_THRESHOLD) {
+      gapAreas.push({
+        start: curr.obs_start_dt,
+        end: next.obs_start_dt,
+      });
+    }
+  }
 
   return (
     <Card className="border-none p-0 bg-stone-800 gap-2">
@@ -634,6 +657,24 @@ function ObservingConditionsApplet({
                     yAxisId="left"
                     data={chartData}
                   />
+                  {gapAreas.map((gap, i) => (
+                    <ReferenceArea
+                      key={`gap-${i}`}
+                      x1={gap.start}
+                      x2={gap.end}
+                      yAxisId="left"
+                      strokeOpacity={0}
+                      fill="#0c4a47"
+                      fillOpacity={0.4}
+                      // label={{
+                      //   value: "Gap > 5min",
+                      //   position: "insideTopLeft",
+                      //   fill: "#FFAAAA",
+                      //   fontSize: 10,
+                      // }}
+                    />
+                  ))}
+
                   <ChartLegend
                     layout={isMobile ? "horizontal" : "vertical"}
                     verticalAlign={isMobile ? "bottom" : "middle"}
@@ -650,15 +691,17 @@ function ObservingConditionsApplet({
     </Card>
   );
 }
-// TODO: Use different(multi) series for each band
-// Use multi series for multi nights
-// TODO: check builtin shapes in recharts
-// TODO: Try connect nulls
+// TODO: Use different(multi) series for each band - Done
+// TODO: Use multi series for multi nights
+// TODO: check builtin shapes in recharts - Done
+// TODO: Try connect nulls - Done
 // TODO: try scatter with line rather than line with dots
 // Update tooltip to show band and value
 // update tooltip style
-// Add twilight reference lines for multiple nights
+// Add twilight reference lines for multiple nights - Done
 // use segments to draw lines between points
+// (to remove possible cross lines between nights
+// if last and first points are of the same band)
 {
   /* <Line
   dataKey="value"
