@@ -249,66 +249,73 @@ const CustomLegend = () => {
 
 const renderCustomLegend = () => (
   <div className="flex flex-col gap-2 p-3 bg-black shadow-[4px_4px_4px_0px_#c27aff] border text-white text-xxs ml-10 shrink-0">
-    <div className="flex items-center gap-2">
-      <svg width="16" height="16" style={{ display: "inline" }}>
-        <g>
-          <XShape cx={8} cy={8} fill="#fff" />
-        </g>
-      </svg>
-      <span>Seeing</span>
-    </div>
-    <div className="flex items-center gap-2">
-      <svg width="16" height="16" style={{ display: "inline" }}>
-        <g>
-          <circle cx="8" cy="8" r="2" fill="#3eb7ff" />
-        </g>
-      </svg>
-      <span>Zero Point (u)</span>
-    </div>
-    <div className="flex items-center gap-2">
-      <svg width="16" height="16" style={{ display: "inline" }}>
-        <g>
-          <StarShape cx={8} cy={8} fill="#30c39f" r={2} />
-        </g>
-      </svg>
-      <span>Zero Point (g)</span>
-    </div>
-    <div className="flex items-center gap-2">
-      <svg width="16" height="16" style={{ display: "inline" }}>
-        <g>
-          <SquareShape cx={8} cy={8} fill="#ff7e00" r={2} />
-        </g>
-      </svg>
-      <span>Zero Point (r)</span>
-    </div>
-    <div className="flex items-center gap-2">
-      <svg width="16" height="16" style={{ display: "inline" }}>
-        <g>
-          <TriangleShape cx={8} cy={8} fill="#2af5ff" r={2} />
-        </g>
-      </svg>
-      <span>Zero Point (i)</span>
-    </div>
-    <div className="flex items-center gap-2">
-      <svg width="16" height="16" style={{ display: "inline" }}>
-        <g>
-          <FlippedTriangleShape cx={8} cy={8} fill="#2af5ff" r={2} />
-        </g>
-      </svg>
-      <span>Zero Point (z)</span>
-    </div>
-    <div className="flex items-center gap-2">
-      <svg width="16" height="16" style={{ display: "inline" }}>
-        <g>
-          <AsteriskShape cx={8} cy={8} fill="#fdc900" r={2} />
-        </g>
-      </svg>
-      <span>Zero Point (y)</span>
+    <div className="grid sm:grid-cols-3 md:grid-cols-1 lg:grid-cols-1 gap-4 h-full md:shrink-1">
+      <div className="flex items-center gap-2">
+        <svg width="16" height="16" style={{ display: "inline" }}>
+          <g>
+            <XShape cx={8} cy={8} fill="#fff" />
+          </g>
+        </svg>
+        <span>Seeing</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <svg width="16" height="16" style={{ display: "inline" }}>
+          <g>
+            <circle cx="8" cy="8" r="2" fill="#3eb7ff" />
+          </g>
+        </svg>
+        <span>Zero Point (u)</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <svg width="16" height="16" style={{ display: "inline" }}>
+          <g>
+            <StarShape cx={8} cy={8} fill="#30c39f" r={2} />
+          </g>
+        </svg>
+        <span>Zero Point (g)</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <svg width="16" height="16" style={{ display: "inline" }}>
+          <g>
+            <SquareShape cx={8} cy={8} fill="#ff7e00" r={2} />
+          </g>
+        </svg>
+        <span>Zero Point (r)</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <svg width="16" height="16" style={{ display: "inline" }}>
+          <g>
+            <TriangleShape cx={8} cy={8} fill="#2af5ff" r={2} />
+          </g>
+        </svg>
+        <span>Zero Point (i)</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <svg width="16" height="16" style={{ display: "inline" }}>
+          <g>
+            <FlippedTriangleShape cx={8} cy={8} fill="#2af5ff" r={2} />
+          </g>
+        </svg>
+        <span>Zero Point (z)</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <svg width="16" height="16" style={{ display: "inline" }}>
+          <g>
+            <AsteriskShape cx={8} cy={8} fill="#fdc900" r={2} />
+          </g>
+        </svg>
+        <span>Zero Point (y)</span>
+      </div>
     </div>
   </div>
 );
 
-function ObservingConditionsApplet({ exposuresLoading, exposureFields }) {
+function ObservingConditionsApplet({
+  exposuresLoading,
+  exposureFields,
+  almanacLoading,
+  almanacInfo,
+}) {
   const isMobile = useIsMobile();
 
   const chartData = exposureFields.map((entry) => {
@@ -320,14 +327,28 @@ function ObservingConditionsApplet({ exposuresLoading, exposureFields }) {
     return { ...entry, obs_start_dt };
   });
 
+  const twilightValues = almanacInfo
+    .map((dayobsAlm) => {
+      const eve = DateTime.fromFormat(
+        dayobsAlm.twilight_evening,
+        "yyyy-MM-dd HH:mm:ss",
+      ).toMillis();
+      const mor = DateTime.fromFormat(
+        dayobsAlm.twilight_morning,
+        "yyyy-MM-dd HH:mm:ss",
+      ).toMillis();
+      return [eve, mor];
+    })
+    .flat();
+
   const xVals = chartData
     .map((d) => d.obs_start_dt)
     .filter((v) => typeof v === "number" && !isNaN(v));
-  //   const yVals = chartData
-  //     .map((d) => d.dimm_seeing)
-  //     .filter((v) => typeof v === "number" && !isNaN(v));
-  const xMin = xVals.length ? Math.min(...xVals) : "auto";
-  const xMax = xVals.length ? Math.max(...xVals) : "auto";
+  const allXVals = [...xVals, ...twilightValues];
+  const xMin = xVals.length ? Math.min(...allXVals) : "auto";
+  const xMax = xVals.length ? Math.max(...allXVals) : "auto";
+
+  // console.log(allXVals);
   //   const yMin = yVals.length ? Math.min(...yVals) : "auto";
   //   const yMax = yVals.length ? Math.max(...yVals) : "auto";
   // console.log("xMin:", xMin, "xMax:", xMax, "yMin:", yMin, "yMax:", yMax);
@@ -344,6 +365,16 @@ function ObservingConditionsApplet({ exposuresLoading, exposureFields }) {
     dimm_seeing: { label: "Seeing", color: "#ffffff" },
     zero_point_median: { label: "Zero Point Median", color: "#3b82f6" },
   };
+
+  almanacInfo.forEach((dayobsAlm, i) => {
+    const eveRaw = dayobsAlm.twilight_evening;
+    const morRaw = dayobsAlm.twilight_morning;
+    const eve = DateTime.fromFormat(eveRaw, "yyyy-MM-dd HH:mm:ss");
+    const mor = DateTime.fromFormat(morRaw, "yyyy-MM-dd HH:mm:ss");
+    console.log(
+      `Day ${i}: evening=${eveRaw} - ${eve} (${eve.isValid}), morning=${morRaw} ${mor}(${mor.isValid})`,
+    );
+  });
 
   return (
     <Card className="border-none p-0 bg-stone-800 gap-2">
@@ -371,7 +402,7 @@ function ObservingConditionsApplet({ exposuresLoading, exposureFields }) {
         </div>
       </CardHeader>
       <CardContent className="flex flex-col gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 h-[320px] font-thin">
-        {exposuresLoading ? (
+        {exposuresLoading && almanacLoading ? (
           <div className="flex-grow">
             <Skeleton className="w-full h-full min-h-[180px] bg-stone-900" />
           </div>
@@ -386,7 +417,7 @@ function ObservingConditionsApplet({ exposuresLoading, exposureFields }) {
                     data={chartData}
                     dataKey="obs_start_dt"
                     type="number"
-                    domain={["auto", "auto"]}
+                    domain={[xMin, xMax]}
                     scale="time"
                     ticks={xTicks}
                     tickFormatter={(tick) =>
@@ -402,6 +433,7 @@ function ObservingConditionsApplet({ exposuresLoading, exposureFields }) {
                       fill: "white",
                       dy: 25,
                     }}
+                    padding={{ left: 30, right: 30 }}
                   />
                   <YAxis
                     yAxisId="left"
@@ -430,20 +462,21 @@ function ObservingConditionsApplet({ exposuresLoading, exposureFields }) {
                     }}
                   />
                   {/* <ZAxis dataKey="zero_point_median" range={[20, 20]} /> */}
-                  <ReferenceLine
-                    x={xMin + 2000000}
-                    stroke="#3eb7ff"
-                    label="twilight"
-                    yAxisId="left"
-                    strokeDasharray="5 5"
-                  />
-                  <ReferenceLine
-                    x={xMax - 2000000}
-                    stroke="#3eb7ff"
-                    label="twilight"
-                    yAxisId="left"
-                    strokeDasharray="5 5"
-                  />
+                  {twilightValues.map((twi, i) =>
+                    typeof twi === "number" &&
+                    !isNaN(twi) &&
+                    xMin <= twi &&
+                    twi <= xMax ? (
+                      <ReferenceLine
+                        key={`twilight-${i}-${twi}`}
+                        x={twi}
+                        stroke="#3eb7ff"
+                        label={`twilight ${i}`}
+                        yAxisId="left"
+                        strokeDasharray="5 5"
+                      />
+                    ) : null,
+                  )}
 
                   <Tooltip
                     content={<CustomTooltip />}
@@ -622,7 +655,7 @@ function ObservingConditionsApplet({ exposuresLoading, exposureFields }) {
 // TODO: check builtin shapes in recharts
 // TODO: Try connect nulls
 // TODO: try scatter with line rather than line with dots
-// Update tooltips to show band and value
+// Update tooltip to show band and value
 // update tooltip style
 // Add twilight reference lines for multiple nights
 // use segments to draw lines between points
