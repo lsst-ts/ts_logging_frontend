@@ -189,10 +189,24 @@ const CustomTooltip = ({ active, payload, label }) => {
         });
       }
     });
+    if (uniqueData.size === 0) return null;
+    uniqueData.set("Band", {
+      name: "Band",
+      value: payload[0].payload.band || "N/A",
+      color: "#ffffff",
+    });
+    uniqueData.set("day_obs", {
+      name: "day_obs",
+      value: payload[0].payload.day_obs,
+      color: "#ffffff",
+    });
     return (
       <div className="bg-gray-800 border border-gray-600 text-white text-sm p-2 rounded shadow-lg">
         <p className="text-gray-300 mb-1">
           {new Date(label).toLocaleTimeString("en-AU", {
+            year: "numeric",
+            month: "numeric",
+            day: "numeric",
             hour: "2-digit",
             minute: "2-digit",
           })}
@@ -399,6 +413,100 @@ function ObservingConditionsApplet({
     }
   }
 
+  //group data by dayobs to handle multiple nights
+  const groupedByDayobs = Object.groupBy(chartData, (exp) => exp.day_obs);
+
+  const groupedChartData = Object.values(groupedByDayobs);
+  // console.log("Grouped by day_obs:", groupedChartData);
+
+  const filterByBand = (data, band) => {
+    return data.map((d) => {
+      if (d.band !== band) {
+        return { ...d, zero_point_median: null };
+      }
+      return d;
+    });
+  };
+
+  const dataWithNightGaps = (data, band) => {
+    return data.flatMap((group, i) => {
+      const filtered = filterByBand(group, band);
+      if (i === 0) return filtered;
+
+      return [{ obs_start_dt: null, zero_point_median: null }, ...filtered];
+    });
+  };
+  // const filteredChartData = groupedChartData.map(group => filterByBand(group, 'u'));
+  // console.log("Filtered chart data for band 'u':", filteredChartData);
+
+  // const testData = [{
+  //   obs_start_dt: DateTime.fromISO("2023-10-01T00:00:00Z").toMillis(),
+  //   band: "u",
+  //   zero_point_median: 20.5,
+  //   day_obs: "2023-10-01",
+  // }, {
+  //   obs_start_dt: DateTime.fromISO("2023-10-01T01:00:00Z").toMillis(),
+  //   band: "g",
+  //   zero_point_median: 21.0,
+  //   day_obs: "2023-10-01",
+  // }, {
+  //   obs_start_dt: DateTime.fromISO("2023-10-01T02:00:00Z").toMillis(),
+  //   band: "r",
+  //   zero_point_median: 19.8,
+  //   day_obs: "2023-10-01",
+  // }, {
+  //   obs_start_dt: DateTime.fromISO("2023-10-01T03:00:00Z").toMillis(),
+  //   band: "i",
+  //   zero_point_median: 20.2,
+  //   day_obs: "2023-10-01",
+  // }, {
+  //   obs_start_dt: DateTime.fromISO("2023-10-01T04:00:00Z").toMillis(),
+  //   band: "z",
+  //   zero_point_median: 20.0,
+  //   day_obs: "2023-10-01",
+  // }, {
+  //   obs_start_dt: DateTime.fromISO("2023-10-01T05:00:00Z").toMillis(),
+  //   band: "y",
+  //   zero_point_median: 20.3,
+  //   day_obs: "2023-10-01",
+  // }, {
+  //   obs_start_dt: DateTime.fromISO("2023-10-01T06:00:00Z").toMillis(),
+  //   band: "u",
+  //   zero_point_median: 20.1,
+  //   day_obs: "2023-10-01",
+  // }, {
+  //   obs_start_dt: DateTime.fromISO("2023-10-01T07:00:00Z").toMillis(),
+  //   band: "g",
+  //   zero_point_median: 21.2,
+  //   day_obs: "2023-10-01",
+  // }, {
+  //   obs_start_dt: DateTime.fromISO("2023-10-01T08:00:00Z").toMillis(),
+  //   band: "r",
+  //   zero_point_median: 19.9,
+  //   day_obs: "2023-10-01",
+  // }, {
+  //   obs_start_dt: DateTime.fromISO("2023-10-01T09:00:00Z").toMillis(),
+  //   band: "i",
+  //   zero_point_median: 20.4,
+  //   day_obs: "2023-10-01",
+  // }, {
+  //   obs_start_dt: DateTime.fromISO("2023-10-01T10:00:00Z").toMillis(),
+  //   band: "z",
+  //   zero_point_median: 20.1,
+  //   day_obs: "2023-10-01",
+  // }, {
+  //   obs_start_dt: DateTime.fromISO("2023-10-01T11:00:00Z").toMillis(),
+  //   band: "y",
+  //   zero_point_median: 20.5,
+  //   day_obs: "2023-10-01",
+  // }]
+
+  // const groups = Object.groupBy(testData, (d) => d.day_obs || "unknown");
+  // const groupedTesData = Object.values(groups);
+
+  // console.log("Test Grouped by day_obs:", groupedTesData);
+  // console.log("Grouped test data, u band:", groupedTesData.map(group => filterByBand(group, 'u')));
+
   return (
     <Card className="border-none p-0 bg-stone-800 gap-2">
       <CardHeader className="grid-cols-3 bg-teal-900 p-4 rounded-sm align-center gap-0">
@@ -425,7 +533,7 @@ function ObservingConditionsApplet({
         </div>
       </CardHeader>
       <CardContent className="flex flex-col gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 h-[320px] font-thin">
-        {exposuresLoading && almanacLoading ? (
+        {exposuresLoading || almanacLoading ? (
           <div className="flex-grow">
             <Skeleton className="w-full h-full min-h-[180px] bg-stone-900" />
           </div>
@@ -444,10 +552,7 @@ function ObservingConditionsApplet({
                     scale="time"
                     ticks={xTicks}
                     tickFormatter={(tick) =>
-                      new Date(tick).toLocaleTimeString("en-AU", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })
+                      DateTime.fromMillis(tick).toFormat("HH:mm")
                     }
                     tick={{ fill: "white" }}
                     label={{
@@ -505,20 +610,27 @@ function ObservingConditionsApplet({
                     content={<CustomTooltip />}
                     cursor={{ strokeDasharray: "3 3", stroke: "#ffffff" }}
                   />
-                  <Line
+                  {/* <Line
                     name="zero_point_median_u"
                     yAxisId="right"
                     type="monotone"
                     dataKey="zero_point_median"
                     dot={{ r: 1, fill: "#3eb7ff", stroke: "#3eb7ff" }}
-                    data={chartData.map((d) => {
-                      if (d.band !== "u") {
-                        return { ...d, zero_point_median: null };
-                      }
-                      return d;
-                    })}
+                    data={dataWithNightGaps(groupedChartData, "u")}
                     isAnimationActive={false}
-                  />
+                  /> */}
+                  {groupedChartData.map((group, i) => (
+                    <Line
+                      key={`zero_point_median_u-${i}`}
+                      name="zero_point_median_u"
+                      yAxisId="right"
+                      type="monotone"
+                      dataKey="zero_point_median"
+                      dot={{ r: 1, fill: "#3eb7ff", stroke: "#3eb7ff" }}
+                      data={filterByBand(group, "u")}
+                      isAnimationActive={false}
+                    />
+                  ))}
                   <Line
                     name="zero_point_median_g"
                     yAxisId="right"
@@ -531,12 +643,7 @@ function ObservingConditionsApplet({
                         <StarShape key={key} {...rest} fill="#30c39f" r={2} />
                       );
                     }}
-                    data={chartData.map((d) => {
-                      if (d.band !== "g") {
-                        return { ...d, zero_point_median: null };
-                      }
-                      return d;
-                    })}
+                    data={dataWithNightGaps(groupedChartData, "g")}
                     isAnimationActive={false}
                   />
                   <Line
@@ -551,12 +658,7 @@ function ObservingConditionsApplet({
                         <SquareShape key={key} {...rest} fill="#ff7e00" r={2} />
                       );
                     }}
-                    data={chartData.map((d) => {
-                      if (d.band !== "r") {
-                        return { ...d, zero_point_median: null };
-                      }
-                      return d;
-                    })}
+                    data={dataWithNightGaps(groupedChartData, "r")}
                     isAnimationActive={false}
                   />
                   {/* <Scatter
@@ -591,12 +693,7 @@ function ObservingConditionsApplet({
                         />
                       );
                     }}
-                    data={chartData.map((d) => {
-                      if (d.band !== "i") {
-                        return { ...d, zero_point_median: null };
-                      }
-                      return d;
-                    })}
+                    data={dataWithNightGaps(groupedChartData, "i")}
                     isAnimationActive={false}
                   />
                   <Line
@@ -616,12 +713,7 @@ function ObservingConditionsApplet({
                         />
                       );
                     }}
-                    data={chartData.map((d) => {
-                      if (d.band !== "z") {
-                        return { ...d, zero_point_median: null };
-                      }
-                      return d;
-                    })}
+                    data={dataWithNightGaps(groupedChartData, "z")}
                     isAnimationActive={false}
                   />
                   <Line
@@ -641,12 +733,7 @@ function ObservingConditionsApplet({
                         />
                       );
                     }}
-                    data={chartData.map((d) => {
-                      if (d.band !== "y") {
-                        return { ...d, zero_point_median: null };
-                      }
-                      return d;
-                    })}
+                    data={dataWithNightGaps(groupedChartData, "y")}
                     isAnimationActive={false}
                   />
                   <Scatter
@@ -691,15 +778,16 @@ function ObservingConditionsApplet({
     </Card>
   );
 }
-// TODO: Use different(multi) series for each band - Done
-// TODO: Use multi series for multi nights
-// TODO: check builtin shapes in recharts - Done
-// TODO: Try connect nulls - Done
+// DONE: Use different(multi) series for each band
+// Done: Didn't work, Use multi series for multi nights
+// DONE: check builtin shapes in recharts
+// DONE: Try connect nulls
 // TODO: try scatter with line rather than line with dots
-// Update tooltip to show band and value
-// update tooltip style
-// Add twilight reference lines for multiple nights - Done
-// use segments to draw lines between points
+// TODO: Update tooltip to show band, full date value
+// TODO: update tooltip style
+// TODO: Update legend style
+// DONE: Add twilight reference lines for multiple nights
+// Done: Didn't work, use segments to draw lines between points
 // (to remove possible cross lines between nights
 // if last and first points are of the same band)
 {
