@@ -6,6 +6,10 @@ import { toast } from "sonner";
 import { useSearch } from "@tanstack/react-router";
 
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+
 import { TELESCOPES } from "@/components/parameters";
 
 import {
@@ -21,13 +25,144 @@ import {
   XAxis,
   YAxis,
   // Customized,
-  // ResponsiveContainer,
+  ResponsiveContainer,
+  ReferenceLine,
+  ReferenceArea,
 } from "recharts";
 
 import { fetchDataLogEntriesFromConsDB } from "@/utils/fetchUtils";
 import { getDatetimeFromDayobsStr } from "@/utils/utils";
 
-function MetricLineChart({ title, dataKey, data, preferredYDomain = null }) {
+// Small vertical lines to represent exposures in the timeline
+const CustomizedDot = (props) => {
+  const { cx, cy, stroke } = props;
+
+  if (cx == null || cy == null) return null;
+
+  return (
+    // vertically centre the lines
+    <svg x={cx - 0.5} y={cy - 10} width={1} height={20}>
+      <rect x={0} y={0} width={1} height={20} fill={stroke || "#3CAE3F"} />
+    </svg>
+  );
+};
+
+function TimelineChart({ data, selectedTimeRange, setSelectedTimeRange }) {
+  const [refAreaLeft, setRefAreaLeft] = useState(null);
+  const [refAreaRight, setRefAreaRight] = useState(null);
+
+  const handleMouseDown = (e) => setRefAreaLeft(e?.activeLabel ?? null);
+  const handleMouseMove = (e) =>
+    refAreaLeft && setRefAreaRight(e?.activeLabel ?? null);
+  const handleMouseUp = () => {
+    if (!refAreaLeft || !refAreaRight || refAreaLeft === refAreaRight) {
+      setRefAreaLeft(null);
+      setRefAreaRight(null);
+      return;
+    }
+    const [start, end] =
+      refAreaLeft < refAreaRight
+        ? [refAreaLeft, refAreaRight]
+        : [refAreaRight, refAreaLeft];
+    setSelectedTimeRange([start, end]);
+    setRefAreaLeft(null);
+    setRefAreaRight(null);
+  };
+
+  // Hourly lines and ticks
+  const dataMin = Math.min(...data.map((d) => d.obs_start_dt));
+  const dataMax = Math.max(...data.map((d) => d.obs_start_dt));
+  // const generateHourlyTicks = (start, end, intervalHours = 1) => {
+  //   const ticks = [];
+  //   let t = DateTime.fromMillis(start).startOf("hour");
+  //   const endDt = DateTime.fromMillis(end);
+  //   while (t <= endDt) {
+  //     ticks.push(t.toMillis());
+  //     t = t.plus({ hours: intervalHours });
+  //   }
+  //   return ticks;
+  // };
+  const generateHourlyTicks = (start, end, intervalHours = 1) => {
+    const ticks = [];
+    let t = DateTime.fromMillis(start).startOf("hour");
+    const endDt = DateTime.fromMillis(end).endOf("hour"); // extend to include end hour
+    while (t <= endDt) {
+      ticks.push(t.toMillis());
+      t = t.plus({ hours: intervalHours });
+    }
+    return ticks;
+  };
+
+  const hourlyTicks = generateHourlyTicks(dataMin, dataMax, 1);
+
+  return (
+    <ResponsiveContainer
+      title="Time Window Selector"
+      config={{}}
+      width="100%"
+      height={80}
+    >
+      <LineChart
+        width="100%"
+        height={80}
+        data={data}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+      >
+        {hourlyTicks.map((tick) => (
+          <ReferenceLine
+            key={tick}
+            x={tick}
+            stroke="#555"
+            strokeDasharray="3 3"
+          />
+        ))}
+        <XAxis
+          dataKey="obs_start_dt"
+          type="number"
+          domain={["dataMin", "dataMax"]}
+          scale="time"
+          ticks={hourlyTicks}
+          interval="preserveStartEnd"
+          tickFormatter={(tick) => DateTime.fromMillis(tick).toFormat("HH:mm")}
+          tick={{ fill: "white", style: { userSelect: "none" } }}
+          axisLine={false}
+          tickMargin={10}
+          minTickGap={15}
+        />
+        <YAxis hide domain={[0, 1]} />
+        <Line
+          dataKey={() => 0.5}
+          stroke="#FFFFFF"
+          type="linear"
+          dot={<CustomizedDot stroke="#3CAE3F" />}
+          isAnimationActive={false}
+        />
+        {refAreaLeft && refAreaRight ? (
+          <ReferenceArea
+            x1={refAreaLeft}
+            x2={refAreaRight}
+            strokeOpacity={0.3}
+          />
+        ) : null}
+        {selectedTimeRange[0] && selectedTimeRange[1] ? (
+          <ReferenceArea
+            x1={selectedTimeRange[0]}
+            x2={selectedTimeRange[1]}
+            stroke="pink"
+            // stroke="#0C4A47"
+            strokeOpacity={1}
+            // fill="#0C4A47"
+            fillOpacity={0.3}
+          />
+        ) : null}
+      </LineChart>
+    </ResponsiveContainer>
+  );
+}
+
+function ObservingDataChart({ title, dataKey, data, preferredYDomain = null }) {
   // Check if data is empty
   const actualValues = data.map((d) => d[dataKey]).filter((v) => v != null);
 
@@ -61,7 +196,7 @@ function MetricLineChart({ title, dataKey, data, preferredYDomain = null }) {
           tickFormatter={(tick) => DateTime.fromMillis(tick).toFormat("HH:mm")}
           tick={{ fill: "white" }}
           label={{
-            value: "Time (TAI)",
+            value: "Observation Start Time (TAI)",
             position: "bottom",
             fill: "white",
             dy: 25,
@@ -85,6 +220,7 @@ function MetricLineChart({ title, dataKey, data, preferredYDomain = null }) {
               formatter={(value, name, item, index, payload) => {
                 const obsStart = payload["obs start"];
                 const exposureId = payload["exposure id"];
+                const band = payload["band"];
 
                 const formattedValue =
                   typeof value === "number" && !Number.isInteger(value)
@@ -100,6 +236,10 @@ function MetricLineChart({ title, dataKey, data, preferredYDomain = null }) {
                     <div>
                       <span className="text-muted-foreground">{title}:</span>{" "}
                       <span className="font-mono">{formattedValue}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Band:</span>{" "}
+                      <span className="font-mono">{band}</span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">
@@ -132,6 +272,9 @@ function MetricLineChart({ title, dataKey, data, preferredYDomain = null }) {
 function Plots() {
   // Routing and URL params
   const { startDayobs, endDayobs, telescope } = useSearch({ from: "/plots" });
+
+  // Time window state
+  const [selectedTimeRange, setSelectedTimeRange] = useState([null, null]);
 
   // The end dayobs is inclusive, so we add one day to the
   // endDayobs to get the correct range for the queries
@@ -171,7 +314,6 @@ function Plots() {
     )
       .then((consDBData) => {
         const dataLog = consDBData.data_log ?? [];
-        // console.log(dataLog);
 
         if (dataLog.length === 0) {
           toast.warning(
@@ -232,6 +374,22 @@ function Plots() {
     // Chronological order
     .sort((a, b) => a.obs_start_dt - b.obs_start_dt);
 
+  // Timeline start and end
+  const timelineStart = chartData.at(0)?.obs_start_dt ?? 0;
+  const timelineEnd = chartData.at(-1)?.obs_start_dt ?? 0;
+
+  // If no selection, use full range
+  const [rangeStart, rangeEnd] =
+    selectedTimeRange[0] && selectedTimeRange[1]
+      ? selectedTimeRange
+      : [timelineStart, timelineEnd];
+
+  // Filter chart data based on selected time range
+  const filteredChartData = chartData.filter(
+    (entry) =>
+      entry.obs_start_dt >= rangeStart && entry.obs_start_dt <= rangeEnd,
+  );
+
   return (
     <>
       <div className="flex flex-col w-full p-8 gap-4">
@@ -259,25 +417,80 @@ function Plots() {
           )}
         </div>
 
+        {/* Timeline */}
+        <TimelineChart
+          data={chartData}
+          selectedTimeRange={selectedTimeRange}
+          setSelectedTimeRange={setSelectedTimeRange}
+        />
+
+        {/* Time Window Inputs */}
+        <div className="flex gap-24 justify-center text-white">
+          <Label className="flex flex-col gap-4">
+            <Input
+              type="time" // this is browser dependent and behaves differently in different browsers
+              id="start-time-picker"
+              step="60"
+              lang="en-GB"
+              inputMode="numeric"
+              pattern="[0-9]{2}:[0-9]{2}"
+              className="max-w-[100px] bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+              value={DateTime.fromMillis(rangeStart).toFormat("HH:mm")}
+              onChange={(e) => {
+                const [h, m] = e.target.value.split(":").map(Number);
+                const newStart = DateTime.fromMillis(rangeStart)
+                  .set({ hour: h, minute: m })
+                  .toMillis();
+                setSelectedTimeRange([newStart, rangeEnd]);
+              }}
+            />
+            Start Time (TAI)
+          </Label>
+          <Label className="flex flex-col gap-4">
+            <Input
+              type="time"
+              id="end-time-picker"
+              step="60"
+              lang="en-GB"
+              inputMode="numeric"
+              pattern="[0-9]{2}:[0-9]{2}"
+              className="max-w-[100px] bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+              value={DateTime.fromMillis(rangeEnd).toFormat("HH:mm")}
+              onChange={(e) => {
+                const [h, m] = e.target.value.split(":").map(Number);
+                const newEnd = DateTime.fromMillis(rangeEnd)
+                  .set({ hour: h, minute: m })
+                  .toMillis();
+                setSelectedTimeRange([rangeStart, newEnd]);
+              }}
+            />
+            End Time (TAI)
+          </Label>
+        </div>
+
         {/* Plots */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <MetricLineChart
+          <ObservingDataChart
             title="DIMM Seeing"
             dataKey="dimm seeing"
-            data={chartData}
+            data={filteredChartData}
             preferredYDomain={[0.6, 1.8]}
           />
-          <MetricLineChart
+          <ObservingDataChart
             title="Photometric Zero Points"
             dataKey="zero point median"
-            data={chartData}
+            data={filteredChartData}
             preferredYDomain={[30, 36]}
           />
-          <MetricLineChart title="Airmass" dataKey="airmass" data={chartData} />
-          <MetricLineChart
+          <ObservingDataChart
+            title="Airmass"
+            dataKey="airmass"
+            data={filteredChartData}
+          />
+          <ObservingDataChart
             title="Sky Brightness"
             dataKey="sky bg median"
-            data={chartData}
+            data={filteredChartData}
           />
         </div>
       </div>
