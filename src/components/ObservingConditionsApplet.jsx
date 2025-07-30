@@ -174,7 +174,19 @@ const StarShape = (props) => {
 };
 
 const CustomTooltip = ({ active, payload, label }) => {
+  console.log(
+    "Tooltip triggered at:",
+    DateTime.fromMillis(label).toFormat("yyyy-MM-dd HH:mm:ss"),
+    payload,
+  );
   if (active && payload && payload.length) {
+    // Filter out entries with null or undefined values
+    // const filteredPayload = payload.filter(
+    //   (entry) => entry.value !== null && entry.value !== undefined
+    // );
+
+    // if (filteredPayload.length === 0) return null;
+
     const uniqueData = new Map();
     payload.forEach((entry) => {
       if (entry.value !== null && entry.value !== undefined) {
@@ -195,24 +207,11 @@ const CustomTooltip = ({ active, payload, label }) => {
       value: payload[0].payload.band || "N/A",
       color: "#ffffff",
     });
-    uniqueData.set("day_obs", {
-      name: "day_obs",
-      value: payload[0].payload.day_obs,
-      color: "#ffffff",
-    });
     return (
-      <div className="bg-gray-800 border border-gray-600 text-white text-sm p-2 rounded shadow-lg">
-        <p className="text-gray-300 mb-1">
-          {new Date(label).toLocaleTimeString("en-AU", {
-            year: "numeric",
-            month: "numeric",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
-        </p>
+      <div className="bg-white text-black text-xs p-2 border border-white rounded text-black font-bold mb-1">
+        <p>{DateTime.fromMillis(label).toFormat("yyyy-MM-dd HH:mm:ss")}</p>
         {Array.from(uniqueData.values()).map((item, index) => (
-          <p key={index} style={{ color: item.color }}>
+          <p key={index}>
             {item.name}: {item.value}
           </p>
         ))}
@@ -324,6 +323,24 @@ const renderCustomLegend = () => (
         </svg>
         <span>Zero Point (y)</span>
       </div>
+      <div className="flex items-center gap-2">
+        <svg width="6" height="20" className="mr-2">
+          <line
+            x1="3"
+            y1="0"
+            x2="3"
+            y2="20"
+            stroke="#3eb7ff"
+            strokeWidth="2"
+            strokeDasharray="4 2"
+          />
+        </svg>
+        <span>Twilight</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="inline-block w-4 h-3 mr-2 bg-teal-800 bg-opacity-90 border border-teal-900" />
+        Closed Shutter
+      </div>
     </div>
   </div>
 );
@@ -336,7 +353,7 @@ function ObservingConditionsApplet({
 }) {
   const isMobile = useIsMobile();
 
-  const chartData = exposureFields.map((entry) => {
+  const data = exposureFields.map((entry) => {
     const obsStart = entry["obs_start"];
     let obs_start_dt = undefined;
     if (typeof obsStart === "string" && DateTime.fromISO(obsStart).isValid) {
@@ -344,6 +361,10 @@ function ObservingConditionsApplet({
     }
     return { ...entry, obs_start_dt };
   });
+
+  const chartData = data
+    .filter((d) => typeof d.obs_start_dt === "number" && !isNaN(d.obs_start_dt))
+    .sort((a, b) => a.obs_start_dt - b.obs_start_dt);
 
   const twilightValues = almanacInfo
     .map((dayobsAlm) => {
@@ -395,14 +416,10 @@ function ObservingConditionsApplet({
   // });
 
   // Calculate open/close shutter time or observing gaps
-  const sortedData = chartData
-    .filter((d) => typeof d.obs_start_dt === "number" && !isNaN(d.obs_start_dt))
-    .sort((a, b) => a.obs_start_dt - b.obs_start_dt);
-
   const gapAreas = [];
-  for (let i = 0; i < sortedData.length - 1; i++) {
-    const curr = sortedData[i];
-    const next = sortedData[i + 1];
+  for (let i = 0; i < chartData.length - 1; i++) {
+    const curr = chartData[i];
+    const next = chartData[i + 1];
     const delta = next.obs_start_dt - curr.obs_start_dt;
 
     if (GAP_THRESHOLD < delta && delta < GAP_MAX_THRESHOLD) {
@@ -415,7 +432,6 @@ function ObservingConditionsApplet({
 
   //group data by dayobs to handle multiple nights
   const groupedByDayobs = Object.groupBy(chartData, (exp) => exp.day_obs);
-
   const groupedChartData = Object.values(groupedByDayobs);
   // console.log("Grouped by day_obs:", groupedChartData);
 
@@ -606,7 +622,7 @@ function ObservingConditionsApplet({
                     ) : null,
                   )}
 
-                  <Tooltip
+                  <ChartTooltip
                     content={<CustomTooltip />}
                     cursor={{ strokeDasharray: "3 3", stroke: "#ffffff" }}
                   />
@@ -616,10 +632,15 @@ function ObservingConditionsApplet({
                     type="monotone"
                     dataKey="zero_point_median"
                     dot={{ r: 1, fill: "#3eb7ff", stroke: "#3eb7ff" }}
-                    data={dataWithNightGaps(groupedChartData, "u")}
+                    data={chartData.map((d) => ({
+                      ...d,
+                      zero_point_median:
+                        d.band === "u" ? d.zero_point_median : null,
+                      obs_start_dt: d.band === "u" ? d.obs_start_dt : null,
+                    }))}
                     isAnimationActive={false}
                   /> */}
-                  {groupedChartData.map((group, i) => (
+                  {/* {groupedChartData.map((group, i) => (
                     <Line
                       key={`zero_point_median_u-${i}`}
                       name="zero_point_median_u"
@@ -630,7 +651,16 @@ function ObservingConditionsApplet({
                       data={filterByBand(group, "u")}
                       isAnimationActive={false}
                     />
-                  ))}
+                  ))} */}
+                  <Line
+                    name="zero_point_median_u"
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="zero_point_median"
+                    dot={{ r: 1, fill: "#3eb7ff", stroke: "#3eb7ff" }}
+                    data={dataWithNightGaps(groupedChartData, "u")}
+                    isAnimationActive={false}
+                  />
                   <Line
                     name="zero_point_median_g"
                     yAxisId="right"
@@ -646,6 +676,44 @@ function ObservingConditionsApplet({
                     data={dataWithNightGaps(groupedChartData, "g")}
                     isAnimationActive={false}
                   />
+                  {/* {groupedChartData.map((group, i) => (
+                    <Line
+                      key={`zero_point_median_r-${i}`}
+                      name="zero_point_median_r"
+                      yAxisId="right"
+                      type="monotone"
+                      dataKey="zero_point_median"
+                      stroke="#ff7e00"
+                      dot={(props) => {
+                        const { key, ...rest } = props;
+                        return (
+                          <SquareShape key={key} {...rest} fill="#ff7e00" r={2} />
+                        );
+                      }}
+                      data={filterByBand(group, "r")}
+                      isAnimationActive={false}
+                    />
+                  ))} */}
+                  {/* <Line
+                    name="zero_point_median_r"
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="zero_point_median"
+                    stroke="#ff7e00"
+                    dot={(props) => {
+                      const { key, ...rest } = props;
+                      return (
+                        <SquareShape key={key} {...rest} fill="#ff7e00" r={2} />
+                      );
+                    }}
+                    data={chartData.map((d) => {
+                      if (d.band !== "g") {
+                        return { ...d, zero_point_median: null };
+                      }
+                      return d;
+                    })}
+                    isAnimationActive={false}
+                  /> */}
                   <Line
                     name="zero_point_median_r"
                     yAxisId="right"
@@ -670,9 +738,8 @@ function ObservingConditionsApplet({
                       fill="#ff7e00"
                       connectNulls="false"
                       shape={<SquareShape />}
-                      // chartData={chartData}
-                      // line
-                      data={chartData.filter(d => d.band === 'y')}
+                      line
+                      data={dataWithNightGaps(groupedChartData, "r")}
                       isAnimationActive={false}
                     /> */}
 
@@ -751,8 +818,8 @@ function ObservingConditionsApplet({
                       x2={gap.end}
                       yAxisId="left"
                       strokeOpacity={0}
-                      fill="#0c4a47"
-                      fillOpacity={0.4}
+                      fill="#147570ff"
+                      fillOpacity={0.5}
                       // label={{
                       //   value: "Gap > 5min",
                       //   position: "insideTopLeft",
