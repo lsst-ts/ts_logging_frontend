@@ -129,6 +129,7 @@ function TimelineChart({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
       >
+        {/* Vertical lines on the hour */}
         {hourlyTicks.map((tick) => (
           <ReferenceLine
             key={tick}
@@ -152,6 +153,7 @@ function TimelineChart({
           minTickGap={15}
         />
         <YAxis hide domain={[0, 1]} />
+        {/* Twilight lines */}
         {twilightValues.map((twi, i) =>
           typeof twi === "number" &&
           !isNaN(twi) &&
@@ -167,6 +169,7 @@ function TimelineChart({
             />
           ) : null,
         )}
+        {/* Points representing exposures and related data */}
         <Line
           dataKey={() => 0.5}
           stroke="#FFFFFF"
@@ -174,21 +177,21 @@ function TimelineChart({
           dot={<CustomizedDot stroke="#3CAE3F" />}
           isAnimationActive={false}
         />
+        {/* Selection rectangle shown during active highlighting */}
         {refAreaLeft && refAreaRight ? (
           <ReferenceArea
             x1={refAreaLeft}
             x2={refAreaRight}
-            strokeOpacity={0.3}
+            fillOpacity={0.3}
+            fill="pink"
           />
         ) : null}
+        {/* Selection rectangle shown once time window selection made */}
         {selectedTimeRange[0] && selectedTimeRange[1] ? (
           <ReferenceArea
             x1={selectedTimeRange[0]}
             x2={selectedTimeRange[1]}
             stroke="pink"
-            // stroke="#0C4A47"
-            strokeOpacity={1}
-            // fill="#0C4A47"
             fillOpacity={0.3}
           />
         ) : null}
@@ -230,12 +233,12 @@ function ObservingDataChart({ title, dataKey, data, preferredYDomain = null }) {
           scale="time"
           tickFormatter={(tick) => DateTime.fromMillis(tick).toFormat("HH:mm")}
           tick={{ fill: "white" }}
-          label={{
-            value: "Observation Start Time (TAI)",
-            position: "bottom",
-            fill: "white",
-            dy: 25,
-          }}
+          // label={{
+          //   value: "Observation Start Time (TAI)",
+          //   position: "bottom",
+          //   fill: "white",
+          //   dy: 25,
+          // }}
         />
         <YAxis
           tick={{ fill: "white" }}
@@ -246,6 +249,7 @@ function ObservingDataChart({ title, dataKey, data, preferredYDomain = null }) {
             position: "insideLeft",
             fill: "white",
             dx: -10,
+            dy: 50,
           }}
         />
         <ChartTooltip
@@ -433,11 +437,18 @@ function Plots() {
 
   // Prepare data for charts
   const chartData = dataLogEntries
-    .map((entry) => ({
-      ...entry,
-      // Convert observation start time to a number for Recharts
-      obs_start_dt: DateTime.fromISO(entry["obs start"]).toMillis(),
-    }))
+    .map((entry) => {
+      const psfSigma = parseFloat(entry["psf sigma median"]);
+      const pixelScale = !isNaN(entry.pixel_scale_median)
+        ? entry.pixel_scale_median
+        : 0.2;
+      return {
+        ...entry,
+        // Convert observation start time to a number for Recharts
+        obs_start_dt: DateTime.fromISO(entry["obs start"]).toMillis(),
+        "psf median": !isNaN(psfSigma) ? psfSigma * 2.355 * pixelScale : null,
+      };
+    })
     // Chronological order
     .sort((a, b) => a.obs_start_dt - b.obs_start_dt);
 
@@ -539,8 +550,8 @@ function Plots() {
         {/* Plots */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <ObservingDataChart
-            title="DIMM Seeing"
-            dataKey="dimm seeing"
+            title="Seeing (PSF)"
+            dataKey="psf median"
             data={filteredChartData}
             preferredYDomain={[0.6, 1.8]}
           />
