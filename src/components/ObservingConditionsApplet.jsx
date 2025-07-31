@@ -23,7 +23,7 @@ import {
 } from "recharts";
 import { DateTime } from "luxon";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useIsMobile } from "@/hooks/use-mobile";
+// import { useIsMobile } from "@/hooks/use-mobile";
 
 const GAP_THRESHOLD = 5 * 60 * 1000;
 const GAP_MAX_THRESHOLD = 60 * 60 * 1000;
@@ -174,11 +174,11 @@ const StarShape = (props) => {
 };
 
 const CustomTooltip = ({ active, payload, label }) => {
-  console.log(
-    "Tooltip triggered at:",
-    DateTime.fromMillis(label).toFormat("yyyy-MM-dd HH:mm:ss"),
-    payload,
-  );
+  // console.log(
+  //   "Tooltip triggered at:",
+  //   DateTime.fromMillis(label).toFormat("yyyy-MM-dd HH:mm:ss"),
+  //   payload,
+  // );
   if (active && payload && payload.length) {
     // Filter out entries with null or undefined values
     // const filteredPayload = payload.filter(
@@ -222,124 +222,199 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 // Custom legend component
-const CustomLegend = () => {
-  return (
-    <div className="flex flex-col justify-center items-start flex-shrink-0 w-[140px] h-[280px] pl-2 bg-neutral-700 rounded-lg">
-      <div className="p-3">
-        <div className="flex items-center mb-3">
-          <svg width="20" height="16" className="mr-2">
-            <g>
-              <line
-                x1="2"
-                y1="2"
-                x2="10"
-                y2="10"
-                stroke="white"
-                strokeWidth="1"
-              />
-              <line
-                x1="2"
-                y1="10"
-                x2="10"
-                y2="2"
-                stroke="white"
-                strokeWidth="1"
-              />
-            </g>
-          </svg>
-          <span className="text-xs text-white">Seeing</span>
-        </div>
-        <div className="flex items-center mb-3">
-          <div className="w-4 h-2 bg-blue-500 rounded mr-2"></div>
-          <span className="text-xs text-blue-300">Zero Point Line</span>
-        </div>
-        <div className="flex items-center">
-          <svg width="16" height="16" className="mr-2">
-            <circle cx="8" cy="8" r="3" fill="blue" />
-          </svg>
-          <span className="text-xs text-blue-300">Zero Point Points</span>
-        </div>
-      </div>
-    </div>
-  );
-};
+// const CustomLegend = () => {
+//   return (
+//     <div className="flex flex-col justify-center items-start flex-shrink-0 w-[140px] h-[280px] pl-2 bg-neutral-700 rounded-lg">
+//       <div className="p-3">
+//         <div className="flex items-center mb-3">
+//           <svg width="20" height="16" className="mr-2">
+//             <g>
+//               <line
+//                 x1="2"
+//                 y1="2"
+//                 x2="10"
+//                 y2="10"
+//                 stroke="white"
+//                 strokeWidth="1"
+//               />
+//               <line
+//                 x1="2"
+//                 y1="10"
+//                 x2="10"
+//                 y2="2"
+//                 stroke="white"
+//                 strokeWidth="1"
+//               />
+//             </g>
+//           </svg>
+//           <span className="text-xs text-white">Seeing</span>
+//         </div>
+//         <div className="flex items-center mb-3">
+//           <div className="w-4 h-2 bg-blue-500 rounded mr-2"></div>
+//           <span className="text-xs text-blue-300">Zero Point Line</span>
+//         </div>
+//         <div className="flex items-center">
+//           <svg width="16" height="16" className="mr-2">
+//             <circle cx="8" cy="8" r="3" fill="blue" />
+//           </svg>
+//           <span className="text-xs text-blue-300">Zero Point Points</span>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };
+
+// const renderCustomLegend = () => (
+//   <div className="flex flex-col gap-2 p-3 bg-black shadow-[4px_4px_4px_0px_#c27aff] border text-white text-xxs ml-10 shrink-0">
+//     <div className="grid lg:grid-cols-1 h-full md:shrink-1">
+//       <div className="flex items-center gap-2">
+//         <svg width="6" height="20" className="mr-2">
+//           <line
+//             x1="6"
+//             y1="0"
+//             x2="6"
+//             y2="20"
+//             stroke="#3eb7ff"
+//             strokeWidth="2"
+//             strokeDasharray="3 2"
+//           />
+//         </svg>
+//         <span>Twilight</span>
+//       </div>
+//       <div className="flex items-center gap-2">
+//         <span className="inline-block w-3 h-4 mr-2 bg-teal-800 bg-opacity-90 border border-teal-900" />
+//         Shutter Closed
+//       </div>
+//       <div className="flex items-center gap-2">
+//         <svg width="16" height="16" style={{ display: "inline" }}>
+//           <g>
+//             <XShape cx={8} cy={8} fill="#fff" />
+//           </g>
+//         </svg>
+//         <span>Seeing</span>
+//       </div>
+//       <div className="flex items-center gap-2">
+//         <svg width="16" height="16" style={{ display: "inline" }}>
+//           <g>
+//             <circle cx="8" cy="8" r="2" fill="#3eb7ff" />
+//           </g>
+//         </svg>
+//         <span>Zero Point (u)</span>
+//       </div>
+//       <div className="flex items-center gap-2">
+//         <svg width="16" height="16" style={{ display: "inline" }}>
+//           <g>
+//             <StarShape cx={8} cy={8} fill="#30c39f" r={2} />
+//           </g>
+//         </svg>
+//         <span>Zero Point (g)</span>
+//       </div>
+//       <div className="flex items-center gap-2">
+//         <svg width="16" height="16" style={{ display: "inline" }}>
+//           <g>
+//             <SquareShape cx={8} cy={8} fill="#ff7e00" r={2} />
+//           </g>
+//         </svg>
+//         <span>Zero Point (r)</span>
+//       </div>
+//       <div className="flex items-center gap-2">
+//         <svg width="16" height="16" style={{ display: "inline" }}>
+//           <g>
+//             <TriangleShape cx={8} cy={8} fill="#2af5ff" r={2} />
+//           </g>
+//         </svg>
+//         <span>Zero Point (i)</span>
+//       </div>
+//       <div className="flex items-center gap-2">
+//         <svg width="16" height="16" style={{ display: "inline" }}>
+//           <g>
+//             <FlippedTriangleShape cx={8} cy={8} fill="#2af5ff" r={2} />
+//           </g>
+//         </svg>
+//         <span>Zero Point (z)</span>
+//       </div>
+//       <div className="flex items-center gap-2">
+//         <svg width="16" height="16" style={{ display: "inline" }}>
+//           <g>
+//             <AsteriskShape cx={8} cy={8} fill="#fdc900" r={2} />
+//           </g>
+//         </svg>
+//         <span>Zero Point (y)</span>
+//       </div>
+//     </div>
+//   </div>
+// );
 
 const renderCustomLegend = () => (
-  <div className="flex flex-col gap-2 p-3 bg-black shadow-[4px_4px_4px_0px_#c27aff] border text-white text-xxs ml-10 shrink-0">
-    <div className="grid sm:grid-cols-3 md:grid-cols-1 lg:grid-cols-1 gap-4 h-full md:shrink-1">
+  <div className="w-full lg:w-32 h-fit flex-shrink-0">
+    <div className="flex flex-wrap gap-1 px-4 py-2 bg-black shadow-[4px_4px_4px_0px_#c27aff] border text-white text-xxs justify-start ">
       <div className="flex items-center gap-2">
-        <svg width="16" height="16" style={{ display: "inline" }}>
+        <svg width="6" height="20" className="mr-2">
+          <line
+            x1="6"
+            y1="0"
+            x2="6"
+            y2="20"
+            stroke="#3eb7ff"
+            strokeWidth="2"
+            strokeDasharray="3 2"
+          />
+        </svg>
+        <span>twilight</span>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <span className="inline-block w-3 h-4 mr-2 bg-teal-800 bg-opacity-90 border border-teal-900" />
+        shutter closed
+      </div>
+
+      <div className="flex items-center gap-2">
+        <svg width="16" height="16">
           <g>
             <XShape cx={8} cy={8} fill="#fff" />
           </g>
         </svg>
-        <span>Seeing</span>
+        <span>seeing</span>
       </div>
-      <div className="flex items-center gap-2">
-        <svg width="16" height="16" style={{ display: "inline" }}>
-          <g>
+
+      <div className="w-full text-white text-xxs">zero points</div>
+      <div className="flex flex-wrap gap-2 p-2 border border-white grid grid-cols-2 gap-3">
+        <div className="flex items-center gap-1">
+          <svg width="16" height="16">
             <circle cx="8" cy="8" r="2" fill="#3eb7ff" />
-          </g>
-        </svg>
-        <span>Zero Point (u)</span>
-      </div>
-      <div className="flex items-center gap-2">
-        <svg width="16" height="16" style={{ display: "inline" }}>
-          <g>
+          </svg>
+          <span>u</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <svg width="16" height="16">
             <StarShape cx={8} cy={8} fill="#30c39f" r={2} />
-          </g>
-        </svg>
-        <span>Zero Point (g)</span>
-      </div>
-      <div className="flex items-center gap-2">
-        <svg width="16" height="16" style={{ display: "inline" }}>
-          <g>
+          </svg>
+          <span>g</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <svg width="16" height="16">
             <SquareShape cx={8} cy={8} fill="#ff7e00" r={2} />
-          </g>
-        </svg>
-        <span>Zero Point (r)</span>
-      </div>
-      <div className="flex items-center gap-2">
-        <svg width="16" height="16" style={{ display: "inline" }}>
-          <g>
+          </svg>
+          <span>r</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <svg width="16" height="16">
             <TriangleShape cx={8} cy={8} fill="#2af5ff" r={2} />
-          </g>
-        </svg>
-        <span>Zero Point (i)</span>
-      </div>
-      <div className="flex items-center gap-2">
-        <svg width="16" height="16" style={{ display: "inline" }}>
-          <g>
+          </svg>
+          <span>i</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <svg width="16" height="16">
             <FlippedTriangleShape cx={8} cy={8} fill="#2af5ff" r={2} />
-          </g>
-        </svg>
-        <span>Zero Point (z)</span>
-      </div>
-      <div className="flex items-center gap-2">
-        <svg width="16" height="16" style={{ display: "inline" }}>
-          <g>
+          </svg>
+          <span>z</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <svg width="16" height="16">
             <AsteriskShape cx={8} cy={8} fill="#fdc900" r={2} />
-          </g>
-        </svg>
-        <span>Zero Point (y)</span>
-      </div>
-      <div className="flex items-center gap-2">
-        <svg width="6" height="20" className="mr-2">
-          <line
-            x1="3"
-            y1="0"
-            x2="3"
-            y2="20"
-            stroke="#3eb7ff"
-            strokeWidth="2"
-            strokeDasharray="4 2"
-          />
-        </svg>
-        <span>Twilight</span>
-      </div>
-      <div className="flex items-center gap-2">
-        <span className="inline-block w-4 h-3 mr-2 bg-teal-800 bg-opacity-90 border border-teal-900" />
-        Closed Shutter
+          </svg>
+          <span>y</span>
+        </div>
       </div>
     </div>
   </div>
@@ -351,7 +426,7 @@ function ObservingConditionsApplet({
   almanacLoading,
   almanacInfo,
 }) {
-  const isMobile = useIsMobile();
+  // const isMobile = useIsMobile();
 
   const data = exposureFields.map((entry) => {
     const obsStart = entry["obs_start"];
@@ -558,7 +633,9 @@ function ObservingConditionsApplet({
             <div className="flex-grow min-w-0 h-full">
               <ChartContainer config={chartConfig} className="w-full h-full">
                 {/* <ResponsiveContainer width="100%" height="100%"> */}
-                <ComposedChart margin={{ left: 20, right: 10, top: 10 }}>
+                <ComposedChart
+                  margin={{ left: 20, right: 10, top: 10, bottom: 5 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" stroke="#555" />
                   <XAxis
                     data={chartData}
@@ -572,12 +649,12 @@ function ObservingConditionsApplet({
                     }
                     tick={{ fill: "white" }}
                     label={{
-                      value: "Time (UTC)",
+                      value: "Time (TAI)",
                       position: "bottom",
                       fill: "white",
-                      dy: 25,
+                      dy: -10,
                     }}
-                    padding={{ left: 30, right: 30 }}
+                    padding={{ left: 10, right: 10 }}
                   />
                   <YAxis
                     yAxisId="left"
@@ -589,7 +666,7 @@ function ObservingConditionsApplet({
                       angle: -90,
                       position: "insideLeft",
                       fill: "white",
-                      dx: -10,
+                      dx: 15,
                     }}
                   />
                   <YAxis
@@ -601,7 +678,7 @@ function ObservingConditionsApplet({
                       value: "Zero Points",
                       angle: 90,
                       position: "insideRight",
-                      dx: 10,
+                      dx: -20,
                       fill: "white",
                     }}
                   />
@@ -615,7 +692,13 @@ function ObservingConditionsApplet({
                         key={`twilight-${i}-${twi}`}
                         x={twi}
                         stroke="#3eb7ff"
-                        label={`twilight ${i}`}
+                        // label={{
+                        //   value: `twilight ${i}`,
+                        //   angle: 90,
+                        //   position: "insideTopLeft",
+                        //   // fill: "white",
+                        //   dx: 7,
+                        // }}
                         yAxisId="left"
                         strokeDasharray="5 5"
                       />
@@ -829,15 +912,19 @@ function ObservingConditionsApplet({
                     />
                   ))}
 
-                  <ChartLegend
+                  {/* <ChartLegend
                     layout={isMobile ? "horizontal" : "vertical"}
                     verticalAlign={isMobile ? "bottom" : "middle"}
                     align={isMobile ? "center" : "right"}
                     content={renderCustomLegend}
-                  />
+                  /> */}
                 </ComposedChart>
                 {/* </ResponsiveContainer> */}
               </ChartContainer>
+            </div>
+            {/* Legend Area */}
+            <div className="w-full h-full lg:w-32 mr-2">
+              {renderCustomLegend()}
             </div>
           </div>
         )}
@@ -845,6 +932,11 @@ function ObservingConditionsApplet({
     </Card>
   );
 }
+// TODO: Check tooltip behavior
+// TODO: Use the legend to show/hide bands
+// TODO: Use callback on click to get the data for the clicked point
+// TODO: check other callbacks like onMouseEnter,
+// onMouseLeave, onMouseUp, onMouseDown, onMouseMove
 // DONE: Use different(multi) series for each band
 // Done: Didn't work, Use multi series for multi nights
 // DONE: check builtin shapes in recharts
