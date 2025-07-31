@@ -79,61 +79,40 @@ function TimelineChart({
     setRefAreaRight(null);
   };
 
-  // Hourly lines and ticks
-  const dataMin = Math.min(...data.map((d) => d.obs_start_dt));
-  const dataMax = Math.max(...data.map((d) => d.obs_start_dt));
-  // const generateHourlyTicks = (start, end, intervalHours = 1) => {
-  //   const ticks = [];
-  //   let t = DateTime.fromMillis(start).startOf("hour");
-  //   const endDt = DateTime.fromMillis(end);
-  //   while (t <= endDt) {
-  //     ticks.push(t.toMillis());
-  //     t = t.plus({ hours: intervalHours });
-  //   }
-  //   return ticks;
-  // };
+  // Set values for twilight lines
+  const twilightValues = almanacInfo
+    .map((dayobsAlm) => {
+      const eve = DateTime.fromFormat(
+        dayobsAlm.twilight_evening,
+        "yyyy-MM-dd HH:mm:ss",
+      ).toMillis(); // TODO: is this definitely TAI?
+      const mor = DateTime.fromFormat(
+        dayobsAlm.twilight_morning,
+        "yyyy-MM-dd HH:mm:ss",
+      ).toMillis();
+      return [eve, mor];
+    })
+    .flat();
+
+  // Get min/max values for x-axis
+  const xVals = data
+    .map((d) => d.obs_start_dt)
+    .filter((v) => typeof v === "number" && !isNaN(v));
+  const allXVals = [...xVals, ...twilightValues];
+  const xMin = xVals.length ? Math.min(...allXVals) : "auto";
+  const xMax = xVals.length ? Math.max(...allXVals) : "auto";
+
   const generateHourlyTicks = (start, end, intervalHours = 1) => {
     const ticks = [];
     let t = DateTime.fromMillis(start).startOf("hour");
-    const endDt = DateTime.fromMillis(end).endOf("hour"); // extend to include end hour
+    const endDt = DateTime.fromMillis(end).endOf("hour");
     while (t <= endDt) {
       ticks.push(t.toMillis());
       t = t.plus({ hours: intervalHours });
     }
     return ticks;
   };
-  const hourlyTicks = generateHourlyTicks(dataMin, dataMax, 1);
-
-  // Prepare twilight lines from Almanac data
-  const twilightLines = almanacInfo.flatMap((entry) => {
-    const lines = [];
-
-    const evening = DateTime.fromFormat(
-      entry.twilight_evening,
-      "yyyy-MM-dd HH:mm:ss",
-      { zone: "utc" },
-    );
-    const morning = DateTime.fromFormat(
-      entry.twilight_morning,
-      "yyyy-MM-dd HH:mm:ss",
-      { zone: "utc" },
-    );
-
-    if (evening.isValid) {
-      lines.push({
-        timestamp: evening.toMillis(),
-        label: `Evening Twilight (${entry.dayobs})`,
-      });
-    }
-    if (morning.isValid) {
-      lines.push({
-        timestamp: morning.toMillis(),
-        label: `Morning Twilight (${entry.dayobs})`,
-      });
-    }
-
-    return lines;
-  });
+  const hourlyTicks = generateHourlyTicks(xMin, xMax, 1);
 
   return (
     <ResponsiveContainer
@@ -160,29 +139,34 @@ function TimelineChart({
         ))}
         <XAxis
           dataKey="obs_start_dt"
+          domain={[xMin, xMax]}
+          allowDataOverflow={true}
           type="number"
-          domain={["dataMin", "dataMax"]}
           scale="time"
+          tickFormatter={(tick) => DateTime.fromMillis(tick).toFormat("HH:mm")}
           ticks={hourlyTicks}
           interval="preserveStartEnd"
-          tickFormatter={(tick) => DateTime.fromMillis(tick).toFormat("HH:mm")}
           tick={{ fill: "white", style: { userSelect: "none" } }}
           axisLine={false}
           tickMargin={10}
           minTickGap={15}
         />
         <YAxis hide domain={[0, 1]} />
-        {twilightLines.map((line) => (
-          <ReferenceLine
-            key={line.timestamp}
-            x={line.timestamp}
-            stroke="#0ea5e9" // sky-500
-            // stroke="#0284c7" // sky-600
-            // stroke="#0369a1" // sky-700
-            strokeWidth={3}
-            strokeDasharray="4 4"
-          />
-        ))}
+        {twilightValues.map((twi, i) =>
+          typeof twi === "number" &&
+          !isNaN(twi) &&
+          xMin <= twi &&
+          twi <= xMax ? (
+            <ReferenceLine
+              key={`twilight-${i}-${twi}`}
+              x={twi}
+              stroke="#0ea5e9" // sky-500
+              strokeWidth={3}
+              strokeDasharray="4 4"
+              yAxisId="0"
+            />
+          ) : null,
+        )}
         <Line
           dataKey={() => 0.5}
           stroke="#FFFFFF"
@@ -270,6 +254,9 @@ function ObservingDataChart({ title, dataKey, data, preferredYDomain = null }) {
               {...props}
               formatter={(value, name, item, index, payload) => {
                 const obsStart = payload["obs start"];
+                const obsStartFormatted = DateTime.fromISO(obsStart).toFormat(
+                  "yyyyLLdd HH:mm:ss.SSS",
+                );
                 const exposureId = payload["exposure id"];
                 const band = payload["band"];
 
@@ -294,9 +281,9 @@ function ObservingDataChart({ title, dataKey, data, preferredYDomain = null }) {
                     </div>
                     <div>
                       <span className="text-muted-foreground">
-                        obs_start (TAI):
+                        Obs Start (TAI):
                       </span>{" "}
-                      <span className="font-mono">{obsStart}</span>
+                      <span className="font-mono">{obsStartFormatted}</span>
                     </div>
                   </div>
                 );
@@ -397,7 +384,7 @@ function Plots() {
     fetchAlmanac(startDayobs, queryEndDayobs, abortController)
       .then((almanac) => {
         setAlmanacInfo(almanac);
-        console.log(almanac);
+        console.log(almanac); // TODO: Remove before PR
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
