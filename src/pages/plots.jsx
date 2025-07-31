@@ -30,8 +30,13 @@ import {
   ReferenceArea,
 } from "recharts";
 
-import { fetchDataLogEntriesFromConsDB } from "@/utils/fetchUtils";
+import {
+  fetchDataLogEntriesFromConsDB,
+  fetchAlmanac,
+} from "@/utils/fetchUtils";
 import { getDatetimeFromDayobsStr } from "@/utils/utils";
+
+// import offlineResponse from "@/assets/dataLog_Simonyi_20250722_20250723.json";
 
 // Small vertical lines to represent exposures in the timeline
 const CustomizedDot = (props) => {
@@ -47,7 +52,12 @@ const CustomizedDot = (props) => {
   );
 };
 
-function TimelineChart({ data, selectedTimeRange, setSelectedTimeRange }) {
+function TimelineChart({
+  data,
+  selectedTimeRange,
+  setSelectedTimeRange,
+  almanacInfo,
+}) {
   const [refAreaLeft, setRefAreaLeft] = useState(null);
   const [refAreaRight, setRefAreaRight] = useState(null);
 
@@ -92,8 +102,38 @@ function TimelineChart({ data, selectedTimeRange, setSelectedTimeRange }) {
     }
     return ticks;
   };
-
   const hourlyTicks = generateHourlyTicks(dataMin, dataMax, 1);
+
+  // Prepare twilight lines from Almanac data
+  const twilightLines = almanacInfo.flatMap((entry) => {
+    const lines = [];
+
+    const evening = DateTime.fromFormat(
+      entry.twilight_evening,
+      "yyyy-MM-dd HH:mm:ss",
+      { zone: "utc" },
+    );
+    const morning = DateTime.fromFormat(
+      entry.twilight_morning,
+      "yyyy-MM-dd HH:mm:ss",
+      { zone: "utc" },
+    );
+
+    if (evening.isValid) {
+      lines.push({
+        timestamp: evening.toMillis(),
+        label: `Evening Twilight (${entry.dayobs})`,
+      });
+    }
+    if (morning.isValid) {
+      lines.push({
+        timestamp: morning.toMillis(),
+        label: `Morning Twilight (${entry.dayobs})`,
+      });
+    }
+
+    return lines;
+  });
 
   return (
     <ResponsiveContainer
@@ -132,6 +172,17 @@ function TimelineChart({ data, selectedTimeRange, setSelectedTimeRange }) {
           minTickGap={15}
         />
         <YAxis hide domain={[0, 1]} />
+        {twilightLines.map((line) => (
+          <ReferenceLine
+            key={line.timestamp}
+            x={line.timestamp}
+            stroke="#0ea5e9" // sky-500
+            // stroke="#0284c7" // sky-600
+            // stroke="#0369a1" // sky-700
+            strokeWidth={3}
+            strokeDasharray="4 4"
+          />
+        ))}
         <Line
           dataKey={() => 0.5}
           stroke="#FFFFFF"
@@ -273,7 +324,6 @@ function Plots() {
   // Routing and URL params
   const { startDayobs, endDayobs, telescope } = useSearch({ from: "/plots" });
 
-  // Time window state
   const [selectedTimeRange, setSelectedTimeRange] = useState([null, null]);
 
   // The end dayobs is inclusive, so we add one day to the
@@ -293,6 +343,10 @@ function Plots() {
   // Data
   const [dataLogEntries, setDataLogEntries] = useState([]);
   const [dataLogLoading, setDataLogLoading] = useState(true);
+
+  // Twilights, moonrise/set and brightness
+  const [almanacInfo, setAlmanacInfo] = useState([]);
+  const [almanacLoading, setAlmanacLoading] = useState(true);
 
   useEffect(() => {
     if (telescope === "AuxTel") {
@@ -340,11 +394,37 @@ function Plots() {
         }
       });
 
+    fetchAlmanac(startDayobs, queryEndDayobs, abortController)
+      .then((almanac) => {
+        setAlmanacInfo(almanac);
+        console.log(almanac);
+      })
+      .catch((err) => {
+        if (!abortController.signal.aborted) {
+          const msg = err?.message;
+          toast.error("Error fetching almanac!", {
+            description: msg,
+            duration: Infinity,
+          });
+        }
+      })
+      .finally(() => {
+        if (!abortController.signal.aborted) {
+          setAlmanacLoading(false);
+        }
+      });
+
     // Cleanup function
     return () => {
       abortController.abort();
     };
   }, [startDayobs, queryEndDayobs, instrument]);
+
+  // Temporary offline data for Simonyi
+  // useEffect(() => {
+  //   setDataLogEntries(offlineResponse.data_log || []);
+  //   setDataLogLoading(false);
+  // }, []);
 
   // Temporary display message for AuxTel queries
   if (telescope === "AuxTel") {
@@ -403,7 +483,7 @@ function Plots() {
 
         {/* Info section */}
         <div className="min-h-[4.5rem] text-white font-thin text-center pb-4 flex flex-col items-center justify-center gap-2">
-          {dataLogLoading ? (
+          {dataLogLoading || almanacLoading ? (
             <>
               <Skeleton className="h-5 w-3/4 max-w-xl bg-stone-700" />
             </>
@@ -422,6 +502,7 @@ function Plots() {
           data={chartData}
           selectedTimeRange={selectedTimeRange}
           setSelectedTimeRange={setSelectedTimeRange}
+          almanacInfo={almanacInfo}
         />
 
         {/* Time Window Inputs */}
