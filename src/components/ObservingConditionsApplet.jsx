@@ -23,7 +23,7 @@ import {
 } from "recharts";
 import { DateTime } from "luxon";
 import { Skeleton } from "@/components/ui/skeleton";
-// import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const GAP_THRESHOLD = 5 * 60 * 1000;
 const GAP_MAX_THRESHOLD = 60 * 60 * 1000;
@@ -364,7 +364,7 @@ const renderCustomLegend = () => (
       </div>
 
       <div className="flex items-center gap-2">
-        <span className="inline-block w-3 h-6 mr-2 bg-teal-800 bg-opacity-90 border border-teal-900" />
+        <span className="inline-block w-3 h-4 mr-2 bg-teal-800 bg-opacity-90 border border-teal-900" />
         shutter closed > 5mins
       </div>
 
@@ -426,7 +426,7 @@ function ObservingConditionsApplet({
   almanacLoading,
   almanacInfo,
 }) {
-  // const isMobile = useIsMobile();
+  const isMobile = useIsMobile();
 
   const data = exposureFields.map((entry) => {
     const obsStart = entry["obs_start"];
@@ -929,20 +929,20 @@ function ObservingConditionsApplet({
                     />
                   ))}
 
-                  {/* <ChartLegend
+                  <ChartLegend
                     layout={isMobile ? "horizontal" : "vertical"}
                     verticalAlign={isMobile ? "bottom" : "middle"}
                     align={isMobile ? "center" : "right"}
                     content={renderCustomLegend}
-                  /> */}
+                  />
                 </ComposedChart>
                 {/* </ResponsiveContainer> */}
               </ChartContainer>
             </div>
             {/* Legend Area */}
-            <div className="w-full h-full lg:w-32 mr-2">
+            {/* <div className="w-full h-full lg:w-32 mr-2">
               {renderCustomLegend()}
-            </div>
+            </div> */}
           </div>
         )}
       </CardContent>
