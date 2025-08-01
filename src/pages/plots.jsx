@@ -99,8 +99,11 @@ function TimelineChart({
     .map((d) => d.obs_start_dt)
     .filter((v) => typeof v === "number" && !isNaN(v));
   const allXVals = [...xVals, ...twilightValues];
-  const xMin = xVals.length ? Math.min(...allXVals) : "auto";
-  const xMax = xVals.length ? Math.max(...allXVals) : "auto";
+  // Swap back once loading skeletons are added
+  // const xMin = xVals.length ? Math.min(...allXVals) : "auto";
+  // const xMax = xVals.length ? Math.max(...allXVals) : "auto";
+  const xMin = Math.min(...allXVals);
+  const xMax = Math.max(...allXVals);
 
   const generateHourlyTicks = (start, end, intervalHours = 1) => {
     const ticks = [];
