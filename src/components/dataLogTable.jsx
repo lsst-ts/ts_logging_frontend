@@ -43,17 +43,19 @@ import {
 } from "@/components/dataLogColumns";
 
 const DEFAULT_COLUMN_VISIBILITY = {
-  RubinTVLink: false,
   exposure_id: true,
+  science_program: true,
+  observation_reason: true,
+  target_name: true,
+  exp_time: true,
+  psf_median: true,
+  zero_point_median: true,
+  RubinTVLink: false,
   exposure_name: false,
   seq_num: false,
   day_obs: false,
   obs_start: false,
-  exp_time: true,
-  science_program: true,
   img_type: false,
-  observation_reason: true,
-  target_name: true,
   exposure_flag: false,
   message_text: false,
   s_ra: false,
@@ -63,18 +65,47 @@ const DEFAULT_COLUMN_VISIBILITY = {
   sky_rotation: false,
   airmass: false,
   dimm_seeing: false,
-  psf_median: true,
   sky_bg_median: false,
-  zero_point_median: true,
   high_snr_source_count_median: false,
   air_temp: false,
 };
+
+// Order of columns shown on initial load and when table is reset
+const DEFAULT_COLUMN_ORDER = [
+  // Default columns
+  "exposure_id",
+  "science_program",
+  "observation_reason",
+  "target_name",
+  "exp_time",
+  "psf_median",
+  "zero_point_median",
+  // Additional columns
+  "exposure_name",
+  "day_obs",
+  "seq_num",
+  "obs_start",
+  "img_type",
+  "s_ra",
+  "s_dec",
+  "altitude",
+  "azimuth",
+  "sky_rotation",
+  "airmass",
+  "dimm_seeing",
+  "sky_bg_median",
+  "high_snr_source_count_median",
+  "air_temp",
+  "exposure_flag",
+  "message_text",
+  "RubinTVLink",
+];
 
 function DataLogTable({ data, dataLogLoading, tableFilters }) {
   const [columnVisibility, setColumnVisibility] = useState(
     DEFAULT_COLUMN_VISIBILITY,
   );
-  const [columnOrder, setColumnOrder] = useState([]);
+  const [columnOrder, setColumnOrder] = useState(DEFAULT_COLUMN_ORDER);
   const [sorting, setSorting] = useState([]);
   const [grouping, setGrouping] = useState([]);
   const [expanded, setExpanded] = useState({});
@@ -100,7 +131,7 @@ function DataLogTable({ data, dataLogLoading, tableFilters }) {
   // Reset function
   const resetTable = () => {
     setColumnVisibility(DEFAULT_COLUMN_VISIBILITY);
-    setColumnOrder([]);
+    setColumnOrder(DEFAULT_COLUMN_ORDER);
     setSorting([]);
     setGrouping([]);
     setColumnFilters([]);
