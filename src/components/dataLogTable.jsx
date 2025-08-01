@@ -42,8 +42,38 @@ import {
   matchValueOrInList,
 } from "@/components/dataLogColumns";
 
+const DEFAULT_COLUMN_VISIBILITY = {
+  RubinTVLink: false,
+  exposure_id: true,
+  exposure_name: false,
+  seq_num: false,
+  day_obs: false,
+  obs_start: false,
+  exp_time: true,
+  science_program: true,
+  img_type: false,
+  observation_reason: true,
+  target_name: true,
+  exposure_flag: false,
+  message_text: false,
+  s_ra: false,
+  s_dec: false,
+  altitude: false,
+  azimuth: false,
+  sky_rotation: false,
+  airmass: false,
+  dimm_seeing: false,
+  psf_median: true,
+  sky_bg_median: false,
+  zero_point_median: true,
+  high_snr_source_count_median: false,
+  air_temp: false,
+};
+
 function DataLogTable({ data, dataLogLoading, tableFilters }) {
-  const [columnVisibility, setColumnVisibility] = useState({});
+  const [columnVisibility, setColumnVisibility] = useState(
+    DEFAULT_COLUMN_VISIBILITY,
+  );
   const [columnOrder, setColumnOrder] = useState([]);
   const [sorting, setSorting] = useState([]);
   const [grouping, setGrouping] = useState([]);
@@ -69,7 +99,7 @@ function DataLogTable({ data, dataLogLoading, tableFilters }) {
 
   // Reset function
   const resetTable = () => {
-    setColumnVisibility({});
+    setColumnVisibility(DEFAULT_COLUMN_VISIBILITY);
     setColumnOrder([]);
     setSorting([]);
     setGrouping([]);
