@@ -23,7 +23,7 @@ import {
 } from "recharts";
 import { DateTime } from "luxon";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useIsMobile } from "@/hooks/use-mobile";
+// import { useIsMobile } from "@/hooks/use-mobile";
 
 const GAP_THRESHOLD = 5 * 60 * 1000;
 const GAP_MAX_THRESHOLD = 60 * 60 * 1000;
@@ -346,9 +346,9 @@ const CustomTooltip = ({ active, payload, label }) => {
 // );
 
 const renderCustomLegend = () => (
-  <div className="w-full lg:w-32 h-fit flex-shrink-0">
+  <div className="w-24 h-fit flex-shrink-0">
     <div className="flex flex-wrap gap-1 px-4 py-2 bg-black shadow-[4px_4px_4px_0px_#c27aff] border text-white text-xxs justify-start ">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center ml-0.5 gap-2">
         <svg width="6" height="20" className="mr-2">
           <line
             x1="6"
@@ -364,8 +364,8 @@ const renderCustomLegend = () => (
       </div>
 
       <div className="flex items-center gap-2">
-        <span className="inline-block w-3 h-4 mr-2 bg-teal-800 bg-opacity-90 border border-teal-900" />
-        shutter closed > 5mins
+        <span className="inline-block w-3 h-5 ml-1 mr-2 bg-teal-800 bg-opacity-90 border border-teal-900" />
+        shutter closed (> 5m)
       </div>
 
       <div className="flex items-center gap-2">
@@ -377,8 +377,8 @@ const renderCustomLegend = () => (
         <span>seeing</span>
       </div>
 
-      <div className="w-full text-white text-xxs">zero points</div>
-      <div className="flex flex-wrap gap-2 p-2 border border-white grid grid-cols-2 gap-2">
+      <div className="w-full text-white mt-2 text-xxs">zero points</div>
+      <div className="gap-1 p-1 pr-2 border border-white grid grid-cols-2">
         <div className="flex items-center gap-1">
           <svg width="16" height="16">
             <circle cx="8" cy="8" r="2" fill="#3eb7ff" />
@@ -426,7 +426,7 @@ function ObservingConditionsApplet({
   almanacLoading,
   almanacInfo,
 }) {
-  const isMobile = useIsMobile();
+  // const isMobile = useIsMobile();
 
   const data = exposureFields.map((entry) => {
     const obsStart = entry["obs_start"];
@@ -646,13 +646,11 @@ function ObservingConditionsApplet({
             <Skeleton className="w-full h-full min-h-[180px] bg-stone-900" />
           </div>
         ) : (
-          <div className="flex flex-col lg:flex-row items-stretch w-full h-full gap-2 overflow-hidden">
+          <div className="h-full overflow-hidden">
             <div className="flex-grow min-w-0 h-full">
               <ChartContainer config={chartConfig} className="w-full h-full">
                 {/* <ResponsiveContainer width="100%" height="100%"> */}
-                <ComposedChart
-                  margin={{ left: 20, right: 10, top: 10, bottom: 5 }}
-                >
+                <ComposedChart>
                   <CartesianGrid strokeDasharray="3 3" stroke="#555" />
                   <XAxis
                     data={chartData}
@@ -683,8 +681,10 @@ function ObservingConditionsApplet({
                       angle: -90,
                       position: "insideLeft",
                       fill: "white",
-                      dx: 15,
+                      dx: 0,
+                      dy: 40,
                     }}
+                    width={50}
                   />
                   <YAxis
                     yAxisId="right"
@@ -695,9 +695,11 @@ function ObservingConditionsApplet({
                       value: "Zero Points (mag)",
                       angle: 90,
                       position: "insideRight",
-                      dx: -20,
+                      dx: -10,
+                      dy: 30,
                       fill: "white",
                     }}
+                    width={50}
                   />
                   {/* <ZAxis dataKey="zero_point_median" range={[20, 20]} /> */}
                   {twilightValues.map((twi, i) =>
@@ -910,6 +912,7 @@ function ObservingConditionsApplet({
                     shape={(props) => <XShape {...props} />}
                     yAxisId="left"
                     data={chartData}
+                    isAnimationActive={false}
                   />
                   {gapAreas.map((gap, i) => (
                     <ReferenceArea
@@ -930,9 +933,9 @@ function ObservingConditionsApplet({
                   ))}
 
                   <ChartLegend
-                    layout={isMobile ? "horizontal" : "vertical"}
-                    verticalAlign={isMobile ? "bottom" : "middle"}
-                    align={isMobile ? "center" : "right"}
+                    layout={"vertical"}
+                    verticalAlign={"middle"}
+                    align={"right"}
                     content={renderCustomLegend}
                   />
                 </ComposedChart>
