@@ -99,15 +99,21 @@ function DataLog() {
 
         // Merge the two data sources
         // and apply conversion to required row(s)
-        const mergedData = mergeDataLogSources(dataLog, exposureLogData).map(
-          (entry) => {
-            const psf = parseFloat(entry["psf sigma median"]);
+        const mergedData = mergeDataLogSources(dataLog, exposureLogData)
+          .map((entry) => {
+            const psfSigma = parseFloat(entry["psf sigma median"]);
+            const pixelScale = !isNaN(entry.pixel_scale_median)
+              ? entry.pixel_scale_median
+              : 0.2;
+
             return {
               ...entry,
-              "psf median": !isNaN(psf) ? psf * 2.355 : null,
+              "psf median": !isNaN(psfSigma)
+                ? psfSigma * 2.355 * pixelScale
+                : null,
             };
-          },
-        );
+          })
+          .sort((a, b) => Number(b["exposure id"]) - Number(a["exposure id"]));
 
         // Set the merged data to state
         setDataLogEntries(mergedData);
