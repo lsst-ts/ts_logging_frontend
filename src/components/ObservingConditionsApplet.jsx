@@ -29,20 +29,20 @@ const GAP_THRESHOLD = 5 * 60 * 1000;
 const GAP_MAX_THRESHOLD = 60 * 60 * 1000;
 
 const XShape = (props) => {
-  const { cx, cy, fill, payload } = props;
+  const { cx, cy, fill } = props;
   const size = 1.5;
   if (cx < size || cy < size) return null;
   // {'u': '#3eb7ff', 'g': '#30c39f', 'r': '#ff7e00', 'i': '#2af5ff', 'z': '#a7f9c1', 'y': '#fdc900'}
   let color = fill;
-  if (payload && payload.band) {
-    if (payload.band === "u") color = "#3eb7ff";
-    else if (payload.band === "g") color = "#30c39f";
-    else if (payload.band === "r") color = "#ff7e00";
-    else if (payload.band === "i") color = "#2af5ff";
-    else if (payload.band === "z") color = "#a7f9c1";
-    else if (payload.band === "y") color = "#fdc900";
-    // Add more as needed
-  }
+  // if (payload && payload.band) {
+  //   if (payload.band === "u") color = "#3eb7ff";
+  //   else if (payload.band === "g") color = "#30c39f";
+  //   else if (payload.band === "r") color = "#ff7e00";
+  //   else if (payload.band === "i") color = "#2af5ff";
+  //   else if (payload.band === "z") color = "#a7f9c1";
+  //   else if (payload.band === "y") color = "#fdc900";
+  //   // Add more as needed
+  // }
   return (
     <g>
       <line
@@ -192,7 +192,7 @@ const CustomTooltip = ({ active, payload, label }) => {
       if (entry.value !== null && entry.value !== undefined) {
         uniqueData.set(entry.dataKey, {
           name:
-            entry.dataKey === "dimm_seeing" ? "Seeing" : "Zero Point Median",
+            entry.dataKey === "psf_median" ? "PSF Seeing" : "Zero Point Median",
           value:
             typeof entry.value === "number"
               ? entry.value.toFixed(2)
@@ -364,8 +364,8 @@ const renderCustomLegend = () => (
       </div>
 
       <div className="flex items-center gap-2">
-        <span className="inline-block w-3 h-4 mr-2 bg-teal-800 bg-opacity-90 border border-teal-900" />
-        shutter closed
+        <span className="inline-block w-3 h-6 mr-2 bg-teal-800 bg-opacity-90 border border-teal-900" />
+        shutter closed > 5mins
       </div>
 
       <div className="flex items-center gap-2">
@@ -378,7 +378,7 @@ const renderCustomLegend = () => (
       </div>
 
       <div className="w-full text-white text-xxs">zero points</div>
-      <div className="flex flex-wrap gap-2 p-2 border border-white grid grid-cols-2 gap-3">
+      <div className="flex flex-wrap gap-2 p-2 border border-white grid grid-cols-2 gap-2">
         <div className="flex items-center gap-1">
           <svg width="16" height="16">
             <circle cx="8" cy="8" r="2" fill="#3eb7ff" />
@@ -434,7 +434,13 @@ function ObservingConditionsApplet({
     if (typeof obsStart === "string" && DateTime.fromISO(obsStart).isValid) {
       obs_start_dt = DateTime.fromISO(obsStart).toMillis();
     }
-    return { ...entry, obs_start_dt };
+
+    const psfSigma = entry["psf_sigma_median"];
+    const pixelScale = entry["pixel_scale_median"]
+      ? entry["pixel_scale_median"]
+      : 0.2;
+    const psf_median = psfSigma ? psfSigma * 2.355 * pixelScale : null;
+    return { ...entry, obs_start_dt, psf_median };
   });
 
   const chartData = data
@@ -455,17 +461,28 @@ function ObservingConditionsApplet({
     })
     .flat();
 
+  // Filter out invalid observing times
   const xVals = chartData
     .map((d) => d.obs_start_dt)
     .filter((v) => typeof v === "number" && !isNaN(v));
+  // add twilight values to xVals
   const allXVals = [...xVals, ...twilightValues];
+  // Calculate min and max for x-axis
   const xMin = xVals.length ? Math.min(...allXVals) : "auto";
   const xMax = xVals.length ? Math.max(...allXVals) : "auto";
 
   // console.log(allXVals);
-  //   const yMin = yVals.length ? Math.min(...yVals) : "auto";
-  //   const yMax = yVals.length ? Math.max(...yVals) : "auto";
+  // Calculate min and max for y-axis (zero point median)
+  const zeroPointVals = chartData
+    .map((d) => d.zero_point_median)
+    .filter((v) => typeof v === "number" && !isNaN(v));
+  // move the minimum value down by 5 for better visibility
+  const zeroPointMedianMin = zeroPointVals.length
+    ? Math.min(...zeroPointVals) - 5
+    : "auto";
+  // const yMax = yVals.length ? Math.max(...yVals) : "auto";
   // console.log("xMin:", xMin, "xMax:", xMax, "yMin:", yMin, "yMax:", yMax);
+
   // Generate evenly spaced ticks between xMin and xMax
   let xTicks = [];
   if (typeof xMin === "number" && typeof xMax === "number" && xMax > xMin) {
@@ -476,7 +493,7 @@ function ObservingConditionsApplet({
   }
 
   const chartConfig = {
-    dimm_seeing: { label: "Seeing", color: "#ffffff" },
+    psf_median: { label: "PSF Seeing", color: "#ffffff" },
     zero_point_median: { label: "Zero Point Median", color: "#3b82f6" },
   };
 
@@ -662,7 +679,7 @@ function ObservingConditionsApplet({
                     domain={["auto", "auto"]}
                     tickFormatter={(tick) => Number(tick).toFixed(2)}
                     label={{
-                      value: "Seeing",
+                      value: "PSF Seeing (arcsec)",
                       angle: -90,
                       position: "insideLeft",
                       fill: "white",
@@ -673,9 +690,9 @@ function ObservingConditionsApplet({
                     yAxisId="right"
                     orientation="right"
                     tick={{ fill: "white" }}
-                    domain={["auto", "auto"]}
+                    domain={[zeroPointMedianMin, "auto"]}
                     label={{
-                      value: "Zero Points",
+                      value: "Zero Points (mag)",
                       angle: 90,
                       position: "insideRight",
                       dx: -20,
@@ -887,8 +904,8 @@ function ObservingConditionsApplet({
                     isAnimationActive={false}
                   />
                   <Scatter
-                    name="dimm_seeing"
-                    dataKey="dimm_seeing"
+                    name="psf_median"
+                    dataKey="psf_median"
                     fill="white"
                     shape={(props) => <XShape {...props} />}
                     yAxisId="left"
