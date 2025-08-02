@@ -30,6 +30,9 @@ export const dataLogColumns = [
     ),
     size: 100,
     filterType: null,
+    meta: {
+      tooltip: "Link to calibrated exposure in RubinTV. Opens in a new tab.",
+    },
   }),
 
   // Identifying data
@@ -39,6 +42,9 @@ export const dataLogColumns = [
     cell: (info) => formatCellValue(info.getValue()),
     size: 140,
     filterType: null,
+    meta: {
+      tooltip: "Unique identifier for the exposure.",
+    },
   }),
   columnHelper.accessor("exposure name", {
     id: "exposure_name",
@@ -46,6 +52,9 @@ export const dataLogColumns = [
     cell: (info) => formatCellValue(info.getValue()),
     size: 200,
     filterType: null,
+    meta: {
+      tooltip: "Official name of the exposure.",
+    },
   }),
   columnHelper.accessor("seq num", {
     id: "seq_num",
@@ -53,6 +62,9 @@ export const dataLogColumns = [
     cell: (info) => formatCellValue(info.getValue()),
     size: 100,
     filterType: "number-range",
+    meta: {
+      tooltip: "Sequence number of the exposure.",
+    },
   }),
 
   // Dayobs and timestamp
@@ -63,13 +75,20 @@ export const dataLogColumns = [
     size: 100,
     filterFn: matchValueOrInList,
     filterType: "string",
+    meta: {
+      tooltip: "Day of observation.",
+    },
   }),
   columnHelper.accessor("obs start", {
     id: "obs_start",
-    header: "Obs Start",
+    header: "Obs Start (TAI)",
     cell: (info) => formatCellValue(info.getValue()),
     size: 240,
     filterType: "number-range",
+    meta: {
+      tooltip:
+        "Start time (TAI) of the exposure at the fiducial center of the focal plane.",
+    },
   }),
   columnHelper.accessor("exp time", {
     id: "exp_time",
@@ -77,6 +96,9 @@ export const dataLogColumns = [
     cell: (info) => formatCellValue(info.getValue(), { decimals: 2 }),
     size: 160,
     filterType: "number-range",
+    meta: {
+      tooltip: "Spatially-averaged duration of exposure, accurate to 10ms.",
+    },
   }),
 
   // Observation Categories
@@ -89,6 +111,7 @@ export const dataLogColumns = [
     filterType: "string",
     meta: {
       urlParam: "science_program",
+      tooltip: "Science program.",
     },
   }),
   columnHelper.accessor("img type", {
@@ -100,6 +123,7 @@ export const dataLogColumns = [
     filterType: "string",
     meta: {
       urlParam: "img_type",
+      tooltip: "Type of visit taken.",
     },
   }),
   columnHelper.accessor("observation reason", {
@@ -111,6 +135,7 @@ export const dataLogColumns = [
     filterType: "string",
     meta: {
       urlParam: "observation_reason",
+      tooltip: "Reason for the observation.",
     },
   }),
   columnHelper.accessor("target name", {
@@ -122,6 +147,7 @@ export const dataLogColumns = [
     filterType: "string",
     meta: {
       urlParam: "target_name",
+      tooltip: "Target of the observation.",
     },
   }),
 
@@ -133,6 +159,9 @@ export const dataLogColumns = [
     size: 100,
     filterFn: matchValueOrInList,
     filterType: "string",
+    meta: {
+      tooltip: "Manually tagged by observers.",
+    },
   }),
   columnHelper.accessor("message_text", {
     id: "message_text",
@@ -140,6 +169,9 @@ export const dataLogColumns = [
     cell: (info) => formatCellValue(info.getValue()),
     size: 120,
     filterType: null,
+    meta: {
+      tooltip: "Comments from observers associated with flags.",
+    },
   }),
 
   // Instrument config and environment
@@ -149,6 +181,10 @@ export const dataLogColumns = [
     cell: (info) => formatCellValue(info.getValue()),
     size: 60,
     filterType: "number-range",
+    meta: {
+      tooltip:
+        "Central Spatial Position in ICRS; Computed right ascension of CCD center.",
+    },
   }),
   columnHelper.accessor("s dec", {
     id: "s_dec",
@@ -156,6 +192,10 @@ export const dataLogColumns = [
     cell: (info) => formatCellValue(info.getValue()),
     size: 70,
     filterType: "number-range",
+    meta: {
+      tooltip:
+        "Central Spatial Position in ICRS; Computed declination of CCD center.",
+    },
   }),
   columnHelper.accessor("altitude", {
     id: "altitude",
@@ -163,6 +203,10 @@ export const dataLogColumns = [
     cell: (info) => formatCellValue(info.getValue()),
     size: 70,
     filterType: "number-range",
+    meta: {
+      tooltip:
+        "Altitude (deg) of focal plane center at the middle of the exposure.",
+    },
   }),
   columnHelper.accessor("azimuth", {
     id: "azimuth",
@@ -170,6 +214,10 @@ export const dataLogColumns = [
     cell: (info) => formatCellValue(info.getValue()),
     size: 60,
     filterType: "number-range",
+    meta: {
+      tooltip:
+        "Azimuth (deg) of focal plane center at the middle of the visit.",
+    },
   }),
   columnHelper.accessor("sky rotation", {
     id: "sky_rotation",
@@ -177,6 +225,9 @@ export const dataLogColumns = [
     cell: (info) => formatCellValue(info.getValue()),
     size: 120,
     filterType: "number-range",
+    meta: {
+      tooltip: "Targeted sky rotation angle (deg).",
+    },
   }),
   columnHelper.accessor("airmass", {
     id: "airmass",
@@ -184,6 +235,10 @@ export const dataLogColumns = [
     cell: (info) => formatCellValue(info.getValue()),
     size: 90,
     filterType: "number-range",
+    meta: {
+      tooltip:
+        "Airmass of the observed line of sight at the middle of the exposure.",
+    },
   }),
   columnHelper.accessor("dimm seeing", {
     id: "dimm_seeing",
@@ -191,6 +246,10 @@ export const dataLogColumns = [
     cell: (info) => formatCellValue(info.getValue()),
     size: 130,
     filterType: "number-range",
+    meta: {
+      tooltip:
+        "Atmospheric seeing (arcesc) as measured by external DIMM (FWHM).",
+    },
   }),
   // psf sigma median * 2.355 * [pixelScale or 2.0]
   columnHelper.accessor("psf median", {
@@ -201,7 +260,7 @@ export const dataLogColumns = [
     filterType: "number-range",
     meta: {
       tooltip:
-        "Median PSF (FWHM) = psf sigma median * 2.355 * [pixel scale or 2.0 when pixel scale is NaN]",
+        "Median PSF FWHM (arcsec): PSF sigma (median across all detectors) * 2.355 * [pixel scale or 2.0 when pixel scale is NaN]",
     },
   }),
   columnHelper.accessor("sky bg median", {
@@ -211,7 +270,7 @@ export const dataLogColumns = [
     size: 140,
     filterType: "number-range",
     meta: {
-      tooltip: "sky bg median",
+      tooltip: "Average sky background (median across all detectors).",
     },
   }),
   columnHelper.accessor("zero point median", {
@@ -221,7 +280,7 @@ export const dataLogColumns = [
     size: 140,
     filterType: "number-range",
     meta: {
-      tooltip: "zero point median",
+      tooltip: "Photometric zero point (median across all detectors) (mag).",
     },
   }),
   columnHelper.accessor("high snr source count median", {
@@ -231,7 +290,8 @@ export const dataLogColumns = [
     size: 200,
     filterType: "number-range",
     meta: {
-      tooltip: "high snr source count median",
+      tooltip:
+        "Count of high signal-to-noise-ratio sources (median across all detectors).",
     },
   }),
   columnHelper.accessor("air temp", {
@@ -240,5 +300,8 @@ export const dataLogColumns = [
     cell: (info) => formatCellValue(info.getValue()),
     size: 150,
     filterType: "number-range",
+    meta: {
+      tooltip: "Outside air temperature in degC.",
+    },
   }),
 ];
