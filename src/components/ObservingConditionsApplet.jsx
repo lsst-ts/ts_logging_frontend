@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
   Popover,
@@ -165,55 +165,82 @@ function ObservingConditionsApplet({
   almanacLoading,
   almanacInfo,
 }) {
-  const data = exposureFields.map((entry) => {
-    // Convert obs_start to a DateTime object and then to milliseconds
-    const obsStart = entry["obs_start"];
-    let obs_start_dt = undefined;
-    if (typeof obsStart === "string" && DateTime.fromISO(obsStart).isValid) {
-      obs_start_dt = DateTime.fromISO(obsStart).toMillis();
-    }
-    // calculate psf_median from psf_sigma_median and pixel_scale_median
-    const psfSigma = entry["psf_sigma_median"];
-    const pixelScale =
-      entry["pixel_scale_median"] ?? DEFAULT_PIXEL_SCALE_MEDIAN;
-    const psf_median = psfSigma
-      ? psfSigma * PSF_SIGMA_FACTOR * pixelScale
-      : null;
-    return { ...entry, obs_start_dt, psf_median };
-  });
+  const data = useMemo(
+    () =>
+      exposureFields.map((entry) => {
+        // Convert obs_start to a DateTime object and then to milliseconds
+        const obsStart = entry["obs_start"];
+        let obs_start_dt = undefined;
+        if (
+          typeof obsStart === "string" &&
+          DateTime.fromISO(obsStart).isValid
+        ) {
+          obs_start_dt = DateTime.fromISO(obsStart).toMillis();
+        }
+        // calculate psf_median from psf_sigma_median and pixel_scale_median
+        const psfSigma = entry["psf_sigma_median"];
+        const pixelScale =
+          entry["pixel_scale_median"] ?? DEFAULT_PIXEL_SCALE_MEDIAN;
+        const psf_median = psfSigma
+          ? psfSigma * PSF_SIGMA_FACTOR * pixelScale
+          : null;
+        return { ...entry, obs_start_dt, psf_median };
+      }),
+    [exposureFields],
+  );
 
   // Filter out entries without obs_start_dt and sort by obs_start_dt
   // to ensure the data is in chronological order and omit crossing lines
   // between different nights/bands
   const isValidNumber = (value) => typeof value === "number" && !isNaN(value);
 
-  const chartData = data
-    .filter((d) => isValidNumber(d.obs_start_dt))
-    .sort((a, b) => a.obs_start_dt - b.obs_start_dt);
+  const chartData = useMemo(
+    () =>
+      data
+        .filter((d) => isValidNumber(d.obs_start_dt))
+        .sort((a, b) => a.obs_start_dt - b.obs_start_dt),
+    [data],
+  );
 
   // retrieve twilight times from almanacInfo
   // and convert them to milliseconds
-  const twilightValues = almanacInfo
-    .map((dayobsAlm) => {
-      const eve = DateTime.fromFormat(
-        dayobsAlm.twilight_evening,
-        ISO_DATETIME_FORMAT,
-      ).toMillis();
-      const mor = DateTime.fromFormat(
-        dayobsAlm.twilight_morning,
-        ISO_DATETIME_FORMAT,
-      ).toMillis();
-      return [eve, mor];
-    })
-    .flat();
+  const twilightValues = useMemo(
+    () =>
+      almanacInfo
+        .map((dayobsAlm) => {
+          const eve = DateTime.fromFormat(
+            dayobsAlm.twilight_evening,
+            ISO_DATETIME_FORMAT,
+          ).toMillis();
+          const mor = DateTime.fromFormat(
+            dayobsAlm.twilight_morning,
+            ISO_DATETIME_FORMAT,
+          ).toMillis();
+          return [eve, mor];
+        })
+        .flat(),
+    [almanacInfo],
+  );
 
-  // Filter out invalid observing times
-  const xVals = chartData.map((d) => d.obs_start_dt).filter(isValidNumber);
-  // add twilight values to xVals to make sure they are included in the chart
-  const allXVals = [...xVals, ...twilightValues];
-  // Calculate min and max for x-axis
-  const xMin = xVals.length ? Math.min(...allXVals) : "auto";
-  const xMax = xVals.length ? Math.max(...allXVals) : "auto";
+  const { xMin, xMax, xTicks } = useMemo(() => {
+    // Filter out invalid observing times
+    const xVals = chartData.map((d) => d.obs_start_dt).filter(isValidNumber);
+    // add twilight values to xVals to make sure they are included in the chart
+    const allXVals = [...xVals, ...twilightValues];
+    // Calculate min and max for x-axis
+    const min = xVals.length ? Math.min(...allXVals) : "auto";
+    const max = xVals.length ? Math.max(...allXVals) : "auto";
+
+    // Generate evenly spaced ticks between xMin and xMax
+    let ticks = [];
+    if (isValidNumber(min) && isValidNumber(max) && max > min) {
+      const step = (max - min) / 9;
+      for (let i = 0; i < 10; i++) {
+        ticks.push(Math.round(min + i * step));
+      }
+    }
+    return { xMin: min, xMax: max, xTicks: ticks };
+  }, [chartData, twilightValues]);
 
   // Calculate min and max for y-axis (zero point median)
   const zeroPointVals = chartData
@@ -224,38 +251,34 @@ function ObservingConditionsApplet({
     ? Math.min(...zeroPointVals) - 5
     : "auto";
 
-  // Generate evenly spaced ticks between xMin and xMax
-  let xTicks = [];
-  if (isValidNumber(xMin) && isValidNumber(xMax) && xMax > xMin) {
-    const step = (xMax - xMin) / 9;
-    for (let i = 0; i < 10; i++) {
-      xTicks.push(Math.round(xMin + i * step));
-    }
-  }
-
   const chartConfig = {
     psf_median: { label: "PSF Seeing", color: "#ffffff" },
     zero_point_median: { label: "Zero Point Median", color: "#3b82f6" },
   };
 
   // Calculate open/close shutter time or observing gaps
-  const gapAreas = [];
-  for (let i = 0; i < chartData.length - 1; i++) {
-    const curr = chartData[i];
-    const next = chartData[i + 1];
-    const delta = next.obs_start_dt - curr.obs_start_dt;
+  const gapAreas = useMemo(() => {
+    const gaps = [];
+    for (let i = 0; i < chartData.length - 1; i++) {
+      const curr = chartData[i];
+      const next = chartData[i + 1];
+      const delta = next.obs_start_dt - curr.obs_start_dt;
 
-    if (GAP_THRESHOLD < delta && delta < GAP_MAX_THRESHOLD) {
-      gapAreas.push({
-        start: curr.obs_start_dt,
-        end: next.obs_start_dt,
-      });
+      if (GAP_THRESHOLD < delta && delta < GAP_MAX_THRESHOLD) {
+        gaps.push({
+          start: curr.obs_start_dt,
+          end: next.obs_start_dt,
+        });
+      }
     }
-  }
+    return gaps;
+  }, [chartData]);
 
   //group data by dayobs to handle multiple nights
-  const groupedByDayobs = Object.groupBy(chartData, (exp) => exp.day_obs);
-  const groupedChartData = Object.values(groupedByDayobs);
+  const groupedChartData = useMemo(() => {
+    const groupedByDayobs = Object.groupBy(chartData, (exp) => exp.day_obs);
+    return Object.values(groupedByDayobs);
+  }, [chartData]);
 
   // Function to filter data by band
   // and return data with null values for other bands
