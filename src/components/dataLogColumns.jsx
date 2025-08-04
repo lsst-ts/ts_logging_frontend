@@ -260,7 +260,7 @@ export const dataLogColumns = [
     filterType: "number-range",
     meta: {
       tooltip:
-        "Median PSF FWHM (arcsec): PSF sigma (median across all detectors) * 2.355 * [pixel scale or 2.0 when pixel scale is NaN]",
+        "Median PSF FWHM (arcsec): PSF sigma (median across all detectors) * 2.355 * [pixel scale or 0.2 when pixel scale is NaN]",
     },
   }),
   columnHelper.accessor("sky bg median", {
