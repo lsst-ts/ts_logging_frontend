@@ -499,81 +499,104 @@ function Plots() {
         </div>
 
         {/* Timeline */}
-        <TimelineChart
-          data={chartData}
-          selectedTimeRange={selectedTimeRange}
-          setSelectedTimeRange={setSelectedTimeRange}
-          almanacInfo={almanacInfo}
-        />
+        {dataLogLoading || almanacLoading ? (
+          <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
+        ) : (
+          <TimelineChart
+            data={chartData}
+            selectedTimeRange={selectedTimeRange}
+            setSelectedTimeRange={setSelectedTimeRange}
+            almanacInfo={almanacInfo}
+          />
+        )}
 
         {/* Time Window Inputs */}
-        <div className="flex gap-24 justify-center text-white">
-          <Label className="flex flex-col gap-4">
-            <Input
-              type="time" // this is browser dependent and behaves differently in different browsers
-              id="start-time-picker"
-              step="60"
-              lang="en-GB"
-              inputMode="numeric"
-              pattern="[0-9]{2}:[0-9]{2}"
-              className="max-w-[100px] bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
-              value={DateTime.fromMillis(rangeStart).toFormat("HH:mm")}
-              onChange={(e) => {
-                const [h, m] = e.target.value.split(":").map(Number);
-                const newStart = DateTime.fromMillis(rangeStart)
-                  .set({ hour: h, minute: m })
-                  .toMillis();
-                setSelectedTimeRange([newStart, rangeEnd]);
-              }}
-            />
-            Start Time (TAI)
-          </Label>
-          <Label className="flex flex-col gap-4">
-            <Input
-              type="time"
-              id="end-time-picker"
-              step="60"
-              lang="en-GB"
-              inputMode="numeric"
-              pattern="[0-9]{2}:[0-9]{2}"
-              className="max-w-[100px] bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
-              value={DateTime.fromMillis(rangeEnd).toFormat("HH:mm")}
-              onChange={(e) => {
-                const [h, m] = e.target.value.split(":").map(Number);
-                const newEnd = DateTime.fromMillis(rangeEnd)
-                  .set({ hour: h, minute: m })
-                  .toMillis();
-                setSelectedTimeRange([rangeStart, newEnd]);
-              }}
-            />
-            End Time (TAI)
-          </Label>
-        </div>
+        {dataLogLoading || almanacLoading ? (
+          <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
+        ) : (
+          <div className="flex gap-24 justify-center text-white">
+            <Label className="flex flex-col gap-4">
+              <Input
+                type="time" // this is browser dependent and behaves differently in different browsers
+                id="start-time-picker"
+                step="60"
+                lang="en-GB"
+                inputMode="numeric"
+                pattern="[0-9]{2}:[0-9]{2}"
+                className="max-w-[100px] bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+                value={DateTime.fromMillis(rangeStart).toFormat("HH:mm")}
+                onChange={(e) => {
+                  const [h, m] = e.target.value.split(":").map(Number);
+                  const newStart = DateTime.fromMillis(rangeStart)
+                    .set({ hour: h, minute: m })
+                    .toMillis();
+                  setSelectedTimeRange([newStart, rangeEnd]);
+                }}
+              />
+              Start Time (TAI)
+            </Label>
+            <Label className="flex flex-col gap-4">
+              <Input
+                type="time"
+                id="end-time-picker"
+                step="60"
+                lang="en-GB"
+                inputMode="numeric"
+                pattern="[0-9]{2}:[0-9]{2}"
+                className="max-w-[100px] bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+                value={DateTime.fromMillis(rangeEnd).toFormat("HH:mm")}
+                onChange={(e) => {
+                  const [h, m] = e.target.value.split(":").map(Number);
+                  const newEnd = DateTime.fromMillis(rangeEnd)
+                    .set({ hour: h, minute: m })
+                    .toMillis();
+                  setSelectedTimeRange([rangeStart, newEnd]);
+                }}
+              />
+              End Time (TAI)
+            </Label>
+          </div>
+        )}
 
         {/* Plots */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <ObservingDataChart
-            title="Seeing (PSF)"
-            dataKey="psf median"
-            data={filteredChartData}
-            preferredYDomain={[0.6, 1.8]}
-          />
-          <ObservingDataChart
-            title="Photometric Zero Points"
-            dataKey="zero point median"
-            data={filteredChartData}
-            preferredYDomain={[30, 36]}
-          />
-          <ObservingDataChart
-            title="Airmass"
-            dataKey="airmass"
-            data={filteredChartData}
-          />
-          <ObservingDataChart
-            title="Sky Brightness"
-            dataKey="sky bg median"
-            data={filteredChartData}
-          />
+          {dataLogLoading || almanacLoading ? (
+            <>
+              {Array(4)
+                .fill(true)
+                .map((_, i) => (
+                  <Skeleton
+                    key={i}
+                    className="w-full h-80 bg-stone-700 rounded-md"
+                  />
+                ))}
+            </>
+          ) : (
+            <>
+              <ObservingDataChart
+                title="Seeing (PSF)"
+                dataKey="psf median"
+                data={filteredChartData}
+                preferredYDomain={[0.6, 1.8]}
+              />
+              <ObservingDataChart
+                title="Photometric Zero Points"
+                dataKey="zero point median"
+                data={filteredChartData}
+                preferredYDomain={[30, 36]}
+              />
+              <ObservingDataChart
+                title="Airmass"
+                dataKey="airmass"
+                data={filteredChartData}
+              />
+              <ObservingDataChart
+                title="Sky Brightness"
+                dataKey="sky bg median"
+                data={filteredChartData}
+              />
+            </>
+          )}
         </div>
       </div>
       <Toaster expand={true} richColors closeButton />
