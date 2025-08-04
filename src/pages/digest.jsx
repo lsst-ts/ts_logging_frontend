@@ -26,7 +26,6 @@ import JiraTicketsTable from "@/components/jira-tickets-table";
 import { useSearch } from "@tanstack/react-router";
 import { TELESCOPES } from "@/components/parameters";
 import ObservingConditionsApplet from "@/components/ObservingConditionsApplet";
-import { DateTime } from "luxon";
 
 export default function Digest() {
   const { startDayobs, endDayobs, telescope } = useSearch({
@@ -250,6 +249,12 @@ export default function Digest() {
         {/* Applets */}
         <div className="flex flex-col gap-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <ObservingConditionsApplet
+              exposuresLoading={exposuresLoading}
+              exposureFields={exposureFields}
+              almanacLoading={almanacLoading}
+              almanacInfo={almanacInfo}
+            />
             <AppletExposures
               exposureFields={exposureFields}
               exposureCount={exposureCount}
@@ -257,12 +262,6 @@ export default function Digest() {
               flags={flags}
               exposuresLoading={exposuresLoading}
               flagsLoading={flagsLoading}
-            />
-            <ObservingConditionsApplet
-              exposuresLoading={exposuresLoading}
-              exposureFields={exposureFields}
-              almanacLoading={almanacLoading}
-              almanacInfo={almanacInfo}
             />
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

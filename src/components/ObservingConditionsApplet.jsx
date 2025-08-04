@@ -15,10 +15,7 @@ import {
   YAxis,
   Scatter,
   Line,
-  Tooltip,
-  ResponsiveContainer,
   ReferenceLine,
-  ZAxis,
   ReferenceArea,
 } from "recharts";
 import { DateTime } from "luxon";
@@ -32,11 +29,18 @@ import {
   AsteriskShape,
 } from "./plotDotShapes";
 
+import { DEFAULT_PIXEL_SCALE_MEDIAN, PSF_SIGMA_FACTOR } from "@/utils/utils";
+
 // Constants for gap detection
 const GAP_THRESHOLD = 5 * 60 * 1000;
 const GAP_MAX_THRESHOLD = 60 * 60 * 1000;
+const ISO_DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
 const CustomTooltip = ({ active, payload, label }) => {
+  const variableTitles = {
+    psf_median: "PSF Seeing",
+    zero_point_median: "Zero Point Median",
+  };
   // Check if the tooltip is active and has payload data
   if (active && payload && payload.length) {
     const uniqueData = new Map();
@@ -45,8 +49,7 @@ const CustomTooltip = ({ active, payload, label }) => {
     payload.forEach((entry) => {
       if (entry.value !== null && entry.value !== undefined) {
         uniqueData.set(entry.dataKey, {
-          name:
-            entry.dataKey === "psf_median" ? "PSF Seeing" : "Zero Point Median",
+          name: variableTitles[entry.dataKey],
           value:
             typeof entry.value === "number"
               ? entry.value.toFixed(2)
@@ -64,10 +67,15 @@ const CustomTooltip = ({ active, payload, label }) => {
     });
     return (
       <div className="bg-white text-black text-xs p-2 border border-white rounded text-black font-bold mb-1">
-        <p>{DateTime.fromMillis(label).toFormat("yyyy-MM-dd HH:mm:ss")}</p>
+        <p>
+          Obs Start:{" "}
+          <span className="font-light">
+            {DateTime.fromMillis(label).toFormat(ISO_DATETIME_FORMAT)}
+          </span>
+        </p>
         {Array.from(uniqueData.values()).map((item, index) => (
           <p key={index}>
-            {item.name}: {item.value}
+            {item.name}: <span className="font-light">{item.value}</span>
           </p>
         ))}
       </div>
@@ -166,18 +174,21 @@ function ObservingConditionsApplet({
     }
     // calculate psf_median from psf_sigma_median and pixel_scale_median
     const psfSigma = entry["psf_sigma_median"];
-    const pixelScale = entry["pixel_scale_median"]
-      ? entry["pixel_scale_median"]
-      : 0.2;
-    const psf_median = psfSigma ? psfSigma * 2.355 * pixelScale : null;
+    const pixelScale =
+      entry["pixel_scale_median"] ?? DEFAULT_PIXEL_SCALE_MEDIAN;
+    const psf_median = psfSigma
+      ? psfSigma * PSF_SIGMA_FACTOR * pixelScale
+      : null;
     return { ...entry, obs_start_dt, psf_median };
   });
 
   // Filter out entries without obs_start_dt and sort by obs_start_dt
   // to ensure the data is in chronological order and omit crossing lines
   // between different nights/bands
+  const isValidNumber = (value) => typeof value === "number" && !isNaN(value);
+
   const chartData = data
-    .filter((d) => typeof d.obs_start_dt === "number" && !isNaN(d.obs_start_dt))
+    .filter((d) => isValidNumber(d.obs_start_dt))
     .sort((a, b) => a.obs_start_dt - b.obs_start_dt);
 
   // retrieve twilight times from almanacInfo
@@ -186,20 +197,18 @@ function ObservingConditionsApplet({
     .map((dayobsAlm) => {
       const eve = DateTime.fromFormat(
         dayobsAlm.twilight_evening,
-        "yyyy-MM-dd HH:mm:ss",
+        ISO_DATETIME_FORMAT,
       ).toMillis();
       const mor = DateTime.fromFormat(
         dayobsAlm.twilight_morning,
-        "yyyy-MM-dd HH:mm:ss",
+        ISO_DATETIME_FORMAT,
       ).toMillis();
       return [eve, mor];
     })
     .flat();
 
   // Filter out invalid observing times
-  const xVals = chartData
-    .map((d) => d.obs_start_dt)
-    .filter((v) => typeof v === "number" && !isNaN(v));
+  const xVals = chartData.map((d) => d.obs_start_dt).filter(isValidNumber);
   // add twilight values to xVals to make sure they are included in the chart
   const allXVals = [...xVals, ...twilightValues];
   // Calculate min and max for x-axis
@@ -209,7 +218,7 @@ function ObservingConditionsApplet({
   // Calculate min and max for y-axis (zero point median)
   const zeroPointVals = chartData
     .map((d) => d.zero_point_median)
-    .filter((v) => typeof v === "number" && !isNaN(v));
+    .filter(isValidNumber);
   // move the minimum value down by 5 for better visibility
   const zeroPointMedianMin = zeroPointVals.length
     ? Math.min(...zeroPointVals) - 5
@@ -217,7 +226,7 @@ function ObservingConditionsApplet({
 
   // Generate evenly spaced ticks between xMin and xMax
   let xTicks = [];
-  if (typeof xMin === "number" && typeof xMax === "number" && xMax > xMin) {
+  if (isValidNumber(xMin) && isValidNumber(xMax) && xMax > xMin) {
     const step = (xMax - xMin) / 9;
     for (let i = 0; i < 10; i++) {
       xTicks.push(Math.round(xMin + i * step));
@@ -321,7 +330,7 @@ function ObservingConditionsApplet({
                     }
                     tick={{ fill: "white" }}
                     label={{
-                      value: "Time (TAI)",
+                      value: "Observation Start Time (TAI)",
                       position: "bottom",
                       fill: "white",
                       dy: -10,
@@ -333,7 +342,7 @@ function ObservingConditionsApplet({
                     yAxisId="left"
                     tick={{ fill: "white" }}
                     domain={["auto", "auto"]}
-                    tickFormatter={(tick) => Number(tick).toFixed(2)}
+                    tickFormatter={(tick) => Number(tick).toFixed(1)}
                     label={{
                       value: "PSF Seeing (arcsec)",
                       angle: -90,
@@ -360,6 +369,18 @@ function ObservingConditionsApplet({
                     }}
                     width={50}
                   />
+                  /* Shutter closed areas */
+                  {gapAreas.map((gap, i) => (
+                    <ReferenceArea
+                      key={`gap-${i}`}
+                      x1={gap.start}
+                      x2={gap.end}
+                      yAxisId="left"
+                      strokeOpacity={0}
+                      fill="#147570ff"
+                      fillOpacity={0.4}
+                    />
+                  ))}
                   /* twilight reference lines */
                   {twilightValues.map((twi, i) =>
                     typeof twi === "number" &&
@@ -489,17 +510,6 @@ function ObservingConditionsApplet({
                     data={chartData}
                     isAnimationActive={false}
                   />
-                  {gapAreas.map((gap, i) => (
-                    <ReferenceArea
-                      key={`gap-${i}`}
-                      x1={gap.start}
-                      x2={gap.end}
-                      yAxisId="left"
-                      strokeOpacity={0}
-                      fill="#147570ff"
-                      fillOpacity={0.5}
-                    />
-                  ))}
                   <ChartLegend
                     layout={"vertical"}
                     verticalAlign={"middle"}

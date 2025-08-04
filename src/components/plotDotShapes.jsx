@@ -1,4 +1,6 @@
-const XShape = (props) => {
+import { memo } from "react";
+
+const XShape = memo((props) => {
   const { cx, cy, fill } = props;
   const size = 1.5;
   if (cx < size || cy < size) return null;
@@ -23,9 +25,9 @@ const XShape = (props) => {
       />
     </g>
   );
-};
+});
 
-const TriangleShape = (props) => {
+const TriangleShape = memo((props) => {
   const { cx, cy, fill = "#2af5ff", r = 2 } = props;
   if (typeof cx !== "number" || typeof cy !== "number") return null;
   return (
@@ -40,9 +42,9 @@ const TriangleShape = (props) => {
       strokeWidth={0.8}
     />
   );
-};
+});
 
-const FlippedTriangleShape = (props) => {
+const FlippedTriangleShape = memo((props) => {
   const { cx, cy, fill = "#a7f9c1", r = 2 } = props;
   if (typeof cx !== "number" || typeof cy !== "number") return null;
   return (
@@ -57,9 +59,9 @@ const FlippedTriangleShape = (props) => {
       strokeWidth={0.8}
     />
   );
-};
+});
 
-const AsteriskShape = (props) => {
+const AsteriskShape = memo((props) => {
   const { cx, cy, fill = "#fdc900", r = 4 } = props;
   if (typeof cx !== "number" || typeof cy !== "number") return null;
   const lines = [];
@@ -83,9 +85,9 @@ const AsteriskShape = (props) => {
     );
   }
   return <g>{lines}</g>;
-};
+});
 
-const SquareShape = (props) => {
+const SquareShape = memo((props) => {
   const { cx, cy, fill = "#ff7e00", r = 2 } = props;
   if (typeof cx !== "number" || typeof cy !== "number") return null;
   const size = r;
@@ -101,9 +103,9 @@ const SquareShape = (props) => {
       rx={0}
     />
   );
-};
+});
 
-const StarShape = (props) => {
+const StarShape = memo((props) => {
   const { cx, cy, fill = "#30c39f", r = 4 } = props;
   if (typeof cx !== "number" || typeof cy !== "number") return null;
   const spikes = 5;
@@ -124,7 +126,7 @@ const StarShape = (props) => {
   }
   path += "Z";
   return <path d={path} fill={fill} stroke={fill} strokeWidth={0.8} />;
-};
+});
 
 export {
   XShape,
