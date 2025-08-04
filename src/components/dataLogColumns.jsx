@@ -248,7 +248,7 @@ export const dataLogColumns = [
     filterType: "number-range",
     meta: {
       tooltip:
-        "Atmospheric seeing (arcesc) as measured by external DIMM (FWHM).",
+        "Atmospheric seeing (arcsec) as measured by external DIMM (FWHM).",
     },
   }),
   // psf sigma median * 2.355 * [pixelScale or 2.0]
