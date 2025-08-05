@@ -66,16 +66,16 @@ const CustomTooltip = ({ active, payload, label }) => {
       color: "#ffffff",
     });
     return (
-      <div className="bg-white text-black text-xs p-2 border border-white rounded text-black font-bold mb-1">
+      <div className="bg-white text-black text-xs p-2 border border-white rounded text-black font-light mb-1">
         <p>
           Obs Start:{" "}
-          <span className="font-light">
+          <span className="font-bold">
             {DateTime.fromMillis(label).toFormat(ISO_DATETIME_FORMAT)}
           </span>
         </p>
         {Array.from(uniqueData.values()).map((item, index) => (
           <p key={index}>
-            {item.name}: <span className="font-light">{item.value}</span>
+            {item.name}: <span className="font-bold">{item.value}</span>
           </p>
         ))}
       </div>
@@ -324,7 +324,38 @@ function ObservingConditionsApplet({
               <img src={InfoIcon} />
             </PopoverTrigger>
             <PopoverContent className="bg-black text-white text-sm border-yellow-700 w-[300px]">
-              This applet displays a summary of the observing conditions.
+              This chart visualizes Zero Point Median and PSF Seeing over the
+              selected dayobs range. It uses the following data columns from
+              ConsDB <code className="font-bold uppercase">exposure</code> and{" "}
+              <code className="font-bold uppercase">visit1_quicklook</code>{" "}
+              tables:
+              <br />
+              <br />
+              <ul>
+                <li>
+                  -{" "}
+                  <code className="font-bold uppercase">zero_point_median</code>{" "}
+                  → for zero points, filtered by{" "}
+                  <code className="font-bold uppercase">band</code>
+                </li>
+                <li>
+                  -{" "}
+                  <code className="font-bold uppercase">psf_sigma_median</code>{" "}
+                  * 2.355 * [
+                  <code className="font-bold uppercase">
+                    pixel_scale_median
+                  </code>{" "}
+                  or 0.2] → to calculate seeing
+                </li>
+                <li>
+                  - <code className="font-bold uppercase">obs_start</code> → for
+                  time axis and detecting <strong>nighttime</strong> gaps (
+                  <strong>> 5min</strong>)
+                </li>
+              </ul>
+              <br />
+              Twilight periods (<strong>18 degree</strong>) are marked with blue
+              dashed lines.
             </PopoverContent>
           </Popover>
         </div>
