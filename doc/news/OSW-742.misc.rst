@@ -1,0 +1,1 @@
+Data Log default column visibility, ordering and sorting updates.

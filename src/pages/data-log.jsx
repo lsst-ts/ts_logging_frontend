@@ -14,6 +14,8 @@ import {
   getDatetimeFromDayobsStr,
   mergeDataLogSources,
   DEFAULT_EXTERNAL_INSTANCE_URL,
+  DEFAULT_PIXEL_SCALE_MEDIAN,
+  PSF_SIGMA_FACTOR,
 } from "@/utils/utils";
 
 function DataLog() {
@@ -99,15 +101,21 @@ function DataLog() {
 
         // Merge the two data sources
         // and apply conversion to required row(s)
-        const mergedData = mergeDataLogSources(dataLog, exposureLogData).map(
-          (entry) => {
-            const psf = parseFloat(entry["psf sigma median"]);
+        const mergedData = mergeDataLogSources(dataLog, exposureLogData)
+          .map((entry) => {
+            const psfSigma = parseFloat(entry["psf sigma median"]);
+            const pixelScale = !isNaN(entry.pixel_scale_median)
+              ? entry.pixel_scale_median
+              : DEFAULT_PIXEL_SCALE_MEDIAN;
+
             return {
               ...entry,
-              "psf median": !isNaN(psf) ? psf * 2.355 : null,
+              "psf median": !isNaN(psfSigma)
+                ? psfSigma * PSF_SIGMA_FACTOR * pixelScale
+                : null,
             };
-          },
-        );
+          })
+          .sort((a, b) => Number(b["exposure id"]) - Number(a["exposure id"]));
 
         // Set the merged data to state
         setDataLogEntries(mergedData);
