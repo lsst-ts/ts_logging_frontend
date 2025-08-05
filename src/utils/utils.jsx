@@ -3,6 +3,9 @@ import { DateTime } from "luxon";
 export const DEFAULT_EXTERNAL_INSTANCE_URL =
   "https://usdf-rsp.slac.stanford.edu";
 
+const DEFAULT_PIXEL_SCALE_MEDIAN = 0.2; // default median pixel scale in arcsec/pixel
+const PSF_SIGMA_FACTOR = 2.355; // factor for going from sigma (σ) to FWHM (2 sqrt(2 ln(2)))
+
 /**
  * Calculates the efficiency of night hours usage, accounting for exposure time and weather loss.
  *
@@ -246,4 +249,6 @@ export {
   mergeDataLogSources,
   getRubinTVUrl,
   buildNavItemUrl,
+  DEFAULT_PIXEL_SCALE_MEDIAN,
+  PSF_SIGMA_FACTOR,
 };
