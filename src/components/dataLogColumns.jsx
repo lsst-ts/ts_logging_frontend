@@ -1,6 +1,10 @@
 import { createColumnHelper } from "@tanstack/react-table";
 import RubinTVLink from "@/components/RubinTVLink";
-import { formatCellValue } from "@/utils/utils";
+import {
+  formatCellValue,
+  DEFAULT_PIXEL_SCALE_MEDIAN,
+  PSF_SIGMA_FACTOR,
+} from "@/utils/utils";
 
 const columnHelper = createColumnHelper();
 
@@ -252,6 +256,7 @@ export const dataLogColumns = [
     },
   }),
   // psf sigma median * 2.355 * [pixelScale or 0.2]
+  // conversion is sigma->FWHM and from unit:pixel -> unit:arcsec
   columnHelper.accessor("psf median", {
     id: "psf_median",
     header: "Median PSF",
@@ -260,7 +265,11 @@ export const dataLogColumns = [
     filterType: "number-range",
     meta: {
       tooltip:
-        "Median PSF FWHM (arcsec): PSF sigma (median across all detectors) * 2.355 * [pixel scale or 0.2 when pixel scale is NaN]",
+        "Median PSF FWHM (arcsec): PSF sigma (median across all detectors) * " +
+        PSF_SIGMA_FACTOR +
+        " * [pixel scale or " +
+        DEFAULT_PIXEL_SCALE_MEDIAN +
+        " when pixel scale is NaN]",
     },
   }),
   columnHelper.accessor("sky bg median", {

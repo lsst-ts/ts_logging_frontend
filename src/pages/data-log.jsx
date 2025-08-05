@@ -14,6 +14,8 @@ import {
   getDatetimeFromDayobsStr,
   mergeDataLogSources,
   DEFAULT_EXTERNAL_INSTANCE_URL,
+  DEFAULT_PIXEL_SCALE_MEDIAN,
+  PSF_SIGMA_FACTOR,
 } from "@/utils/utils";
 
 function DataLog() {
@@ -104,12 +106,12 @@ function DataLog() {
             const psfSigma = parseFloat(entry["psf sigma median"]);
             const pixelScale = !isNaN(entry.pixel_scale_median)
               ? entry.pixel_scale_median
-              : 0.2;
+              : DEFAULT_PIXEL_SCALE_MEDIAN;
 
             return {
               ...entry,
               "psf median": !isNaN(psfSigma)
-                ? psfSigma * 2.355 * pixelScale
+                ? psfSigma * PSF_SIGMA_FACTOR * pixelScale
                 : null,
             };
           })
