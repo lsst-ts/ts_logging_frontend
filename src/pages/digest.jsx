@@ -25,6 +25,7 @@ import DialogMetricsCard from "@/components/dialog-metrics-card";
 import JiraTicketsTable from "@/components/jira-tickets-table";
 import { useSearch } from "@tanstack/react-router";
 import { TELESCOPES } from "@/components/parameters";
+import ObservingConditionsApplet from "@/components/ObservingConditionsApplet";
 
 export default function Digest() {
   const { startDayobs, endDayobs, telescope } = useSearch({
@@ -49,6 +50,7 @@ export default function Digest() {
   const [jiraLoading, setJiraLoading] = useState(true);
 
   const [flagsLoading, setFlagsLoading] = useState(true);
+  const [almanacInfo, setAlmanacInfo] = useState([]);
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -100,7 +102,9 @@ export default function Digest() {
       });
 
     fetchAlmanac(startDayobs, queryEndDayobs, abortController)
-      .then((hours) => {
+      .then((almanac) => {
+        setAlmanacInfo(almanac);
+        const hours = almanac.reduce((acc, day) => acc + day.night_hours, 0);
         setNightHours(hours);
       })
       .catch((err) => {
@@ -245,6 +249,12 @@ export default function Digest() {
         {/* Applets */}
         <div className="flex flex-col gap-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <ObservingConditionsApplet
+              exposuresLoading={exposuresLoading}
+              exposureFields={exposureFields}
+              almanacLoading={almanacLoading}
+              almanacInfo={almanacInfo}
+            />
             <AppletExposures
               exposureFields={exposureFields}
               exposureCount={exposureCount}
@@ -253,7 +263,6 @@ export default function Digest() {
               exposuresLoading={exposuresLoading}
               flagsLoading={flagsLoading}
             />
-            <Applet />
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <Applet />

@@ -42,9 +42,67 @@ import {
   matchValueOrInList,
 } from "@/components/dataLogColumns";
 
+const DEFAULT_COLUMN_VISIBILITY = {
+  RubinTVLink: true,
+  exposure_id: true,
+  exposure_name: false,
+  seq_num: false,
+  day_obs: false,
+  science_program: true,
+  observation_reason: true,
+  img_type: true,
+  target_name: true,
+  obs_start: true,
+  exp_time: true,
+  exposure_flag: true,
+  message_text: true,
+  s_ra: true,
+  s_dec: true,
+  altitude: true,
+  azimuth: true,
+  sky_rotation: true,
+  airmass: true,
+  dimm_seeing: true,
+  psf_median: true,
+  sky_bg_median: true,
+  zero_point_median: true,
+  high_snr_source_count_median: true,
+  air_temp: true,
+};
+
+const DEFAULT_COLUMN_ORDER = [
+  "RubinTVLink",
+  "exposure_id",
+  "exposure_name",
+  "day_obs",
+  "seq_num",
+  "science_program",
+  "observation_reason",
+  "img_type",
+  "target_name",
+  "obs_start",
+  "exp_time",
+  "exposure_flag",
+  "message_text",
+  "s_ra",
+  "s_dec",
+  "altitude",
+  "azimuth",
+  "sky_rotation",
+  "airmass",
+  "dimm_seeing",
+  "psf_median",
+  "sky_bg_median",
+  "zero_point_median",
+  "high_snr_source_count_median",
+  "air_temp",
+];
+
 function DataLogTable({ data, dataLogLoading, tableFilters }) {
-  const [columnVisibility, setColumnVisibility] = useState({});
-  const [columnOrder, setColumnOrder] = useState([]);
+  const [columnVisibility, setColumnVisibility] = useState(
+    DEFAULT_COLUMN_VISIBILITY,
+  );
+  const [columnOrder, setColumnOrder] = useState(DEFAULT_COLUMN_ORDER);
   const [sorting, setSorting] = useState([]);
   const [grouping, setGrouping] = useState([]);
   const [expanded, setExpanded] = useState({});
@@ -69,8 +127,8 @@ function DataLogTable({ data, dataLogLoading, tableFilters }) {
 
   // Reset function
   const resetTable = () => {
-    setColumnVisibility({});
-    setColumnOrder([]);
+    setColumnVisibility(DEFAULT_COLUMN_VISIBILITY);
+    setColumnOrder(DEFAULT_COLUMN_ORDER);
     setSorting([]);
     setGrouping([]);
     setColumnFilters([]);

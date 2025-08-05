@@ -1,5 +1,11 @@
 import { DateTime } from "luxon";
 
+export const DEFAULT_EXTERNAL_INSTANCE_URL =
+  "https://usdf-rsp.slac.stanford.edu";
+
+const DEFAULT_PIXEL_SCALE_MEDIAN = 0.2; // default median pixel scale in arcsec/pixel
+const PSF_SIGMA_FACTOR = 2.355; // factor for going from sigma (σ) to FWHM (2 sqrt(2 ln(2)))
+
 /**
  * Calculates the efficiency of night hours usage, accounting for exposure time and weather loss.
  *
@@ -178,10 +184,12 @@ const mergeDataLogSources = (consDbRows, exposureLogRows) => {
 const getRubinTVUrl = (dayObs, seqNum) => {
   if (!dayObs || !seqNum) return null;
 
-  const baseUrl = import.meta.env.VITE_EXTERNAL_INSTANCE_URL;
-  if (!baseUrl) {
-    console.error("VITE_EXTERNAL_INSTANCE_URL is not defined");
-    return null;
+  // Local development URL
+  let baseUrl = DEFAULT_EXTERNAL_INSTANCE_URL;
+
+  // Production URL
+  if (window.location.host !== "localhost") {
+    baseUrl = window.location.origin;
   }
 
   const dateStr = getDatetimeFromDayobsStr(`${dayObs}`).toFormat("yyyy-MM-dd");
@@ -241,4 +249,6 @@ export {
   mergeDataLogSources,
   getRubinTVUrl,
   buildNavItemUrl,
+  DEFAULT_PIXEL_SCALE_MEDIAN,
+  PSF_SIGMA_FACTOR,
 };

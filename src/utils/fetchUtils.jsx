@@ -90,7 +90,7 @@ const fetchAlmanac = async (start, end, abortController) => {
   const url = `${backendLocation}/almanac?dayObsStart=${start}&dayObsEnd=${end}`;
   try {
     const data = await fetchData(url, abortController);
-    return data.night_hours;
+    return data.almanac_info;
   } catch (err) {
     if (err.name !== "AbortError") {
       console.error("Error fetching Almanac:", err);

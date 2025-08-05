@@ -10,7 +10,13 @@ import {
   fetchDataLogEntriesFromConsDB,
   fetchDataLogEntriesFromExposureLog,
 } from "@/utils/fetchUtils";
-import { getDatetimeFromDayobsStr, mergeDataLogSources } from "@/utils/utils";
+import {
+  getDatetimeFromDayobsStr,
+  mergeDataLogSources,
+  DEFAULT_EXTERNAL_INSTANCE_URL,
+  DEFAULT_PIXEL_SCALE_MEDIAN,
+  PSF_SIGMA_FACTOR,
+} from "@/utils/utils";
 
 function DataLog() {
   // Routing and URL params
@@ -32,7 +38,7 @@ function DataLog() {
   const instrument = TELESCOPES[telescope];
 
   // For display on page
-  const baseUrl = import.meta.env.VITE_EXTERNAL_INSTANCE_URL;
+  const baseUrl = DEFAULT_EXTERNAL_INSTANCE_URL;
   const instrumentName = telescope;
   const dateRangeString =
     startDayobs === endDayobs
@@ -95,15 +101,21 @@ function DataLog() {
 
         // Merge the two data sources
         // and apply conversion to required row(s)
-        const mergedData = mergeDataLogSources(dataLog, exposureLogData).map(
-          (entry) => {
-            const psf = parseFloat(entry["psf sigma median"]);
+        const mergedData = mergeDataLogSources(dataLog, exposureLogData)
+          .map((entry) => {
+            const psfSigma = parseFloat(entry["psf sigma median"]);
+            const pixelScale = !isNaN(entry.pixel_scale_median)
+              ? entry.pixel_scale_median
+              : DEFAULT_PIXEL_SCALE_MEDIAN;
+
             return {
               ...entry,
-              "psf median": !isNaN(psf) ? psf * 2.355 : null,
+              "psf median": !isNaN(psfSigma)
+                ? psfSigma * PSF_SIGMA_FACTOR * pixelScale
+                : null,
             };
-          },
-        );
+          })
+          .sort((a, b) => Number(b["exposure id"]) - Number(a["exposure id"]));
 
         // Set the merged data to state
         setDataLogEntries(mergedData);
@@ -145,7 +157,7 @@ function DataLog() {
           <p>
             Please refer to the{" "}
             <a
-              href={`${baseUrl}/times-square/github/lsst-ts/ts_logging_and_reporting/ExposureDetail`}
+              href={`${baseUrl}/times-square/github/lsst-ts/ts_logging_and_reporting/ExposureDetail?instrument=LATISS`}
               className="underline text-blue-300 hover:text-blue-400"
               target="_blank"
               rel="noopener noreferrer"
@@ -182,10 +194,12 @@ function DataLog() {
                 {dataLogEntries.length} exposures returned for {instrumentName}{" "}
                 {dateRangeString}.
               </p>
-              <p>
-                <span className="font-bold">Note:</span> Filters persist across
-                queries. If you don't see data as expected, try resetting the
-                table.
+              <p className="max-w-2xl">
+                <span className="font-bold">Note:</span> Table customisations
+                (such as filtering, sorting, column hiding, and grouping) do not
+                persist across page navigations. However, they will persist
+                while querying different dates or date ranges on this page. If
+                data doesn't appear as expected, try resetting the table.
               </p>
             </>
           )}
