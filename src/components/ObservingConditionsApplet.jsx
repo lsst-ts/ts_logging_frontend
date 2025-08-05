@@ -33,7 +33,6 @@ import { DEFAULT_PIXEL_SCALE_MEDIAN, PSF_SIGMA_FACTOR } from "@/utils/utils";
 
 // Constants for gap detection
 const GAP_THRESHOLD = 5 * 60 * 1000;
-const GAP_MAX_THRESHOLD = 60 * 60 * 1000;
 const ISO_DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
 const CustomTooltip = ({ active, payload, label }) => {
@@ -256,27 +255,47 @@ function ObservingConditionsApplet({
     zero_point_median: { label: "Zero Point Median", color: "#3b82f6" },
   };
 
+  const groupedByDayobs = useMemo(
+    () => Object.groupBy(chartData, (exp) => exp.day_obs),
+    [chartData],
+  );
+
+  const getDayobsAlmanac = (dayobs) => {
+    for (const dayObsAlm of almanacInfo) {
+      if (parseInt(dayObsAlm.dayobs) === parseInt(dayobs) + 1) return dayObsAlm;
+    }
+    return null;
+  };
   // Calculate open/close shutter time or observing gaps
   const gapAreas = useMemo(() => {
     const gaps = [];
-    for (let i = 0; i < chartData.length - 1; i++) {
-      const curr = chartData[i];
-      const next = chartData[i + 1];
-      const delta = next.obs_start_dt - curr.obs_start_dt;
+    for (const [dayobs, exps] of Object.entries(groupedByDayobs)) {
+      for (let i = 0; i < exps.length; i++) {
+        const curr = exps[i].obs_start_dt;
+        // set the next time to the end of the dayobs almanac
+        // if it is the last exposure of the dayobs
+        const next =
+          i === exps.length - 1
+            ? DateTime.fromFormat(
+                getDayobsAlmanac(dayobs).twilight_morning,
+                ISO_DATETIME_FORMAT,
+              ).toMillis()
+            : exps[i + 1].obs_start_dt;
 
-      if (GAP_THRESHOLD < delta && delta < GAP_MAX_THRESHOLD) {
-        gaps.push({
-          start: curr.obs_start_dt,
-          end: next.obs_start_dt,
-        });
+        const delta = next - curr;
+        if (GAP_THRESHOLD < delta) {
+          gaps.push({
+            start: curr,
+            end: next,
+          });
+        }
       }
     }
     return gaps;
-  }, [chartData]);
+  }, [groupedByDayobs]);
 
   //group data by dayobs to handle multiple nights
   const groupedChartData = useMemo(() => {
-    const groupedByDayobs = Object.groupBy(chartData, (exp) => exp.day_obs);
     return Object.values(groupedByDayobs);
   }, [chartData]);
 
