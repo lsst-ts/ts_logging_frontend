@@ -1,3 +1,25 @@
+v0.7.0 (2025-08-05)
+===================
+
+New Features
+------------
+
+- Introduce Observing Conditions Applet in digest page (`OSW-646 <https://rubinobs.atlassian.net//browse/OSW-646>`_)
+
+
+Bug Fixes
+---------
+
+- Fix broken external links by setting USDF prod as util const. (`OSW-702 <https://rubinobs.atlassian.net//browse/OSW-702>`_)
+
+
+Other Changes and Additions
+---------------------------
+
+- Data Log default column visibility, ordering and sorting updates. (`OSW-742 <https://rubinobs.atlassian.net//browse/OSW-742>`_)
+- Update Data Log info text. (`OSW-750 <https://rubinobs.atlassian.net//browse/OSW-750>`_)
+
+
 v0.6.0 (2025-07-16)
 ===================
 
