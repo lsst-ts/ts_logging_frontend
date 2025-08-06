@@ -117,92 +117,86 @@ const renderCustomLegend = (props) => (
 
       <div className="w-full text-white mt-2 text-xxs">zero points</div>
       <div className="gap-1 p-1 pr-2 border border-white grid grid-cols-2">
-        <div className="flex items-center gap-1">
-          <svg
-            width="16"
-            height="16"
-            onMouseEnter={() =>
-              props.onMouseEnter({ dataKey: "zero_point_median_u" })
-            }
-            onMouseLeave={() =>
-              props.onMouseLeave({ dataKey: "zero_point_median_u" })
-            }
-          >
+        <div
+          className="flex items-center gap-1"
+          onMouseEnter={() =>
+            props.onMouseEnter({ dataKey: "zero_point_median_u" })
+          }
+          onMouseLeave={() =>
+            props.onMouseLeave({ dataKey: "zero_point_median_u" })
+          }
+        >
+          <svg width="16" height="16">
             <circle cx="8" cy="8" r="2" fill="#3eb7ff" />
           </svg>
           <span>u</span>
         </div>
-        <div className="flex items-center gap-1">
-          <svg
-            width="16"
-            height="16"
-            onMouseEnter={() =>
-              props.onMouseEnter({ dataKey: "zero_point_median_g" })
-            }
-            onMouseLeave={() =>
-              props.onMouseLeave({ dataKey: "zero_point_median_g" })
-            }
-          >
+        <div
+          className="flex items-center gap-1"
+          onMouseEnter={() =>
+            props.onMouseEnter({ dataKey: "zero_point_median_g" })
+          }
+          onMouseLeave={() =>
+            props.onMouseLeave({ dataKey: "zero_point_median_g" })
+          }
+        >
+          <svg width="16" height="16">
             <TriangleShape cx={8} cy={8} fill="#30c39f" r={2} />
           </svg>
           <span>g</span>
         </div>
-        <div className="flex items-center gap-1">
-          <svg
-            width="16"
-            height="16"
-            onMouseEnter={() =>
-              props.onMouseEnter({ dataKey: "zero_point_median_r" })
-            }
-            onMouseLeave={() =>
-              props.onMouseLeave({ dataKey: "zero_point_median_r" })
-            }
-          >
+        <div
+          className="flex items-center gap-1"
+          onMouseEnter={() =>
+            props.onMouseEnter({ dataKey: "zero_point_median_r" })
+          }
+          onMouseLeave={() =>
+            props.onMouseLeave({ dataKey: "zero_point_median_r" })
+          }
+        >
+          <svg width="16" height="16">
             <FlippedTriangleShape cx={8} cy={8} fill="#ff7e00" r={2} />
           </svg>
           <span>r</span>
         </div>
-        <div className="flex items-center gap-1">
-          <svg
-            width="16"
-            height="16"
-            onMouseEnter={() =>
-              props.onMouseEnter({ dataKey: "zero_point_median_i" })
-            }
-            onMouseLeave={() =>
-              props.onMouseLeave({ dataKey: "zero_point_median_i" })
-            }
-          >
+        <div
+          className="flex items-center gap-1"
+          onMouseEnter={() =>
+            props.onMouseEnter({ dataKey: "zero_point_median_i" })
+          }
+          onMouseLeave={() =>
+            props.onMouseLeave({ dataKey: "zero_point_median_i" })
+          }
+        >
+          <svg width="16" height="16">
             <SquareShape cx={8} cy={8} fill="#2af5ff" r={2} />
           </svg>
           <span>i</span>
         </div>
-        <div className="flex items-center gap-1">
-          <svg
-            width="16"
-            height="16"
-            onMouseEnter={() =>
-              props.onMouseEnter({ dataKey: "zero_point_median_z" })
-            }
-            onMouseLeave={() =>
-              props.onMouseLeave({ dataKey: "zero_point_median_z" })
-            }
-          >
+        <div
+          className="flex items-center gap-1"
+          onMouseEnter={() =>
+            props.onMouseEnter({ dataKey: "zero_point_median_z" })
+          }
+          onMouseLeave={() =>
+            props.onMouseLeave({ dataKey: "zero_point_median_z" })
+          }
+        >
+          <svg width="16" height="16">
             <StarShape cx={8} cy={8} fill="#a7f9c1" r={2} />
           </svg>
           <span>z</span>
         </div>
-        <div className="flex items-center gap-1">
-          <svg
-            width="16"
-            height="16"
-            onMouseEnter={() =>
-              props.onMouseEnter({ dataKey: "zero_point_median_y" })
-            }
-            onMouseLeave={() =>
-              props.onMouseLeave({ dataKey: "zero_point_median_y" })
-            }
-          >
+        <div
+          className="flex items-center gap-1"
+          onMouseEnter={() =>
+            props.onMouseEnter({ dataKey: "zero_point_median_y" })
+          }
+          onMouseLeave={() =>
+            props.onMouseLeave({ dataKey: "zero_point_median_y" })
+          }
+        >
+          <svg width="16" height="16">
             <AsteriskShape cx={8} cy={8} fill="#fdc900" r={2} />
           </svg>
           <span>y</span>
