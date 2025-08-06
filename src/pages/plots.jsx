@@ -39,6 +39,8 @@ import {
 } from "@/utils/fetchUtils";
 import { getDatetimeFromDayobsStr } from "@/utils/utils";
 
+import TimeWindowControls from "@/components/TimeWindowControls";
+
 // import offlineResponse from "@/assets/dataLog_Simonyi_20250722_20250723.json";
 
 // Small vertical lines to represent exposures in the timeline
@@ -469,7 +471,7 @@ function Plots() {
   const timelineEnd = chartData.at(-1)?.obs_start_dt ?? 0;
 
   // If no selection, use full range
-  const [rangeStart, rangeEnd] =
+  const [windowStart, windowEnd] =
     selectedTimeRange[0] && selectedTimeRange[1]
       ? selectedTimeRange
       : [timelineStart, timelineEnd];
@@ -477,7 +479,7 @@ function Plots() {
   // Filter chart data based on selected time range
   const filteredChartData = chartData.filter(
     (entry) =>
-      entry.obs_start_dt >= rangeStart && entry.obs_start_dt <= rangeEnd,
+      entry.obs_start_dt >= windowStart && entry.obs_start_dt <= windowEnd,
   );
 
   return (
@@ -523,182 +525,15 @@ function Plots() {
         {dataLogLoading || almanacLoading ? (
           <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
         ) : (
-          <div className="flex flex-row justify-between gap-8 text-white">
-            {/* Time Inputs */}
-            <div className="flex flex-row gap-4">
-              {/* Labels */}
-              <div className="flex flex-col gap-4">
-                <Label
-                  htmlFor="start-time-input"
-                  className="h-9 w-18 !items-left text-start"
-                >
-                  Start (TAI):
-                </Label>
-                <Label htmlFor="end-time-input" className="h-9 w-18 !text-left">
-                  End (TAI):
-                </Label>
-              </div>
-
-              {/* Time inputs */}
-              <div className="flex flex-col gap-4">
-                <Input
-                  type="time" // this is browser dependent and behaves differently in different browsers
-                  id="start-time-input"
-                  step="60"
-                  lang="en-GB"
-                  inputMode="numeric"
-                  pattern="[0-9]{2}:[0-9]{2}"
-                  className="max-w-[100px] bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
-                  value={DateTime.fromMillis(rangeStart).toFormat("HH:mm")}
-                  onChange={(e) => {
-                    const [h, m] = e.target.value.split(":").map(Number);
-                    const newStart = DateTime.fromMillis(rangeStart)
-                      .set({ hour: h, minute: m })
-                      .toMillis();
-                    setSelectedTimeRange([newStart, rangeEnd]);
-                  }}
-                />
-                <Input
-                  type="time"
-                  id="end-time-input"
-                  step="60"
-                  lang="en-GB"
-                  inputMode="numeric"
-                  pattern="[0-9]{2}:[0-9]{2}"
-                  className="max-w-[100px] bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
-                  value={DateTime.fromMillis(rangeEnd).toFormat("HH:mm")}
-                  onChange={(e) => {
-                    const [h, m] = e.target.value.split(":").map(Number);
-                    const newEnd = DateTime.fromMillis(rangeEnd)
-                      .set({ hour: h, minute: m })
-                      .toMillis();
-                    setSelectedTimeRange([rangeStart, newEnd]);
-                  }}
-                />
-              </div>
-
-              {/* Dayobs inputs */}
-              <div className="flex flex-col gap-4">
-                {/* Start dayobs */}
-                <Select
-                  aria-label="Start dayobs"
-                  // Get dayobs from TAI window start time
-                  value={DateTime.fromMillis(rangeStart)
-                    .minus({ hours: 12, seconds: 37 }) // TODO: Set TAI leap seconds as a utils const.
-                    .toFormat("yyyyLLdd")}
-                  onValueChange={(newDayobsStr) => {
-                    // Get new dayobs
-                    const dayobsStart = DateTime.fromFormat(
-                      newDayobsStr,
-                      "yyyyLLdd",
-                      {
-                        zone: "utc",
-                      },
-                    );
-
-                    // Get start time from window
-                    const [h, m] = DateTime.fromMillis(rangeStart, {
-                      zone: "utc",
-                    })
-                      .toFormat("HH:mm")
-                      .split(":")
-                      .map(Number);
-
-                    // Set new datetime
-                    // If in second half of dayobs -> set as next day
-                    const dayobsToDate =
-                      h < 12 ? dayobsStart.plus({ days: 1 }) : dayobsStart;
-                    const dt = dayobsToDate.set({ hour: h, minute: m });
-
-                    // Set window
-                    if (dt.isValid) {
-                      setSelectedTimeRange([dt.toMillis(), rangeEnd]);
-                    }
-                  }}
-                >
-                  <SelectTrigger
-                    id="start-dayobs-select"
-                    className="w-[120px] bg-white text-black justify-between font-normal shadow-[4px_4px_4px_0px_#3CAE3F] focus-visible:ring-4 focus-visible:ring-green-500/50"
-                  >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableDayobs.map((dayobs) => (
-                      <SelectItem key={dayobs} value={dayobs}>
-                        {dayobs}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {/* End dayobs */}
-                <Select
-                  aria-label="End dayobs"
-                  // Get dayobs from TAI window start time
-                  value={DateTime.fromMillis(rangeEnd)
-                    .minus({ hours: 12, seconds: 37 })
-                    .toFormat("yyyyLLdd")}
-                  onValueChange={(newDayobsStr) => {
-                    // Get new dayobs
-                    const dayobsEnd = DateTime.fromFormat(
-                      newDayobsStr,
-                      "yyyyLLdd",
-                      {
-                        zone: "utc",
-                      },
-                    );
-
-                    // Get end time from window
-                    const [h, m] = DateTime.fromMillis(rangeEnd, {
-                      zone: "utc",
-                    })
-                      .toFormat("HH:mm")
-                      .split(":")
-                      .map(Number);
-
-                    // Set new datetime
-                    // If in second half of dayobs -> set as next day
-                    const dayobsToDate =
-                      h < 12 ? dayobsEnd.plus({ days: 1 }) : dayobsEnd;
-                    const dt = dayobsToDate.set({ hour: h, minute: m });
-
-                    // Set window
-                    if (dt.isValid) {
-                      setSelectedTimeRange([rangeStart, dt.toMillis()]);
-                    }
-                  }}
-                >
-                  <SelectTrigger
-                    id="end-dayobs-select"
-                    className="w-[120px] bg-white text-black justify-between font-normal shadow-[4px_4px_4px_0px_#3CAE3F] focus-visible:ring-4 focus-visible:ring-green-500/50"
-                  >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableDayobs.map((dayobs) => (
-                      <SelectItem key={dayobs} value={dayobs}>
-                        {dayobs}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Reset Button */}
-            <Button
-              className="bg-white text-black w-30 h-10 font-light rounded-md shadow-[4px_4px_4px_0px_#3CAE3F] 
-                      flex justify-center items-center py-2 px-4 
-                      hover:shadow-[6px_6px_8px_0px_#3CAE3F] hover:scale-[1.02] hover:bg-white transition-all duration-200"
-              onClick={() => setSelectedTimeRange([timelineStart, timelineEnd])}
-              disabled={
-                selectedTimeRange[0] === timelineStart &&
-                selectedTimeRange[1] === timelineEnd
-              }
-            >
-              Reset Window
-            </Button>
-          </div>
+          <TimeWindowControls
+            windowStart={windowStart}
+            windowEnd={windowEnd}
+            selectedTimeRange={selectedTimeRange}
+            setSelectedTimeRange={setSelectedTimeRange}
+            availableDayobs={availableDayobs}
+            timelineStart={timelineStart}
+            timelineEnd={timelineEnd}
+          />
         )}
 
         {/* Plots */}
