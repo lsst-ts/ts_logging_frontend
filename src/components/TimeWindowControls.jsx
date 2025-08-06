@@ -20,7 +20,7 @@ export default function TimeWindowControls({
   timelineEnd,
 }) {
   return (
-    <div className="flex flex-row justify-between gap-8 text-white">
+    <div className="flex flex-row justify-between mt-4 gap-8 text-white">
       {/* Time Inputs */}
       <div className="flex flex-row gap-4">
         {/* Time Labels */}
