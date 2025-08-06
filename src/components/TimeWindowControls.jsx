@@ -23,7 +23,7 @@ export default function TimeWindowControls({
     <div className="flex flex-row justify-between gap-8 text-white">
       {/* Time Inputs */}
       <div className="flex flex-row gap-4">
-        {/* Labels */}
+        {/* Time Labels */}
         <div className="flex flex-col gap-4">
           <Label
             htmlFor="start-time-input"
@@ -74,7 +74,7 @@ export default function TimeWindowControls({
           />
         </div>
 
-        {/* Dayobs inputs */}
+        {/* Dayobs Labels */}
         <div className="flex flex-col gap-4">
           <Label
             htmlFor="start-dayobs-input"
@@ -89,6 +89,7 @@ export default function TimeWindowControls({
             End Dayobs:
           </Label>
         </div>
+        {/* Dayobs inputs */}
         <div className="flex flex-col gap-4">
           {/* Start dayobs */}
           <Select
