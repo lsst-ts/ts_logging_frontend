@@ -48,16 +48,16 @@ function DataLog() {
   // To pass url filter params to table
   const tableFilters = [];
   if (science_program?.length) {
-    tableFilters.push({ id: "science program", value: science_program });
+    tableFilters.push({ id: "science_program", value: science_program });
   }
   if (img_type?.length) {
-    tableFilters.push({ id: "img type", value: img_type });
+    tableFilters.push({ id: "img_type", value: img_type });
   }
   if (observation_reason?.length) {
-    tableFilters.push({ id: "observation reason", value: observation_reason });
+    tableFilters.push({ id: "observation_reason", value: observation_reason });
   }
   if (target_name?.length) {
-    tableFilters.push({ id: "target name", value: target_name });
+    tableFilters.push({ id: "target_name", value: target_name });
   }
 
   // Data
@@ -103,13 +103,21 @@ function DataLog() {
         // and apply conversion to required row(s)
         const mergedData = mergeDataLogSources(dataLog, exposureLogData)
           .map((entry) => {
+            // Replace spaces with underscores
+            const normalisedEntry = Object.fromEntries(
+              Object.entries(entry).map(([key, value]) => [
+                key.replace(/ /g, "_"),
+                value,
+              ]),
+            );
+
             const psfSigma = parseFloat(entry["psf sigma median"]);
             const pixelScale = !isNaN(entry.pixel_scale_median)
               ? entry.pixel_scale_median
               : DEFAULT_PIXEL_SCALE_MEDIAN;
 
             return {
-              ...entry,
+              ...normalisedEntry,
               "psf median": !isNaN(psfSigma)
                 ? psfSigma * PSF_SIGMA_FACTOR * pixelScale
                 : null,

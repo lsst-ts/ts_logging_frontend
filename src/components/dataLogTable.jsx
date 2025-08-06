@@ -121,7 +121,6 @@ function DataLogTable({ data, dataLogLoading, tableFilters }) {
         return [...remaining, ...tableFilters];
       });
       hasAppliedTableFilters.current = true;
-      console.log("Applied filters from URL:", tableFilters);
     }
   }, [tableFilters]);
 
