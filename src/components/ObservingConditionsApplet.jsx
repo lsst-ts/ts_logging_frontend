@@ -103,7 +103,7 @@ const renderCustomLegend = (props) => (
       </div>
       <div className="flex items-center gap-2">
         <span className="inline-block w-3 h-5 ml-1 mr-2 bg-teal-800 bg-opacity-90 border border-teal-900" />
-        shutter closed (> 5m)
+        shutter closed (&gt; 5m)
       </div>
 
       <div className="flex items-center gap-2">
@@ -143,7 +143,7 @@ const renderCustomLegend = (props) => (
               props.onMouseLeave({ dataKey: "zero_point_median_g" })
             }
           >
-            <StarShape cx={8} cy={8} fill="#30c39f" r={2} />
+            <TriangleShape cx={8} cy={8} fill="#30c39f" r={2} />
           </svg>
           <span>g</span>
         </div>
@@ -158,7 +158,7 @@ const renderCustomLegend = (props) => (
               props.onMouseLeave({ dataKey: "zero_point_median_r" })
             }
           >
-            <SquareShape cx={8} cy={8} fill="#ff7e00" r={2} />
+            <FlippedTriangleShape cx={8} cy={8} fill="#ff7e00" r={2} />
           </svg>
           <span>r</span>
         </div>
@@ -173,7 +173,7 @@ const renderCustomLegend = (props) => (
               props.onMouseLeave({ dataKey: "zero_point_median_i" })
             }
           >
-            <TriangleShape cx={8} cy={8} fill="#2af5ff" r={2} />
+            <SquareShape cx={8} cy={8} fill="#2af5ff" r={2} />
           </svg>
           <span>i</span>
         </div>
@@ -188,7 +188,7 @@ const renderCustomLegend = (props) => (
               props.onMouseLeave({ dataKey: "zero_point_median_z" })
             }
           >
-            <FlippedTriangleShape cx={8} cy={8} fill="#2af5ff" r={2} />
+            <StarShape cx={8} cy={8} fill="#a7f9c1" r={2} />
           </svg>
           <span>z</span>
         </div>
@@ -443,7 +443,7 @@ function ObservingConditionsApplet({
                 <li>
                   - <code className="font-bold uppercase">obs_start</code> → for
                   time axis and detecting <strong>nighttime</strong> gaps (
-                  <strong>> 5min</strong>)
+                  <strong>&gt; 5min</strong>)
                 </li>
               </ul>
               <br />
@@ -574,7 +574,7 @@ function ObservingConditionsApplet({
                     dot={(props) => {
                       const { key, ...rest } = props;
                       return (
-                        <StarShape
+                        <TriangleShape
                           key={key}
                           {...rest}
                           fill="#30c39f"
@@ -597,7 +597,7 @@ function ObservingConditionsApplet({
                     dot={(props) => {
                       const { key, ...rest } = props;
                       return (
-                        <SquareShape
+                        <FlippedTriangleShape
                           key={key}
                           {...rest}
                           fill="#ff7e00"
@@ -620,7 +620,7 @@ function ObservingConditionsApplet({
                     dot={(props) => {
                       const { key, ...rest } = props;
                       return (
-                        <TriangleShape
+                        <SquareShape
                           key={key}
                           {...rest}
                           fill="#2af5ff"
@@ -643,7 +643,7 @@ function ObservingConditionsApplet({
                     dot={(props) => {
                       const { key, ...rest } = props;
                       return (
-                        <FlippedTriangleShape
+                        <StarShape
                           key={key}
                           {...rest}
                           fill="#a7f9c1"
