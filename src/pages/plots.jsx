@@ -1,8 +1,3 @@
-// Current set of uncommitted changes
-// related to adding dayobs drop down inputs
-// are good to commit - once you've checked over
-// the ChatGPT code and know what it is doing.
-
 import { useEffect, useState } from "react";
 
 import { DateTime } from "luxon";
