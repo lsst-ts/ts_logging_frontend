@@ -1,0 +1,1 @@
+Fix broken filter when moving from Exposure Breakdown to Data Log
