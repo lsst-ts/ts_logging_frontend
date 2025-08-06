@@ -34,6 +34,14 @@ import { DEFAULT_PIXEL_SCALE_MEDIAN, PSF_SIGMA_FACTOR } from "@/utils/utils";
 // Constants for gap detection
 const GAP_THRESHOLD = 5 * 60 * 1000;
 const ISO_DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
+const BAND_COLORS = {
+  u: "#3eb7ff",
+  g: "#30c39f",
+  r: "#ff7e00",
+  i: "#2af5ff",
+  z: "#a7f9c1",
+  y: "#fdc900",
+};
 
 const CustomTooltip = ({ active, payload, label }) => {
   const variableTitles = {
@@ -127,7 +135,7 @@ const renderCustomLegend = (props) => (
           }
         >
           <svg width="16" height="16">
-            <circle cx="8" cy="8" r="2" fill="#3eb7ff" />
+            <circle cx="8" cy="8" r="2" fill={BAND_COLORS.u} />
           </svg>
           <span>u</span>
         </div>
@@ -141,7 +149,7 @@ const renderCustomLegend = (props) => (
           }
         >
           <svg width="16" height="16">
-            <TriangleShape cx={8} cy={8} fill="#30c39f" r={2} />
+            <TriangleShape cx={8} cy={8} fill={BAND_COLORS.g} r={2} />
           </svg>
           <span>g</span>
         </div>
@@ -155,7 +163,7 @@ const renderCustomLegend = (props) => (
           }
         >
           <svg width="16" height="16">
-            <FlippedTriangleShape cx={8} cy={8} fill="#ff7e00" r={2} />
+            <FlippedTriangleShape cx={8} cy={8} fill={BAND_COLORS.r} r={2} />
           </svg>
           <span>r</span>
         </div>
@@ -169,7 +177,7 @@ const renderCustomLegend = (props) => (
           }
         >
           <svg width="16" height="16">
-            <SquareShape cx={8} cy={8} fill="#2af5ff" r={2} />
+            <SquareShape cx={8} cy={8} fill={BAND_COLORS.i} r={2} />
           </svg>
           <span>i</span>
         </div>
@@ -183,7 +191,7 @@ const renderCustomLegend = (props) => (
           }
         >
           <svg width="16" height="16">
-            <StarShape cx={8} cy={8} fill="#a7f9c1" r={2} />
+            <StarShape cx={8} cy={8} fill={BAND_COLORS.z} r={2} />
           </svg>
           <span>z</span>
         </div>
@@ -197,7 +205,7 @@ const renderCustomLegend = (props) => (
           }
         >
           <svg width="16" height="16">
-            <AsteriskShape cx={8} cy={8} fill="#fdc900" r={2} />
+            <AsteriskShape cx={8} cy={8} fill={BAND_COLORS.y} r={2} />
           </svg>
           <span>y</span>
         </div>
@@ -549,8 +557,8 @@ function ObservingConditionsApplet({
                     dataKey="zero_point_median"
                     dot={{
                       r: 1,
-                      fill: "#3eb7ff",
-                      stroke: "#3eb7ff",
+                      fill: BAND_COLORS.u,
+                      stroke: BAND_COLORS.u,
                       strokeOpacity: uOpacity,
                       fillOpacity: uOpacity,
                     }}
@@ -563,7 +571,7 @@ function ObservingConditionsApplet({
                     yAxisId="right"
                     type="monotone"
                     dataKey="zero_point_median"
-                    stroke="#30c39f"
+                    stroke={BAND_COLORS.g}
                     strokeOpacity={gOpacity}
                     dot={(props) => {
                       const { key, ...rest } = props;
@@ -571,7 +579,7 @@ function ObservingConditionsApplet({
                         <TriangleShape
                           key={key}
                           {...rest}
-                          fill="#30c39f"
+                          fill={BAND_COLORS.g}
                           r={2}
                           strokeOpacity={gOpacity}
                           fillOpacity={gOpacity}
@@ -586,7 +594,7 @@ function ObservingConditionsApplet({
                     yAxisId="right"
                     type="monotone"
                     dataKey="zero_point_median"
-                    stroke="#ff7e00"
+                    stroke={BAND_COLORS.r}
                     strokeOpacity={rOpacity}
                     dot={(props) => {
                       const { key, ...rest } = props;
@@ -594,7 +602,7 @@ function ObservingConditionsApplet({
                         <FlippedTriangleShape
                           key={key}
                           {...rest}
-                          fill="#ff7e00"
+                          fill={BAND_COLORS.r}
                           r={2}
                           strokeOpacity={rOpacity}
                           fillOpacity={rOpacity}
@@ -609,7 +617,7 @@ function ObservingConditionsApplet({
                     yAxisId="right"
                     type="monotone"
                     dataKey="zero_point_median"
-                    stroke="#2af5ff"
+                    stroke={BAND_COLORS.i}
                     strokeOpacity={iOpacity}
                     dot={(props) => {
                       const { key, ...rest } = props;
@@ -617,7 +625,7 @@ function ObservingConditionsApplet({
                         <SquareShape
                           key={key}
                           {...rest}
-                          fill="#2af5ff"
+                          fill={BAND_COLORS.i}
                           r={2}
                           strokeOpacity={iOpacity}
                           fillOpacity={iOpacity}
@@ -632,7 +640,7 @@ function ObservingConditionsApplet({
                     yAxisId="right"
                     type="monotone"
                     dataKey="zero_point_median"
-                    stroke="#a7f9c1"
+                    stroke={BAND_COLORS.z}
                     strokeOpacity={zOpacity}
                     dot={(props) => {
                       const { key, ...rest } = props;
@@ -640,7 +648,7 @@ function ObservingConditionsApplet({
                         <StarShape
                           key={key}
                           {...rest}
-                          fill="#a7f9c1"
+                          fill={BAND_COLORS.z}
                           r={2}
                           strokeOpacity={zOpacity}
                           fillOpacity={zOpacity}
@@ -655,7 +663,7 @@ function ObservingConditionsApplet({
                     yAxisId="right"
                     type="monotone"
                     dataKey="zero_point_median"
-                    stroke="#fdc900"
+                    stroke={BAND_COLORS.y}
                     strokeOpacity={yOpacity}
                     dot={(props) => {
                       const { key, ...rest } = props;
@@ -663,7 +671,7 @@ function ObservingConditionsApplet({
                         <AsteriskShape
                           key={key}
                           {...rest}
-                          fill="#fdc900"
+                          fill={BAND_COLORS.y}
                           r={2}
                           strokeOpacity={yOpacity}
                           fillOpacity={yOpacity}
