@@ -107,10 +107,15 @@ function TimelineChart({
   const xMin = Math.min(...allXVals);
   const xMax = Math.max(...allXVals);
 
+  // TAI xAxis ticks
   const generateHourlyTicks = (start, end, intervalHours = 1) => {
     const ticks = [];
+
+    // Get start of first hour and end of last hour on timeline
     let t = DateTime.fromMillis(start).startOf("hour");
     const endDt = DateTime.fromMillis(end).endOf("hour");
+
+    // Loop through timeline, collecting hours
     while (t <= endDt) {
       ticks.push(t.toMillis());
       t = t.plus({ hours: intervalHours });
@@ -119,17 +124,64 @@ function TimelineChart({
   };
   const hourlyTicks = generateHourlyTicks(xMin, xMax, 1);
 
+  // Dayobs xAxis
+  // Alternate dayobs labels and vertical lines
+  const renderDayobsTicks = ({ x, y, payload }) => {
+    const value = payload.value;
+    const dt = DateTime.fromMillis(value);
+
+    const hour = dt.hour;
+    const isMidday = hour === 12;
+    const isMidnight = hour === 0;
+
+    // Lines at midday
+    if (isMidday) {
+      return (
+        <line
+          x1={x}
+          y1={y - 36}
+          x2={x}
+          y2={y + 22}
+          stroke="grey"
+          opacity={0.5}
+        />
+      );
+    }
+
+    // Labels at midnight
+    if (isMidnight) {
+      // Get date prior to midnight
+      const dayobs = dt.minus({ minutes: 1 }).toFormat("yyyyLLdd");
+      return (
+        <text
+          x={x}
+          y={y + 22}
+          fontSize={14}
+          textAnchor="middle"
+          fill="grey"
+          opacity={0.5}
+          style={{ WebkitUserSelect: "none" }}
+        >
+          {dayobs}
+        </text>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <ResponsiveContainer
       title="Time Window Selector"
       config={{}}
       width="100%"
-      height={80}
+      height={almanacInfo.length > 1 ? 120 : 80}
     >
       <LineChart
         width="100%"
-        height={80}
+        height={almanacInfo.length > 1 ? 120 : 80}
         data={data}
+        margin={{ top: 0, right: 30, left: 30, bottom: 0 }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -143,6 +195,24 @@ function TimelineChart({
             strokeDasharray="3 3"
           />
         ))}
+        {/* Dayobs axis - labels and lines */}
+        {almanacInfo.length > 1 && (
+          <XAxis
+            xAxisId="dayobs"
+            dataKey="obs_start_dt"
+            domain={[xMin, xMax]}
+            allowDataOverflow
+            type="number"
+            scale="time"
+            ticks={hourlyTicks}
+            interval={0}
+            axisLine={false}
+            tickLine={false}
+            tick={renderDayobsTicks}
+            height={40}
+          />
+        )}
+        {/* TAI Time Axis */}
         <XAxis
           dataKey="obs_start_dt"
           domain={[xMin, xMax]}
@@ -214,6 +284,9 @@ function ObservingDataChart({
 }) {
   // Check if data is empty
   const actualValues = data.map((d) => d[dataKey]).filter((v) => v != null);
+  // console.log("actualValues: ", actualValues);
+
+  // If all values are NaN show msg?
 
   // Check if all points are within preferred yDomain
   const isWithinPreferredDomain =
@@ -307,6 +380,7 @@ function ObservingDataChart({
           )}
         />
         <Line
+          connectNulls
           type="monotone"
           dataKey={dataKey}
           stroke="#000000"
