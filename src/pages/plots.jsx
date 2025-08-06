@@ -1,38 +1,46 @@
-import { useState, useEffect } from "react";
-import { DateTime } from "luxon";
+// Current set of uncommitted changes
+// related to adding dayobs drop down inputs
+// are good to commit - once you've checked over
+// the ChatGPT code and know what it is doing.
 
-import { Toaster } from "@/components/ui/sonner";
+import { useEffect, useState } from "react";
+
+import { DateTime } from "luxon";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ReferenceArea,
+  ReferenceLine,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { toast } from "sonner";
 import { useSearch } from "@tanstack/react-router";
 
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-
-import { TELESCOPES } from "@/components/parameters";
-
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Toaster } from "@/components/ui/sonner";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  // Cell,
-  XAxis,
-  YAxis,
-  // Customized,
-  ResponsiveContainer,
-  ReferenceLine,
-  ReferenceArea,
-} from "recharts";
+import { TELESCOPES } from "@/components/parameters";
 
 import {
-  fetchDataLogEntriesFromConsDB,
   fetchAlmanac,
+  fetchDataLogEntriesFromConsDB,
 } from "@/utils/fetchUtils";
 import { getDatetimeFromDayobsStr } from "@/utils/utils";
 
@@ -94,14 +102,11 @@ function TimelineChart({
     })
     .flat();
 
-  // Get min/max values for x-axis
+  // Set min/max values for x-axis
   const xVals = data
     .map((d) => d.obs_start_dt)
     .filter((v) => typeof v === "number" && !isNaN(v));
   const allXVals = [...xVals, ...twilightValues];
-  // Swap back once loading skeletons are added
-  // const xMin = xVals.length ? Math.min(...allXVals) : "auto";
-  // const xMax = xVals.length ? Math.max(...allXVals) : "auto";
   const xMin = Math.min(...allXVals);
   const xMax = Math.max(...allXVals);
 
@@ -203,7 +208,13 @@ function TimelineChart({
   );
 }
 
-function ObservingDataChart({ title, dataKey, data, preferredYDomain = null }) {
+function ObservingDataChart({
+  title,
+  unit = null,
+  dataKey,
+  data,
+  preferredYDomain = null,
+}) {
   // Check if data is empty
   const actualValues = data.map((d) => d[dataKey]).filter((v) => v != null);
 
@@ -221,12 +232,13 @@ function ObservingDataChart({ title, dataKey, data, preferredYDomain = null }) {
     : ["auto", "auto"];
 
   return (
-    <ChartContainer title={title} config={{}}>
+    <ChartContainer className="pt-8" title={title} config={{}}>
+      <h1 className="text-white text-lg font-thin text-center">{title}</h1>
       <LineChart
         width={500}
         height={300}
         data={data}
-        margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
+        margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
       >
         <CartesianGrid strokeDasharray="3 3" stroke="#555" />
         <XAxis
@@ -236,23 +248,21 @@ function ObservingDataChart({ title, dataKey, data, preferredYDomain = null }) {
           scale="time"
           tickFormatter={(tick) => DateTime.fromMillis(tick).toFormat("HH:mm")}
           tick={{ fill: "white" }}
-          // label={{
-          //   value: "Observation Start Time (TAI)",
-          //   position: "bottom",
-          //   fill: "white",
-          //   dy: 25,
-          // }}
         />
         <YAxis
           tick={{ fill: "white" }}
           domain={finalYDomain}
+          width={50}
           label={{
-            value: title,
+            value: unit,
             angle: -90,
             position: "insideLeft",
             fill: "white",
-            dx: -10,
-            dy: 50,
+            dx: 0,
+            dy: 20,
+            fontSize: 16,
+            fontWeight: 100,
+            letterSpacing: 1,
           }}
         />
         <ChartTooltip
@@ -302,7 +312,6 @@ function ObservingDataChart({ title, dataKey, data, preferredYDomain = null }) {
         <Line
           type="monotone"
           dataKey={dataKey}
-          // stroke=""
           stroke="#000000"
           strokeWidth={2}
           // dot={{ r: 1, fill: "#0C4A47", stroke: "#0C4A47" }} // sidebar teal
@@ -441,7 +450,7 @@ function Plots() {
   // Prepare data for charts
   const chartData = dataLogEntries
     .map((entry) => {
-      const psfSigma = parseFloat(entry["psf sigma median"]);
+      const psfSigma = parseFloat(entry["psf sigma median"]); // TODO: get from utils after PR
       const pixelScale = !isNaN(entry.pixel_scale_median)
         ? entry.pixel_scale_median
         : 0.2;
@@ -454,6 +463,11 @@ function Plots() {
     })
     // Chronological order
     .sort((a, b) => a.obs_start_dt - b.obs_start_dt);
+
+  // Get all available dayobs
+  const availableDayobs = [
+    ...new Set(chartData.map((entry) => entry["day obs"].toString())),
+  ].sort();
 
   // Timeline start and end
   const timelineStart = chartData.at(0)?.obs_start_dt ?? 0;
@@ -510,51 +524,185 @@ function Plots() {
           />
         )}
 
-        {/* Time Window Inputs */}
+        {/* Time Window Inputs & Controls */}
         {dataLogLoading || almanacLoading ? (
           <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
         ) : (
-          <div className="flex gap-24 justify-center text-white">
-            <Label className="flex flex-col gap-4">
-              <Input
-                type="time" // this is browser dependent and behaves differently in different browsers
-                id="start-time-picker"
-                step="60"
-                lang="en-GB"
-                inputMode="numeric"
-                pattern="[0-9]{2}:[0-9]{2}"
-                className="max-w-[100px] bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
-                value={DateTime.fromMillis(rangeStart).toFormat("HH:mm")}
-                onChange={(e) => {
-                  const [h, m] = e.target.value.split(":").map(Number);
-                  const newStart = DateTime.fromMillis(rangeStart)
-                    .set({ hour: h, minute: m })
-                    .toMillis();
-                  setSelectedTimeRange([newStart, rangeEnd]);
-                }}
-              />
-              Start Time (TAI)
-            </Label>
-            <Label className="flex flex-col gap-4">
-              <Input
-                type="time"
-                id="end-time-picker"
-                step="60"
-                lang="en-GB"
-                inputMode="numeric"
-                pattern="[0-9]{2}:[0-9]{2}"
-                className="max-w-[100px] bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
-                value={DateTime.fromMillis(rangeEnd).toFormat("HH:mm")}
-                onChange={(e) => {
-                  const [h, m] = e.target.value.split(":").map(Number);
-                  const newEnd = DateTime.fromMillis(rangeEnd)
-                    .set({ hour: h, minute: m })
-                    .toMillis();
-                  setSelectedTimeRange([rangeStart, newEnd]);
-                }}
-              />
-              End Time (TAI)
-            </Label>
+          <div className="flex flex-row justify-between gap-8 text-white">
+            {/* Time Inputs */}
+            <div className="flex flex-row gap-4">
+              {/* Labels */}
+              <div className="flex flex-col gap-4">
+                <Label
+                  htmlFor="start-time-input"
+                  className="h-9 w-18 !items-left text-start"
+                >
+                  Start (TAI):
+                </Label>
+                <Label htmlFor="end-time-input" className="h-9 w-18 !text-left">
+                  End (TAI):
+                </Label>
+              </div>
+
+              {/* Time inputs */}
+              <div className="flex flex-col gap-4">
+                <Input
+                  type="time" // this is browser dependent and behaves differently in different browsers
+                  id="start-time-input"
+                  step="60"
+                  lang="en-GB"
+                  inputMode="numeric"
+                  pattern="[0-9]{2}:[0-9]{2}"
+                  className="max-w-[100px] bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+                  value={DateTime.fromMillis(rangeStart).toFormat("HH:mm")}
+                  onChange={(e) => {
+                    const [h, m] = e.target.value.split(":").map(Number);
+                    const newStart = DateTime.fromMillis(rangeStart)
+                      .set({ hour: h, minute: m })
+                      .toMillis();
+                    setSelectedTimeRange([newStart, rangeEnd]);
+                  }}
+                />
+                <Input
+                  type="time"
+                  id="end-time-input"
+                  step="60"
+                  lang="en-GB"
+                  inputMode="numeric"
+                  pattern="[0-9]{2}:[0-9]{2}"
+                  className="max-w-[100px] bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+                  value={DateTime.fromMillis(rangeEnd).toFormat("HH:mm")}
+                  onChange={(e) => {
+                    const [h, m] = e.target.value.split(":").map(Number);
+                    const newEnd = DateTime.fromMillis(rangeEnd)
+                      .set({ hour: h, minute: m })
+                      .toMillis();
+                    setSelectedTimeRange([rangeStart, newEnd]);
+                  }}
+                />
+              </div>
+
+              {/* Dayobs inputs */}
+              <div className="flex flex-col gap-4">
+                {/* Start dayobs */}
+                <Select
+                  aria-label="Start dayobs"
+                  // Get dayobs from TAI window start time
+                  value={DateTime.fromMillis(rangeStart)
+                    .minus({ hours: 12, seconds: 37 }) // TODO: Set TAI leap seconds as a utils const.
+                    .toFormat("yyyyLLdd")}
+                  onValueChange={(newDayobsStr) => {
+                    // Get new dayobs
+                    const dayobsStart = DateTime.fromFormat(
+                      newDayobsStr,
+                      "yyyyLLdd",
+                      {
+                        zone: "utc",
+                      },
+                    );
+
+                    // Get start time from window
+                    const [h, m] = DateTime.fromMillis(rangeStart, {
+                      zone: "utc",
+                    })
+                      .toFormat("HH:mm")
+                      .split(":")
+                      .map(Number);
+
+                    // Set new datetime
+                    // If in second half of dayobs -> set as next day
+                    const dayobsToDate =
+                      h < 12 ? dayobsStart.plus({ days: 1 }) : dayobsStart;
+                    const dt = dayobsToDate.set({ hour: h, minute: m });
+
+                    // Set window
+                    if (dt.isValid) {
+                      setSelectedTimeRange([dt.toMillis(), rangeEnd]);
+                    }
+                  }}
+                >
+                  <SelectTrigger
+                    id="start-dayobs-select"
+                    className="w-[120px] bg-white text-black justify-between font-normal shadow-[4px_4px_4px_0px_#3CAE3F] focus-visible:ring-4 focus-visible:ring-green-500/50"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableDayobs.map((dayobs) => (
+                      <SelectItem key={dayobs} value={dayobs}>
+                        {dayobs}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* End dayobs */}
+                <Select
+                  aria-label="End dayobs"
+                  // Get dayobs from TAI window start time
+                  value={DateTime.fromMillis(rangeEnd)
+                    .minus({ hours: 12, seconds: 37 })
+                    .toFormat("yyyyLLdd")}
+                  onValueChange={(newDayobsStr) => {
+                    // Get new dayobs
+                    const dayobsEnd = DateTime.fromFormat(
+                      newDayobsStr,
+                      "yyyyLLdd",
+                      {
+                        zone: "utc",
+                      },
+                    );
+
+                    // Get end time from window
+                    const [h, m] = DateTime.fromMillis(rangeEnd, {
+                      zone: "utc",
+                    })
+                      .toFormat("HH:mm")
+                      .split(":")
+                      .map(Number);
+
+                    // Set new datetime
+                    // If in second half of dayobs -> set as next day
+                    const dayobsToDate =
+                      h < 12 ? dayobsEnd.plus({ days: 1 }) : dayobsEnd;
+                    const dt = dayobsToDate.set({ hour: h, minute: m });
+
+                    // Set window
+                    if (dt.isValid) {
+                      setSelectedTimeRange([rangeStart, dt.toMillis()]);
+                    }
+                  }}
+                >
+                  <SelectTrigger
+                    id="end-dayobs-select"
+                    className="w-[120px] bg-white text-black justify-between font-normal shadow-[4px_4px_4px_0px_#3CAE3F] focus-visible:ring-4 focus-visible:ring-green-500/50"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableDayobs.map((dayobs) => (
+                      <SelectItem key={dayobs} value={dayobs}>
+                        {dayobs}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Reset Button */}
+            <Button
+              className="bg-white text-black w-30 h-10 font-light rounded-md shadow-[4px_4px_4px_0px_#3CAE3F] 
+                      flex justify-center items-center py-2 px-4 
+                      hover:shadow-[6px_6px_8px_0px_#3CAE3F] hover:scale-[1.02] hover:bg-white transition-all duration-200"
+              onClick={() => setSelectedTimeRange([timelineStart, timelineEnd])}
+              disabled={
+                selectedTimeRange[0] === timelineStart &&
+                selectedTimeRange[1] === timelineEnd
+              }
+            >
+              Reset Window
+            </Button>
           </div>
         )}
 
@@ -575,12 +723,14 @@ function Plots() {
             <>
               <ObservingDataChart
                 title="Seeing (PSF)"
+                unit="arcsec"
                 dataKey="psf median"
                 data={filteredChartData}
                 preferredYDomain={[0.6, 1.8]}
               />
               <ObservingDataChart
                 title="Photometric Zero Points"
+                unit="magnitude"
                 dataKey="zero point median"
                 data={filteredChartData}
                 preferredYDomain={[30, 36]}
