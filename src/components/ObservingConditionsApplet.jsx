@@ -84,7 +84,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 // Custom legend to display band colors and shapes
-const renderCustomLegend = () => (
+const renderCustomLegend = (props) => (
   <div className="w-24 h-fit flex-shrink-0">
     <div className="flex flex-wrap gap-1 px-4 py-2 bg-black shadow-[4px_4px_4px_0px_#c27aff] border text-white text-xxs justify-start ">
       <div className="flex items-center ml-0.5 gap-2">
@@ -118,37 +118,91 @@ const renderCustomLegend = () => (
       <div className="w-full text-white mt-2 text-xxs">zero points</div>
       <div className="gap-1 p-1 pr-2 border border-white grid grid-cols-2">
         <div className="flex items-center gap-1">
-          <svg width="16" height="16">
+          <svg
+            width="16"
+            height="16"
+            onMouseEnter={() =>
+              props.onMouseEnter({ dataKey: "zero_point_median_u" })
+            }
+            onMouseLeave={() =>
+              props.onMouseLeave({ dataKey: "zero_point_median_u" })
+            }
+          >
             <circle cx="8" cy="8" r="2" fill="#3eb7ff" />
           </svg>
           <span>u</span>
         </div>
         <div className="flex items-center gap-1">
-          <svg width="16" height="16">
+          <svg
+            width="16"
+            height="16"
+            onMouseEnter={() =>
+              props.onMouseEnter({ dataKey: "zero_point_median_g" })
+            }
+            onMouseLeave={() =>
+              props.onMouseLeave({ dataKey: "zero_point_median_g" })
+            }
+          >
             <StarShape cx={8} cy={8} fill="#30c39f" r={2} />
           </svg>
           <span>g</span>
         </div>
         <div className="flex items-center gap-1">
-          <svg width="16" height="16">
+          <svg
+            width="16"
+            height="16"
+            onMouseEnter={() =>
+              props.onMouseEnter({ dataKey: "zero_point_median_r" })
+            }
+            onMouseLeave={() =>
+              props.onMouseLeave({ dataKey: "zero_point_median_r" })
+            }
+          >
             <SquareShape cx={8} cy={8} fill="#ff7e00" r={2} />
           </svg>
           <span>r</span>
         </div>
         <div className="flex items-center gap-1">
-          <svg width="16" height="16">
+          <svg
+            width="16"
+            height="16"
+            onMouseEnter={() =>
+              props.onMouseEnter({ dataKey: "zero_point_median_i" })
+            }
+            onMouseLeave={() =>
+              props.onMouseLeave({ dataKey: "zero_point_median_i" })
+            }
+          >
             <TriangleShape cx={8} cy={8} fill="#2af5ff" r={2} />
           </svg>
           <span>i</span>
         </div>
         <div className="flex items-center gap-1">
-          <svg width="16" height="16">
+          <svg
+            width="16"
+            height="16"
+            onMouseEnter={() =>
+              props.onMouseEnter({ dataKey: "zero_point_median_z" })
+            }
+            onMouseLeave={() =>
+              props.onMouseLeave({ dataKey: "zero_point_median_z" })
+            }
+          >
             <FlippedTriangleShape cx={8} cy={8} fill="#2af5ff" r={2} />
           </svg>
           <span>z</span>
         </div>
         <div className="flex items-center gap-1">
-          <svg width="16" height="16">
+          <svg
+            width="16"
+            height="16"
+            onMouseEnter={() =>
+              props.onMouseEnter({ dataKey: "zero_point_median_y" })
+            }
+            onMouseLeave={() =>
+              props.onMouseLeave({ dataKey: "zero_point_median_y" })
+            }
+          >
             <AsteriskShape cx={8} cy={8} fill="#fdc900" r={2} />
           </svg>
           <span>y</span>
@@ -164,6 +218,26 @@ function ObservingConditionsApplet({
   almanacLoading,
   almanacInfo,
 }) {
+  const [hoveringBand, setHoveringBand] = React.useState(null); // to track the hovered band
+
+  // opacity for each band based on hovering state
+  // if hoveringBand is set, the opacity for that band is 1, otherwise it
+  // is set to 0 to hide the line
+  let uOpacity = hoveringBand && hoveringBand !== "zero_point_median_u" ? 0 : 1;
+  let rOpacity = hoveringBand && hoveringBand !== "zero_point_median_r" ? 0 : 1;
+  let yOpacity = hoveringBand && hoveringBand !== "zero_point_median_y" ? 0 : 1;
+  let iOpacity = hoveringBand && hoveringBand !== "zero_point_median_i" ? 0 : 1;
+  let zOpacity = hoveringBand && hoveringBand !== "zero_point_median_z" ? 0 : 1;
+  let gOpacity = hoveringBand && hoveringBand !== "zero_point_median_g" ? 0 : 1;
+
+  const handleMouseEnter = (payload) => {
+    setHoveringBand(payload.dataKey);
+  };
+
+  const handleMouseLeave = () => {
+    setHoveringBand(null);
+  };
+
   const data = useMemo(
     () =>
       exposureFields.map((entry) => {
@@ -479,7 +553,14 @@ function ObservingConditionsApplet({
                     yAxisId="right"
                     type="monotone"
                     dataKey="zero_point_median"
-                    dot={{ r: 1, fill: "#3eb7ff", stroke: "#3eb7ff" }}
+                    dot={{
+                      r: 1,
+                      fill: "#3eb7ff",
+                      stroke: "#3eb7ff",
+                      strokeOpacity: uOpacity,
+                      fillOpacity: uOpacity,
+                    }}
+                    strokeOpacity={uOpacity}
                     data={dataWithNightGaps(groupedChartData, "u")}
                     isAnimationActive={false}
                   />
@@ -489,10 +570,18 @@ function ObservingConditionsApplet({
                     type="monotone"
                     dataKey="zero_point_median"
                     stroke="#30c39f"
+                    strokeOpacity={gOpacity}
                     dot={(props) => {
                       const { key, ...rest } = props;
                       return (
-                        <StarShape key={key} {...rest} fill="#30c39f" r={2} />
+                        <StarShape
+                          key={key}
+                          {...rest}
+                          fill="#30c39f"
+                          r={2}
+                          strokeOpacity={gOpacity}
+                          fillOpacity={gOpacity}
+                        />
                       );
                     }}
                     data={dataWithNightGaps(groupedChartData, "g")}
@@ -504,10 +593,18 @@ function ObservingConditionsApplet({
                     type="monotone"
                     dataKey="zero_point_median"
                     stroke="#ff7e00"
+                    strokeOpacity={rOpacity}
                     dot={(props) => {
                       const { key, ...rest } = props;
                       return (
-                        <SquareShape key={key} {...rest} fill="#ff7e00" r={2} />
+                        <SquareShape
+                          key={key}
+                          {...rest}
+                          fill="#ff7e00"
+                          r={2}
+                          strokeOpacity={rOpacity}
+                          fillOpacity={rOpacity}
+                        />
                       );
                     }}
                     data={dataWithNightGaps(groupedChartData, "r")}
@@ -519,6 +616,7 @@ function ObservingConditionsApplet({
                     type="monotone"
                     dataKey="zero_point_median"
                     stroke="#2af5ff"
+                    strokeOpacity={iOpacity}
                     dot={(props) => {
                       const { key, ...rest } = props;
                       return (
@@ -527,6 +625,8 @@ function ObservingConditionsApplet({
                           {...rest}
                           fill="#2af5ff"
                           r={2}
+                          strokeOpacity={iOpacity}
+                          fillOpacity={iOpacity}
                         />
                       );
                     }}
@@ -539,6 +639,7 @@ function ObservingConditionsApplet({
                     type="monotone"
                     dataKey="zero_point_median"
                     stroke="#a7f9c1"
+                    strokeOpacity={zOpacity}
                     dot={(props) => {
                       const { key, ...rest } = props;
                       return (
@@ -547,6 +648,8 @@ function ObservingConditionsApplet({
                           {...rest}
                           fill="#a7f9c1"
                           r={2}
+                          strokeOpacity={zOpacity}
+                          fillOpacity={zOpacity}
                         />
                       );
                     }}
@@ -559,6 +662,7 @@ function ObservingConditionsApplet({
                     type="monotone"
                     dataKey="zero_point_median"
                     stroke="#fdc900"
+                    strokeOpacity={yOpacity}
                     dot={(props) => {
                       const { key, ...rest } = props;
                       return (
@@ -567,6 +671,8 @@ function ObservingConditionsApplet({
                           {...rest}
                           fill="#fdc900"
                           r={2}
+                          strokeOpacity={yOpacity}
+                          fillOpacity={yOpacity}
                         />
                       );
                     }}
@@ -588,6 +694,8 @@ function ObservingConditionsApplet({
                     verticalAlign={"middle"}
                     align={"right"}
                     content={renderCustomLegend}
+                    onMouseEnter={handleMouseEnter}
+                    onMouseLeave={handleMouseLeave}
                   />
                 </ComposedChart>
               </ChartContainer>
