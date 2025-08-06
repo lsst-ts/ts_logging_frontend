@@ -28,8 +28,8 @@ export const dataLogColumns = [
     header: "RubinTV",
     cell: ({ row }) => (
       <RubinTVLink
-        dayObs={row.original["day obs"]}
-        seqNum={row.original["seq num"]}
+        dayObs={row.original["day_obs"]}
+        seqNum={row.original["seq_num"]}
       />
     ),
     size: 100,
@@ -40,8 +40,7 @@ export const dataLogColumns = [
   }),
 
   // Identifying data
-  columnHelper.accessor("exposure id", {
-    id: "exposure_id",
+  columnHelper.accessor("exposure_id", {
     header: "Exposure Id",
     cell: (info) => formatCellValue(info.getValue()),
     size: 140,
@@ -50,8 +49,7 @@ export const dataLogColumns = [
       tooltip: "Unique identifier for the exposure.",
     },
   }),
-  columnHelper.accessor("exposure name", {
-    id: "exposure_name",
+  columnHelper.accessor("exposure_name", {
     header: "Exposure Name",
     cell: (info) => formatCellValue(info.getValue()),
     size: 200,
@@ -60,8 +58,7 @@ export const dataLogColumns = [
       tooltip: "Official name of the exposure.",
     },
   }),
-  columnHelper.accessor("seq num", {
-    id: "seq_num",
+  columnHelper.accessor("seq_num", {
     header: "Seq Num",
     cell: (info) => formatCellValue(info.getValue()),
     size: 100,
@@ -72,8 +69,7 @@ export const dataLogColumns = [
   }),
 
   // Dayobs and timestamp
-  columnHelper.accessor("day obs", {
-    id: "day_obs",
+  columnHelper.accessor("day_obs", {
     header: "Day Obs",
     cell: (info) => formatCellValue(info.getValue()),
     size: 100,
@@ -83,8 +79,7 @@ export const dataLogColumns = [
       tooltip: "Day of observation.",
     },
   }),
-  columnHelper.accessor("obs start", {
-    id: "obs_start",
+  columnHelper.accessor("obs_start", {
     header: "Obs Start (TAI)",
     cell: (info) => formatCellValue(info.getValue()),
     size: 240,
@@ -94,8 +89,7 @@ export const dataLogColumns = [
         "Start time (TAI) of the exposure at the fiducial center of the focal plane.",
     },
   }),
-  columnHelper.accessor("exp time", {
-    id: "exp_time",
+  columnHelper.accessor("exp_time", {
     header: "Exposure Time (s)",
     cell: (info) => formatCellValue(info.getValue(), { decimals: 2 }),
     size: 160,
@@ -106,8 +100,7 @@ export const dataLogColumns = [
   }),
 
   // Observation Categories
-  columnHelper.accessor("science program", {
-    id: "science_program",
+  columnHelper.accessor("science_program", {
     header: "Science Program",
     cell: (info) => formatCellValue(info.getValue()),
     size: 150,
@@ -118,8 +111,7 @@ export const dataLogColumns = [
       tooltip: "Science program.",
     },
   }),
-  columnHelper.accessor("img type", {
-    id: "img_type",
+  columnHelper.accessor("img_type", {
     header: "Obs Type",
     cell: (info) => formatCellValue(info.getValue()),
     size: 100,
@@ -130,8 +122,7 @@ export const dataLogColumns = [
       tooltip: "Type of visit taken.",
     },
   }),
-  columnHelper.accessor("observation reason", {
-    id: "observation_reason",
+  columnHelper.accessor("observation_reason", {
     header: "Obs Reason",
     cell: (info) => formatCellValue(info.getValue()),
     size: 160,
@@ -142,8 +133,7 @@ export const dataLogColumns = [
       tooltip: "Reason for the observation.",
     },
   }),
-  columnHelper.accessor("target name", {
-    id: "target_name",
+  columnHelper.accessor("target_name", {
     header: "Target Name",
     cell: (info) => formatCellValue(info.getValue()),
     size: 160,
@@ -157,7 +147,6 @@ export const dataLogColumns = [
 
   // Flag Info
   columnHelper.accessor("exposure_flag", {
-    id: "exposure_flag",
     header: "Flags",
     cell: (info) => formatCellValue(info.getValue()),
     size: 100,
@@ -168,7 +157,6 @@ export const dataLogColumns = [
     },
   }),
   columnHelper.accessor("message_text", {
-    id: "message_text",
     header: "Comments",
     cell: (info) => formatCellValue(info.getValue()),
     size: 120,
@@ -179,8 +167,7 @@ export const dataLogColumns = [
   }),
 
   // Instrument config and environment
-  columnHelper.accessor("s ra", {
-    id: "s_ra",
+  columnHelper.accessor("s_ra", {
     header: "RA",
     cell: (info) => formatCellValue(info.getValue()),
     size: 60,
@@ -190,8 +177,7 @@ export const dataLogColumns = [
         "Central Spatial Position in ICRS; Computed right ascension of CCD center.",
     },
   }),
-  columnHelper.accessor("s dec", {
-    id: "s_dec",
+  columnHelper.accessor("s_dec", {
     header: "Dec",
     cell: (info) => formatCellValue(info.getValue()),
     size: 70,
@@ -202,7 +188,6 @@ export const dataLogColumns = [
     },
   }),
   columnHelper.accessor("altitude", {
-    id: "altitude",
     header: "Alt",
     cell: (info) => formatCellValue(info.getValue()),
     size: 70,
@@ -213,7 +198,6 @@ export const dataLogColumns = [
     },
   }),
   columnHelper.accessor("azimuth", {
-    id: "azimuth",
     header: "Az",
     cell: (info) => formatCellValue(info.getValue()),
     size: 60,
@@ -223,8 +207,7 @@ export const dataLogColumns = [
         "Azimuth (deg) of focal plane center at the middle of the visit.",
     },
   }),
-  columnHelper.accessor("sky rotation", {
-    id: "sky_rotation",
+  columnHelper.accessor("sky_rotation", {
     header: "Sky Rotation",
     cell: (info) => formatCellValue(info.getValue()),
     size: 120,
@@ -234,7 +217,6 @@ export const dataLogColumns = [
     },
   }),
   columnHelper.accessor("airmass", {
-    id: "airmass",
     header: "Airmass",
     cell: (info) => formatCellValue(info.getValue()),
     size: 90,
@@ -244,8 +226,7 @@ export const dataLogColumns = [
         "Airmass of the observed line of sight at the middle of the exposure.",
     },
   }),
-  columnHelper.accessor("dimm seeing", {
-    id: "dimm_seeing",
+  columnHelper.accessor("dimm_seeing", {
     header: "DIMM seeing",
     cell: (info) => formatCellValue(info.getValue()),
     size: 130,
@@ -257,8 +238,7 @@ export const dataLogColumns = [
   }),
   // psf sigma median * 2.355 * [pixelScale or 0.2]
   // conversion is sigma->FWHM and from unit:pixel -> unit:arcsec
-  columnHelper.accessor("psf median", {
-    id: "psf_median",
+  columnHelper.accessor("psf_median", {
     header: "Median PSF",
     cell: (info) => formatCellValue(info.getValue()),
     size: 115,
@@ -272,8 +252,7 @@ export const dataLogColumns = [
         " when pixel scale is NaN]",
     },
   }),
-  columnHelper.accessor("sky bg median", {
-    id: "sky_bg_median",
+  columnHelper.accessor("sky_bg_median", {
     header: "Sky Brightness",
     cell: (info) => formatCellValue(info.getValue()),
     size: 140,
@@ -282,8 +261,7 @@ export const dataLogColumns = [
       tooltip: "Average sky background (median across all detectors).",
     },
   }),
-  columnHelper.accessor("zero point median", {
-    id: "zero_point_median",
+  columnHelper.accessor("zero_point_median", {
     header: "Photometric ZP",
     cell: (info) => formatCellValue(info.getValue()),
     size: 140,
@@ -292,8 +270,7 @@ export const dataLogColumns = [
       tooltip: "Photometric zero point (median across all detectors) (mag).",
     },
   }),
-  columnHelper.accessor("high snr source count median", {
-    id: "high_snr_source_count_median",
+  columnHelper.accessor("high_snr_source_count_median", {
     header: "High SNR Source Counts",
     cell: (info) => formatCellValue(info.getValue()),
     size: 200,
@@ -303,8 +280,7 @@ export const dataLogColumns = [
         "Count of high signal-to-noise-ratio sources (median across all detectors).",
     },
   }),
-  columnHelper.accessor("air temp", {
-    id: "air_temp",
+  columnHelper.accessor("air_temp", {
     header: "Outside Air Temp",
     cell: (info) => formatCellValue(info.getValue()),
     size: 150,
