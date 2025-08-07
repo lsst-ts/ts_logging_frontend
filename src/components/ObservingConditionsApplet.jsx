@@ -243,7 +243,8 @@ function ObservingConditionsApplet({
 
   const data = useMemo(
     () =>
-      exposureFields.map((entry) => {
+      // fallback to empty array if exposureFields is undefined
+      (exposureFields ?? []).map((entry) => {
         // Convert obs_start to a DateTime object and then to milliseconds
         const obsStart = entry["obs_start"];
         let obs_start_dt = undefined;
@@ -272,7 +273,8 @@ function ObservingConditionsApplet({
 
   const chartData = useMemo(
     () =>
-      data
+      // fallback to empty array if data is undefined
+      (data ?? [])
         .filter((d) => isValidNumber(d.obs_start_dt))
         .sort((a, b) => a.obs_start_dt - b.obs_start_dt),
     [data],
@@ -282,7 +284,8 @@ function ObservingConditionsApplet({
   // and convert them to milliseconds
   const twilightValues = useMemo(
     () =>
-      almanacInfo
+      // fallback to empty array if almanacInfo is undefined
+      (almanacInfo ?? [])
         .map((dayobsAlm) => {
           const eve = DateTime.fromFormat(
             dayobsAlm.twilight_evening,
