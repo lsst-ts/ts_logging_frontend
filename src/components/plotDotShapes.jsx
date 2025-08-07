@@ -1,7 +1,7 @@
 import { memo } from "react";
 
 const XShape = memo((props) => {
-  const { cx, cy, fill } = props;
+  const { cx, cy, fill, strokeOpacity = 1, fillOpacity = 1 } = props;
   const size = 1.5;
   if (cx < size || cy < size) return null;
   let color = fill;
@@ -22,13 +22,22 @@ const XShape = memo((props) => {
         y2={cy - size}
         stroke={color}
         strokeWidth={1}
+        strokeOpacity={strokeOpacity}
+        fillOpacity={fillOpacity}
       />
     </g>
   );
 });
 
 const TriangleShape = memo((props) => {
-  const { cx, cy, fill = "#2af5ff", r = 2 } = props;
+  const {
+    cx,
+    cy,
+    fill = "#2af5ff",
+    r = 2,
+    strokeOpacity = 1,
+    fillOpacity = 1,
+  } = props;
   if (typeof cx !== "number" || typeof cy !== "number") return null;
   return (
     <polygon
@@ -40,12 +49,21 @@ const TriangleShape = memo((props) => {
       fill={fill}
       stroke={fill}
       strokeWidth={0.8}
+      strokeOpacity={strokeOpacity}
+      fillOpacity={fillOpacity}
     />
   );
 });
 
 const FlippedTriangleShape = memo((props) => {
-  const { cx, cy, fill = "#a7f9c1", r = 2 } = props;
+  const {
+    cx,
+    cy,
+    fill = "#a7f9c1",
+    r = 2,
+    strokeOpacity = 1,
+    fillOpacity = 1,
+  } = props;
   if (typeof cx !== "number" || typeof cy !== "number") return null;
   return (
     <polygon
@@ -57,12 +75,21 @@ const FlippedTriangleShape = memo((props) => {
       fill={fill}
       stroke={fill}
       strokeWidth={0.8}
+      strokeOpacity={strokeOpacity}
+      fillOpacity={fillOpacity}
     />
   );
 });
 
 const AsteriskShape = memo((props) => {
-  const { cx, cy, fill = "#fdc900", r = 4 } = props;
+  const {
+    cx,
+    cy,
+    fill = "#fdc900",
+    r = 4,
+    strokeOpacity = 1,
+    fillOpacity = 1,
+  } = props;
   if (typeof cx !== "number" || typeof cy !== "number") return null;
   const lines = [];
   for (let i = 0; i < 6; i++) {
@@ -81,6 +108,8 @@ const AsteriskShape = memo((props) => {
         stroke={fill}
         strokeWidth={1.2}
         strokeLinecap="round"
+        strokeOpacity={strokeOpacity}
+        fillOpacity={fillOpacity}
       />,
     );
   }
@@ -88,7 +117,14 @@ const AsteriskShape = memo((props) => {
 });
 
 const SquareShape = memo((props) => {
-  const { cx, cy, fill = "#ff7e00", r = 2 } = props;
+  const {
+    cx,
+    cy,
+    fill = "#ff7e00",
+    r = 2,
+    strokeOpacity = 1,
+    fillOpacity = 1,
+  } = props;
   if (typeof cx !== "number" || typeof cy !== "number") return null;
   const size = r;
   return (
@@ -101,12 +137,21 @@ const SquareShape = memo((props) => {
       stroke={fill}
       strokeWidth={0.8}
       rx={0}
+      strokeOpacity={strokeOpacity}
+      fillOpacity={fillOpacity}
     />
   );
 });
 
 const StarShape = memo((props) => {
-  const { cx, cy, fill = "#30c39f", r = 4 } = props;
+  const {
+    cx,
+    cy,
+    fill = "#30c39f",
+    r = 4,
+    strokeOpacity = 1,
+    fillOpacity = 1,
+  } = props;
   if (typeof cx !== "number" || typeof cy !== "number") return null;
   const spikes = 5;
   const outerRadius = r;
@@ -125,7 +170,16 @@ const StarShape = memo((props) => {
     rot += step;
   }
   path += "Z";
-  return <path d={path} fill={fill} stroke={fill} strokeWidth={0.8} />;
+  return (
+    <path
+      d={path}
+      fill={fill}
+      stroke={fill}
+      strokeWidth={0.8}
+      strokeOpacity={strokeOpacity}
+      fillOpacity={fillOpacity}
+    />
+  );
 });
 
 export {
