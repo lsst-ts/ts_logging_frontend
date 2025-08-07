@@ -341,8 +341,11 @@ function ObservingConditionsApplet({
   );
 
   const getDayobsAlmanac = (dayobs) => {
-    for (const dayObsAlm of almanacInfo) {
-      if (parseInt(dayObsAlm.dayobs) === parseInt(dayobs) + 1) return dayObsAlm;
+    if (almanacInfo && Array.isArray(almanacInfo)) {
+      for (const dayObsAlm of almanacInfo) {
+        if (parseInt(dayObsAlm.dayobs) === parseInt(dayobs) + 1)
+          return dayObsAlm;
+      }
     }
     return null;
   };
@@ -354,13 +357,20 @@ function ObservingConditionsApplet({
         const curr = exps[i].obs_start_dt;
         // set the next time to the end of the dayobs almanac
         // if it is the last exposure of the dayobs
-        const next =
-          i === exps.length - 1
+        // use twilight_morning as next time (if almanac is available)
+        // otherwise use the current exp obs_start_dt (last gap will be zero)
+        let next;
+        if (i === exps.length - 1) {
+          const dayobsAlm = getDayobsAlmanac(dayobs);
+          next = dayobsAlm
             ? DateTime.fromFormat(
-                getDayobsAlmanac(dayobs).twilight_morning,
+                dayobsAlm.twilight_morning,
                 ISO_DATETIME_FORMAT,
               ).toMillis()
-            : exps[i + 1].obs_start_dt;
+            : exps[i].obs_start_dt;
+        } else {
+          next = exps[i + 1].obs_start_dt;
+        }
 
         const delta = next - curr;
         if (GAP_THRESHOLD < delta) {
