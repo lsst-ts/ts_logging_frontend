@@ -1,3 +1,15 @@
+v0.7.1 (2025-08-07)
+===================
+
+Bug Fixes
+---------
+
+- Add null checks and fallback to empty array to prevent errors when data is undefined (`OSW-810 <https://rubinobs.atlassian.net//browse/OSW-810>`_)
+- Fix broken filter when moving from Exposure Breakdown to Data Log (`OSW-814 <https://rubinobs.atlassian.net//browse/OSW-814>`_)
+- Fix the colors and shapes in the plot and the legend to follow the plotting guidelines. (`OSW-815 <https://rubinobs.atlassian.net//browse/OSW-815>`_)
+- Allow users to show zero points of a certain band while hiding other bands when hovering over this band icon in the legend. (`OSW-815 <https://rubinobs.atlassian.net//browse/OSW-815>`_)
+
+
 v0.7.0 (2025-08-05)
 ===================
 

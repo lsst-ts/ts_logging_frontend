@@ -1,1 +1,0 @@
-Fix the colors and shapes in the plot and the legend to follow the plotting guidelines.

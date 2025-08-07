@@ -1,1 +1,0 @@
-Add null checks and fallback to empty array to prevent errors when data is undefined
