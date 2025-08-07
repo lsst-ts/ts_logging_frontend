@@ -124,9 +124,9 @@ const renderCustomLegend = (props) => (
       </div>
 
       <div className="w-full text-white mt-2 text-xxs">zero points</div>
-      <div className="gap-1 p-1 pr-2 border border-white grid grid-cols-2">
+      <div className="p-1 pr-1 border border-white grid grid-cols-2">
         <div
-          className="flex items-center gap-1"
+          className="flex flex-row items-center gap-1 pr-1"
           onMouseEnter={() =>
             props.onMouseEnter({ dataKey: "zero_point_median_u" })
           }
@@ -140,7 +140,7 @@ const renderCustomLegend = (props) => (
           <span>u</span>
         </div>
         <div
-          className="flex items-center gap-1"
+          className="flex items-center gap-1 pr-1"
           onMouseEnter={() =>
             props.onMouseEnter({ dataKey: "zero_point_median_g" })
           }
@@ -154,7 +154,7 @@ const renderCustomLegend = (props) => (
           <span>g</span>
         </div>
         <div
-          className="flex items-center gap-1"
+          className="flex items-center gap-1 pr-1"
           onMouseEnter={() =>
             props.onMouseEnter({ dataKey: "zero_point_median_r" })
           }
@@ -167,8 +167,9 @@ const renderCustomLegend = (props) => (
           </svg>
           <span>r</span>
         </div>
+
         <div
-          className="flex items-center gap-1"
+          className="flex items-center gap-1 pr-1"
           onMouseEnter={() =>
             props.onMouseEnter({ dataKey: "zero_point_median_i" })
           }
@@ -182,7 +183,7 @@ const renderCustomLegend = (props) => (
           <span>i</span>
         </div>
         <div
-          className="flex items-center gap-1"
+          className="flex items-center gap-1 pr-1"
           onMouseEnter={() =>
             props.onMouseEnter({ dataKey: "zero_point_median_z" })
           }
@@ -196,7 +197,7 @@ const renderCustomLegend = (props) => (
           <span>z</span>
         </div>
         <div
-          className="flex items-center gap-1"
+          className="flex items-center gap-1 pr-1"
           onMouseEnter={() =>
             props.onMouseEnter({ dataKey: "zero_point_median_y" })
           }
