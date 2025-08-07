@@ -1,0 +1,1 @@
+Allow users to show zero points of a certain band while hiding other bands when hovering over this band icon in the legend.
