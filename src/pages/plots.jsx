@@ -14,16 +14,6 @@ import {
 import { toast } from "sonner";
 import { useSearch } from "@tanstack/react-router";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Toaster } from "@/components/ui/sonner";
 import {
@@ -59,13 +49,21 @@ const CustomizedDot = (props) => {
 
 function TimelineChart({
   data,
+  twilightValues = [],
+  moonValues = [],
+  fullTimeRange,
   selectedTimeRange,
   setSelectedTimeRange,
-  almanacInfo,
+  staticTicks,
 }) {
   const [refAreaLeft, setRefAreaLeft] = useState(null);
   const [refAreaRight, setRefAreaRight] = useState(null);
+  const [xMin, xMax] = fullTimeRange;
+  if (!xMin || !xMax) {
+    return null;
+  }
 
+  // Handle click+drag and set state accordingly
   const handleMouseDown = (e) => setRefAreaLeft(e?.activeLabel ?? null);
   const handleMouseMove = (e) =>
     refAreaLeft && setRefAreaRight(e?.activeLabel ?? null);
@@ -75,6 +73,7 @@ function TimelineChart({
       setRefAreaRight(null);
       return;
     }
+    // Swap start/end if user dragged backwards
     const [start, end] =
       refAreaLeft < refAreaRight
         ? [refAreaLeft, refAreaRight]
@@ -83,29 +82,6 @@ function TimelineChart({
     setRefAreaLeft(null);
     setRefAreaRight(null);
   };
-
-  // Set values for twilight lines
-  const twilightValues = almanacInfo
-    .map((dayobsAlm) => {
-      const eve = DateTime.fromFormat(
-        dayobsAlm.twilight_evening,
-        "yyyy-MM-dd HH:mm:ss",
-      ).toMillis(); // TODO: is this definitely TAI?
-      const mor = DateTime.fromFormat(
-        dayobsAlm.twilight_morning,
-        "yyyy-MM-dd HH:mm:ss",
-      ).toMillis();
-      return [eve, mor];
-    })
-    .flat();
-
-  // Set min/max values for x-axis
-  const xVals = data
-    .map((d) => d.obs_start_dt)
-    .filter((v) => typeof v === "number" && !isNaN(v));
-  const allXVals = [...xVals, ...twilightValues];
-  const xMin = Math.min(...allXVals);
-  const xMax = Math.max(...allXVals);
 
   // TAI xAxis ticks
   const generateHourlyTicks = (start, end, intervalHours = 1) => {
@@ -136,16 +112,7 @@ function TimelineChart({
 
     // Lines at midday
     if (isMidday) {
-      return (
-        <line
-          x1={x}
-          y1={y - 36}
-          x2={x}
-          y2={y + 22}
-          stroke="grey"
-          opacity={0.5}
-        />
-      );
+      return <line x1={x} y1={y - 100} x2={x} y2={y + 22} stroke="grey" />;
     }
 
     // Labels at midnight
@@ -159,7 +126,6 @@ function TimelineChart({
           fontSize={14}
           textAnchor="middle"
           fill="grey"
-          opacity={0.5}
           style={{ WebkitUserSelect: "none" }}
         >
           {dayobs}
@@ -175,37 +141,40 @@ function TimelineChart({
       title="Time Window Selector"
       config={{}}
       width="100%"
-      height={almanacInfo.length > 1 ? 120 : 80}
+      height={twilightValues.length > 1 ? 120 : 80}
     >
       <LineChart
         width="100%"
-        height={almanacInfo.length > 1 ? 120 : 80}
+        height={twilightValues.length > 1 ? 120 : 80}
         data={data}
         margin={{ top: 0, right: 30, left: 30, bottom: 0 }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
       >
+        {/* Timeline */}
+        <ReferenceLine y={0.5} stroke="white" strokeWidth={1.5} />
         {/* Vertical lines on the hour */}
         {hourlyTicks.map((tick) => (
           <ReferenceLine
             key={tick}
             x={tick}
-            stroke="#555"
+            stroke="white"
             strokeDasharray="3 3"
+            opacity={0.4}
           />
         ))}
         {/* Dayobs axis - labels and lines */}
-        {almanacInfo.length > 1 && (
+        {twilightValues.length > 1 && (
           <XAxis
             xAxisId="dayobs"
             dataKey="obs_start_dt"
-            domain={[xMin, xMax]}
-            allowDataOverflow
+            domain={staticTicks ? fullTimeRange : selectedTimeRange}
+            // allowDataOverflow
             type="number"
             scale="time"
             ticks={hourlyTicks}
-            interval={0}
+            interval={staticTicks && 0}
             axisLine={false}
             tickLine={false}
             tick={renderDayobsTicks}
@@ -215,31 +184,50 @@ function TimelineChart({
         {/* TAI Time Axis */}
         <XAxis
           dataKey="obs_start_dt"
-          domain={[xMin, xMax]}
+          domain={staticTicks ? fullTimeRange : selectedTimeRange}
           allowDataOverflow={true}
           type="number"
           scale="time"
           tickFormatter={(tick) => DateTime.fromMillis(tick).toFormat("HH:mm")}
-          ticks={hourlyTicks}
-          interval="preserveStartEnd"
+          ticks={staticTicks && hourlyTicks}
+          interval={staticTicks ?? "preserveStartEnd"}
           tick={{ fill: "white", style: { userSelect: "none" } }}
           axisLine={false}
           tickMargin={10}
           minTickGap={15}
         />
         <YAxis hide domain={[0, 1]} />
+        {/* Selection rectangle shown once time window selection made */}
+        {selectedTimeRange[0] && selectedTimeRange[1] ? (
+          <ReferenceArea
+            x1={selectedTimeRange[0]}
+            x2={selectedTimeRange[1]}
+            stroke="hotPink"
+            fillOpacity={0.2}
+          />
+        ) : null}
         {/* Twilight lines */}
         {twilightValues.map((twi, i) =>
-          typeof twi === "number" &&
-          !isNaN(twi) &&
-          xMin <= twi &&
-          twi <= xMax ? (
+          xMin <= twi && twi <= xMax ? (
             <ReferenceLine
               key={`twilight-${i}-${twi}`}
               x={twi}
-              stroke="#0ea5e9" // sky-500
+              stroke="#0ea5e9"
               strokeWidth={3}
-              strokeDasharray="4 4"
+              // strokeDasharray="4 4"
+              yAxisId="0"
+            />
+          ) : null,
+        )}
+        {/* Moon lines */}
+        {moonValues.map((twi, i) =>
+          xMin <= twi && twi <= xMax ? (
+            <ReferenceLine
+              key={`moon-${i}-${twi}`}
+              x={twi}
+              stroke="#EAB308"
+              strokeWidth={3}
+              // strokeDasharray="4 4"
               yAxisId="0"
             />
           ) : null,
@@ -261,15 +249,6 @@ function TimelineChart({
             fill="pink"
           />
         ) : null}
-        {/* Selection rectangle shown once time window selection made */}
-        {selectedTimeRange[0] && selectedTimeRange[1] ? (
-          <ReferenceArea
-            x1={selectedTimeRange[0]}
-            x2={selectedTimeRange[1]}
-            stroke="pink"
-            fillOpacity={0.3}
-          />
-        ) : null}
       </LineChart>
     </ResponsiveContainer>
   );
@@ -281,12 +260,14 @@ function ObservingDataChart({
   dataKey,
   data,
   preferredYDomain = null,
+  twilightValues = [],
+  moonValues = [],
+  selectedTimeRange,
 }) {
+  const [xMin, xMax] = selectedTimeRange;
+
   // Check if data is empty
   const actualValues = data.map((d) => d[dataKey]).filter((v) => v != null);
-  // console.log("actualValues: ", actualValues);
-
-  // If all values are NaN show msg?
 
   // Check if all points are within preferred yDomain
   const isWithinPreferredDomain =
@@ -302,11 +283,10 @@ function ObservingDataChart({
     : ["auto", "auto"];
 
   return (
-    <ChartContainer className="pt-8" title={title} config={{}}>
+    <ChartContainer className="pt-8 h-50 w-full" title={title} config={{}}>
       <h1 className="text-white text-lg font-thin text-center">{title}</h1>
       <LineChart
         width={500}
-        height={300}
         data={data}
         margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
       >
@@ -335,14 +315,42 @@ function ObservingDataChart({
             letterSpacing: 1,
           }}
         />
+        {/* Twilight lines */}
+        {twilightValues.map((twi, i) =>
+          xMin <= twi && twi <= xMax ? (
+            <ReferenceLine
+              key={`twilight-${i}-${twi}`}
+              x={twi}
+              stroke="#0ea5e9"
+              strokeWidth={3}
+              strokeDasharray="4 4"
+              yAxisId="0"
+            />
+          ) : null,
+        )}
+        {/* Moon lines */}
+        {moonValues.map((twi, i) =>
+          xMin <= twi && twi <= xMax ? (
+            <ReferenceLine
+              key={`moon-${i}-${twi}`}
+              x={twi}
+              stroke="#EAB308"
+              strokeWidth={3}
+              strokeDasharray="4 4"
+              yAxisId="0"
+            />
+          ) : null,
+        )}
         <ChartTooltip
+          position={"topRight"}
+          offset={50}
           content={(props) => (
             <ChartTooltipContent
               {...props}
               formatter={(value, name, item, index, payload) => {
                 const obsStart = payload["obs start"];
                 const obsStartFormatted = DateTime.fromISO(obsStart).toFormat(
-                  "yyyyLLdd HH:mm:ss.SSS",
+                  "yyyy-LL-dd HH:mm:ss.SSS",
                 );
                 const exposureId = payload["exposure id"];
                 const band = payload["band"];
@@ -398,8 +406,6 @@ function Plots() {
   // Routing and URL params
   const { startDayobs, endDayobs, telescope } = useSearch({ from: "/plots" });
 
-  const [selectedTimeRange, setSelectedTimeRange] = useState([null, null]);
-
   // The end dayobs is inclusive, so we add one day to the
   // endDayobs to get the correct range for the queries
   const queryEndDayobs = getDatetimeFromDayobsStr(endDayobs.toString())
@@ -416,11 +422,17 @@ function Plots() {
 
   // Data
   const [dataLogEntries, setDataLogEntries] = useState([]);
+  const [availableDayobs, setAvailableDayobs] = useState([]);
   const [dataLogLoading, setDataLogLoading] = useState(true);
 
   // Twilights, moonrise/set and brightness
-  const [almanacInfo, setAlmanacInfo] = useState([]);
+  const [twilightValues, setTwilightValues] = useState([]);
+  const [moonValues, setMoonValues] = useState([]);
   const [almanacLoading, setAlmanacLoading] = useState(true);
+
+  // Time ranges for timeline and plots
+  const [selectedTimeRange, setSelectedTimeRange] = useState([null, null]);
+  const [fullTimeRange, setFullTimeRange] = useState([null, null]);
 
   useEffect(() => {
     if (telescope === "AuxTel") {
@@ -432,6 +444,7 @@ function Plots() {
 
     // Trigger loading skeletons
     setDataLogLoading(true);
+    setAlmanacLoading(true);
 
     // Fetch data from both sources
     fetchDataLogEntriesFromConsDB(
@@ -449,9 +462,68 @@ function Plots() {
           );
         }
 
-        // Set the merged data to state
-        setDataLogEntries(dataLog);
-        setDataLogLoading(false);
+        // Prepare data for charts
+        const chartData = dataLog
+          .map((entry) => {
+            const psfSigma = parseFloat(entry["psf sigma median"]);
+            const pixelScale = !isNaN(entry.pixel_scale_median)
+              ? entry.pixel_scale_median
+              : 0.2; // TODO: get from utils
+            return {
+              ...entry,
+              // Convert observation start time to a number for Recharts
+              obs_start_dt: DateTime.fromISO(entry["obs start"]).toMillis(),
+              "psf median": !isNaN(psfSigma)
+                ? psfSigma * 2.355 * pixelScale
+                : null, // TODO: get from utils
+            };
+          })
+          // Chronological order
+          .sort((a, b) => a.obs_start_dt - b.obs_start_dt);
+
+        // Get all available dayobs
+        const dayobsRange = [
+          ...new Set(chartData.map((entry) => entry["day obs"].toString())),
+        ].sort();
+
+        // Timeline start and end
+        const timelineStart = chartData.at(0)?.obs_start_dt ?? 0;
+        const timelineEnd = chartData.at(-1)?.obs_start_dt ?? 0;
+
+        // Set static timeline axis to boundaries of queried dayobs
+        let fullXRange = [timelineStart, timelineEnd];
+        if (dayobsRange.length > 0) {
+          const firstDayobs = dayobsRange[0];
+          const lastDayobs = dayobsRange[dayobsRange.length - 1];
+
+          // Set TAI timeline start time from firstDayobs
+          const startTimeOfFirstDayobs = DateTime.fromFormat(
+            firstDayobs,
+            "yyyyLLdd",
+            { zone: "utc" },
+          )
+            .set({ hour: 12, minute: 0, second: 37 })
+            .toMillis();
+
+          // Set TAI timeline end time from lastDayobs
+          const endTimeOfLastDayobs = DateTime.fromFormat(
+            lastDayobs,
+            "yyyyLLdd",
+          )
+            .plus({ days: 1 })
+            .set({ hour: 11, minute: 59, second: 37 })
+            .toMillis();
+
+          fullXRange = [startTimeOfFirstDayobs, endTimeOfLastDayobs];
+
+          setAvailableDayobs(dayobsRange);
+          setFullTimeRange(fullXRange);
+          // Set original selected range to be the full range
+          setSelectedTimeRange(fullXRange);
+        }
+
+        // Set the data to state
+        setDataLogEntries(chartData);
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
@@ -470,7 +542,47 @@ function Plots() {
 
     fetchAlmanac(startDayobs, queryEndDayobs, abortController)
       .then((almanac) => {
-        setAlmanacInfo(almanac);
+        // Set values for twilight lines
+        const twilightValues = almanac
+          .map((dayobsAlm) => {
+            const eve = DateTime.fromFormat(
+              dayobsAlm.twilight_evening,
+              "yyyy-MM-dd HH:mm:ss",
+            )
+              .plus({ seconds: 37 }) // TODO: get TAI constant from utils
+              .toMillis();
+            const mor = DateTime.fromFormat(
+              dayobsAlm.twilight_morning,
+              "yyyy-MM-dd HH:mm:ss",
+            )
+              .plus({ seconds: 37 }) // TODO: get TAI constant from utils
+              .toMillis();
+            return [eve, mor];
+          })
+          .flat();
+
+        // Set values for moon rise/set lines
+        const moonValues = almanac
+          .map((dayobsAlm) => {
+            const moonRise = DateTime.fromFormat(
+              dayobsAlm.moon_rise_time,
+              "yyyy-MM-dd HH:mm:ss",
+            )
+              .plus({ seconds: 37 }) // TODO: get TAI constant from utils
+              .toMillis();
+            const moonSet = DateTime.fromFormat(
+              dayobsAlm.moon_set_time,
+              "yyyy-MM-dd HH:mm:ss",
+            )
+              .plus({ seconds: 37 }) // TODO: get TAI constant from utils
+              .toMillis();
+            return [moonRise, moonSet];
+          })
+          .flat();
+
+        // TODO: this should be [moonRise, moonSet]
+        setTwilightValues(twilightValues);
+        setMoonValues(moonValues);
         console.log(almanac); // TODO: Remove before PR
       })
       .catch((err) => {
@@ -518,42 +630,11 @@ function Plots() {
     );
   }
 
-  // Prepare data for charts
-  const chartData = dataLogEntries
-    .map((entry) => {
-      const psfSigma = parseFloat(entry["psf sigma median"]); // TODO: get from utils after PR
-      const pixelScale = !isNaN(entry.pixel_scale_median)
-        ? entry.pixel_scale_median
-        : 0.2;
-      return {
-        ...entry,
-        // Convert observation start time to a number for Recharts
-        obs_start_dt: DateTime.fromISO(entry["obs start"]).toMillis(),
-        "psf median": !isNaN(psfSigma) ? psfSigma * 2.355 * pixelScale : null,
-      };
-    })
-    // Chronological order
-    .sort((a, b) => a.obs_start_dt - b.obs_start_dt);
-
-  // Get all available dayobs
-  const availableDayobs = [
-    ...new Set(chartData.map((entry) => entry["day obs"].toString())),
-  ].sort();
-
-  // Timeline start and end
-  const timelineStart = chartData.at(0)?.obs_start_dt ?? 0;
-  const timelineEnd = chartData.at(-1)?.obs_start_dt ?? 0;
-
-  // If no selection, use full range
-  const [windowStart, windowEnd] =
-    selectedTimeRange[0] && selectedTimeRange[1]
-      ? selectedTimeRange
-      : [timelineStart, timelineEnd];
-
   // Filter chart data based on selected time range
-  const filteredChartData = chartData.filter(
+  const filteredChartData = dataLogEntries.filter(
     (entry) =>
-      entry.obs_start_dt >= windowStart && entry.obs_start_dt <= windowEnd,
+      entry.obs_start_dt >= selectedTimeRange[0] &&
+      entry.obs_start_dt <= selectedTimeRange[1],
   );
 
   return (
@@ -587,12 +668,30 @@ function Plots() {
         {dataLogLoading || almanacLoading ? (
           <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
         ) : (
-          <TimelineChart
-            data={chartData}
-            selectedTimeRange={selectedTimeRange}
-            setSelectedTimeRange={setSelectedTimeRange}
-            almanacInfo={almanacInfo}
-          />
+          <>
+            <div className="border border-white rounded-md pt-2">
+              <TimelineChart
+                data={dataLogEntries}
+                twilightValues={twilightValues}
+                moonValues={moonValues}
+                // -
+                fullTimeRange={fullTimeRange}
+                selectedTimeRange={selectedTimeRange}
+                setSelectedTimeRange={setSelectedTimeRange}
+                staticTicks={true}
+              />
+            </div>
+            <TimelineChart
+              data={dataLogEntries}
+              twilightValues={twilightValues}
+              moonValues={moonValues}
+              // -
+              fullTimeRange={fullTimeRange}
+              selectedTimeRange={selectedTimeRange}
+              setSelectedTimeRange={setSelectedTimeRange}
+              staticTicks={false}
+            />
+          </>
         )}
 
         {/* Time Window Inputs & Controls */}
@@ -600,13 +699,10 @@ function Plots() {
           <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
         ) : (
           <TimeWindowControls
-            windowStart={windowStart}
-            windowEnd={windowEnd}
+            fullTimeRange={fullTimeRange}
             selectedTimeRange={selectedTimeRange}
             setSelectedTimeRange={setSelectedTimeRange}
             availableDayobs={availableDayobs}
-            timelineStart={timelineStart}
-            timelineEnd={timelineEnd}
           />
         )}
 
@@ -631,6 +727,8 @@ function Plots() {
                 dataKey="psf median"
                 data={filteredChartData}
                 preferredYDomain={[0.6, 1.8]}
+                twilightValues={twilightValues}
+                selectedTimeRange={selectedTimeRange}
               />
               <ObservingDataChart
                 title="Photometric Zero Points"
@@ -638,16 +736,23 @@ function Plots() {
                 dataKey="zero point median"
                 data={filteredChartData}
                 preferredYDomain={[30, 36]}
+                twilightValues={twilightValues}
+                selectedTimeRange={selectedTimeRange}
               />
               <ObservingDataChart
                 title="Airmass"
                 dataKey="airmass"
                 data={filteredChartData}
+                twilightValues={twilightValues}
+                selectedTimeRange={selectedTimeRange}
               />
               <ObservingDataChart
                 title="Sky Brightness"
                 dataKey="sky bg median"
                 data={filteredChartData}
+                twilightValues={twilightValues}
+                moonValues={moonValues}
+                selectedTimeRange={selectedTimeRange}
               />
             </>
           )}
