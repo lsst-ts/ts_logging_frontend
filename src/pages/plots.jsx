@@ -34,20 +34,24 @@ import TimeWindowControls from "@/components/TimeWindowControls";
 // import offlineResponse from "@/assets/dataLog_Simonyi_20250722_20250723.json";
 
 // Small vertical lines to represent exposures in the timeline
-const CustomizedDot = (props) => {
-  const { cx, cy, stroke } = props;
-
+const CustomisedDot = ({ cx, cy, stroke, h, w }) => {
   if (cx == null || cy == null) return null;
 
+  // Defaults
+  const height = h || 2;
+  const width = w || 1;
+  const halfHeight = height / 2;
+  const halfWidth = width / 2;
+  const fill = stroke || "#3CAE3F";
+
   return (
-    // vertically centre the lines
-    <svg x={cx - 0.5} y={cy - 10} width={1} height={20}>
-      <rect x={0} y={0} width={1} height={20} fill={stroke || "#3CAE3F"} />
+    <svg x={cx - halfWidth} y={cy - halfHeight} width={width} height={height}>
+      <rect x={0} y={0} width={width} height={height} fill={fill} />
     </svg>
   );
 };
 
-function TimelineChart({
+function Timeline({
   data,
   twilightValues = [],
   moonValues = [],
@@ -56,13 +60,13 @@ function TimelineChart({
   setSelectedTimeRange,
   staticTicks,
 }) {
+  // Click & Drag Functionality ------------------------
   const [refAreaLeft, setRefAreaLeft] = useState(null);
   const [refAreaRight, setRefAreaRight] = useState(null);
   const [xMin, xMax] = fullTimeRange;
   if (!xMin || !xMax) {
     return null;
   }
-
   // Handle click+drag and set state accordingly
   const handleMouseDown = (e) => setRefAreaLeft(e?.activeLabel ?? null);
   const handleMouseMove = (e) =>
@@ -82,7 +86,9 @@ function TimelineChart({
     setRefAreaLeft(null);
     setRefAreaRight(null);
   };
+  // --------------------------------------------------------
 
+  // Axis Utils =============================================
   // TAI xAxis ticks
   const generateHourlyTicks = (start, end, intervalHours = 1) => {
     const ticks = [];
@@ -99,7 +105,6 @@ function TimelineChart({
     return ticks;
   };
   const hourlyTicks = generateHourlyTicks(xMin, xMax, 1);
-
   // Dayobs xAxis
   // Alternate dayobs labels and vertical lines
   const renderDayobsTicks = ({ x, y, payload }) => {
@@ -135,7 +140,9 @@ function TimelineChart({
 
     return null;
   };
+  // --------------------------------------------------------
 
+  // Timeline ===============================================
   return (
     <ResponsiveContainer
       title="Time Window Selector"
@@ -237,7 +244,7 @@ function TimelineChart({
           dataKey={() => 0.5}
           stroke="#FFFFFF"
           type="linear"
-          dot={<CustomizedDot stroke="#3CAE3F" />}
+          dot={<CustomisedDot stroke="#3CAE3F" h="20" w="1" />}
           isAnimationActive={false}
         />
         {/* Selection rectangle shown during active highlighting */}
@@ -254,7 +261,7 @@ function TimelineChart({
   );
 }
 
-function ObservingDataChart({
+function TimeseriesPlot({
   title,
   unit = null,
   dataKey,
@@ -282,6 +289,7 @@ function ObservingDataChart({
     ? preferredYDomain
     : ["auto", "auto"];
 
+  // Plot =================================================
   return (
     <ChartContainer className="pt-8 h-50 w-full" title={title} config={{}}>
       <h1 className="text-white text-lg font-thin text-center">{title}</h1>
@@ -323,7 +331,7 @@ function ObservingDataChart({
               x={twi}
               stroke="#0ea5e9"
               strokeWidth={3}
-              strokeDasharray="4 4"
+              // strokeDasharray="4 4"
               yAxisId="0"
             />
           ) : null,
@@ -336,7 +344,7 @@ function ObservingDataChart({
               x={twi}
               stroke="#EAB308"
               strokeWidth={3}
-              strokeDasharray="4 4"
+              // strokeDasharray="4 4"
               yAxisId="0"
             />
           ) : null,
@@ -387,14 +395,19 @@ function ObservingDataChart({
             />
           )}
         />
+        {/* Data */}
         <Line
           connectNulls
           type="monotone"
           dataKey={dataKey}
-          stroke="#000000"
+          // stroke="#000000" // black
+          stroke="#3CAE3F" // green
           strokeWidth={2}
-          // dot={{ r: 1, fill: "#0C4A47", stroke: "#0C4A47" }} // sidebar teal
-          dot={{ r: 0.5, fill: "#3CAE3F", stroke: "#3CAE3F" }} // shadow green
+          // points
+          // dot={{ r: 1, fill: "#0C4A47", stroke: "#0C4A47" }} // sidebar teal circle
+          // dot={{ r: 0.5, fill: "#3CAE3F", stroke: "#3CAE3F" }} // shadow green circle
+          // dot={<CustomisedDot stroke="#3CAE3F" h="5" w="0.5" />} // green vertical lines
+          dot={<CustomisedDot stroke="#3CAE3F" h="0" w="0.5" />} // no points
           activeDot={{ r: 4, fill: "#ffffff" }}
         />
       </LineChart>
@@ -462,8 +475,8 @@ function Plots() {
           );
         }
 
-        // Prepare data for charts
-        const chartData = dataLog
+        // Prepare data for plots
+        const data = dataLog
           .map((entry) => {
             const psfSigma = parseFloat(entry["psf sigma median"]);
             const pixelScale = !isNaN(entry.pixel_scale_median)
@@ -481,14 +494,14 @@ function Plots() {
           // Chronological order
           .sort((a, b) => a.obs_start_dt - b.obs_start_dt);
 
+        // Timeline start and end
+        const timelineStart = data.at(0)?.obs_start_dt ?? 0;
+        const timelineEnd = data.at(-1)?.obs_start_dt ?? 0;
+
         // Get all available dayobs
         const dayobsRange = [
-          ...new Set(chartData.map((entry) => entry["day obs"].toString())),
+          ...new Set(data.map((entry) => entry["day obs"].toString())),
         ].sort();
-
-        // Timeline start and end
-        const timelineStart = chartData.at(0)?.obs_start_dt ?? 0;
-        const timelineEnd = chartData.at(-1)?.obs_start_dt ?? 0;
 
         // Set static timeline axis to boundaries of queried dayobs
         let fullXRange = [timelineStart, timelineEnd];
@@ -496,7 +509,7 @@ function Plots() {
           const firstDayobs = dayobsRange[0];
           const lastDayobs = dayobsRange[dayobsRange.length - 1];
 
-          // Set TAI timeline start time from firstDayobs
+          // Set TAI start time using firstDayobs
           const startTimeOfFirstDayobs = DateTime.fromFormat(
             firstDayobs,
             "yyyyLLdd",
@@ -505,7 +518,7 @@ function Plots() {
             .set({ hour: 12, minute: 0, second: 37 })
             .toMillis();
 
-          // Set TAI timeline end time from lastDayobs
+          // Set TAI end time using lastDayobs
           const endTimeOfLastDayobs = DateTime.fromFormat(
             lastDayobs,
             "yyyyLLdd",
@@ -518,12 +531,11 @@ function Plots() {
 
           setAvailableDayobs(dayobsRange);
           setFullTimeRange(fullXRange);
-          // Set original selected range to be the full range
           setSelectedTimeRange(fullXRange);
         }
 
         // Set the data to state
-        setDataLogEntries(chartData);
+        setDataLogEntries(data);
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
@@ -630,8 +642,8 @@ function Plots() {
     );
   }
 
-  // Filter chart data based on selected time range
-  const filteredChartData = dataLogEntries.filter(
+  // Filter data based on selected time range
+  const filteredData = dataLogEntries.filter(
     (entry) =>
       entry.obs_start_dt >= selectedTimeRange[0] &&
       entry.obs_start_dt <= selectedTimeRange[1],
@@ -670,7 +682,7 @@ function Plots() {
         ) : (
           <>
             <div className="border border-white rounded-md pt-2">
-              <TimelineChart
+              <Timeline
                 data={dataLogEntries}
                 twilightValues={twilightValues}
                 moonValues={moonValues}
@@ -681,7 +693,7 @@ function Plots() {
                 staticTicks={true}
               />
             </div>
-            <TimelineChart
+            <Timeline
               data={dataLogEntries}
               twilightValues={twilightValues}
               moonValues={moonValues}
@@ -721,35 +733,35 @@ function Plots() {
             </>
           ) : (
             <>
-              <ObservingDataChart
+              <TimeseriesPlot
                 title="Seeing (PSF)"
                 unit="arcsec"
                 dataKey="psf median"
-                data={filteredChartData}
+                data={filteredData}
                 preferredYDomain={[0.6, 1.8]}
                 twilightValues={twilightValues}
                 selectedTimeRange={selectedTimeRange}
               />
-              <ObservingDataChart
+              <TimeseriesPlot
                 title="Photometric Zero Points"
                 unit="magnitude"
                 dataKey="zero point median"
-                data={filteredChartData}
+                data={filteredData}
                 preferredYDomain={[30, 36]}
                 twilightValues={twilightValues}
                 selectedTimeRange={selectedTimeRange}
               />
-              <ObservingDataChart
+              <TimeseriesPlot
                 title="Airmass"
                 dataKey="airmass"
-                data={filteredChartData}
+                data={filteredData}
                 twilightValues={twilightValues}
                 selectedTimeRange={selectedTimeRange}
               />
-              <ObservingDataChart
+              <TimeseriesPlot
                 title="Sky Brightness"
                 dataKey="sky bg median"
-                data={filteredChartData}
+                data={filteredData}
                 twilightValues={twilightValues}
                 moonValues={moonValues}
                 selectedTimeRange={selectedTimeRange}
