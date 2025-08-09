@@ -32,6 +32,7 @@ import { getDatetimeFromDayobsStr } from "@/utils/utils";
 import TimeWindowControls from "@/components/TimeWindowControls";
 
 // import offlineResponse from "@/assets/dataLog_Simonyi_20250722_20250723.json";
+// import offlineResponse from "@/assets/dataLog_Simonyi_0721_0723_wAlmanac.json";
 
 // Small vertical lines to represent exposures in the timeline
 const CustomisedDot = ({ cx, cy, stroke, h, w }) => {
@@ -177,7 +178,7 @@ function Timeline({
             xAxisId="dayobs"
             dataKey="obs_start_dt"
             domain={staticTicks ? fullTimeRange : selectedTimeRange}
-            // allowDataOverflow
+            allowDataOverflow
             type="number"
             scale="time"
             ticks={hourlyTicks}
@@ -302,7 +303,7 @@ function TimeseriesPlot({
         <XAxis
           dataKey="obs_start_dt"
           type="number"
-          domain={["auto", "auto"]}
+          domain={selectedTimeRange}
           scale="time"
           tickFormatter={(tick) => DateTime.fromMillis(tick).toFormat("HH:mm")}
           tick={{ fill: "white" }}
@@ -447,6 +448,111 @@ function Plots() {
   const [selectedTimeRange, setSelectedTimeRange] = useState([null, null]);
   const [fullTimeRange, setFullTimeRange] = useState([null, null]);
 
+  async function prepareExposureData(dataLog) {
+    // Prepare data for plots
+    const data = dataLog
+      .map((entry) => {
+        const psfSigma = parseFloat(entry["psf sigma median"]);
+        const pixelScale = !isNaN(entry.pixel_scale_median)
+          ? entry.pixel_scale_median
+          : 0.2; // TODO: get from utils
+        return {
+          ...entry,
+          // Convert observation start time to a number for Recharts
+          obs_start_dt: DateTime.fromISO(entry["obs start"]).toMillis(),
+          "psf median": !isNaN(psfSigma) ? psfSigma * 2.355 * pixelScale : null, // TODO: get from utils
+        };
+      })
+      // Chronological order
+      .sort((a, b) => a.obs_start_dt - b.obs_start_dt);
+
+    // Timeline start and end
+    const timelineStart = data.at(0)?.obs_start_dt ?? 0;
+    const timelineEnd = data.at(-1)?.obs_start_dt ?? 0;
+
+    // Get all available dayobs
+    const dayobsRange = [
+      ...new Set(data.map((entry) => entry["day obs"].toString())),
+    ].sort();
+
+    // Set static timeline axis to boundaries of queried dayobs
+    let fullXRange = [timelineStart, timelineEnd];
+    if (dayobsRange.length > 0) {
+      const firstDayobs = dayobsRange[0];
+      const lastDayobs = dayobsRange[dayobsRange.length - 1];
+
+      // Set TAI start time using firstDayobs
+      const startTimeOfFirstDayobs = DateTime.fromFormat(
+        firstDayobs,
+        "yyyyLLdd",
+        { zone: "utc" },
+      )
+        // .plus({ days: 1 })
+        // .set({ hour: 12, minute: 0, second: 37 })
+        .toMillis();
+
+      // Set TAI end time using lastDayobs
+      const endTimeOfLastDayobs = DateTime.fromFormat(lastDayobs, "yyyyLLdd")
+        .plus({ days: 1 })
+        .set({ hour: 11, minute: 59, second: 37 })
+        .toMillis();
+
+      fullXRange = [startTimeOfFirstDayobs, endTimeOfLastDayobs];
+
+      setAvailableDayobs(dayobsRange);
+      setFullTimeRange(fullXRange);
+      setSelectedTimeRange(fullXRange);
+    }
+
+    // Set the data to state
+    setDataLogEntries(data);
+  }
+
+  async function prepareAlmanacData(almanac) {
+    // Set values for twilight lines
+    const twilightValues = almanac
+      .map((dayobsAlm) => {
+        const eve = DateTime.fromFormat(
+          dayobsAlm.twilight_evening,
+          "yyyy-MM-dd HH:mm:ss",
+        )
+          .plus({ seconds: 37 }) // TODO: get TAI constant from utils
+          .toMillis();
+        const mor = DateTime.fromFormat(
+          dayobsAlm.twilight_morning,
+          "yyyy-MM-dd HH:mm:ss",
+        )
+          .plus({ seconds: 37 }) // TODO: get TAI constant from utils
+          .toMillis();
+        return [eve, mor];
+      })
+      .flat();
+
+    // Set values for moon rise/set lines
+    const moonValues = almanac
+      .map((dayobsAlm) => {
+        const moonRise = DateTime.fromFormat(
+          dayobsAlm.moon_rise_time,
+          "yyyy-MM-dd HH:mm:ss",
+        )
+          .plus({ seconds: 37 }) // TODO: get TAI constant from utils
+          .toMillis();
+        const moonSet = DateTime.fromFormat(
+          dayobsAlm.moon_set_time,
+          "yyyy-MM-dd HH:mm:ss",
+        )
+          .plus({ seconds: 37 }) // TODO: get TAI constant from utils
+          .toMillis();
+        return [moonRise, moonSet];
+      })
+      .flat();
+
+    // TODO: this should be [moonRise, moonSet]
+    setTwilightValues(twilightValues);
+    setMoonValues(moonValues);
+    console.log(almanac); // TODO: Remove before PR
+  }
+
   useEffect(() => {
     if (telescope === "AuxTel") {
       return;
@@ -475,67 +581,7 @@ function Plots() {
           );
         }
 
-        // Prepare data for plots
-        const data = dataLog
-          .map((entry) => {
-            const psfSigma = parseFloat(entry["psf sigma median"]);
-            const pixelScale = !isNaN(entry.pixel_scale_median)
-              ? entry.pixel_scale_median
-              : 0.2; // TODO: get from utils
-            return {
-              ...entry,
-              // Convert observation start time to a number for Recharts
-              obs_start_dt: DateTime.fromISO(entry["obs start"]).toMillis(),
-              "psf median": !isNaN(psfSigma)
-                ? psfSigma * 2.355 * pixelScale
-                : null, // TODO: get from utils
-            };
-          })
-          // Chronological order
-          .sort((a, b) => a.obs_start_dt - b.obs_start_dt);
-
-        // Timeline start and end
-        const timelineStart = data.at(0)?.obs_start_dt ?? 0;
-        const timelineEnd = data.at(-1)?.obs_start_dt ?? 0;
-
-        // Get all available dayobs
-        const dayobsRange = [
-          ...new Set(data.map((entry) => entry["day obs"].toString())),
-        ].sort();
-
-        // Set static timeline axis to boundaries of queried dayobs
-        let fullXRange = [timelineStart, timelineEnd];
-        if (dayobsRange.length > 0) {
-          const firstDayobs = dayobsRange[0];
-          const lastDayobs = dayobsRange[dayobsRange.length - 1];
-
-          // Set TAI start time using firstDayobs
-          const startTimeOfFirstDayobs = DateTime.fromFormat(
-            firstDayobs,
-            "yyyyLLdd",
-            { zone: "utc" },
-          )
-            .set({ hour: 12, minute: 0, second: 37 })
-            .toMillis();
-
-          // Set TAI end time using lastDayobs
-          const endTimeOfLastDayobs = DateTime.fromFormat(
-            lastDayobs,
-            "yyyyLLdd",
-          )
-            .plus({ days: 1 })
-            .set({ hour: 11, minute: 59, second: 37 })
-            .toMillis();
-
-          fullXRange = [startTimeOfFirstDayobs, endTimeOfLastDayobs];
-
-          setAvailableDayobs(dayobsRange);
-          setFullTimeRange(fullXRange);
-          setSelectedTimeRange(fullXRange);
-        }
-
-        // Set the data to state
-        setDataLogEntries(data);
+        prepareExposureData(dataLog);
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
@@ -554,48 +600,7 @@ function Plots() {
 
     fetchAlmanac(startDayobs, queryEndDayobs, abortController)
       .then((almanac) => {
-        // Set values for twilight lines
-        const twilightValues = almanac
-          .map((dayobsAlm) => {
-            const eve = DateTime.fromFormat(
-              dayobsAlm.twilight_evening,
-              "yyyy-MM-dd HH:mm:ss",
-            )
-              .plus({ seconds: 37 }) // TODO: get TAI constant from utils
-              .toMillis();
-            const mor = DateTime.fromFormat(
-              dayobsAlm.twilight_morning,
-              "yyyy-MM-dd HH:mm:ss",
-            )
-              .plus({ seconds: 37 }) // TODO: get TAI constant from utils
-              .toMillis();
-            return [eve, mor];
-          })
-          .flat();
-
-        // Set values for moon rise/set lines
-        const moonValues = almanac
-          .map((dayobsAlm) => {
-            const moonRise = DateTime.fromFormat(
-              dayobsAlm.moon_rise_time,
-              "yyyy-MM-dd HH:mm:ss",
-            )
-              .plus({ seconds: 37 }) // TODO: get TAI constant from utils
-              .toMillis();
-            const moonSet = DateTime.fromFormat(
-              dayobsAlm.moon_set_time,
-              "yyyy-MM-dd HH:mm:ss",
-            )
-              .plus({ seconds: 37 }) // TODO: get TAI constant from utils
-              .toMillis();
-            return [moonRise, moonSet];
-          })
-          .flat();
-
-        // TODO: this should be [moonRise, moonSet]
-        setTwilightValues(twilightValues);
-        setMoonValues(moonValues);
-        console.log(almanac); // TODO: Remove before PR
+        prepareAlmanacData(almanac);
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
@@ -618,7 +623,7 @@ function Plots() {
     };
   }, [startDayobs, queryEndDayobs, instrument]);
 
-  // Temporary offline data for Simonyi
+  // // Temporary offline data for Simonyi
   // useEffect(() => {
   //   setDataLogEntries(offlineResponse.data_log || []);
   //   setDataLogLoading(false);
@@ -642,6 +647,7 @@ function Plots() {
     );
   }
 
+  // TODO: Move this into main data Prep function & assign it to state
   // Filter data based on selected time range
   const filteredData = dataLogEntries.filter(
     (entry) =>
@@ -686,7 +692,6 @@ function Plots() {
                 data={dataLogEntries}
                 twilightValues={twilightValues}
                 moonValues={moonValues}
-                // -
                 fullTimeRange={fullTimeRange}
                 selectedTimeRange={selectedTimeRange}
                 setSelectedTimeRange={setSelectedTimeRange}
@@ -697,7 +702,6 @@ function Plots() {
               data={dataLogEntries}
               twilightValues={twilightValues}
               moonValues={moonValues}
-              // -
               fullTimeRange={fullTimeRange}
               selectedTimeRange={selectedTimeRange}
               setSelectedTimeRange={setSelectedTimeRange}
@@ -722,6 +726,7 @@ function Plots() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {dataLogLoading || almanacLoading ? (
             <>
+              {/* 4 loading plot skeletons */}
               {Array(4)
                 .fill(true)
                 .map((_, i) => (
