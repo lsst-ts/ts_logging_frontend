@@ -28,11 +28,20 @@ import {
   fetchDataLogEntriesFromConsDB,
 } from "@/utils/fetchUtils";
 import { getDatetimeFromDayobsStr } from "@/utils/utils";
+import {
+  isoToTAI,
+  // taiToMillis,
+  // millisToTAI,
+  // taiToDayobs,
+  dayobsToTAI,
+  millisToDateTime,
+  millisToHHmm,
+} from "@/utils/timeUtils";
 
 import TimeWindowControls from "@/components/TimeWindowControls";
 
 // import offlineResponse from "@/assets/dataLog_Simonyi_20250722_20250723.json";
-// import offlineResponse from "@/assets/dataLog_Simonyi_0721_0723_wAlmanac.json";
+import offlineResponse from "@/assets/dataLog_Simonyi_0721_0723_wAlmanac.json";
 
 // Small vertical lines to represent exposures in the timeline
 const CustomisedDot = ({ cx, cy, stroke, h, w }) => {
@@ -61,13 +70,19 @@ function Timeline({
   setSelectedTimeRange,
   staticTicks,
 }) {
-  // Click & Drag Functionality ------------------------
   const [refAreaLeft, setRefAreaLeft] = useState(null);
   const [refAreaRight, setRefAreaRight] = useState(null);
-  const [xMin, xMax] = fullTimeRange;
-  if (!xMin || !xMax) {
-    return null;
-  }
+
+  // Convert datetime inputs to millis format for plots ====
+  const xMinMillis = fullTimeRange[0]?.toMillis();
+  const xMaxMillis = fullTimeRange[1]?.toMillis();
+  const selectedMinMillis = selectedTimeRange[0]?.toMillis();
+  const selectedMaxMillis = selectedTimeRange[1]?.toMillis();
+
+  if (!xMinMillis || !xMaxMillis) return null;
+  // --------------------------------------------------------
+
+  // Click & Drag Functionality =============================
   // Handle click+drag and set state accordingly
   const handleMouseDown = (e) => setRefAreaLeft(e?.activeLabel ?? null);
   const handleMouseMove = (e) =>
@@ -79,11 +94,15 @@ function Timeline({
       return;
     }
     // Swap start/end if user dragged backwards
-    const [start, end] =
+    const [startMillis, endMillis] =
       refAreaLeft < refAreaRight
         ? [refAreaLeft, refAreaRight]
         : [refAreaRight, refAreaLeft];
-    setSelectedTimeRange([start, end]);
+
+    // Convert millis to DateTime objects
+    const startDT = millisToDateTime(startMillis);
+    const endDT = millisToDateTime(endMillis);
+    setSelectedTimeRange([startDT, endDT]);
     setRefAreaLeft(null);
     setRefAreaRight(null);
   };
@@ -91,12 +110,12 @@ function Timeline({
 
   // Axis Utils =============================================
   // TAI xAxis ticks
-  const generateHourlyTicks = (start, end, intervalHours = 1) => {
+  const generateHourlyTicks = (startMillis, endMillis, intervalHours = 1) => {
     const ticks = [];
 
     // Get start of first hour and end of last hour on timeline
-    let t = DateTime.fromMillis(start).startOf("hour");
-    const endDt = DateTime.fromMillis(end).endOf("hour");
+    let t = millisToDateTime(startMillis).startOf("hour");
+    const endDt = millisToDateTime(endMillis).endOf("hour");
 
     // Loop through timeline, collecting hours
     while (t <= endDt) {
@@ -105,12 +124,12 @@ function Timeline({
     }
     return ticks;
   };
-  const hourlyTicks = generateHourlyTicks(xMin, xMax, 1);
+  const hourlyTicks = generateHourlyTicks(xMinMillis, xMaxMillis, 1);
   // Dayobs xAxis
   // Alternate dayobs labels and vertical lines
   const renderDayobsTicks = ({ x, y, payload }) => {
     const value = payload.value;
-    const dt = DateTime.fromMillis(value);
+    const dt = millisToDateTime(value);
 
     const hour = dt.hour;
     const isMidday = hour === 12;
@@ -176,8 +195,12 @@ function Timeline({
         {twilightValues.length > 1 && (
           <XAxis
             xAxisId="dayobs"
-            dataKey="obs_start_dt"
-            domain={staticTicks ? fullTimeRange : selectedTimeRange}
+            dataKey="obs_start_millis"
+            domain={
+              staticTicks
+                ? [xMinMillis, xMaxMillis]
+                : [selectedMinMillis, selectedMaxMillis]
+            }
             allowDataOverflow
             type="number"
             scale="time"
@@ -185,18 +208,22 @@ function Timeline({
             interval={staticTicks && 0}
             axisLine={false}
             tickLine={false}
-            tick={renderDayobsTicks}
+            tick={staticTicks && renderDayobsTicks}
             height={40}
           />
         )}
         {/* TAI Time Axis */}
         <XAxis
-          dataKey="obs_start_dt"
-          domain={staticTicks ? fullTimeRange : selectedTimeRange}
+          dataKey="obs_start_millis"
+          domain={
+            staticTicks
+              ? [xMinMillis, xMaxMillis]
+              : [selectedMinMillis, selectedMaxMillis]
+          }
           allowDataOverflow={true}
           type="number"
           scale="time"
-          tickFormatter={(tick) => DateTime.fromMillis(tick).toFormat("HH:mm")}
+          tickFormatter={(tick) => millisToHHmm(tick)}
           ticks={staticTicks && hourlyTicks}
           interval={staticTicks ?? "preserveStartEnd"}
           tick={{ fill: "white", style: { userSelect: "none" } }}
@@ -206,36 +233,34 @@ function Timeline({
         />
         <YAxis hide domain={[0, 1]} />
         {/* Selection rectangle shown once time window selection made */}
-        {selectedTimeRange[0] && selectedTimeRange[1] ? (
+        {selectedMinMillis && selectedMaxMillis ? (
           <ReferenceArea
-            x1={selectedTimeRange[0]}
-            x2={selectedTimeRange[1]}
+            x1={selectedMinMillis}
+            x2={selectedMaxMillis}
             stroke="hotPink"
             fillOpacity={0.2}
           />
         ) : null}
         {/* Twilight lines */}
         {twilightValues.map((twi, i) =>
-          xMin <= twi && twi <= xMax ? (
+          xMinMillis <= twi && twi <= xMaxMillis ? (
             <ReferenceLine
               key={`twilight-${i}-${twi}`}
               x={twi}
               stroke="#0ea5e9"
               strokeWidth={3}
-              // strokeDasharray="4 4"
               yAxisId="0"
             />
           ) : null,
         )}
         {/* Moon lines */}
         {moonValues.map((twi, i) =>
-          xMin <= twi && twi <= xMax ? (
+          xMinMillis <= twi && twi <= xMaxMillis ? (
             <ReferenceLine
               key={`moon-${i}-${twi}`}
               x={twi}
               stroke="#EAB308"
               strokeWidth={3}
-              // strokeDasharray="4 4"
               yAxisId="0"
             />
           ) : null,
@@ -272,7 +297,8 @@ function TimeseriesPlot({
   moonValues = [],
   selectedTimeRange,
 }) {
-  const [xMin, xMax] = selectedTimeRange;
+  const selectedMinMillis = selectedTimeRange[0]?.toMillis();
+  const selectedMaxMillis = selectedTimeRange[1]?.toMillis();
 
   // Check if data is empty
   const actualValues = data.map((d) => d[dataKey]).filter((v) => v != null);
@@ -301,11 +327,11 @@ function TimeseriesPlot({
       >
         <CartesianGrid strokeDasharray="3 3" stroke="#555" />
         <XAxis
-          dataKey="obs_start_dt"
+          dataKey="obs_start_millis"
           type="number"
           domain={selectedTimeRange}
           scale="time"
-          tickFormatter={(tick) => DateTime.fromMillis(tick).toFormat("HH:mm")}
+          tickFormatter={(tick) => millisToHHmm(tick)}
           tick={{ fill: "white" }}
         />
         <YAxis
@@ -326,26 +352,24 @@ function TimeseriesPlot({
         />
         {/* Twilight lines */}
         {twilightValues.map((twi, i) =>
-          xMin <= twi && twi <= xMax ? (
+          selectedMinMillis <= twi && twi <= selectedMaxMillis ? (
             <ReferenceLine
               key={`twilight-${i}-${twi}`}
               x={twi}
               stroke="#0ea5e9"
               strokeWidth={3}
-              // strokeDasharray="4 4"
               yAxisId="0"
             />
           ) : null,
         )}
         {/* Moon lines */}
         {moonValues.map((twi, i) =>
-          xMin <= twi && twi <= xMax ? (
+          selectedMinMillis <= twi && twi <= selectedMaxMillis ? (
             <ReferenceLine
               key={`moon-${i}-${twi}`}
               x={twi}
               stroke="#EAB308"
               strokeWidth={3}
-              // strokeDasharray="4 4"
               yAxisId="0"
             />
           ) : null,
@@ -353,12 +377,13 @@ function TimeseriesPlot({
         <ChartTooltip
           position={"topRight"}
           offset={50}
+          // allowEscapeViewBox={{ x: false, y: true }}
           content={(props) => (
             <ChartTooltipContent
               {...props}
               formatter={(value, name, item, index, payload) => {
-                const obsStart = payload["obs start"];
-                const obsStartFormatted = DateTime.fromISO(obsStart).toFormat(
+                const obs_start_dt = payload["obs_start_dt"];
+                const obsStartFormatted = obs_start_dt.toFormat(
                   "yyyy-LL-dd HH:mm:ss.SSS",
                 );
                 const exposureId = payload["exposure id"];
@@ -456,15 +481,16 @@ function Plots() {
         const pixelScale = !isNaN(entry.pixel_scale_median)
           ? entry.pixel_scale_median
           : 0.2; // TODO: get from utils
+        const obsStartDt = isoToTAI(entry["obs start"]);
         return {
           ...entry,
-          // Convert observation start time to a number for Recharts
-          obs_start_dt: DateTime.fromISO(entry["obs start"]).toMillis(),
+          obs_start_dt: obsStartDt,
+          obs_start_millis: obsStartDt.toMillis(),
           "psf median": !isNaN(psfSigma) ? psfSigma * 2.355 * pixelScale : null, // TODO: get from utils
         };
       })
       // Chronological order
-      .sort((a, b) => a.obs_start_dt - b.obs_start_dt);
+      .sort((a, b) => a.obs_start_millis - b.obs_start_millis);
 
     // Timeline start and end
     const timelineStart = data.at(0)?.obs_start_dt ?? 0;
@@ -481,21 +507,8 @@ function Plots() {
       const firstDayobs = dayobsRange[0];
       const lastDayobs = dayobsRange[dayobsRange.length - 1];
 
-      // Set TAI start time using firstDayobs
-      const startTimeOfFirstDayobs = DateTime.fromFormat(
-        firstDayobs,
-        "yyyyLLdd",
-        { zone: "utc" },
-      )
-        // .plus({ days: 1 })
-        // .set({ hour: 12, minute: 0, second: 37 })
-        .toMillis();
-
-      // Set TAI end time using lastDayobs
-      const endTimeOfLastDayobs = DateTime.fromFormat(lastDayobs, "yyyyLLdd")
-        .plus({ days: 1 })
-        .set({ hour: 11, minute: 59, second: 37 })
-        .toMillis();
+      const startTimeOfFirstDayobs = dayobsToTAI(firstDayobs, 12, 0);
+      const endTimeOfLastDayobs = dayobsToTAI(lastDayobs, 11, 59);
 
       fullXRange = [startTimeOfFirstDayobs, endTimeOfLastDayobs];
 
@@ -515,12 +528,14 @@ function Plots() {
         const eve = DateTime.fromFormat(
           dayobsAlm.twilight_evening,
           "yyyy-MM-dd HH:mm:ss",
+          { zone: "utc" },
         )
           .plus({ seconds: 37 }) // TODO: get TAI constant from utils
           .toMillis();
         const mor = DateTime.fromFormat(
           dayobsAlm.twilight_morning,
           "yyyy-MM-dd HH:mm:ss",
+          { zone: "utc" },
         )
           .plus({ seconds: 37 }) // TODO: get TAI constant from utils
           .toMillis();
@@ -553,19 +568,104 @@ function Plots() {
     console.log(almanac); // TODO: Remove before PR
   }
 
+  // useEffect(() => {
+  //   if (telescope === "AuxTel") {
+  //     return;
+  //   }
+
+  //   // To cancel previous fetch if still in progress
+  //   const abortController = new AbortController();
+
+  //   // Trigger loading skeletons
+  //   setDataLogLoading(true);
+  //   setAlmanacLoading(true);
+
+  //   // Fetch data from both sources
+  //   fetchDataLogEntriesFromConsDB(
+  //     startDayobs,
+  //     queryEndDayobs,
+  //     instrument,
+  //     abortController,
+  //   )
+  //     .then((consDBData) => {
+  //       const dataLog = consDBData.data_log ?? [];
+
+  //       if (dataLog.length === 0) {
+  //         toast.warning(
+  //           "No data log records found in ConsDB for the selected date range.",
+  //         );
+  //       }
+
+  //       prepareExposureData(dataLog);
+  //     })
+  //     .catch((err) => {
+  //       if (!abortController.signal.aborted) {
+  //         const msg = err?.message || "Unknown error";
+  //         toast.error("Error fetching data log!", {
+  //           description: msg,
+  //           duration: Infinity,
+  //         });
+  //       }
+  //     })
+  //     .finally(() => {
+  //       if (!abortController.signal.aborted) {
+  //         setDataLogLoading(false);
+  //       }
+  //     });
+
+  //   fetchAlmanac(startDayobs, queryEndDayobs, abortController)
+  //     .then((almanac) => {
+  //       prepareAlmanacData(almanac);
+  //     })
+  //     .catch((err) => {
+  //       if (!abortController.signal.aborted) {
+  //         const msg = err?.message;
+  //         toast.error("Error fetching almanac!", {
+  //           description: msg,
+  //           duration: Infinity,
+  //         });
+  //       }
+  //     })
+  //     .finally(() => {
+  //       if (!abortController.signal.aborted) {
+  //         setAlmanacLoading(false);
+  //       }
+  //     });
+
+  //   // Cleanup function
+  //   return () => {
+  //     abortController.abort();
+  //   };
+  // }, [startDayobs, queryEndDayobs, instrument]);
+
   useEffect(() => {
     if (telescope === "AuxTel") {
       return;
     }
 
-    // To cancel previous fetch if still in progress
     const abortController = new AbortController();
 
-    // Trigger loading skeletons
+    // DEVELOPMENT ONLY ==============================
+    if (import.meta.env.DEV) {
+      setDataLogLoading(true);
+      setAlmanacLoading(true);
+
+      setTimeout(() => {
+        prepareExposureData(offlineResponse.data_log);
+        prepareAlmanacData(offlineResponse.almanac_info);
+        setDataLogLoading(false);
+        setAlmanacLoading(false);
+      }, 100);
+
+      return () => {
+        abortController.abort();
+      };
+    }
+    // ------------------------------------------------
+
     setDataLogLoading(true);
     setAlmanacLoading(true);
 
-    // Fetch data from both sources
     fetchDataLogEntriesFromConsDB(
       startDayobs,
       queryEndDayobs,
@@ -574,20 +674,17 @@ function Plots() {
     )
       .then((consDBData) => {
         const dataLog = consDBData.data_log ?? [];
-
         if (dataLog.length === 0) {
           toast.warning(
             "No data log records found in ConsDB for the selected date range.",
           );
         }
-
         prepareExposureData(dataLog);
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          const msg = err?.message || "Unknown error";
           toast.error("Error fetching data log!", {
-            description: msg,
+            description: err?.message || "Unknown error",
             duration: Infinity,
           });
         }
@@ -604,9 +701,8 @@ function Plots() {
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          const msg = err?.message;
           toast.error("Error fetching almanac!", {
-            description: msg,
+            description: err?.message,
             duration: Infinity,
           });
         }
@@ -617,7 +713,6 @@ function Plots() {
         }
       });
 
-    // Cleanup function
     return () => {
       abortController.abort();
     };
@@ -647,7 +742,7 @@ function Plots() {
     );
   }
 
-  // TODO: Move this into main data Prep function & assign it to state
+  // TODO: When does this run?
   // Filter data based on selected time range
   const filteredData = dataLogEntries.filter(
     (entry) =>
