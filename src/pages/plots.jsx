@@ -21,6 +21,10 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+
+import ResetTimeRangeButton from "@/components/ResetTimeRangeButton";
+import PlotVisibilityPopover from "@/components/PlotVisibilityPopover";
+import { PLOT_DEFINITIONS } from "@/components/PLOT_DEFINITIONS";
 import { TELESCOPES } from "@/components/parameters";
 
 import {
@@ -38,10 +42,18 @@ import {
   millisToHHmm,
 } from "@/utils/timeUtils";
 
-import TimeWindowControls from "@/components/TimeWindowControls";
+// import TimeWindowControls from "@/components/TimeWindowControls";
 
 // import offlineResponse from "@/assets/dataLog_Simonyi_20250722_20250723.json";
-import offlineResponse from "@/assets/dataLog_Simonyi_0721_0723_wAlmanac.json";
+// import offlineResponse from "@/assets/dataLog_Simonyi_0721_0723_wAlmanac.json";
+
+// TODO: Move to utils as it is being defined here and in PlotVisibilityPopover.
+function prettyTitleFromKey(key) {
+  return key
+    .split(" ")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
 
 // Small vertical lines to represent exposures in the timeline
 const CustomisedDot = ({ cx, cy, stroke, h, w }) => {
@@ -300,9 +312,9 @@ function TimeseriesPlot({
   const selectedMinMillis = selectedTimeRange[0]?.toMillis();
   const selectedMaxMillis = selectedTimeRange[1]?.toMillis();
 
+  // TODO: is this still being applied? ====================
   // Check if data is empty
   const actualValues = data.map((d) => d[dataKey]).filter((v) => v != null);
-
   // Check if all points are within preferred yDomain
   const isWithinPreferredDomain =
     preferredYDomain &&
@@ -310,11 +322,26 @@ function TimeseriesPlot({
     actualValues.every(
       (val) => val >= preferredYDomain[0] && val <= preferredYDomain[1],
     );
-
   // If data overflows preferred domain, use "auto" for Y axis
   const finalYDomain = isWithinPreferredDomain
     ? preferredYDomain
     : ["auto", "auto"];
+  // --------------------------------------------------------
+
+  // Compute decimal places for y-axis ticks ================
+  const values = data.map((d) => d[dataKey]).filter((v) => v != null);
+  // Get min/max
+  const minVal = values.length > 0 ? Math.min(...values) : null;
+  const maxVal = values.length > 0 ? Math.max(...values) : null;
+  // Get yRange
+  const yRange = minVal !== null && maxVal !== null ? maxVal - minVal : 0;
+  // Decide decimal places based on yRange
+  let decimalPlaces = 3;
+  if (yRange > 5) decimalPlaces = 0;
+  else if (yRange > 1.5) decimalPlaces = 1;
+  else if (yRange > 0.01) decimalPlaces = 2;
+  else if (yRange == 0) decimalPlaces = 0;
+  // ---------------------------------------------------------
 
   // Plot =================================================
   return (
@@ -336,7 +363,9 @@ function TimeseriesPlot({
         />
         <YAxis
           tick={{ fill: "white" }}
+          tickFormatter={(value) => value.toFixed(decimalPlaces)}
           domain={finalYDomain}
+          // domain={["auto", "auto"]}
           width={50}
           label={{
             value: unit,
@@ -473,6 +502,11 @@ function Plots() {
   const [selectedTimeRange, setSelectedTimeRange] = useState([null, null]);
   const [fullTimeRange, setFullTimeRange] = useState([null, null]);
 
+  // Keep track of default and user-added plots
+  const [activePlots, setActivePlots] = useState(
+    PLOT_DEFINITIONS.filter((p) => p.default).map((p) => p.key),
+  );
+
   async function prepareExposureData(dataLog) {
     // Prepare data for plots
     const data = dataLog
@@ -568,76 +602,6 @@ function Plots() {
     console.log(almanac); // TODO: Remove before PR
   }
 
-  // useEffect(() => {
-  //   if (telescope === "AuxTel") {
-  //     return;
-  //   }
-
-  //   // To cancel previous fetch if still in progress
-  //   const abortController = new AbortController();
-
-  //   // Trigger loading skeletons
-  //   setDataLogLoading(true);
-  //   setAlmanacLoading(true);
-
-  //   // Fetch data from both sources
-  //   fetchDataLogEntriesFromConsDB(
-  //     startDayobs,
-  //     queryEndDayobs,
-  //     instrument,
-  //     abortController,
-  //   )
-  //     .then((consDBData) => {
-  //       const dataLog = consDBData.data_log ?? [];
-
-  //       if (dataLog.length === 0) {
-  //         toast.warning(
-  //           "No data log records found in ConsDB for the selected date range.",
-  //         );
-  //       }
-
-  //       prepareExposureData(dataLog);
-  //     })
-  //     .catch((err) => {
-  //       if (!abortController.signal.aborted) {
-  //         const msg = err?.message || "Unknown error";
-  //         toast.error("Error fetching data log!", {
-  //           description: msg,
-  //           duration: Infinity,
-  //         });
-  //       }
-  //     })
-  //     .finally(() => {
-  //       if (!abortController.signal.aborted) {
-  //         setDataLogLoading(false);
-  //       }
-  //     });
-
-  //   fetchAlmanac(startDayobs, queryEndDayobs, abortController)
-  //     .then((almanac) => {
-  //       prepareAlmanacData(almanac);
-  //     })
-  //     .catch((err) => {
-  //       if (!abortController.signal.aborted) {
-  //         const msg = err?.message;
-  //         toast.error("Error fetching almanac!", {
-  //           description: msg,
-  //           duration: Infinity,
-  //         });
-  //       }
-  //     })
-  //     .finally(() => {
-  //       if (!abortController.signal.aborted) {
-  //         setAlmanacLoading(false);
-  //       }
-  //     });
-
-  //   // Cleanup function
-  //   return () => {
-  //     abortController.abort();
-  //   };
-  // }, [startDayobs, queryEndDayobs, instrument]);
-
   useEffect(() => {
     if (telescope === "AuxTel") {
       return;
@@ -646,21 +610,21 @@ function Plots() {
     const abortController = new AbortController();
 
     // DEVELOPMENT ONLY ==============================
-    if (import.meta.env.DEV) {
-      setDataLogLoading(true);
-      setAlmanacLoading(true);
+    // if (import.meta.env.DEV) {
+    //   setDataLogLoading(true);
+    //   setAlmanacLoading(true);
 
-      setTimeout(() => {
-        prepareExposureData(offlineResponse.data_log);
-        prepareAlmanacData(offlineResponse.almanac_info);
-        setDataLogLoading(false);
-        setAlmanacLoading(false);
-      }, 100);
+    //   setTimeout(() => {
+    //     prepareExposureData(offlineResponse.data_log);
+    //     prepareAlmanacData(offlineResponse.almanac_info);
+    //     setDataLogLoading(false);
+    //     setAlmanacLoading(false);
+    //   }, 100);
 
-      return () => {
-        abortController.abort();
-      };
-    }
+    //   return () => {
+    //     abortController.abort();
+    //   };
+    // }
     // ------------------------------------------------
 
     setDataLogLoading(true);
@@ -809,12 +773,19 @@ function Plots() {
         {dataLogLoading || almanacLoading ? (
           <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
         ) : (
-          <TimeWindowControls
-            fullTimeRange={fullTimeRange}
-            selectedTimeRange={selectedTimeRange}
-            setSelectedTimeRange={setSelectedTimeRange}
-            availableDayobs={availableDayobs}
-          />
+          <div className="flex flex-row w-full justify-between gap-8">
+            <PlotVisibilityPopover
+              dataLogEntries={dataLogEntries}
+              activePlots={activePlots}
+              setActivePlots={setActivePlots}
+            />
+            <ResetTimeRangeButton
+              fullTimeRange={fullTimeRange}
+              selectedTimeRange={selectedTimeRange}
+              setSelectedTimeRange={setSelectedTimeRange}
+              availableDayobs={availableDayobs}
+            />
+          </div>
         )}
 
         {/* Plots */}
@@ -833,39 +804,23 @@ function Plots() {
             </>
           ) : (
             <>
-              <TimeseriesPlot
-                title="Seeing (PSF)"
-                unit="arcsec"
-                dataKey="psf median"
-                data={filteredData}
-                preferredYDomain={[0.6, 1.8]}
-                twilightValues={twilightValues}
-                selectedTimeRange={selectedTimeRange}
-              />
-              <TimeseriesPlot
-                title="Photometric Zero Points"
-                unit="magnitude"
-                dataKey="zero point median"
-                data={filteredData}
-                preferredYDomain={[30, 36]}
-                twilightValues={twilightValues}
-                selectedTimeRange={selectedTimeRange}
-              />
-              <TimeseriesPlot
-                title="Airmass"
-                dataKey="airmass"
-                data={filteredData}
-                twilightValues={twilightValues}
-                selectedTimeRange={selectedTimeRange}
-              />
-              <TimeseriesPlot
-                title="Sky Brightness"
-                dataKey="sky bg median"
-                data={filteredData}
-                twilightValues={twilightValues}
-                moonValues={moonValues}
-                selectedTimeRange={selectedTimeRange}
-              />
+              {activePlots.map((key) => {
+                const def = PLOT_DEFINITIONS.find((p) => p.key === key);
+                return (
+                  <TimeseriesPlot
+                    title={def?.title || prettyTitleFromKey(key)}
+                    dataKey={def.key}
+                    key={def.key}
+                    data={filteredData}
+                    twilightValues={twilightValues}
+                    // Show moon rise/set only on sky-related plots
+                    {...(def.key.startsWith("sky")
+                      ? { moonValues: moonValues }
+                      : {})}
+                    selectedTimeRange={selectedTimeRange}
+                  />
+                );
+              })}
             </>
           )}
         </div>
