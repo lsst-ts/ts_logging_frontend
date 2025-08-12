@@ -3,7 +3,6 @@ import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import Applet from "@/components/applet.jsx";
 import AppletExposures from "@/components/applet-exposures.jsx";
-import NightSummary from "@/components/applet-night-summary.jsx";
 import MetricsCard from "@/components/metrics-card.jsx";
 
 import { EfficiencyChart } from "@/components/ui/RadialChart.jsx";
@@ -28,6 +27,7 @@ import JiraTicketsTable from "@/components/jira-tickets-table";
 import { useSearch } from "@tanstack/react-router";
 import { TELESCOPES } from "@/components/parameters";
 import ObservingConditionsApplet from "@/components/ObservingConditionsApplet";
+import NightSummary from "@/components/NightSummary.jsx";
 
 export default function Digest() {
   const { startDayobs, endDayobs, telescope } = useSearch({
