@@ -579,17 +579,17 @@ function Plots() {
       // Chronological order
       .sort((a, b) => a.obs_start_millis - b.obs_start_millis);
 
-    // Timeline start and end
-    const timelineStart = data.at(0)?.obs_start_dt ?? 0;
-    const timelineEnd = data.at(-1)?.obs_start_dt ?? 0;
-
     // Get all available dayobs
     const dayobsRange = [
       ...new Set(data.map((entry) => entry["day obs"].toString())),
     ].sort();
 
+    // Get first and last observations
+    const firstObs = data.at(0)?.obs_start_dt ?? 0;
+    const lastObs = data.at(-1)?.obs_start_dt ?? 0;
+
     // Set static timeline axis to boundaries of queried dayobs
-    let fullXRange = [timelineStart, timelineEnd];
+    let fullXRange = [firstObs, lastObs];
     if (dayobsRange.length > 0) {
       const firstDayobs = dayobsRange[0];
       const lastDayobs = dayobsRange[dayobsRange.length - 1];
@@ -597,7 +597,11 @@ function Plots() {
       const startTimeOfFirstDayobs = dayobsToTAI(firstDayobs, 12, 0);
       const endTimeOfLastDayobs = dayobsToTAI(lastDayobs, 11, 59);
 
-      fullXRange = [startTimeOfFirstDayobs, endTimeOfLastDayobs];
+      // Add an extra minute to the end so that the final dayobs tick line shows
+      fullXRange = [
+        startTimeOfFirstDayobs,
+        endTimeOfLastDayobs.plus({ minute: 1 }),
+      ];
 
       setAvailableDayobs(dayobsRange);
       setFullTimeRange(fullXRange);
