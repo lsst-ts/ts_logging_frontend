@@ -132,6 +132,33 @@ const fetchNarrativeLog = async (start, end, instrument, abortController) => {
 };
 
 /**
+ * Fetches the nightreport data for a specified date range.
+ *
+ * @async
+ * @function fetchNightreport
+ * @param {string} start - The start date for the observation range (format: YYYY-MM-DD).
+ * @param {string} end - The end date for the observation range (format: YYYY-MM-DD).
+ * @param {AbortController} abortController - The AbortController used to cancel the request if needed.
+ * @returns {Promise<Object[]>} A promise that resolves to an array of objects with:
+ *   - obs_id (string): The observation ID.
+ *   - exposure_flag (string): The flag associated with the observation.
+ *   Returns an empty array if fetching fails.
+ * @throws {Error} Throws an error if the narrative log cannot be fetched and the request was not aborted.
+ */
+const fetchNightreport = async (start, end, abortController) => {
+  const url = `${backendLocation}/night-reports?dayObsStart=${start}&dayObsEnd=${end}`;
+  try {
+    const data = await fetchData(url, abortController);
+    return [data.reports];
+  } catch (err) {
+    if (err.name !== "AbortError") {
+      console.error("Error fetching Nightreport API:", err);
+    }
+    throw err;
+  }
+};
+
+/**
  * Fetches exposure flags from the backend for a specified date range and instrument.
  *
  * @async
@@ -257,6 +284,7 @@ export {
   fetchExposures,
   fetchAlmanac,
   fetchNarrativeLog,
+  fetchNightreport,
   fetchExposureFlags,
   fetchJiraTickets,
   fetchDataLogEntriesFromConsDB,
