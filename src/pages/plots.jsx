@@ -402,14 +402,14 @@ function TimeseriesPlot({
           tickFormatter={(value) => value.toFixed(decimalPlaces)}
           domain={finalYDomain}
           // domain={["auto", "auto"]}
-          width={50}
+          width={70}
           label={{
             value: unit,
             angle: -90,
             position: "insideLeft",
             fill: "white",
             dx: 0,
-            dy: 20,
+            dy: 30,
             fontSize: 16,
             fontWeight: 100,
             letterSpacing: 1,
@@ -851,6 +851,7 @@ function Plots() {
                 return (
                   <TimeseriesPlot
                     title={def?.title || prettyTitleFromKey(key)}
+                    unit={def?.unit}
                     dataKey={def.key}
                     key={def.key}
                     data={filteredData}
