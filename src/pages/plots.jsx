@@ -456,7 +456,7 @@ function TimeseriesPlot({
               {...props}
               formatter={(value, name, item, index, payload) => {
                 const exposureId = payload["exposure id"];
-                const band = payload["band"];
+                const physicalFilter = payload["physical filter"];
                 const scienceProgram = payload["science program"];
                 const obsReason = payload["observation reason"];
 
@@ -489,8 +489,8 @@ function TimeseriesPlot({
                       <span className="font-mono">{obsReason}</span>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Band:</span>{" "}
-                      <span className="font-mono">{band}</span>
+                      <span className="text-muted-foreground">Filter:</span>{" "}
+                      <span className="font-mono">{physicalFilter}</span>
                     </div>
                   </div>
                 );
