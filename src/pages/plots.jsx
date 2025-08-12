@@ -34,15 +34,10 @@ import {
 import { getDatetimeFromDayobsStr } from "@/utils/utils";
 import {
   isoToTAI,
-  // taiToMillis,
-  // millisToTAI,
-  // taiToDayobs,
   dayobsToTAI,
   millisToDateTime,
   millisToHHmm,
 } from "@/utils/timeUtils";
-
-// import TimeWindowControls from "@/components/TimeWindowControls";
 
 // import offlineResponse from "@/assets/dataLog_Simonyi_20250722_20250723.json";
 // import offlineResponse from "@/assets/dataLog_Simonyi_0721_0723_wAlmanac.json";
@@ -118,6 +113,9 @@ function Timeline({
     setRefAreaLeft(null);
     setRefAreaRight(null);
   };
+  const handleDoubleClick = () => {
+    setSelectedTimeRange(fullTimeRange);
+  };
   // --------------------------------------------------------
 
   // Axis Utils =============================================
@@ -190,6 +188,7 @@ function Timeline({
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
+        onDoubleClick={handleDoubleClick}
       >
         {/* Timeline */}
         <ReferenceLine y={0.5} stroke="white" strokeWidth={1.5} />
@@ -307,10 +306,43 @@ function TimeseriesPlot({
   preferredYDomain = null,
   twilightValues = [],
   moonValues = [],
+  fullTimeRange,
   selectedTimeRange,
+  setSelectedTimeRange,
 }) {
+  const [refAreaLeft, setRefAreaLeft] = useState(null);
+  const [refAreaRight, setRefAreaRight] = useState(null);
   const selectedMinMillis = selectedTimeRange[0]?.toMillis();
   const selectedMaxMillis = selectedTimeRange[1]?.toMillis();
+
+  // Click & Drag Functionality =============================
+  // Handle click+drag and set state accordingly
+  const handleMouseDown = (e) => setRefAreaLeft(e?.activeLabel ?? null);
+  const handleMouseMove = (e) =>
+    refAreaLeft && setRefAreaRight(e?.activeLabel ?? null);
+  const handleMouseUp = () => {
+    if (!refAreaLeft || !refAreaRight || refAreaLeft === refAreaRight) {
+      setRefAreaLeft(null);
+      setRefAreaRight(null);
+      return;
+    }
+    // Swap start/end if user dragged backwards
+    const [startMillis, endMillis] =
+      refAreaLeft < refAreaRight
+        ? [refAreaLeft, refAreaRight]
+        : [refAreaRight, refAreaLeft];
+
+    // Convert millis to DateTime objects
+    const startDT = millisToDateTime(startMillis);
+    const endDT = millisToDateTime(endMillis);
+    setSelectedTimeRange([startDT, endDT]);
+    setRefAreaLeft(null);
+    setRefAreaRight(null);
+  };
+  const handleDoubleClick = () => {
+    setSelectedTimeRange(fullTimeRange);
+  };
+  // --------------------------------------------------------
 
   // TODO: is this still being applied? ====================
   // Check if data is empty
@@ -351,18 +383,22 @@ function TimeseriesPlot({
         width={500}
         data={data}
         margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onDoubleClick={handleDoubleClick}
       >
         <CartesianGrid strokeDasharray="3 3" stroke="#555" />
         <XAxis
           dataKey="obs_start_millis"
           type="number"
-          domain={selectedTimeRange}
+          domain={[selectedMinMillis, selectedMaxMillis]}
           scale="time"
           tickFormatter={(tick) => millisToHHmm(tick)}
-          tick={{ fill: "white" }}
+          tick={{ fill: "white", style: { userSelect: "none" } }}
         />
         <YAxis
-          tick={{ fill: "white" }}
+          tick={{ fill: "white", style: { userSelect: "none" } }}
           tickFormatter={(value) => value.toFixed(decimalPlaces)}
           domain={finalYDomain}
           // domain={["auto", "auto"]}
@@ -379,6 +415,14 @@ function TimeseriesPlot({
             letterSpacing: 1,
           }}
         />
+        {/* Selection rectangle shown once time window selection made */}
+        {selectedMinMillis && selectedMaxMillis ? (
+          <ReferenceArea
+            x1={selectedMinMillis}
+            x2={selectedMaxMillis}
+            fillOpacity={0}
+          />
+        ) : null}
         {/* Twilight lines */}
         {twilightValues.map((twi, i) =>
           selectedMinMillis <= twi && twi <= selectedMaxMillis ? (
@@ -406,7 +450,7 @@ function TimeseriesPlot({
         <ChartTooltip
           position={"topRight"}
           offset={50}
-          // allowEscapeViewBox={{ x: false, y: true }}
+          allowEscapeViewBox={{ x: false, y: true }}
           content={(props) => (
             <ChartTooltipContent
               {...props}
@@ -465,6 +509,10 @@ function TimeseriesPlot({
           dot={<CustomisedDot stroke="#3CAE3F" h="0" w="0.5" />} // no points
           activeDot={{ r: 4, fill: "#ffffff" }}
         />
+        {/* Selection rectangle shown during active highlighting */}
+        {refAreaLeft && refAreaRight ? (
+          <ReferenceArea x1={refAreaLeft} x2={refAreaRight} fillOpacity={0.3} />
+        ) : null}
       </LineChart>
     </ChartContainer>
   );
@@ -746,17 +794,6 @@ function Plots() {
           <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
         ) : (
           <>
-            <div className="border border-white rounded-md pt-2">
-              <Timeline
-                data={dataLogEntries}
-                twilightValues={twilightValues}
-                moonValues={moonValues}
-                fullTimeRange={fullTimeRange}
-                selectedTimeRange={selectedTimeRange}
-                setSelectedTimeRange={setSelectedTimeRange}
-                staticTicks={true}
-              />
-            </div>
             <Timeline
               data={dataLogEntries}
               twilightValues={twilightValues}
@@ -764,7 +801,7 @@ function Plots() {
               fullTimeRange={fullTimeRange}
               selectedTimeRange={selectedTimeRange}
               setSelectedTimeRange={setSelectedTimeRange}
-              staticTicks={false}
+              staticTicks={true}
             />
           </>
         )}
@@ -817,7 +854,9 @@ function Plots() {
                     {...(def.key.startsWith("sky")
                       ? { moonValues: moonValues }
                       : {})}
+                    fullTimeRange={fullTimeRange}
                     selectedTimeRange={selectedTimeRange}
+                    setSelectedTimeRange={setSelectedTimeRange}
                   />
                 );
               })}
