@@ -132,6 +132,45 @@ const fetchNarrativeLog = async (start, end, instrument, abortController) => {
 };
 
 /**
+ * Fetches the nightreport data for a specified date range.
+ *
+ * @async
+ * @function fetchNightreport
+ * @param {string} start - The start date for the observation range (format: YYYYMMDD).
+ * @param {string} end - The end date for the observation range (format: YYYYMMDD).
+ * @param {AbortController} abortController - The AbortController used to cancel the request if needed.
+ * @returns {Promise<Object[]>} A promise that resolves to an array of objects with:
+ *   - id (string): The report ID.
+ *   - site_id (string): The site identifier.
+ *   - day_obs (number): The observation date in YYYYMMDD format.
+ *   - summary (string): The summary of the night report.
+ *   - weather (string): The weather conditions during the night.
+ *   - maintel_summary (string): The Simonyi telescope summary.
+ *   - auxtel_summary (string): The Auxiliary telescope summary.
+ *   - confluence_url (string): The URL to the Confluence page with the plan of the night.
+ *   - user_id (string): The user ID of the person who created the report.
+ *   - user_agent (string): The user agent of the person who created the report.
+ *   - date_added (string): The date when the report was started.
+ *   - date_sent (string): The date when the report was sent.
+ *   - is_valid (boolean): Indicates if the report is valid.
+ *   - parent_id (string): The ID of the parent report, if any.
+ *   - observers_crew (string[]): The list of observers usernames.
+ * @throws {Error} Throws an error if the night reports cannot be fetched and the request was not aborted.
+ */
+const fetchNightreport = async (start, end, abortController) => {
+  const url = `${backendLocation}/night-reports?dayObsStart=${start}&dayObsEnd=${end}`;
+  try {
+    const data = await fetchData(url, abortController);
+    return [data.reports];
+  } catch (err) {
+    if (err.name !== "AbortError") {
+      console.error("Error fetching Nightreport API:", err);
+    }
+    throw err;
+  }
+};
+
+/**
  * Fetches exposure flags from the backend for a specified date range and instrument.
  *
  * @async
@@ -257,6 +296,7 @@ export {
   fetchExposures,
   fetchAlmanac,
   fetchNarrativeLog,
+  fetchNightreport,
   fetchExposureFlags,
   fetchJiraTickets,
   fetchDataLogEntriesFromConsDB,
