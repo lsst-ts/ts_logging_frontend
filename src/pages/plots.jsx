@@ -198,8 +198,8 @@ function Timeline({
             key={tick}
             x={tick}
             stroke="white"
-            strokeDasharray="3 3"
-            opacity={0.4}
+            // strokeDasharray="3 3"
+            opacity={0.2}
           />
         ))}
         {/* Dayobs axis - labels and lines */}
@@ -455,12 +455,10 @@ function TimeseriesPlot({
             <ChartTooltipContent
               {...props}
               formatter={(value, name, item, index, payload) => {
-                const obs_start_dt = payload["obs_start_dt"];
-                const obsStartFormatted = obs_start_dt.toFormat(
-                  "yyyy-LL-dd HH:mm:ss.SSS",
-                );
                 const exposureId = payload["exposure id"];
                 const band = payload["band"];
+                const scienceProgram = payload["science program"];
+                const obsReason = payload["observation reason"];
 
                 const formattedValue =
                   typeof value === "number" && !Number.isInteger(value)
@@ -470,22 +468,29 @@ function TimeseriesPlot({
                 return (
                   <div className="flex flex-col gap-1">
                     <div>
+                      <span className="text-muted-foreground">{title}:</span>{" "}
+                      <span className="font-mono">{formattedValue}</span>
+                    </div>
+                    <hr className="m-1 text-cyan-700/50" />
+                    <div>
                       <span className="text-muted-foreground">Exposure:</span>{" "}
                       <span className="font-mono">{exposureId}</span>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">{title}:</span>{" "}
-                      <span className="font-mono">{formattedValue}</span>
+                      <span className="text-muted-foreground">
+                        Science Progam:
+                      </span>{" "}
+                      <span className="font-mono">{scienceProgram}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">
+                        Obs. Reason:
+                      </span>{" "}
+                      <span className="font-mono">{obsReason}</span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Band:</span>{" "}
                       <span className="font-mono">{band}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">
-                        Obs Start (TAI):
-                      </span>{" "}
-                      <span className="font-mono">{obsStartFormatted}</span>
                     </div>
                   </div>
                 );
