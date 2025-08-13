@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-// import { DateTime } from "luxon";
+import { DateTime } from "luxon";
 import {
   CartesianGrid,
   Line,
@@ -964,6 +964,48 @@ function Plots() {
                   />
                 );
               })}
+            </>
+          )}
+        </div>
+
+        {/* Visit Maps */}
+        <div className="mt-16 mxb-8 text-white font-thin text-center">
+          <h1 className="flex flex-row gap-2 text-white text-3xl uppercase justify-center pb-4">
+            <span className="tracking-[2px] font-extralight">Visit</span>
+            <span className="font-extrabold"> Maps</span>
+          </h1>
+          {dataLogLoading || almanacLoading ? (
+            <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
+          ) : (
+            <>
+              <p>
+                For visit maps, visit the Scheduler-oriented night summaries:{" "}
+                {availableDayobs.map((dayobs, idx) => {
+                  // TODO: Create timeUtils
+                  const dt = DateTime.fromFormat(dayobs, "yyyyLLdd");
+                  const pathFormat = dt.toFormat("yyyy/LL/dd");
+                  const fileFormat = dt.toFormat("yyyy-LL-dd");
+                  // TODO: How should we generate url?
+                  return (
+                    <span key={dayobs}>
+                      <a
+                        href={`https://s3df.slac.stanford.edu/data/rubin/sim-data/schedview/reports/nightsum/lsstcam/${pathFormat}/nightsum_${fileFormat}.html`}
+                        className="underline text-blue-300 hover:text-blue-400"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {fileFormat}
+                      </a>
+                      {idx < availableDayobs.length - 1 && ", "}
+                    </span>
+                  );
+                })}
+                .
+              </p>
+              <p className="pt-2">
+                <span className="font-medium">Note: </span>If you see a 404
+                error, the summary has not been created.
+              </p>
             </>
           )}
         </div>
