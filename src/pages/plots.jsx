@@ -35,6 +35,7 @@ import { getDatetimeFromDayobsStr } from "@/utils/utils";
 import {
   isoToTAI,
   dayobsToTAI,
+  almanacDayobsForPlot,
   millisToDateTime,
   millisToHHmm,
   utcDateTimeStrToTAIMillis,
@@ -72,6 +73,7 @@ const CustomisedDot = ({ cx, cy, stroke, h, w }) => {
 function Timeline({
   data,
   twilightValues,
+  illumValues,
   moonIntervals,
   fullTimeRange,
   selectedTimeRange,
@@ -138,8 +140,9 @@ function Timeline({
   };
   const hourlyTicks = generateHourlyTicks(xMinMillis, xMaxMillis, 1);
 
-  // Dayobs xAxis
-  // Alternate dayobs labels and vertical lines
+  // Dayobs and moon illuminations labels along xAxis
+  // Show vertical lines at midday dayobs borders
+  // Show dayobs/illumination labels at midnights
   const renderDayobsTicks = ({ x, y, payload }) => {
     const value = payload.value;
     const dt = millisToDateTime(value);
@@ -156,18 +159,52 @@ function Timeline({
     // Labels at midnight
     if (isMidnight) {
       // Get date prior to midnight
-      const dayobs = dt.minus({ minutes: 1 }).toFormat("yyyy-LL-dd");
+      const dayobs = dt.minus({ minutes: 1 }).toFormat("yyyyLLdd");
+
+      // Find illumination by matching dayobs timestamp
+      const illumEntry = illumValues.find((entry) => entry.dayobs === dayobs);
+
+      // Get labels
+      const dayobsLabel = dt.minus({ minutes: 1 }).toFormat("yyyy-LL-dd");
+      const illumLabel = illumEntry?.illum ?? null;
+
       return (
-        <text
-          x={x}
-          y={y + 10}
-          fontSize={12}
-          textAnchor="middle"
-          fill="grey"
-          style={{ WebkitUserSelect: "none" }}
-        >
-          {dayobs}
-        </text>
+        <>
+          {/* Bottom Dayobs Labels */}
+          <text
+            x={x}
+            y={y + 10}
+            fontSize={12}
+            textAnchor="middle"
+            fill="grey"
+            style={{ WebkitUserSelect: "none" }}
+          >
+            {dayobsLabel}
+          </text>
+
+          {/* Top Moon Illumination Labels */}
+          {illumLabel && (
+            <>
+              {/* Moon symbol */}
+              <g transform={`translate(${x - 9}, ${y - 93})`}>
+                <circle cx={0} cy={0} r={4} fill="white" />
+                <circle cx={2} cy={-2} r={4} fill="#27272a" />
+              </g>
+              <text
+                x={x + 9}
+                y={y - 90}
+                fontSize={10}
+                fontWeight={100}
+                letterSpacing={0.5}
+                fill="white"
+                textAnchor="middle"
+                style={{ userSelect: "none" }}
+              >
+                {illumLabel}
+              </text>
+            </>
+          )}
+        </>
       );
     }
 
@@ -181,13 +218,13 @@ function Timeline({
       title="Time Window Selector"
       config={{}}
       width="100%"
-      height={twilightValues.length > 1 ? 100 : 60}
+      height={twilightValues.length > 1 ? 110 : 70}
     >
       <LineChart
         width="100%"
-        height={twilightValues.length > 1 ? 100 : 60}
+        height={twilightValues.length > 1 ? 110 : 70}
         data={data}
-        margin={{ top: 1, right: 30, left: 30, bottom: 0 }}
+        margin={{ top: 15, right: 30, left: 30, bottom: 0 }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -197,15 +234,9 @@ function Timeline({
         <ReferenceLine y={0.5} stroke="white" strokeWidth={1.5} />
         {/* Vertical lines on the hour */}
         {hourlyTicks.map((tick) => (
-          <ReferenceLine
-            key={tick}
-            x={tick}
-            stroke="white"
-            // strokeDasharray="3 3"
-            opacity={0.2}
-          />
+          <ReferenceLine key={tick} x={tick} stroke="white" opacity={0.1} />
         ))}
-        {/* Dayobs axis - labels and lines */}
+        {/* Dayobs & Moon Illuminaition labels and lines */}
         {twilightValues.length > 1 && (
           <XAxis
             xAxisId="dayobs"
@@ -472,7 +503,7 @@ function TimeseriesPlot({
                     : value;
 
                 return (
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-1 select-none">
                     <div>
                       <span className="text-muted-foreground">{title}:</span>{" "}
                       <span className="font-mono">{formattedValue}</span>
@@ -554,6 +585,7 @@ function Plots() {
 
   // Twilights, moonrise/set and brightness
   const [twilightValues, setTwilightValues] = useState([]);
+  const [illumValues, setIllumValues] = useState([]);
   const [moonValues, setMoonValues] = useState([]);
   const [moonIntervals, setMoonIntervals] = useState([]);
   const [almanacLoading, setAlmanacLoading] = useState(true);
@@ -628,6 +660,14 @@ function Plots() {
       ])
       .flat();
 
+    // Set values for moon illumination at dayobs midnights
+    const illumValues = almanac.flatMap((dayobsAlm) => [
+      {
+        dayobs: almanacDayobsForPlot(dayobsAlm.dayobs),
+        illum: dayobsAlm.moon_illumination,
+      },
+    ]);
+
     // Set values for moon rise/set times
     const moonValues = almanac.flatMap((dayobsAlm) => [
       {
@@ -641,40 +681,41 @@ function Plots() {
     ]);
 
     setTwilightValues(twilightValues);
+    setIllumValues(illumValues);
     setMoonValues(moonValues);
-    console.log(almanac); // TODO: Remove before PR
-    console.log("twilightValues: ", twilightValues);
-    console.log("moonValues: ", moonValues);
   }
 
   // Pair up moon rise/set times for display
   function prepareMoonIntervals(events, xMinMillis, xMaxMillis) {
-    // Sort by time ascending
-    const sorted = events.sort((a, b) => a.time - b.time);
+    if (!events?.length) return [];
 
+    const sorted = [...events].sort((a, b) => a.time - b.time);
     const intervals = [];
     let currentStart = null;
+    for (let i = 0; i < sorted.length; i++) {
+      const { time, type } = sorted[i];
 
-    // Pair up
-    for (const { time, type } of sorted) {
       if (type === "rise") {
-        currentStart = time;
+        // If this rise is before timeline, clamp it
+        currentStart = Math.max(time, xMinMillis);
       } else if (type === "set" && currentStart != null) {
-        intervals.push([currentStart, time]);
+        // Clamp end time to max
+        intervals.push([currentStart, Math.min(time, xMaxMillis)]);
         currentStart = null;
       }
     }
-    // In cases where the moon is up over the start/end
-    // of the requested dayobs range, we set part of the
-    // interval pair to the min/max of timeline.
-    // Handle starts-with-set
-    if (sorted[0]?.type === "set") {
-      intervals.unshift([xMinMillis, sorted[0].time]);
+
+    // Handle moon already up at start
+    if (sorted[0].type === "set") {
+      intervals.unshift([xMinMillis, Math.min(sorted[0].time, xMaxMillis)]);
     }
 
-    // Handle ends-with-rise
-    if (sorted[sorted.length - 1]?.type === "rise") {
-      intervals.push([sorted[sorted.length - 1].time, xMaxMillis]);
+    // Handle moon still up at end
+    if (sorted[sorted.length - 1].type === "rise") {
+      intervals.push([
+        Math.max(sorted[sorted.length - 1].time, xMinMillis),
+        xMaxMillis,
+      ]);
     }
 
     return intervals;
@@ -790,7 +831,8 @@ function Plots() {
           <span className="font-extrabold">Plots</span>
         </h1>
         <p className="min-h-[4.5rem] text-white font-thin text-center pb-4 flex flex-col items-center justify-center gap-2">
-          AuxTel is currently not supported in this page.
+          AuxTel is currently not supported in this page. Contact the Logging
+          team if this is a priority for you.
         </p>
         <Toaster expand={true} richColors closeButton />
       </div>
@@ -830,6 +872,23 @@ function Plots() {
               </p>
             </>
           )}
+          <div className="flex flex-col max-w-xxl mt-2 border border-1 border-white rounded-md p-2 gap-2">
+            <p>
+              <span className="font-medium">Click & Drag</span> on any plot to
+              zoom in. <span className="font-medium">Double-Click</span> to zoom
+              out.
+            </p>
+            <p>
+              Twilights are shown as blue lines. Moon above horizon is shown by
+              yellow background. Moon illumination (%) at midnight is shown
+              above the timeline.
+            </p>
+            <p>
+              Change which plots are shown by clicking on{" "}
+              <span className="font-medium">Show/Hide Plots</span> button.
+              Future features include remembering your plot preferences.
+            </p>
+          </div>
         </div>
 
         {/* Timeline */}
@@ -840,6 +899,7 @@ function Plots() {
             <Timeline
               data={dataLogEntries}
               twilightValues={twilightValues}
+              illumValues={illumValues}
               moonIntervals={moonIntervals}
               fullTimeRange={fullTimeRange}
               selectedTimeRange={selectedTimeRange}
