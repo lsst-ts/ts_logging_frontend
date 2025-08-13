@@ -45,6 +45,19 @@ const dayobsToTAI = (dayobsStr, hour, minute) => {
 };
 
 /**
+ * Convert almanac dayobs number → adjusted dayobs string (yyyyLLdd)
+ * Subtracts one day to align with almanac data offset.
+ */
+const almanacDayobsForPlot = (dayobsNum) => {
+  return (
+    DateTime.fromFormat(dayobsNum.toString(), "yyyyLLdd", { zone: "utc" })
+      // Decremenet one day due to almanac returning data for previous dayobs
+      .minus({ days: 1 })
+      .toFormat("yyyyLLdd")
+  );
+};
+
+/**
  * Convert milliseconds (UTC timestamp) → DateTime with zone UTC (no offset applied)
  */
 const millisToDateTime = (millis) =>
@@ -72,6 +85,7 @@ export {
   millisToTAI,
   taiToDayobs,
   dayobsToTAI,
+  almanacDayobsForPlot,
   millisToDateTime,
   millisToHHmm,
   utcDateTimeStrToTAIMillis,
