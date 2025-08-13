@@ -142,35 +142,28 @@ function Timeline({
 
   // Dayobs and moon illuminations labels along xAxis
   // Show vertical lines at midday dayobs borders
-  // Show dayobs/illumination labels at midnights
+  // Show dayobs/illumination labels at midnights (UTC/Chile)
   const renderDayobsTicks = ({ x, y, payload }) => {
     const value = payload.value;
     const dt = millisToDateTime(value);
 
-    const hour = dt.hour;
-    const isMidday = hour === 12;
-    const isMidnight = hour === 0;
+    const hourUTC = dt.hour;
+    const isMiddayUTC = hourUTC === 12;
+    const isMidnightUTC = hourUTC === 0;
 
-    // Lines at midday
-    if (isMidday) {
+    // Lines at midday dayobs borders
+    if (isMiddayUTC) {
       return <line x1={x} y1={y - 100} x2={x} y2={y + 22} stroke="grey" />;
     }
 
-    // Labels at midnight
-    if (isMidnight) {
+    // Dayobs labels
+    if (isMidnightUTC) {
+      // TODO: Make into timeUtil (apply to below, also)
       // Get date prior to midnight
-      const dayobs = dt.minus({ minutes: 1 }).toFormat("yyyyLLdd");
-
-      // Find illumination by matching dayobs timestamp
-      const illumEntry = illumValues.find((entry) => entry.dayobs === dayobs);
-
-      // Get labels
       const dayobsLabel = dt.minus({ minutes: 1 }).toFormat("yyyy-LL-dd");
-      const illumLabel = illumEntry?.illum ?? null;
 
       return (
         <>
-          {/* Bottom Dayobs Labels */}
           <text
             x={x}
             y={y + 10}
@@ -181,8 +174,27 @@ function Timeline({
           >
             {dayobsLabel}
           </text>
+        </>
+      );
+    }
 
-          {/* Top Moon Illumination Labels */}
+    // Convert to Chilean local time
+    const dtChile = dt.setZone("America/Santiago");
+    const isMidnightChile = dtChile.hour === 0;
+
+    // Moon illumincation labels
+    // Illumination data is retrieved at midnight Chilean time
+    // so it makes sense to display value at that time.
+    if (isMidnightChile) {
+      // Get date prior to midnight
+      const dayobs = dtChile.minus({ minutes: 1 }).toFormat("yyyyLLdd");
+      // Find illumination by matching dayobs timestamp
+      const illumEntry = illumValues.find((entry) => entry.dayobs === dayobs);
+      // Get label
+      const illumLabel = illumEntry?.illum ?? null;
+
+      return (
+        <>
           {illumLabel && (
             <>
               {/* Moon symbol */}
@@ -875,16 +887,16 @@ function Plots() {
           <div className="flex flex-col max-w-xxl mt-2 border border-1 border-white rounded-md p-2 gap-2">
             <p>
               <span className="font-medium">Click & Drag</span> on any plot to
-              zoom in. <span className="font-medium">Double-Click</span> to zoom
-              out.
+              zoom in, and <span className="font-medium">Double-Click</span> to
+              zoom out.
             </p>
             <p>
-              Twilights are shown as blue lines. Moon above horizon is shown by
-              a yellow background. Moon illumination (%) at midnight is shown
-              above the timeline.
+              Twilights are shown as blue lines, moon above the horizon is
+              highlighted in yellow, and moon illumination (%) is displayed
+              above the timeline at local Chilean midnight.
             </p>
             <p>
-              Change which plots are shown by clicking on the{" "}
+              Change which plots are shown by clicking the{" "}
               <span className="font-medium">Show/Hide Plots</span> button.
               Future features include remembering your plot preferences.
             </p>
