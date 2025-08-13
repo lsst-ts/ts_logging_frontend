@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { DateTime } from "luxon";
+// import { DateTime } from "luxon";
 import {
   CartesianGrid,
   Line,
@@ -880,11 +880,11 @@ function Plots() {
             </p>
             <p>
               Twilights are shown as blue lines. Moon above horizon is shown by
-              yellow background. Moon illumination (%) at midnight is shown
+              a yellow background. Moon illumination (%) at midnight is shown
               above the timeline.
             </p>
             <p>
-              Change which plots are shown by clicking on{" "}
+              Change which plots are shown by clicking on the{" "}
               <span className="font-medium">Show/Hide Plots</span> button.
               Future features include remembering your plot preferences.
             </p>
