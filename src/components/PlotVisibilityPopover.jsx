@@ -1,10 +1,6 @@
 import { useMemo } from "react";
 
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from "@/components/ui/popover";
+import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 
 import { PLOT_DEFINITIONS } from "@/components/PLOT_DEFINITIONS";
@@ -52,8 +48,8 @@ function PlotVisibilityPopover({
 
   return (
     <div className="flex flex-row justify-between mt-4 gap-8 text-white">
-      <Popover>
-        <PopoverTrigger asChild>
+      <Dialog>
+        <DialogTrigger asChild>
           <button
             className="text-sm btn bg-white text-black w-40 h-10 font-light rounded-md shadow-[4px_4px_4px_0px_#3CAE3F] 
                         flex justify-center items-center py-2 px-4 
@@ -61,8 +57,8 @@ function PlotVisibilityPopover({
           >
             Show / Hide Plots
           </button>
-        </PopoverTrigger>
-        <PopoverContent className="w-56">
+        </DialogTrigger>
+        <DialogContent className="!max-w-[600px]">
           <div className="flex justify-between mb-2">
             <button
               onClick={handleSelectAll}
@@ -72,12 +68,12 @@ function PlotVisibilityPopover({
             </button>
             <button
               onClick={handleDeselectAll}
-              className="text-xs text-red-600 hover:underline"
+              className="text-xs text-red-600 hover:underline mr-5"
             >
               Deselect All
             </button>
           </div>
-          <div className="space-y-2 max-h-60 overflow-y-auto">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 max-h-[400px] overflow-y-auto pr-5">
             {PLOT_DEFINITIONS.map(({ key, title }) => (
               <div
                 key={key}
@@ -94,12 +90,13 @@ function PlotVisibilityPopover({
                   }`}
                 >
                   {title || prettyTitleFromKey(key)}
+                  {!fieldStatus[key] && " (null)"}
                 </span>
               </div>
             ))}
           </div>
-        </PopoverContent>
-      </Popover>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
