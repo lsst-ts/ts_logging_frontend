@@ -57,6 +57,15 @@ const millisToDateTime = (millis) =>
 const millisToHHmm = (millis) =>
   DateTime.fromMillis(millis, { zone: "utc" }).toFormat("HH:mm");
 
+/**
+ * Convert a UTC date-time string in format "yyyy-MM-dd HH:mm:ss"
+ * to milliseconds, applying TAI offset.
+ */
+const utcDateTimeStrToTAIMillis = (dateTimeStr) =>
+  DateTime.fromFormat(dateTimeStr, "yyyy-MM-dd HH:mm:ss", { zone: "utc" })
+    .plus({ seconds: TAI_OFFSET_SECONDS })
+    .toMillis();
+
 export {
   isoToTAI,
   taiToMillis,
@@ -65,4 +74,5 @@ export {
   dayobsToTAI,
   millisToDateTime,
   millisToHHmm,
+  utcDateTimeStrToTAIMillis,
 };
