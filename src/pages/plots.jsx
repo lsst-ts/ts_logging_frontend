@@ -37,6 +37,7 @@ import {
   dayobsToTAI,
   millisToDateTime,
   millisToHHmm,
+  utcDateTimeStrToTAIMillis,
 } from "@/utils/timeUtils";
 
 // import offlineResponse from "@/assets/dataLog_Simonyi_20250722_20250723.json";
@@ -70,8 +71,8 @@ const CustomisedDot = ({ cx, cy, stroke, h, w }) => {
 
 function Timeline({
   data,
-  twilightValues = [],
-  moonValues = [],
+  twilightValues,
+  moonIntervals,
   fullTimeRange,
   selectedTimeRange,
   setSelectedTimeRange,
@@ -89,6 +90,7 @@ function Timeline({
   if (!xMinMillis || !xMaxMillis) return null;
   // --------------------------------------------------------
 
+  // TODO: Move these to utils
   // Click & Drag Functionality =============================
   // Handle click+drag and set state accordingly
   const handleMouseDown = (e) => setRefAreaLeft(e?.activeLabel ?? null);
@@ -135,6 +137,7 @@ function Timeline({
     return ticks;
   };
   const hourlyTicks = generateHourlyTicks(xMinMillis, xMaxMillis, 1);
+
   // Dayobs xAxis
   // Alternate dayobs labels and vertical lines
   const renderDayobsTicks = ({ x, y, payload }) => {
@@ -153,12 +156,12 @@ function Timeline({
     // Labels at midnight
     if (isMidnight) {
       // Get date prior to midnight
-      const dayobs = dt.minus({ minutes: 1 }).toFormat("yyyyLLdd");
+      const dayobs = dt.minus({ minutes: 1 }).toFormat("yyyy-LL-dd");
       return (
         <text
           x={x}
-          y={y + 22}
-          fontSize={14}
+          y={y + 10}
+          fontSize={12}
           textAnchor="middle"
           fill="grey"
           style={{ WebkitUserSelect: "none" }}
@@ -178,13 +181,13 @@ function Timeline({
       title="Time Window Selector"
       config={{}}
       width="100%"
-      height={twilightValues.length > 1 ? 120 : 80}
+      height={twilightValues.length > 1 ? 100 : 60}
     >
       <LineChart
         width="100%"
-        height={twilightValues.length > 1 ? 120 : 80}
+        height={twilightValues.length > 1 ? 100 : 60}
         data={data}
-        margin={{ top: 0, right: 30, left: 30, bottom: 0 }}
+        margin={{ top: 1, right: 30, left: 30, bottom: 0 }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -220,7 +223,7 @@ function Timeline({
             axisLine={false}
             tickLine={false}
             tick={staticTicks && renderDayobsTicks}
-            height={40}
+            height={20}
           />
         )}
         {/* TAI Time Axis */}
@@ -234,15 +237,43 @@ function Timeline({
           allowDataOverflow={true}
           type="number"
           scale="time"
-          tickFormatter={(tick) => millisToHHmm(tick)}
-          ticks={staticTicks && hourlyTicks}
-          interval={staticTicks ?? "preserveStartEnd"}
-          tick={{ fill: "white", style: { userSelect: "none" } }}
+          tick={false}
           axisLine={false}
-          tickMargin={10}
-          minTickGap={15}
         />
         <YAxis hide domain={[0, 1]} />
+        {/* Moon Up Area */}
+        {moonIntervals.map(([start, end], i) => (
+          <ReferenceArea
+            key={`moon-up-${i}`}
+            x1={start}
+            x2={end}
+            fillOpacity={0.2}
+            fill="#EAB308"
+            yAxisId="0"
+          />
+        ))}
+        {/* Twilight lines and times */}
+        {twilightValues.map((twi, i) =>
+          xMinMillis <= twi && twi <= xMaxMillis ? (
+            <ReferenceLine
+              key={`twilight-${i}-${twi}`}
+              x={twi}
+              stroke="#0ea5e9"
+              strokeWidth={3}
+              yAxisId="0"
+              label={{
+                value: `${millisToHHmm(twi)}`,
+                position: "bottom",
+                fill: "white",
+                dy: 5,
+                fontSize: 10,
+                fontWeight: 100,
+                letterSpacing: 0.5,
+                style: { userSelect: "none" },
+              }}
+            />
+          ) : null,
+        )}
         {/* Selection rectangle shown once time window selection made */}
         {selectedMinMillis && selectedMaxMillis ? (
           <ReferenceArea
@@ -252,30 +283,6 @@ function Timeline({
             fillOpacity={0.2}
           />
         ) : null}
-        {/* Twilight lines */}
-        {twilightValues.map((twi, i) =>
-          xMinMillis <= twi && twi <= xMaxMillis ? (
-            <ReferenceLine
-              key={`twilight-${i}-${twi}`}
-              x={twi}
-              stroke="#0ea5e9"
-              strokeWidth={3}
-              yAxisId="0"
-            />
-          ) : null,
-        )}
-        {/* Moon lines */}
-        {moonValues.map((twi, i) =>
-          xMinMillis <= twi && twi <= xMaxMillis ? (
-            <ReferenceLine
-              key={`moon-${i}-${twi}`}
-              x={twi}
-              stroke="#EAB308"
-              strokeWidth={3}
-              yAxisId="0"
-            />
-          ) : null,
-        )}
         {/* Points representing exposures and related data */}
         <Line
           dataKey={() => 0.5}
@@ -304,8 +311,8 @@ function TimeseriesPlot({
   dataKey,
   data,
   preferredYDomain = null,
-  twilightValues = [],
-  moonValues = [],
+  twilightValues,
+  moonIntervals = [],
   fullTimeRange,
   selectedTimeRange,
   setSelectedTimeRange,
@@ -435,18 +442,17 @@ function TimeseriesPlot({
             />
           ) : null,
         )}
-        {/* Moon lines */}
-        {moonValues.map((twi, i) =>
-          selectedMinMillis <= twi && twi <= selectedMaxMillis ? (
-            <ReferenceLine
-              key={`moon-${i}-${twi}`}
-              x={twi}
-              stroke="#EAB308"
-              strokeWidth={3}
-              yAxisId="0"
-            />
-          ) : null,
-        )}
+        {/* Moon Up Area */}
+        {moonIntervals.map(([start, end], i) => (
+          <ReferenceArea
+            key={`moon-up-${i}`}
+            x1={start}
+            x2={end}
+            fillOpacity={0.2}
+            fill="#EAB308"
+            yAxisId="0"
+          />
+        ))}
         <ChartTooltip
           position={"topRight"}
           offset={50}
@@ -549,6 +555,7 @@ function Plots() {
   // Twilights, moonrise/set and brightness
   const [twilightValues, setTwilightValues] = useState([]);
   const [moonValues, setMoonValues] = useState([]);
+  const [moonIntervals, setMoonIntervals] = useState([]);
   const [almanacLoading, setAlmanacLoading] = useState(true);
 
   // Time ranges for timeline and plots
@@ -615,48 +622,62 @@ function Plots() {
   async function prepareAlmanacData(almanac) {
     // Set values for twilight lines
     const twilightValues = almanac
-      .map((dayobsAlm) => {
-        const eve = DateTime.fromFormat(
-          dayobsAlm.twilight_evening,
-          "yyyy-MM-dd HH:mm:ss",
-          { zone: "utc" },
-        )
-          .plus({ seconds: 37 }) // TODO: get TAI constant from utils
-          .toMillis();
-        const mor = DateTime.fromFormat(
-          dayobsAlm.twilight_morning,
-          "yyyy-MM-dd HH:mm:ss",
-          { zone: "utc" },
-        )
-          .plus({ seconds: 37 }) // TODO: get TAI constant from utils
-          .toMillis();
-        return [eve, mor];
-      })
+      .map((dayobsAlm) => [
+        utcDateTimeStrToTAIMillis(dayobsAlm.twilight_evening),
+        utcDateTimeStrToTAIMillis(dayobsAlm.twilight_morning),
+      ])
       .flat();
 
-    // Set values for moon rise/set lines
-    const moonValues = almanac
-      .map((dayobsAlm) => {
-        const moonRise = DateTime.fromFormat(
-          dayobsAlm.moon_rise_time,
-          "yyyy-MM-dd HH:mm:ss",
-        )
-          .plus({ seconds: 37 }) // TODO: get TAI constant from utils
-          .toMillis();
-        const moonSet = DateTime.fromFormat(
-          dayobsAlm.moon_set_time,
-          "yyyy-MM-dd HH:mm:ss",
-        )
-          .plus({ seconds: 37 }) // TODO: get TAI constant from utils
-          .toMillis();
-        return [moonRise, moonSet];
-      })
-      .flat();
+    // Set values for moon rise/set times
+    const moonValues = almanac.flatMap((dayobsAlm) => [
+      {
+        time: utcDateTimeStrToTAIMillis(dayobsAlm.moon_rise_time),
+        type: "rise",
+      },
+      {
+        time: utcDateTimeStrToTAIMillis(dayobsAlm.moon_set_time),
+        type: "set",
+      },
+    ]);
 
-    // TODO: this should be [moonRise, moonSet]
     setTwilightValues(twilightValues);
     setMoonValues(moonValues);
     console.log(almanac); // TODO: Remove before PR
+    console.log("twilightValues: ", twilightValues);
+    console.log("moonValues: ", moonValues);
+  }
+
+  // Pair up moon rise/set times for display
+  function prepareMoonIntervals(events, xMinMillis, xMaxMillis) {
+    // Sort by time ascending
+    const sorted = events.sort((a, b) => a.time - b.time);
+
+    const intervals = [];
+    let currentStart = null;
+
+    // Pair up
+    for (const { time, type } of sorted) {
+      if (type === "rise") {
+        currentStart = time;
+      } else if (type === "set" && currentStart != null) {
+        intervals.push([currentStart, time]);
+        currentStart = null;
+      }
+    }
+    // In cases where the moon is up over the start/end
+    // of the requested dayobs range, we set part of the
+    // interval pair to the min/max of timeline.
+    // Handle starts-with-set
+    if (sorted[0]?.type === "set") {
+      intervals.unshift([xMinMillis, sorted[0].time]);
+    }
+
+    // Handle ends-with-rise
+    if (sorted[sorted.length - 1]?.type === "rise") {
+      intervals.push([sorted[sorted.length - 1].time, xMaxMillis]);
+    }
+
+    return intervals;
   }
 
   useEffect(() => {
@@ -739,6 +760,19 @@ function Plots() {
     };
   }, [startDayobs, queryEndDayobs, instrument]);
 
+  // Pair up moon rise/set times
+  useEffect(() => {
+    const [xMinMillis, xMaxMillis] = fullTimeRange;
+    if (moonValues && xMinMillis != null && xMaxMillis != null) {
+      const intervals = prepareMoonIntervals(
+        moonValues,
+        xMinMillis,
+        xMaxMillis,
+      );
+      setMoonIntervals(intervals);
+    }
+  }, [moonValues, fullTimeRange]);
+
   // // Temporary offline data for Simonyi
   // useEffect(() => {
   //   setDataLogEntries(offlineResponse.data_log || []);
@@ -806,7 +840,7 @@ function Plots() {
             <Timeline
               data={dataLogEntries}
               twilightValues={twilightValues}
-              moonValues={moonValues}
+              moonIntervals={moonIntervals}
               fullTimeRange={fullTimeRange}
               selectedTimeRange={selectedTimeRange}
               setSelectedTimeRange={setSelectedTimeRange}
@@ -862,7 +896,7 @@ function Plots() {
                     twilightValues={twilightValues}
                     // Show moon rise/set only on sky-related plots
                     {...(def.key.startsWith("sky")
-                      ? { moonValues: moonValues }
+                      ? { moonIntervals: moonIntervals }
                       : {})}
                     fullTimeRange={fullTimeRange}
                     selectedTimeRange={selectedTimeRange}
