@@ -110,6 +110,32 @@ function SelectObsDay({ days, selectedDay, setDay }) {
   );
 }
 
+function convertReportToText(report) {
+  return `Night of ${report.day_obs}
+${report.summary}
+
+Weather:
+${report.weather}
+
+Detailed report:
+${report.maintel_summary || ""}
+${report.auxtel_summary || ""}
+
+Observers:
+${(report.observers_crew || []).join(", ")}
+
+${report.date_sent ? `Sent at ${report.date_sent}Z` : ""}`;
+}
+
+function handleDownload(reports) {
+  // TODO: Implement the download functionality
+  console.log("TODO: download reports...");
+  const textContent = reports
+    .map(convertReportToText)
+    .join("-----------------\n");
+  console.log(textContent);
+}
+
 function NightSummary({ reports = [], nightreportLoading = false }) {
   const availableDays = reports.map((report) => report.day_obs);
   const [selectedDay, setSelectedDay] = useState(availableDays[0]);
@@ -132,12 +158,12 @@ function NightSummary({ reports = [], nightreportLoading = false }) {
         <div className="flex flex-row gap-2 justify-end">
           <Popover>
             <PopoverTrigger className="self-end min-w-4">
-              <img src={DownloadIcon} />
+              <img src={DownloadIcon} onClick={() => handleDownload(reports)} />
             </PopoverTrigger>
             <PopoverContent className="bg-black text-white text-sm border-yellow-700">
               This is a placeholder for the download/export button. Once
               implemented, clicking here will download this Applet's data to a
-              .csv file.
+              .txt file.
             </PopoverContent>
           </Popover>
           <Popover>
