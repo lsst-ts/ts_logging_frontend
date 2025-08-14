@@ -289,4 +289,13 @@ export const dataLogColumns = [
       tooltip: "Outside air temperature in degC.",
     },
   }),
+  columnHelper.accessor("dome_temp", {
+    header: "Dome Temp",
+    cell: (info) => formatCellValue(info.getValue()),
+    size: 150,
+    filterType: "number-range",
+    meta: {
+      tooltip: "Temperature in Dome at M2 in degC.",
+    },
+  }),
 ];
