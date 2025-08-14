@@ -465,14 +465,17 @@ function TimeseriesPlot({
             letterSpacing: 1,
           }}
         />
-        {/* Selection rectangle shown once time window selection made */}
-        {selectedMinMillis && selectedMaxMillis ? (
+        {/* Moon Up Area */}
+        {moonIntervals.map(([start, end], i) => (
           <ReferenceArea
-            x1={selectedMinMillis}
-            x2={selectedMaxMillis}
-            fillOpacity={0}
+            key={`moon-up-${i}`}
+            x1={start}
+            x2={end}
+            fillOpacity={0.2}
+            fill="#EAB308"
+            yAxisId="0"
           />
-        ) : null}
+        ))}
         {/* Twilight lines */}
         {twilightValues.map((twi, i) =>
           selectedMinMillis <= twi && twi <= selectedMaxMillis ? (
@@ -485,17 +488,6 @@ function TimeseriesPlot({
             />
           ) : null,
         )}
-        {/* Moon Up Area */}
-        {moonIntervals.map(([start, end], i) => (
-          <ReferenceArea
-            key={`moon-up-${i}`}
-            x1={start}
-            x2={end}
-            fillOpacity={0.2}
-            fill="#EAB308"
-            yAxisId="0"
-          />
-        ))}
         <ChartTooltip
           position={"topRight"}
           offset={50}
