@@ -8,7 +8,7 @@ import {
 
 const columnHelper = createColumnHelper();
 
-// Exact (multple) match(es) filter function
+// Exact (multiple) match(es) filter function
 export const matchValueOrInList = (row, columnId, filterValue) => {
   const rowValue = row.getValue(columnId);
 
@@ -20,8 +20,6 @@ export const matchValueOrInList = (row, columnId, filterValue) => {
 };
 
 export const dataLogColumns = [
-  // Missing field: "dome_temp"
-
   // Link to RubinTV
   columnHelper.display({
     id: "RubinTVLink",
