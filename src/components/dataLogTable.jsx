@@ -68,6 +68,7 @@ const DEFAULT_COLUMN_VISIBILITY = {
   zero_point_median: true,
   high_snr_source_count_median: true,
   air_temp: true,
+  dome_temp: true,
 };
 
 const DEFAULT_COLUMN_ORDER = [
@@ -96,6 +97,7 @@ const DEFAULT_COLUMN_ORDER = [
   "zero_point_median",
   "high_snr_source_count_median",
   "air_temp",
+  "dome_temp",
 ];
 
 function DataLogTable({ data, dataLogLoading, tableFilters }) {

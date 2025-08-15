@@ -8,7 +8,7 @@ import {
 
 const columnHelper = createColumnHelper();
 
-// Exact (multple) match(es) filter function
+// Exact (multiple) match(es) filter function
 export const matchValueOrInList = (row, columnId, filterValue) => {
   const rowValue = row.getValue(columnId);
 
@@ -20,8 +20,6 @@ export const matchValueOrInList = (row, columnId, filterValue) => {
 };
 
 export const dataLogColumns = [
-  // Missing field: "dome_temp"
-
   // Link to RubinTV
   columnHelper.display({
     id: "RubinTVLink",
@@ -287,6 +285,15 @@ export const dataLogColumns = [
     filterType: "number-range",
     meta: {
       tooltip: "Outside air temperature in degC.",
+    },
+  }),
+  columnHelper.accessor("mt_salindex112_temperature_0_mean", {
+    header: "Dome Temp",
+    cell: (info) => formatCellValue(info.getValue()),
+    size: 100,
+    filterType: "number-range",
+    meta: {
+      tooltip: "Temperature in Dome at M2 in degC.",
     },
   }),
 ];
