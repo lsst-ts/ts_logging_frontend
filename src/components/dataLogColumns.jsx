@@ -287,10 +287,10 @@ export const dataLogColumns = [
       tooltip: "Outside air temperature in degC.",
     },
   }),
-  columnHelper.accessor("dome_temp", {
+  columnHelper.accessor("mt_salindex112_temperature_0_mean", {
     header: "Dome Temp",
     cell: (info) => formatCellValue(info.getValue()),
-    size: 150,
+    size: 100,
     filterType: "number-range",
     meta: {
       tooltip: "Temperature in Dome at M2 in degC.",
