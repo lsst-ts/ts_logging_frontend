@@ -22,10 +22,22 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 
-import ResetTimeRangeButton from "@/components/ResetTimeRangeButton";
 import PlotVisibilityPopover from "@/components/PlotVisibilityPopover";
-import { PLOT_DEFINITIONS } from "@/components/PLOT_DEFINITIONS";
+import PlotFormatPopover from "@/components/PlotFormatPopover";
+
+import {
+  PLOT_DEFINITIONS,
+  PLOT_COLOR_OPTIONS,
+  BAND_COLOURS,
+} from "@/components/PLOT_DEFINITIONS";
 import { TELESCOPES } from "@/components/parameters";
+import {
+  TriangleShape,
+  FlippedTriangleShape,
+  SquareShape,
+  StarShape,
+  AsteriskShape,
+} from "@/components/plotDotShapes";
 
 import {
   fetchAlmanac,
@@ -68,6 +80,38 @@ const CustomisedDot = ({ cx, cy, stroke, h, w }) => {
       <rect x={0} y={0} width={width} height={height} fill={fill} />
     </svg>
   );
+};
+
+// Band markers for the timeseries plots
+const CustomisedDotWithShape = ({ cx, cy, band, r = 2 }) => {
+  if (cx == null || cy == null) return null;
+
+  // Band "u" is a blue circle
+  if (band === "u") {
+    return <circle cx={cx} cy={cy} r={r || 2} fill="#3eb7ff" />;
+  }
+
+  // Choose shape based on prop
+  let ShapeComponent;
+  switch (band) {
+    case "g":
+      ShapeComponent = TriangleShape;
+      break;
+    case "r":
+      ShapeComponent = FlippedTriangleShape;
+      break;
+    case "i":
+      ShapeComponent = SquareShape;
+      break;
+    case "z":
+      ShapeComponent = StarShape;
+      break;
+    case "y":
+      ShapeComponent = AsteriskShape;
+      break;
+  }
+
+  return <ShapeComponent cx={cx} cy={cy} r={r} />;
 };
 
 function Timeline({
@@ -359,11 +403,22 @@ function TimeseriesPlot({
   fullTimeRange,
   selectedTimeRange,
   setSelectedTimeRange,
+  plotShape,
+  plotColor,
+  bandMarker,
+  isBandPlot = false,
+  plotIndex = 0,
 }) {
   const [refAreaLeft, setRefAreaLeft] = useState(null);
   const [refAreaRight, setRefAreaRight] = useState(null);
   const selectedMinMillis = selectedTimeRange[0]?.toMillis();
   const selectedMaxMillis = selectedTimeRange[1]?.toMillis();
+
+  // Get color, either from options or generated based on index (for assorted colors)
+  const selectedColor =
+    plotColor === "assorted"
+      ? `hsl(${plotIndex * 40}, 70%, 50%)`
+      : PLOT_COLOR_OPTIONS.find((c) => c.key === plotColor)?.color || "#ffffff";
 
   // Click & Drag Functionality =============================
   // Handle click+drag and set state accordingly
@@ -423,6 +478,63 @@ function TimeseriesPlot({
   else if (yRange > 1.5) decimalPlaces = 1;
   else if (yRange > 0.01) decimalPlaces = 2;
   else if (yRange == 0) decimalPlaces = 0;
+  // ---------------------------------------------------------
+
+  // Plot Formatting =========================================
+  const DOT_RADIUS = 2;
+  let lineProps = {
+    dataKey,
+    activeDot: { r: 4, fill: "#ffffff" },
+    isAnimationActive: false,
+  };
+
+  if (isBandPlot && bandMarker === "bandColorsIcons") {
+    // Band markers (colours and icons)
+    lineProps.stroke = "";
+    lineProps.dot = (props) => (
+      <CustomisedDotWithShape
+        {...props}
+        stroke={selectedColor}
+        band={props.payload.band}
+        style={{ pointerEvents: "all" }}
+      />
+    );
+  } else if (isBandPlot && bandMarker === "bandColor") {
+    // Band markers (colours only)
+    lineProps.stroke = "";
+    lineProps.dot = (props) => {
+      const { cx, cy, payload } = props;
+      const fill = BAND_COLOURS[payload.band]?.color || selectedColor;
+
+      // Don't show a dot if undefined or null
+      if (cy == null) return null;
+
+      return (
+        <circle
+          cx={cx}
+          cy={cy}
+          r={DOT_RADIUS}
+          fill={fill}
+          stroke={fill}
+          style={{ pointerEvents: "all" }}
+        />
+      );
+    };
+  } else if (plotShape === "line") {
+    // Lines
+    lineProps.connectNulls = true;
+    (lineProps.isAnimationActive = true), (lineProps.type = "linear");
+    lineProps.stroke = selectedColor;
+    lineProps.dot = false;
+  } else {
+    // Dots
+    lineProps.stroke = "";
+    lineProps.dot = {
+      r: DOT_RADIUS,
+      fill: selectedColor,
+      stroke: selectedColor,
+    };
+  }
   // ---------------------------------------------------------
 
   // Plot =================================================
@@ -541,20 +653,7 @@ function TimeseriesPlot({
           )}
         />
         {/* Data */}
-        <Line
-          connectNulls
-          type="monotone"
-          dataKey={dataKey}
-          // stroke="#000000" // black
-          stroke="#3CAE3F" // green
-          strokeWidth={2}
-          // points
-          // dot={{ r: 1, fill: "#0C4A47", stroke: "#0C4A47" }} // sidebar teal circle
-          // dot={{ r: 0.5, fill: "#3CAE3F", stroke: "#3CAE3F" }} // shadow green circle
-          // dot={<CustomisedDot stroke="#3CAE3F" h="5" w="0.5" />} // green vertical lines
-          dot={<CustomisedDot stroke="#3CAE3F" h="0" w="0.5" />} // no points
-          activeDot={{ r: 4, fill: "#ffffff" }}
-        />
+        <Line {...lineProps} />
         {/* Selection rectangle shown during active highlighting */}
         {refAreaLeft && refAreaRight ? (
           <ReferenceArea x1={refAreaLeft} x2={refAreaRight} fillOpacity={0.3} />
@@ -602,6 +701,11 @@ function Plots() {
   const [activePlots, setActivePlots] = useState(
     PLOT_DEFINITIONS.filter((p) => p.default).map((p) => p.key),
   );
+
+  // Plot format
+  const [plotShape, setPlotShape] = useState("line");
+  const [plotColor, setPlotColor] = useState("assorted");
+  const [bandMarker, setBandMarker] = useState("none");
 
   async function prepareExposureData(dataLog) {
     // Prepare data for plots
@@ -923,11 +1027,13 @@ function Plots() {
               activePlots={activePlots}
               setActivePlots={setActivePlots}
             />
-            <ResetTimeRangeButton
-              fullTimeRange={fullTimeRange}
-              selectedTimeRange={selectedTimeRange}
-              setSelectedTimeRange={setSelectedTimeRange}
-              availableDayobs={availableDayobs}
+            <PlotFormatPopover
+              plotShape={plotShape}
+              setPlotShape={setPlotShape}
+              plotColor={plotColor}
+              setPlotColor={setPlotColor}
+              bandMarker={bandMarker}
+              setBandMarker={setBandMarker}
             />
           </div>
         )}
@@ -948,7 +1054,7 @@ function Plots() {
             </>
           ) : (
             <>
-              {activePlots.map((key) => {
+              {activePlots.map((key, idx) => {
                 const def = PLOT_DEFINITIONS.find((p) => p.key === key);
                 return (
                   <TimeseriesPlot
@@ -965,6 +1071,11 @@ function Plots() {
                     fullTimeRange={fullTimeRange}
                     selectedTimeRange={selectedTimeRange}
                     setSelectedTimeRange={setSelectedTimeRange}
+                    plotShape={plotShape}
+                    plotColor={plotColor}
+                    bandMarker={bandMarker}
+                    isBandPlot={!!def?.bandMarker}
+                    plotIndex={idx}
                   />
                 );
               })}
