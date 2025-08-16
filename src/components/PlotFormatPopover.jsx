@@ -18,7 +18,7 @@ function PlotFormatPopover({
   setBandMarker,
 }) {
   return (
-    <div className="flex flex-row justify-between pt-4 gap-8 text-black">
+    <div className="flex flex-row justify-between gap-8 text-black">
       <Dialog>
         <DialogTrigger asChild>
           <button
