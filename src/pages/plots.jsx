@@ -1021,12 +1021,41 @@ function Plots() {
         {dataLogLoading || almanacLoading ? (
           <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
         ) : (
-          <div className="flex flex-row w-full justify-between gap-8">
+          <div className="flex flex-row w-full justify-between items-center gap-8 mt-4">
             <PlotVisibilityPopover
               dataLogEntries={dataLogEntries}
               activePlots={activePlots}
               setActivePlots={setActivePlots}
             />
+            {/* Conditionally display band icon/color key */}
+            {bandMarker !== "none" && (
+              <div className="flex flex-row h-10 px-4 justify-between items-center gap-3 border border-1 border-white rounded-md text-white font-thin">
+                <div>Bands:</div>
+
+                {Object.entries(BAND_COLOURS).map(([band, { color }]) => {
+                  // Map each band to its shape component
+                  const ShapeComponent = {
+                    u: "circle",
+                    g: FlippedTriangleShape,
+                    r: TriangleShape,
+                    i: SquareShape,
+                    z: StarShape,
+                    y: AsteriskShape,
+                  }[band];
+
+                  return (
+                    <div key={band} className="flex items-center gap-1">
+                      <svg width="16" height="16">
+                        <ShapeComponent cx={8} cy={8} fill={color} r={4} />
+                      </svg>
+                      <span>{band}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Plot format controls */}
             <PlotFormatPopover
               plotShape={plotShape}
               setPlotShape={setPlotShape}
