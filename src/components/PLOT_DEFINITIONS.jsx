@@ -154,9 +154,9 @@ export const PLOT_BAND_MARKER_OPTIONS = [
 // TODO: import these in plotDotShapes
 export const BAND_COLOURS = {
   u: { color: "#3eb7ff" },
-  g: { color: "#2af5ff" },
-  r: { color: "#a7f9c1" },
-  i: { color: "#ff7e00" },
-  z: { color: "#30c39f" },
+  g: { color: "#30c39f" },
+  r: { color: "#ff7e00" },
+  i: { color: "#2af5ff" },
+  z: { color: "#a7f9c1" },
   y: { color: "#fdc900" },
 };

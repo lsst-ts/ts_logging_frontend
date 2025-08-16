@@ -47,7 +47,7 @@ function PlotVisibilityPopover({
   };
 
   return (
-    <div className="flex flex-row justify-between mt-4 gap-8 text-white">
+    <div className="flex flex-row justify-between gap-8 text-white">
       <Dialog>
         <DialogTrigger asChild>
           <button
