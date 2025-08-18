@@ -5,6 +5,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import InfoIcon from "../assets/InfoIcon.svg";
 import DownloadIcon from "../assets/DownloadIcon.svg";
@@ -91,22 +98,29 @@ function scrollToId(id) {
 }
 
 function SelectObsDay({ days, selectedDay, setDay }) {
-  const handleChange = (e) => {
-    const newDay = e.target.value;
-    scrollToId(newDay);
-    setDay(newDay);
+  const handleChange = (value) => {
+    scrollToId(value);
+    setDay(value);
   };
   return (
-    <select
-      className="bg-stone-800 text-white rounded-sm border border-teal-900 ml-4"
-      onChange={handleChange}
-    >
-      {days.map((day) => (
-        <option key={day} value={day} selected={day == selectedDay}>
-          {day}
-        </option>
-      ))}
-    </select>
+    <Select value={selectedDay} onValueChange={handleChange}>
+      <SelectTrigger
+        className={
+          "!h-[1rem] text-sidebar-foreground text-xs px-2 py-0" +
+          " ml-2 inline-flex bg-white justify-between font-normal" +
+          " focus-visible:ring-4 focus-visible:ring-green-500/50"
+        }
+      >
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {days.map((day) => (
+          <SelectItem key={day} value={day}>
+            {day}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }
 
