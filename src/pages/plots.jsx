@@ -57,6 +57,7 @@ import {
   millisToDateTime,
   millisToHHmm,
   utcDateTimeStrToTAIMillis,
+  dayobsAtMidnight,
 } from "@/utils/timeUtils";
 
 // import offlineResponse from "@/assets/dataLog_Simonyi_20250722_20250723.json";
@@ -189,9 +190,8 @@ function Timeline({
 
     // Dayobs labels
     if (isMidnightUTC) {
-      // TODO: Make into timeUtil (apply to below, also)
       // Get date prior to midnight
-      const dayobsLabel = dt.minus({ minutes: 1 }).toFormat("yyyy-LL-dd");
+      const dayobsLabel = dayobsAtMidnight(dt, "yyyy-LL-dd");
 
       return (
         <>
@@ -218,7 +218,7 @@ function Timeline({
     // so it makes sense to display value at that time.
     if (isMidnightChile) {
       // Get date prior to midnight
-      const dayobs = dtChile.minus({ minutes: 1 }).toFormat("yyyyLLdd");
+      const dayobs = dayobsAtMidnight(dtChile, "yyyyLLdd");
       // Find illumination by matching dayobs timestamp
       const illumEntry = illumValues.find((entry) => entry.dayobs === dayobs);
       // Get label
@@ -411,7 +411,6 @@ function TimeseriesPlot({
   unit = null,
   dataKey,
   data,
-  preferredYDomain = null,
   twilightValues,
   moonIntervals = [],
   fullTimeRange,
@@ -441,22 +440,6 @@ function TimeseriesPlot({
     handleMouseUp,
     handleDoubleClick,
   } = useClickDrag(setSelectedTimeRange, fullTimeRange);
-  // --------------------------------------------------------
-
-  // TODO: is this still being applied? ====================
-  // Check if data is empty
-  const actualValues = data.map((d) => d[dataKey]).filter((v) => v != null);
-  // Check if all points are within preferred yDomain
-  const isWithinPreferredDomain =
-    preferredYDomain &&
-    actualValues.length > 0 &&
-    actualValues.every(
-      (val) => val >= preferredYDomain[0] && val <= preferredYDomain[1],
-    );
-  // If data overflows preferred domain, use "auto" for Y axis
-  const finalYDomain = isWithinPreferredDomain
-    ? preferredYDomain
-    : ["auto", "auto"];
   // --------------------------------------------------------
 
   // Compute decimal places for y-axis ticks ================
@@ -555,8 +538,7 @@ function TimeseriesPlot({
         <YAxis
           tick={{ fill: "white", style: { userSelect: "none" } }}
           tickFormatter={(value) => value.toFixed(decimalPlaces)}
-          domain={finalYDomain}
-          // domain={["auto", "auto"]}
+          domain={["auto", "auto"]}
           width={70}
           label={{
             value: unit,
@@ -936,7 +918,6 @@ function Plots() {
     );
   }
 
-  // TODO: When does this run?
   // Filter data based on selected time range
   const filteredData = dataLogEntries.filter(
     (entry) =>
@@ -1117,11 +1098,10 @@ function Plots() {
               <p>
                 For visit maps, visit the Scheduler-oriented night summaries:{" "}
                 {availableDayobs.map((dayobs, idx) => {
-                  // TODO: Create timeUtils
+                  // TODO: Create util that takes dayobs and returns url
                   const dt = DateTime.fromFormat(dayobs, "yyyyLLdd");
                   const pathFormat = dt.toFormat("yyyy/LL/dd");
                   const fileFormat = dt.toFormat("yyyy-LL-dd");
-                  // TODO: How should we generate url?
                   return (
                     <span key={dayobs}>
                       <a
