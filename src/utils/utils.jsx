@@ -239,6 +239,21 @@ const buildNavItemUrl = (
 };
 
 /**
+ * Generate the Scheduler night summary link info for a given dayobs.
+ *
+ * @param {string} dayobs - Dayobs string in "yyyyLLdd" format.
+ * @returns {{ url: string, label: string }} Object containing the URL and display label.
+ */
+const getNightSummaryLink = (dayobs) => {
+  const dt = DateTime.fromFormat(dayobs, "yyyyLLdd");
+  const pathFormat = dt.toFormat("yyyy/LL/dd");
+  const label = dt.toFormat("yyyy-LL-dd");
+  const url = `https://s3df.slac.stanford.edu/data/rubin/sim-data/schedview/reports/nightsum/lsstcam/${pathFormat}/nightsum_${label}.html`;
+
+  return { url, label };
+};
+
+/**
  * Converts a string key into a more human-readable title.
  *
  * Capitalises the first letter of each word, preserving spaces.
@@ -264,6 +279,7 @@ export {
   mergeDataLogSources,
   getRubinTVUrl,
   buildNavItemUrl,
+  getNightSummaryLink,
   prettyTitleFromKey,
   DEFAULT_PIXEL_SCALE_MEDIAN,
   PSF_SIGMA_FACTOR,
