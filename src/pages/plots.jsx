@@ -1055,11 +1055,13 @@ function Plots() {
           <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
         ) : (
           <div className="flex flex-row w-full justify-between items-center gap-8 mt-4">
+            {/* Show/Hide Plots button */}
             <PlotVisibilityPopover
               dataLogEntries={dataLogEntries}
               activePlots={activePlots}
               setActivePlots={setActivePlots}
             />
+
             {/* Conditionally display band icon/color key */}
             {bandMarker !== "none" && (
               <div className="flex flex-row h-10 px-4 justify-between items-center gap-3 border border-1 border-white rounded-md text-white font-thin">
