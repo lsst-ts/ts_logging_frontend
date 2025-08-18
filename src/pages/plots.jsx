@@ -714,7 +714,7 @@ function Plots() {
     const lastObs = data.at(-1)?.obs_start_dt ?? 0;
 
     // Set static timeline axis to boundaries of queried dayobs
-    let fullXRange = [firstObs, lastObs];
+    let fullXRange = [];
     if (dayobsRange.length > 0) {
       const firstDayobs = dayobsRange[0];
       const lastDayobs = dayobsRange[dayobsRange.length - 1];
@@ -730,7 +730,7 @@ function Plots() {
 
       setAvailableDayobs(dayobsRange);
       setFullTimeRange(fullXRange);
-      setSelectedTimeRange(fullXRange);
+      setSelectedTimeRange([firstObs, lastObs]);
     }
 
     // Set the data to state
