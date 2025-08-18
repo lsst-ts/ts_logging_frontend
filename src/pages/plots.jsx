@@ -48,6 +48,7 @@ import {
   DEFAULT_PIXEL_SCALE_MEDIAN,
   PSF_SIGMA_FACTOR,
   getDatetimeFromDayobsStr,
+  getNightSummaryLink,
   prettyTitleFromKey,
 } from "@/utils/utils";
 import {
@@ -1098,19 +1099,16 @@ function Plots() {
               <p>
                 For visit maps, visit the Scheduler-oriented night summaries:{" "}
                 {availableDayobs.map((dayobs, idx) => {
-                  // TODO: Create util that takes dayobs and returns url
-                  const dt = DateTime.fromFormat(dayobs, "yyyyLLdd");
-                  const pathFormat = dt.toFormat("yyyy/LL/dd");
-                  const fileFormat = dt.toFormat("yyyy-LL-dd");
+                  const { url, label } = getNightSummaryLink(dayobs);
                   return (
                     <span key={dayobs}>
                       <a
-                        href={`https://s3df.slac.stanford.edu/data/rubin/sim-data/schedview/reports/nightsum/lsstcam/${pathFormat}/nightsum_${fileFormat}.html`}
+                        href={url}
                         className="underline text-blue-300 hover:text-blue-400"
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        {fileFormat}
+                        {label}
                       </a>
                       {idx < availableDayobs.length - 1 && ", "}
                     </span>
