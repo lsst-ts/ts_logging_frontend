@@ -44,7 +44,12 @@ import {
   fetchAlmanac,
   fetchDataLogEntriesFromConsDB,
 } from "@/utils/fetchUtils";
-import { getDatetimeFromDayobsStr, prettyTitleFromKey } from "@/utils/utils";
+import {
+  DEFAULT_PIXEL_SCALE_MEDIAN,
+  PSF_SIGMA_FACTOR,
+  getDatetimeFromDayobsStr,
+  prettyTitleFromKey,
+} from "@/utils/utils";
 import {
   isoToTAI,
   dayobsToTAI,
@@ -702,13 +707,15 @@ function Plots() {
         const psfSigma = parseFloat(entry["psf sigma median"]);
         const pixelScale = !isNaN(entry.pixel_scale_median)
           ? entry.pixel_scale_median
-          : 0.2; // TODO: get from utils
+          : DEFAULT_PIXEL_SCALE_MEDIAN;
         const obsStartDt = isoToTAI(entry["obs start"]);
         return {
           ...entry,
           obs_start_dt: obsStartDt,
           obs_start_millis: obsStartDt.toMillis(),
-          "psf median": !isNaN(psfSigma) ? psfSigma * 2.355 * pixelScale : null, // TODO: get from utils
+          "psf median": !isNaN(psfSigma)
+            ? psfSigma * PSF_SIGMA_FACTOR * pixelScale
+            : null,
         };
       })
       // Chronological order
