@@ -5,7 +5,8 @@ import { millisToDateTime } from "@/utils/timeUtils";
  * Hook for managing click+drag time range selection on Recharts.
  *
  * @param {Function} setSelectedTimeRange - Setter for the selected time range state.
- * @param {[any, any]} fullTimeRange - The full resettable time range.
+ *   Expects an array of Luxon DateTime objects [start, end].
+ * @param {[number, number]} fullTimeRange - The full resettable time range, in TAI milliseconds.
  * @returns {object} Handlers and refs for use in a Recharts chart.
  */
 export const useClickDrag = (setSelectedTimeRange, fullTimeRange) => {
