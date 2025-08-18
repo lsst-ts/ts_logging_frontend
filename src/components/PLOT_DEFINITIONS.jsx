@@ -159,3 +159,12 @@ export const BAND_COLOURS = {
   z: { color: "#a7f9c1" },
   y: { color: "#fdc900" },
 };
+
+export const BAND_COLORS = {
+  u: "#3eb7ff",
+  g: "#30c39f",
+  r: "#ff7e00",
+  i: "#2af5ff",
+  z: "#a7f9c1",
+  y: "#fdc900",
+};
