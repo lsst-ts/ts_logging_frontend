@@ -989,7 +989,8 @@ function Plots() {
             <p>
               Twilights are shown as blue lines, moon above the horizon is
               highlighted in yellow, and moon illumination (%) is displayed
-              above the timeline at local Chilean midnight.
+              above the timeline at local Chilean midnight. All times displayed
+              are in TAI (UTC+37s).
             </p>
             <p>
               Change which plots are shown by clicking the{" "}
