@@ -1,4 +1,10 @@
-import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogTitle,
+  DialogDescription,
+  DialogContent,
+} from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
@@ -30,8 +36,12 @@ function PlotFormatPopover({
           </button>
         </DialogTrigger>
         <DialogContent className="!max-w-[500px] m-2 pb-8">
-          <h1 className="text-lg font-thin mb-2">Format Plot Display</h1>
-
+          <DialogTitle className="text-lg font-thin mb-4">
+            Format Plot Display
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            Make changes to how the plot is displayed.
+          </DialogDescription>
           {/* Shape Selection */}
           <h2 className="text-md font-thin">Shape</h2>
           <RadioGroup
