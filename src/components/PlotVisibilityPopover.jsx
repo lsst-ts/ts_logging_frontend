@@ -1,6 +1,12 @@
 import { useMemo } from "react";
 
-import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogTitle,
+  DialogDescription,
+  DialogContent,
+} from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 
 import { PLOT_DEFINITIONS } from "@/components/PLOT_DEFINITIONS";
@@ -53,6 +59,13 @@ function PlotVisibilityPopover({
           </button>
         </DialogTrigger>
         <DialogContent className="!max-w-[600px]">
+          <DialogTitle className="text-lg font-thin mb-4 sr-only">
+            Plot Visibility Settings
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            Check boxes to show or hide plots in the timeline. Plots with no
+            data are disabled.
+          </DialogDescription>
           <div className="flex justify-between mb-2">
             <button
               onClick={handleSelectAll}
