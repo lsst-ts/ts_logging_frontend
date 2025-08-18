@@ -118,7 +118,6 @@ function Timeline({
   fullTimeRange,
   selectedTimeRange,
   setSelectedTimeRange,
-  staticTicks,
 }) {
   // Click & Drag plot hooks ================================
   const {
@@ -298,30 +297,22 @@ function Timeline({
           <XAxis
             xAxisId="dayobs"
             dataKey="obs_start_millis"
-            domain={
-              staticTicks
-                ? [xMinMillis, xMaxMillis]
-                : [selectedMinMillis, selectedMaxMillis]
-            }
+            domain={[xMinMillis, xMaxMillis]}
             allowDataOverflow
             type="number"
             scale="time"
             ticks={hourlyTicks}
-            interval={staticTicks && 0}
+            interval={0}
             axisLine={false}
             tickLine={false}
-            tick={staticTicks && renderDayobsTicks}
+            tick={renderDayobsTicks}
             height={PLOT_LABEL_HEIGHT}
           />
         )}
         {/* TAI Time Axis */}
         <XAxis
           dataKey="obs_start_millis"
-          domain={
-            staticTicks
-              ? [xMinMillis, xMaxMillis]
-              : [selectedMinMillis, selectedMaxMillis]
-          }
+          domain={[xMinMillis, xMaxMillis]}
           allowDataOverflow={true}
           type="number"
           scale="time"
@@ -329,6 +320,7 @@ function Timeline({
           axisLine={false}
           fontSize="20"
         />
+        {/* Needed, not shown */}
         <YAxis hide domain={[0, 1]} />
         {/* Moon Up Area */}
         {moonIntervals.map(([start, end], i) => (
@@ -962,7 +954,6 @@ function Plots() {
               fullTimeRange={fullTimeRange}
               selectedTimeRange={selectedTimeRange}
               setSelectedTimeRange={setSelectedTimeRange}
-              staticTicks={true}
             />
           </>
         )}
