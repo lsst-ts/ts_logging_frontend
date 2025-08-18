@@ -333,7 +333,7 @@ function Timeline({
             yAxisId="0"
           />
         ))}
-        {/* Twilight lines and times */}
+        {/* Twilight Lines and Times */}
         {twilightValues.map((twi, i) =>
           xMinMillis <= twi && twi <= xMaxMillis ? (
             <ReferenceLine
@@ -355,7 +355,7 @@ function Timeline({
             />
           ) : null,
         )}
-        {/* Selection area (shaded background) shown once time window selection made */}
+        {/* Selection Area (shaded background) shown once time window selection made */}
         {selectedMinMillis && selectedMaxMillis ? (
           <ReferenceArea
             x1={selectedMinMillis}
@@ -364,7 +364,7 @@ function Timeline({
             fillOpacity={0.2}
           />
         ) : null}
-        {/* Points representing exposures and related data */}
+        {/* Data Points */}
         <Line
           dataKey={() => 0.5}
           stroke="#FFFFFF"
@@ -431,6 +431,7 @@ function TimeseriesPlot({
   } = useClickDrag(setSelectedTimeRange, fullTimeRange);
   // --------------------------------------------------------
 
+  // TODO: This is sometimes being overridden.
   // Compute decimal places for y-axis ticks ================
   const values = data.map((d) => d[dataKey]).filter((v) => v != null);
   // Get min/max
