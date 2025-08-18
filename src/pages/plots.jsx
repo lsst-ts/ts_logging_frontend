@@ -28,7 +28,7 @@ import PlotFormatPopover from "@/components/PlotFormatPopover";
 import {
   PLOT_DEFINITIONS,
   PLOT_COLOR_OPTIONS,
-  BAND_COLOURS,
+  BAND_COLORS,
 } from "@/components/PLOT_DEFINITIONS";
 import { TELESCOPES } from "@/components/parameters";
 import {
@@ -89,7 +89,7 @@ const CustomisedDotWithShape = ({ cx, cy, band, r = 2 }) => {
 
   // Band "u" is a blue circle
   if (band === "u") {
-    return <circle cx={cx} cy={cy} r={r || 2} fill="#3eb7ff" />;
+    return <circle cx={cx} cy={cy} r={r || 2} fill={BAND_COLORS.u} />;
   }
 
   // Choose shape based on prop
@@ -530,26 +530,25 @@ function TimeseriesPlot({
   if (isBandPlot && bandMarker === "bandColorsIcons") {
     // Band markers (colours and icons)
     lineProps.stroke = "";
-    lineProps.dot = (props) => (
+    lineProps.dot = ({ index, ...rest }) => (
       <CustomisedDotWithShape
-        {...props}
+        {...rest}
+        key={`dot-${index}`}
         stroke={selectedColor}
-        band={props.payload.band}
+        band={rest.payload.band}
         style={{ pointerEvents: "all" }}
       />
     );
   } else if (isBandPlot && bandMarker === "bandColor") {
     // Band markers (colours only)
     lineProps.stroke = "";
-    lineProps.dot = (props) => {
-      const { cx, cy, payload } = props;
-      const fill = BAND_COLOURS[payload.band]?.color || selectedColor;
-
-      // Don't show a dot if undefined or null
-      if (cy == null) return null;
+    lineProps.dot = ({ cx, cy, payload, index }) => {
+      const fill = BAND_COLORS[payload.band] || selectedColor;
+      if (cy == null) return null; // don't show a dot if undefined or null
 
       return (
         <circle
+          key={`dot-${index}`}
           cx={cx}
           cy={cy}
           r={DOT_RADIUS}
@@ -1066,12 +1065,12 @@ function Plots() {
               <div className="flex flex-row h-10 px-4 justify-between items-center gap-3 border border-1 border-white rounded-md text-white font-thin">
                 <div>Bands:</div>
 
-                {Object.entries(BAND_COLOURS).map(([band, { color }]) => {
+                {Object.entries(BAND_COLORS).map(([band, color]) => {
                   // Map each band to its shape component
                   const ShapeComponent = {
                     u: "circle",
-                    g: FlippedTriangleShape,
-                    r: TriangleShape,
+                    g: TriangleShape,
+                    r: FlippedTriangleShape,
                     i: SquareShape,
                     z: StarShape,
                     y: AsteriskShape,
