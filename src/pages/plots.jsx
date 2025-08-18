@@ -917,7 +917,7 @@ function Plots() {
           ) : (
             <>
               <p>
-                {dataLogEntries.length} exposures returned for {instrumentName}{" "}
+                {dataLogEntries.length} exposures found for {instrumentName}{" "}
                 {dateRangeString}.
               </p>
             </>
