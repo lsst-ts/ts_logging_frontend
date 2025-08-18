@@ -670,7 +670,7 @@ function Plots() {
   const [fullTimeRange, setFullTimeRange] = useState([null, null]);
 
   // Keep track of default and user-added plots
-  const [activePlots, setActivePlots] = useState(
+  const [visiblePlots, setVisiblePlots] = useState(
     PLOT_DEFINITIONS.filter((p) => p.default).map((p) => p.key),
   );
 
@@ -975,8 +975,8 @@ function Plots() {
             {/* Show/Hide Plots button */}
             <PlotVisibilityPopover
               dataLogEntries={dataLogEntries}
-              activePlots={activePlots}
-              setActivePlots={setActivePlots}
+              visiblePlots={visiblePlots}
+              setVisiblePlots={setVisiblePlots}
             />
 
             {/* Conditionally display band icon/color key */}
@@ -1035,7 +1035,7 @@ function Plots() {
             </>
           ) : (
             <>
-              {activePlots.map((key, idx) => {
+              {visiblePlots.map((key, idx) => {
                 const def = PLOT_DEFINITIONS.find((p) => p.key === key);
                 return (
                   <TimeseriesPlot

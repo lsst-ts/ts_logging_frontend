@@ -8,8 +8,8 @@ import { prettyTitleFromKey } from "@/utils/utils";
 
 function PlotVisibilityPopover({
   dataLogEntries,
-  activePlots,
-  setActivePlots,
+  visiblePlots,
+  setVisiblePlots,
 }) {
   // Detect which numeric fields have all-null data
   // so their checkboxes can be disabled.
@@ -27,15 +27,15 @@ function PlotVisibilityPopover({
 
   // Handlers for popover actions
   const handleSelectAll = () => {
-    setActivePlots(
+    setVisiblePlots(
       PLOT_DEFINITIONS.map((p) => p.key).filter((key) => fieldStatus[key]),
     );
   };
   const handleDeselectAll = () => {
-    setActivePlots([]);
+    setVisiblePlots([]);
   };
   const togglePlot = (key, checked) => {
-    setActivePlots((prev) =>
+    setVisiblePlots((prev) =>
       checked ? [...prev, key] : prev.filter((k) => k !== key),
     );
   };
@@ -74,9 +74,9 @@ function PlotVisibilityPopover({
                 className="flex items-center space-x-2 opacity-100"
               >
                 <Checkbox
-                  checked={activePlots.includes(key)}
+                  checked={visiblePlots.includes(key)}
                   onCheckedChange={(checked) => togglePlot(key, !!checked)}
-                  disabled={!fieldStatus[key]} // disable if all-null
+                  disabled={!fieldStatus[key]}
                 />
                 <span
                   className={`text-sm ${
