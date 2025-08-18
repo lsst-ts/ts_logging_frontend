@@ -1148,7 +1148,7 @@ function Plots() {
               </p>
               <p className="pt-2">
                 <span className="font-medium">Note: </span>If you see a 404
-                error, the summary has not been created.
+                error, the summary might not have been created for that day.
               </p>
             </>
           )}
