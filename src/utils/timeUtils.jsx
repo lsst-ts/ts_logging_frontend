@@ -42,7 +42,7 @@ const millisToDateTime = (millis) =>
 
 /**
  * Format milliseconds → HH:mm in UTC
- * Use for chart tick formatters to avoid local timezone bleed.
+ * Used for chart tick formatters to avoid local timezone bleed.
  */
 const millisToHHmm = (millis) =>
   DateTime.fromMillis(millis, { zone: "utc" }).toFormat("HH:mm");
@@ -57,7 +57,8 @@ const utcDateTimeStrToTAIMillis = (dateTimeStr) =>
     .toMillis();
 
 /**
- * Convert DateTime → formatted dayobs string, subtracting 1 minute
+ * Convert DateTime → formatted dayobs string
+ * Subtract 1 minute to get previous day's date.
  *
  * @param {DateTime} dt - Luxon DateTime object
  * @param {string} format - Luxon format string, e.g., "yyyy-LL-dd" or "yyyyLLdd"
