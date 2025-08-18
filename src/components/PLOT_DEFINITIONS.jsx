@@ -150,15 +150,6 @@ export const PLOT_BAND_MARKER_OPTIONS = [
   { key: "bandColorsIcons", label: "Colors & Icons" },
 ];
 
-export const BAND_COLOURS = {
-  u: { color: "#3eb7ff" },
-  g: { color: "#30c39f" },
-  r: { color: "#ff7e00" },
-  i: { color: "#2af5ff" },
-  z: { color: "#a7f9c1" },
-  y: { color: "#fdc900" },
-};
-
 export const BAND_COLORS = {
   u: "#3eb7ff",
   g: "#30c39f",
