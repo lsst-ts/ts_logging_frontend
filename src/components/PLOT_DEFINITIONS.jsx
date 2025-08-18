@@ -128,16 +128,15 @@ export const PLOT_DEFINITIONS = [
 
 export const PLOT_COLOR_OPTIONS = [
   { key: "assorted", label: "Assorted" },
-  { key: "white", label: "White" },
-  { key: "green", label: "Neon Green", color: "#3CAE3F" },
-  { key: "turquoise", label: "Rubin Turquoise", color: "#00BABC" },
-  { key: "blue", label: "Deep Sky Blue" },
-  { key: "red", label: "Laser Red" },
-  { key: "pink", label: "Pink" },
-  { key: "purple", label: "Purple" },
-  { key: "orange", label: "Orange" },
-  { key: "yellow", label: "Yellow" },
-  { key: "black", label: "Black" },
+  { key: "white", label: "White", color: "#FFFFFF" },
+  { key: "green", label: "Green", color: "#3CAE3F" },
+  { key: "turquoise", label: "Turquoise", color: "#00BABC" },
+  { key: "blue", label: "Blue", color: "#2A6FF2" },
+  { key: "purple", label: "Purple", color: "#8E44AD" },
+  { key: "pink", label: "Pink", color: "#FF3CAC" },
+  { key: "red", label: "Red", color: "#E63946" },
+  { key: "orange", label: "Orange", color: "#FF7F11" },
+  { key: "yellow", label: "Yellow", color: "#FFD60A" },
 ];
 
 export const PLOT_DOT_OPTIONS = [
