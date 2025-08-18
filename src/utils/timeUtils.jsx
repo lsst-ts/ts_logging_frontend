@@ -1,7 +1,6 @@
 import { DateTime } from "luxon";
 
 const TAI_OFFSET_SECONDS = 37;
-const DAYOBS_OFFSET_HOURS = 12;
 
 /**
  * Convert ISO string (representing TAI time) → TAI DateTime
@@ -11,28 +10,6 @@ const isoToTAI = (isoStr) =>
   DateTime.fromISO(isoStr, { zone: "utc" }).plus({
     seconds: TAI_OFFSET_SECONDS,
   });
-
-/**
- * Convert TAI DateTime → milliseconds for internal use
- */
-const taiToMillis = (taiDateTime) => taiDateTime.toMillis();
-
-/**
- * Convert internal milliseconds → TAI DateTime
- */
-const millisToTAI = (millis) =>
-  DateTime.fromMillis(millis, { zone: "utc" }).plus({
-    seconds: TAI_OFFSET_SECONDS,
-  });
-
-/**
- * Convert TAI DateTime → dayobs string YYYYMMDD
- * dayobs midnight = TAI midnight - 12h
- */
-const taiToDayobs = (taiDateTime) =>
-  taiDateTime
-    .minus({ hours: DAYOBS_OFFSET_HOURS, seconds: TAI_OFFSET_SECONDS })
-    .toFormat("yyyyLLdd");
 
 /**
  * Convert dayobs string + time (hour, minute) → TAI DateTime
@@ -79,14 +56,23 @@ const utcDateTimeStrToTAIMillis = (dateTimeStr) =>
     .plus({ seconds: TAI_OFFSET_SECONDS })
     .toMillis();
 
+/**
+ * Convert DateTime → formatted dayobs string, subtracting 1 minute
+ *
+ * @param {DateTime} dt - Luxon DateTime object
+ * @param {string} format - Luxon format string, e.g., "yyyy-LL-dd" or "yyyyLLdd"
+ * @returns {string} Formatted dayobs string
+ */
+const dayobsAtMidnight = (dt, format = "yyyy-LL-dd") => {
+  return dt.minus({ minutes: 1 }).toFormat(format);
+};
+
 export {
   isoToTAI,
-  taiToMillis,
-  millisToTAI,
-  taiToDayobs,
   dayobsToTAI,
   almanacDayobsForPlot,
   millisToDateTime,
   millisToHHmm,
   utcDateTimeStrToTAIMillis,
+  dayobsAtMidnight,
 };
