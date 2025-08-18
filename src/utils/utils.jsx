@@ -238,6 +238,21 @@ const buildNavItemUrl = (
   return query ? `${itemUrl}?${query}` : itemUrl;
 };
 
+/**
+ * Converts a string key into a more human-readable title.
+ *
+ * Capitalises the first letter of each word, preserving spaces.
+ *
+ * @param {string} key - The key string to convert (e.g., "exposure time").
+ * @returns {string} The prettified title (e.g., "Exposure Time").
+ */
+const prettyTitleFromKey = (key) => {
+  return key
+    .split(" ")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+};
+
 export {
   calculateEfficiency,
   calculateTimeLoss,
@@ -249,6 +264,7 @@ export {
   mergeDataLogSources,
   getRubinTVUrl,
   buildNavItemUrl,
+  prettyTitleFromKey,
   DEFAULT_PIXEL_SCALE_MEDIAN,
   PSF_SIGMA_FACTOR,
 };

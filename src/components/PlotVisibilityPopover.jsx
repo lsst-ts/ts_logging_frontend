@@ -4,13 +4,7 @@ import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 
 import { PLOT_DEFINITIONS } from "@/components/PLOT_DEFINITIONS";
-
-function prettyTitleFromKey(key) {
-  return key
-    .split(" ")
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
-}
+import { prettyTitleFromKey } from "@/utils/utils";
 
 function PlotVisibilityPopover({
   dataLogEntries,

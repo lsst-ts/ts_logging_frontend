@@ -150,7 +150,6 @@ export const PLOT_BAND_MARKER_OPTIONS = [
   { key: "bandColorsIcons", label: "Colors & Icons" },
 ];
 
-// TODO: import these in plotDotShapes
 export const BAND_COLOURS = {
   u: { color: "#3eb7ff" },
   g: { color: "#30c39f" },

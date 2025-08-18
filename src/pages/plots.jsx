@@ -39,11 +39,12 @@ import {
   AsteriskShape,
 } from "@/components/plotDotShapes";
 
+import { useClickDrag } from "@/hooks/useClickDrag";
 import {
   fetchAlmanac,
   fetchDataLogEntriesFromConsDB,
 } from "@/utils/fetchUtils";
-import { getDatetimeFromDayobsStr } from "@/utils/utils";
+import { getDatetimeFromDayobsStr, prettyTitleFromKey } from "@/utils/utils";
 import {
   isoToTAI,
   dayobsToTAI,
@@ -55,14 +56,6 @@ import {
 
 // import offlineResponse from "@/assets/dataLog_Simonyi_20250722_20250723.json";
 // import offlineResponse from "@/assets/dataLog_Simonyi_0721_0723_wAlmanac.json";
-
-// TODO: Move to utils as it is being defined here and in PlotVisibilityPopover.
-function prettyTitleFromKey(key) {
-  return key
-    .split(" ")
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
-}
 
 // Small vertical lines to represent exposures in the timeline
 const CustomisedDot = ({ cx, cy, stroke, h, w }) => {
@@ -82,7 +75,6 @@ const CustomisedDot = ({ cx, cy, stroke, h, w }) => {
   );
 };
 
-// TODO: Fix error using this component
 // Band markers for the timeseries plots
 const CustomisedDotWithShape = ({ cx, cy, band, r = 2 }) => {
   if (cx == null || cy == null) return null;
@@ -125,8 +117,16 @@ function Timeline({
   setSelectedTimeRange,
   staticTicks,
 }) {
-  const [refAreaLeft, setRefAreaLeft] = useState(null);
-  const [refAreaRight, setRefAreaRight] = useState(null);
+  // Click & Drag plot hooks ================================
+  const {
+    refAreaLeft,
+    refAreaRight,
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
+    handleDoubleClick,
+  } = useClickDrag(setSelectedTimeRange, fullTimeRange);
+  // --------------------------------------------------------
 
   // Convert datetime inputs to millis format for plots ====
   const xMinMillis = fullTimeRange[0]?.toMillis();
@@ -135,36 +135,6 @@ function Timeline({
   const selectedMaxMillis = selectedTimeRange[1]?.toMillis();
 
   if (!xMinMillis || !xMaxMillis) return null;
-  // --------------------------------------------------------
-
-  // TODO: Move these to utils
-  // Click & Drag Functionality =============================
-  // Handle click+drag and set state accordingly
-  const handleMouseDown = (e) => setRefAreaLeft(e?.activeLabel ?? null);
-  const handleMouseMove = (e) =>
-    refAreaLeft && setRefAreaRight(e?.activeLabel ?? null);
-  const handleMouseUp = () => {
-    if (!refAreaLeft || !refAreaRight || refAreaLeft === refAreaRight) {
-      setRefAreaLeft(null);
-      setRefAreaRight(null);
-      return;
-    }
-    // Swap start/end if user dragged backwards
-    const [startMillis, endMillis] =
-      refAreaLeft < refAreaRight
-        ? [refAreaLeft, refAreaRight]
-        : [refAreaRight, refAreaLeft];
-
-    // Convert millis to DateTime objects
-    const startDT = millisToDateTime(startMillis);
-    const endDT = millisToDateTime(endMillis);
-    setSelectedTimeRange([startDT, endDT]);
-    setRefAreaLeft(null);
-    setRefAreaRight(null);
-  };
-  const handleDoubleClick = () => {
-    setSelectedTimeRange(fullTimeRange);
-  };
   // --------------------------------------------------------
 
   // Axis Utils =============================================
@@ -448,8 +418,6 @@ function TimeseriesPlot({
   isBandPlot = false,
   plotIndex = 0,
 }) {
-  const [refAreaLeft, setRefAreaLeft] = useState(null);
-  const [refAreaRight, setRefAreaRight] = useState(null);
   const selectedMinMillis = selectedTimeRange[0]?.toMillis();
   const selectedMaxMillis = selectedTimeRange[1]?.toMillis();
 
@@ -459,33 +427,15 @@ function TimeseriesPlot({
       ? `hsl(${plotIndex * 40}, 70%, 50%)`
       : PLOT_COLOR_OPTIONS.find((c) => c.key === plotColor)?.color || "#ffffff";
 
-  // Click & Drag Functionality =============================
-  // Handle click+drag and set state accordingly
-  const handleMouseDown = (e) => setRefAreaLeft(e?.activeLabel ?? null);
-  const handleMouseMove = (e) =>
-    refAreaLeft && setRefAreaRight(e?.activeLabel ?? null);
-  const handleMouseUp = () => {
-    if (!refAreaLeft || !refAreaRight || refAreaLeft === refAreaRight) {
-      setRefAreaLeft(null);
-      setRefAreaRight(null);
-      return;
-    }
-    // Swap start/end if user dragged backwards
-    const [startMillis, endMillis] =
-      refAreaLeft < refAreaRight
-        ? [refAreaLeft, refAreaRight]
-        : [refAreaRight, refAreaLeft];
-
-    // Convert millis to DateTime objects
-    const startDT = millisToDateTime(startMillis);
-    const endDT = millisToDateTime(endMillis);
-    setSelectedTimeRange([startDT, endDT]);
-    setRefAreaLeft(null);
-    setRefAreaRight(null);
-  };
-  const handleDoubleClick = () => {
-    setSelectedTimeRange(fullTimeRange);
-  };
+  // Click & Drag plot hooks ================================
+  const {
+    refAreaLeft,
+    refAreaRight,
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
+    handleDoubleClick,
+  } = useClickDrag(setSelectedTimeRange, fullTimeRange);
   // --------------------------------------------------------
 
   // TODO: is this still being applied? ====================
