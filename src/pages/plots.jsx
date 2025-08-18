@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 
-import { DateTime } from "luxon";
 import {
   CartesianGrid,
   Line,
@@ -60,9 +59,6 @@ import {
   utcDateTimeStrToTAIMillis,
   dayobsAtMidnight,
 } from "@/utils/timeUtils";
-
-// import offlineResponse from "@/assets/dataLog_Simonyi_20250722_20250723.json";
-// import offlineResponse from "@/assets/dataLog_Simonyi_0721_0723_wAlmanac.json";
 
 // Small vertical lines to represent exposures in the timeline
 const CustomisedDot = ({ cx, cy, stroke, h, w }) => {
@@ -813,24 +809,6 @@ function Plots() {
     }
 
     const abortController = new AbortController();
-
-    // DEVELOPMENT ONLY ==============================
-    // if (import.meta.env.DEV) {
-    //   setDataLogLoading(true);
-    //   setAlmanacLoading(true);
-
-    //   setTimeout(() => {
-    //     prepareExposureData(offlineResponse.data_log);
-    //     prepareAlmanacData(offlineResponse.almanac_info);
-    //     setDataLogLoading(false);
-    //     setAlmanacLoading(false);
-    //   }, 100);
-
-    //   return () => {
-    //     abortController.abort();
-    //   };
-    // }
-    // ------------------------------------------------
 
     setDataLogLoading(true);
     setAlmanacLoading(true);
