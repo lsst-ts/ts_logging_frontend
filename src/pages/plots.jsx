@@ -82,6 +82,7 @@ const CustomisedDot = ({ cx, cy, stroke, h, w }) => {
   );
 };
 
+// TODO: Fix error using this component
 // Band markers for the timeseries plots
 const CustomisedDotWithShape = ({ cx, cy, band, r = 2 }) => {
   if (cx == null || cy == null) return null;
@@ -195,9 +196,20 @@ function Timeline({
     const isMiddayUTC = hourUTC === 12;
     const isMidnightUTC = hourUTC === 0;
 
+    const DIST_BELOW_xAXIS = 10;
+    const LABEL_TEXT_SIZE = 16;
+
     // Lines at midday dayobs borders
     if (isMiddayUTC) {
-      return <line x1={x} y1={y - 100} x2={x} y2={y + 22} stroke="grey" />;
+      return (
+        <line
+          x1={x}
+          y1={y - PLOT_HEIGHT + DIST_BELOW_xAXIS}
+          x2={x}
+          y2={y + DIST_BELOW_xAXIS}
+          stroke="grey"
+        />
+      );
     }
 
     // Dayobs labels
@@ -210,8 +222,8 @@ function Timeline({
         <>
           <text
             x={x}
-            y={y + 10}
-            fontSize={12}
+            y={y + DIST_BELOW_xAXIS}
+            fontSize={LABEL_TEXT_SIZE}
             textAnchor="middle"
             fill="grey"
             style={{ WebkitUserSelect: "none" }}
@@ -237,19 +249,33 @@ function Timeline({
       // Get label
       const illumLabel = illumEntry?.illum ?? null;
 
+      const DIST_FROM_xAXIS = 85; // distance from xAxis to label
+      const xOffset = 10; // offset between moon symbol and label
+      const MOON_RADIUS = 6;
+
       return (
         <>
           {illumLabel && (
             <>
               {/* Moon symbol */}
-              <g transform={`translate(${x - 9}, ${y - 93})`}>
-                <circle cx={0} cy={0} r={4} fill="white" />
-                <circle cx={2} cy={-2} r={4} fill="#27272a" />
+              <g
+                transform={`translate(${x - xOffset}, ${
+                  y - DIST_FROM_xAXIS - MOON_RADIUS
+                })`}
+              >
+                <circle cx={0} cy={0} r={MOON_RADIUS} fill="white" />
+                <circle
+                  cx={MOON_RADIUS / 2}
+                  cy={-MOON_RADIUS / 2}
+                  r={MOON_RADIUS}
+                  fill="#27272a"
+                />
               </g>
+              {/* Illumination value */}
               <text
-                x={x + 9}
-                y={y - 90}
-                fontSize={10}
+                x={x + xOffset}
+                y={y - DIST_FROM_xAXIS}
+                fontSize={LABEL_TEXT_SIZE}
                 fontWeight={100}
                 letterSpacing={0.5}
                 fill="white"
@@ -266,6 +292,9 @@ function Timeline({
 
     return null;
   };
+
+  const PLOT_HEIGHT = twilightValues.length > 1 ? 110 : 70;
+  const PLOT_LABEL_HEIGHT = 20; // height of the top padding & xAxis label
   // --------------------------------------------------------
 
   // Timeline ===============================================
@@ -274,13 +303,13 @@ function Timeline({
       title="Time Window Selector"
       config={{}}
       width="100%"
-      height={twilightValues.length > 1 ? 110 : 70}
+      height={PLOT_HEIGHT}
     >
       <LineChart
         width="100%"
-        height={twilightValues.length > 1 ? 110 : 70}
+        height={PLOT_HEIGHT}
         data={data}
-        margin={{ top: 15, right: 30, left: 30, bottom: 0 }}
+        margin={{ top: PLOT_LABEL_HEIGHT, right: 30, left: 30, bottom: 0 }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -292,7 +321,7 @@ function Timeline({
         {hourlyTicks.map((tick) => (
           <ReferenceLine key={tick} x={tick} stroke="white" opacity={0.1} />
         ))}
-        {/* Dayobs & Moon Illuminaition labels and lines */}
+        {/* Dayobs & Moon Illumination labels and lines */}
         {twilightValues.length > 1 && (
           <XAxis
             xAxisId="dayobs"
@@ -310,7 +339,7 @@ function Timeline({
             axisLine={false}
             tickLine={false}
             tick={staticTicks && renderDayobsTicks}
-            height={20}
+            height={PLOT_LABEL_HEIGHT}
           />
         )}
         {/* TAI Time Axis */}
@@ -326,6 +355,7 @@ function Timeline({
           scale="time"
           tick={false}
           axisLine={false}
+          fontSize="20"
         />
         <YAxis hide domain={[0, 1]} />
         {/* Moon Up Area */}
@@ -353,7 +383,7 @@ function Timeline({
                 position: "bottom",
                 fill: "white",
                 dy: 5,
-                fontSize: 10,
+                fontSize: 16,
                 fontWeight: 100,
                 letterSpacing: 0.5,
                 style: { userSelect: "none" },
@@ -361,12 +391,12 @@ function Timeline({
             />
           ) : null,
         )}
-        {/* Selection rectangle shown once time window selection made */}
+        {/* Selection area (shaded background) shown once time window selection made */}
         {selectedMinMillis && selectedMaxMillis ? (
           <ReferenceArea
             x1={selectedMinMillis}
             x2={selectedMaxMillis}
-            stroke="hotPink"
+            stroke="none"
             fillOpacity={0.2}
           />
         ) : null}
@@ -378,6 +408,15 @@ function Timeline({
           dot={<CustomisedDot stroke="#3CAE3F" h="20" w="1" />}
           isAnimationActive={false}
         />
+        {/* Selection area (rectangle outline) shown once time window selection made */}
+        {selectedMinMillis && selectedMaxMillis ? (
+          <ReferenceArea
+            x1={selectedMinMillis}
+            x2={selectedMaxMillis}
+            stroke="hotPink"
+            fillOpacity={0}
+          />
+        ) : null}
         {/* Selection rectangle shown during active highlighting */}
         {refAreaLeft && refAreaRight ? (
           <ReferenceArea
@@ -922,12 +961,6 @@ function Plots() {
     }
   }, [moonValues, fullTimeRange]);
 
-  // // Temporary offline data for Simonyi
-  // useEffect(() => {
-  //   setDataLogEntries(offlineResponse.data_log || []);
-  //   setDataLogLoading(false);
-  // }, []);
-
   // Temporary display message for AuxTel queries
   if (telescope === "AuxTel") {
     return (
@@ -980,7 +1013,7 @@ function Plots() {
               </p>
             </>
           )}
-          <div className="flex flex-col max-w-xxl mt-2 border border-1 border-white rounded-md p-2 gap-2">
+          <div className="flex flex-col max-w-xxl mt-6 border border-1 border-white rounded-md p-2 gap-2">
             <p>
               <span className="font-medium">Click & Drag</span> on any plot to
               zoom in, and <span className="font-medium">Double-Click</span> to
