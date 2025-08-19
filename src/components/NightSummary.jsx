@@ -62,8 +62,7 @@ function Report({
   let telescopeSummary = "-";
   if (maintelSummary) {
     telescopeSummary = maintelSummary;
-  }
-  else if (auxTelSummary) {
+  } else if (auxTelSummary) {
     telescopeSummary = auxTelSummary;
   }
 
@@ -110,7 +109,7 @@ function SelectObsDay({ days, selectedDay, setDay }) {
       <SelectTrigger
         className={
           "!h-[1rem] text-sidebar-foreground text-xs px-2 py-0" +
-          " ml-2 inline-flex bg-white justify-between font-normal" +
+          " inline-flex bg-white justify-between font-normal" +
           " focus-visible:ring-4 focus-visible:ring-green-500/50"
         }
       >
@@ -162,16 +161,16 @@ function NightSummary({ reports = [], nightreportLoading = false }) {
   return (
     <Card className="border-none p-0 bg-stone-800 gap-2">
       <CardHeader className="grid-cols-3 bg-teal-900 p-4 rounded-sm align-center items-center gap-0">
-        <CardTitle className="text-white font-thin col-span-2">
+        <CardTitle className="text-white font-thin">
           Observers Night Summary
-          {!nightreportLoading && availableDays.length > 1 && (
-            <SelectObsDay
-              days={availableDays}
-              selectedDay={selectedDay}
-              setDay={setSelectedDay}
-            />
-          )}
         </CardTitle>
+        {!nightreportLoading && availableDays.length > 1 && (
+          <SelectObsDay
+            days={availableDays}
+            selectedDay={selectedDay}
+            setDay={setSelectedDay}
+          />
+        )}
         <div className="flex flex-row gap-2 justify-end">
           <Popover>
             <PopoverTrigger className="self-end min-w-4">
