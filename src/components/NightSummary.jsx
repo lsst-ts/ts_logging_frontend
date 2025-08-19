@@ -59,11 +59,19 @@ function Report({
     };
   }, [containerRef?.current]);
 
+  let telescopeSummary = "-";
+  if (maintelSummary) {
+    telescopeSummary = maintelSummary;
+  }
+  else if (auxTelSummary) {
+    telescopeSummary = auxTelSummary;
+  }
+
   return (
     <div
       ref={reportRef}
       id={dayObs}
-      className={`flex flex-col gap-2 [&:not(:last-child)]:border-b [&:not(:last-child)]:pb-4`}
+      className={`flex flex-col gap-2 [&:not(:last-child)]:border-b [&:not(:last-child)]:pb-8`}
     >
       <div className="hidden">{id}</div>
       <div className="font-semibold">Night of {dayObs}</div>
@@ -71,15 +79,10 @@ function Report({
       <div className="font-medium">Weather</div>
       <div>{weather}</div>
       <div className="font-medium">Detailed report</div>
-      {maintelSummary && (
-        <div className="whitespace-pre-wrap">{maintelSummary}</div>
-      )}
-      {auxTelSummary && (
-        <div className="whitespace-pre-wrap">{auxTelSummary}</div>
-      )}
+      <div className="whitespace-pre-wrap">{telescopeSummary}</div>
       <div className="font-medium">Observers</div>
       <div>{(observersCrew ?? []).join(", ")}</div>
-      <div className="text-xs text-end">Sent at {dateSent}Z</div>
+      <div className="text-xs text-end mt-2">Sent at {dateSent}Z</div>
     </div>
   );
 }
