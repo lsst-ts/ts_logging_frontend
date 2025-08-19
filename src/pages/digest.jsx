@@ -34,7 +34,6 @@ export default function Digest() {
     from: "__root__",
   });
 
-  const [nightHours, setNightHours] = useState(0.0);
   const [weatherLoss, setWeatherLoss] = useState(0.0);
   const [faultLoss, setFaultLoss] = useState(0.0);
   const [exposureFields, setExposureFields] = useState([]);
@@ -109,8 +108,6 @@ export default function Digest() {
     fetchAlmanac(startDayobs, queryEndDayobs, abortController)
       .then((almanac) => {
         setAlmanacInfo(almanac);
-        const hours = almanac.reduce((acc, day) => acc + day.night_hours, 0);
-        setNightHours(hours);
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
@@ -229,7 +226,8 @@ export default function Digest() {
 
   // calculate open shutter efficiency
   const efficiency = calculateEfficiency(
-    nightHours,
+    exposureFields,
+    almanacInfo,
     sumOnSkyExpTime,
     weatherLoss,
   );

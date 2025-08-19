@@ -30,7 +30,11 @@ import {
 } from "./plotDotShapes";
 import { BAND_COLORS } from "@/components/PLOT_DEFINITIONS";
 
-import { DEFAULT_PIXEL_SCALE_MEDIAN, PSF_SIGMA_FACTOR } from "@/utils/utils";
+import {
+  DEFAULT_PIXEL_SCALE_MEDIAN,
+  PSF_SIGMA_FACTOR,
+  ISO_DATETIME_FORMAT,
+} from "@/utils/utils";
 
 // Constants for gap detection
 const GAP_THRESHOLD = 5 * 60 * 1000;
@@ -355,8 +359,15 @@ function ObservingConditionsApplet({
   const getDayobsAlmanac = (dayobs) => {
     if (almanacInfo && Array.isArray(almanacInfo)) {
       for (const dayObsAlm of almanacInfo) {
-        if (parseInt(dayObsAlm.dayobs) === parseInt(dayobs) + 1)
-          return dayObsAlm;
+        // minus one day from almanac dayobs to match the exposure dayobs
+        // to fix the issue with almanac dayobs being one day ahead
+        let actualAlmDayobs = DateTime.fromFormat(
+          dayObsAlm.dayobs.toString(),
+          "yyyyLLdd",
+        )
+          .minus({ days: 1 })
+          .toFormat("yyyyLLdd");
+        if (actualAlmDayobs === dayobs) return dayObsAlm;
       }
     }
     return null;
