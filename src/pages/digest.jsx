@@ -13,6 +13,7 @@ import {
   fetchExposures,
   fetchAlmanac,
   fetchNarrativeLog,
+  fetchNightreport,
   fetchExposureFlags,
   fetchJiraTickets,
 } from "@/utils/fetchUtils";
@@ -26,6 +27,7 @@ import JiraTicketsTable from "@/components/jira-tickets-table";
 import { useSearch } from "@tanstack/react-router";
 import { TELESCOPES } from "@/components/parameters";
 import ObservingConditionsApplet from "@/components/ObservingConditionsApplet";
+import NightSummary from "@/components/NightSummary.jsx";
 
 export default function Digest() {
   const { startDayobs, endDayobs, telescope } = useSearch({
@@ -41,10 +43,12 @@ export default function Digest() {
   const [onSkyExpCount, setOnSkyExpCount] = useState(0);
   const [sumOnSkyExpTime, setSumOnSkyExpTime] = useState(0.0);
   const [flags, setFlags] = useState([]);
+  const [reports, setReports] = useState([]);
 
   const [exposuresLoading, setExposuresLoading] = useState(true);
   const [almanacLoading, setAlmanacLoading] = useState(true);
   const [narrativeLoading, setNarrativeLoading] = useState(true);
+  const [nightreportLoading, setNightreportLoading] = useState(true);
 
   const [jiraTickets, setJiraTickets] = useState([]);
   const [jiraLoading, setJiraLoading] = useState(true);
@@ -63,6 +67,7 @@ export default function Digest() {
     setExposuresLoading(true);
     setAlmanacLoading(true);
     setNarrativeLoading(true);
+    setNightreportLoading(true);
     setJiraLoading(true);
     setFlagsLoading(true);
 
@@ -142,6 +147,34 @@ export default function Digest() {
       .finally(() => {
         if (!abortController.signal.aborted) {
           setNarrativeLoading(false);
+        }
+      });
+
+    fetchNightreport(startDayobs, queryEndDayobs, abortController)
+      .then(([reports]) => {
+        const parsedReports = reports.map((report) => ({
+          ...report,
+          maintel_summary:
+            telescope === "Simonyi" ? report.maintel_summary : null,
+          auxtel_summary: telescope === "AuxTel" ? report.auxtel_summary : null,
+        }));
+        setReports(parsedReports);
+        if (reports.length === 0) {
+          toast.warning("No night reports found for the selected date range.");
+        }
+      })
+      .catch((err) => {
+        if (!abortController.signal.aborted) {
+          const msg = err?.message;
+          toast.error("Error fetching night reports!", {
+            description: msg,
+            duration: Infinity,
+          });
+        }
+      })
+      .finally(() => {
+        if (!abortController.signal.aborted) {
+          setNightreportLoading(false);
         }
       });
 
@@ -265,7 +298,10 @@ export default function Digest() {
             />
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <Applet />
+            <NightSummary
+              reports={reports}
+              nightreportLoading={nightreportLoading}
+            />
             <Applet />
             <Applet />
           </div>
