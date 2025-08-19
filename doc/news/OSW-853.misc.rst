@@ -1,0 +1,1 @@
+Change PSF Seeing label as requested, add other exp data to the tooltip
