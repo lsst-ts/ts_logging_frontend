@@ -131,6 +131,7 @@ function DataLog() {
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
+          setDataLogEntries([]);
           const msg = err?.message || "Unknown error";
           toast.error("Error fetching exposure or data log!", {
             description: msg,
