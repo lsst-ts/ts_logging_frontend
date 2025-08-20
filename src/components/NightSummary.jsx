@@ -158,38 +158,50 @@ function NightSummary({ reports = [], nightreportLoading = false }) {
 
   const reportsContainerRef = useRef(null);
 
+  const showObsDaySelector = !nightreportLoading && availableDays.length > 1;
+
   return (
     <Card className="border-none p-0 bg-stone-800 gap-2">
-      <CardHeader className="grid-cols-3 bg-teal-900 p-4 rounded-sm align-center items-center gap-0">
+      <CardHeader
+        className={
+          "flex flex-wrap gap-x-4" +
+          " bg-teal-900 p-4 rounded-sm align-center items-center"
+        }
+      >
         <CardTitle className="text-white font-thin">
           Observers Night Summary
         </CardTitle>
-        {!nightreportLoading && availableDays.length > 1 && (
-          <SelectObsDay
-            days={availableDays}
-            selectedDay={selectedDay}
-            setDay={setSelectedDay}
-          />
-        )}
-        <div className="flex flex-row gap-2 justify-end">
-          <Popover>
-            <PopoverTrigger className="self-end min-w-4">
-              <img src={DownloadIcon} onClick={() => handleDownload(reports)} />
-            </PopoverTrigger>
-            <PopoverContent className="bg-black text-white text-sm border-yellow-700">
-              This is a placeholder for the download/export button. Once
-              implemented, clicking here will download this Applet's data to a
-              .txt file.
-            </PopoverContent>
-          </Popover>
-          <Popover>
-            <PopoverTrigger className="self-end min-w-4">
-              <img src={InfoIcon} />
-            </PopoverTrigger>
-            <PopoverContent className="bg-black text-white text-sm border-yellow-700">
-              Observers night report retrieved from the nightreport API.
-            </PopoverContent>
-          </Popover>
+        <div className="flex gap-x-2 grow">
+          {showObsDaySelector && (
+            <SelectObsDay
+              days={availableDays}
+              selectedDay={selectedDay}
+              setDay={setSelectedDay}
+            />
+          )}
+          <div className="flex flex-row gap-2 ml-auto">
+            <Popover>
+              <PopoverTrigger className="self-end min-w-4">
+                <img
+                  src={DownloadIcon}
+                  onClick={() => handleDownload(reports)}
+                />
+              </PopoverTrigger>
+              <PopoverContent className="bg-black text-white text-sm border-yellow-700">
+                This is a placeholder for the download/export button. Once
+                implemented, clicking here will download this Applet's data to a
+                .txt file.
+              </PopoverContent>
+            </Popover>
+            <Popover>
+              <PopoverTrigger className="self-end min-w-4">
+                <img src={InfoIcon} />
+              </PopoverTrigger>
+              <PopoverContent className="bg-black text-white text-sm border-yellow-700">
+                Observers night report retrieved from the nightreport API.
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
       </CardHeader>
       <CardContent
