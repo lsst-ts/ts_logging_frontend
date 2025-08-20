@@ -160,6 +160,9 @@ function NightSummary({ reports = [], nightreportLoading = false }) {
 
   const showObsDaySelector = !nightreportLoading && availableDays.length > 1;
 
+  const appletTitle =
+    availableDays.length > 1 ? "Night Reports" : "Night Report";
+
   return (
     <Card className="border-none p-0 bg-stone-800 gap-2">
       <CardHeader
@@ -168,9 +171,7 @@ function NightSummary({ reports = [], nightreportLoading = false }) {
           " bg-teal-900 p-4 rounded-sm align-center items-center"
         }
       >
-        <CardTitle className="text-white font-thin">
-          Observers Night Summary
-        </CardTitle>
+        <CardTitle className="text-white font-thin">{appletTitle}</CardTitle>
         <div className="flex gap-x-2 grow">
           {showObsDaySelector && (
             <SelectObsDay
