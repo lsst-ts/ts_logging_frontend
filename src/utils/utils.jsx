@@ -26,6 +26,8 @@ const calculateEfficiency = (
   if (!exposures || !Array.isArray(exposures)) {
     return 0;
   }
+  // const newExpTime = exposures.reduce((sum, exp) => exp.can_see_sky ? sum + exp.exp_time : sum , 0)
+  // console.log(`new total exp time: ${newExpTime}`);
   let nightHours = 0;
   let totalExpTime = sumExpTime;
   if (almanacInfo && Array.isArray(almanacInfo)) {
@@ -352,7 +354,11 @@ const calculateSumExpTimeBetweenTwilights = (exposureFields, almanacInfo) => {
       const expTime = parseFloat(exposure["exp_time"]);
       const expObsStart = DateTime.fromISO(exposure["obs_start"]);
       // console.log(`eve ${eveningTwilight}, obs_start ${expObsStart}, morn ${morningTwilight}, exp_time ${expTime}`);
-      if (expObsStart >= eveningTwilight && expObsStart <= morningTwilight) {
+      if (
+        exposure["can_see_sky"] &&
+        expObsStart >= eveningTwilight &&
+        expObsStart <= morningTwilight
+      ) {
         return sum + (isNaN(expTime) ? 0 : expTime);
       }
       return sum;
