@@ -21,21 +21,15 @@ const calculateEfficiency = (
   sumExpTime,
   weatherLoss,
 ) => {
-  console.log(`total exp time: ${sumExpTime}`);
-  console.log(`weather loss: ${weatherLoss}`);
   if (!exposures || !Array.isArray(exposures)) {
     return 0;
   }
-  // const newExpTime = exposures.reduce((sum, exp) => exp.can_see_sky ? sum + exp.exp_time : sum , 0)
-  // console.log(`new total exp time: ${newExpTime}`);
   let nightHours = 0;
   let totalExpTime = sumExpTime;
   if (almanacInfo && Array.isArray(almanacInfo)) {
     nightHours = almanacInfo.reduce((acc, day) => acc + day.night_hours, 0);
     totalExpTime = calculateSumExpTimeBetweenTwilights(exposures, almanacInfo);
   }
-  console.log(`total exp time between twilights: ${totalExpTime}`);
-  console.log(`night hours: ${nightHours}`);
   let eff = 0.0;
   if (nightHours !== 0) {
     eff = (100 * totalExpTime) / ((nightHours - weatherLoss) * 60 * 60);
@@ -290,6 +284,17 @@ const getNightSummaryLink = (dayobs) => {
 };
 
   // TODO: this function should be moved to utils and removed from Observing Conditions applet
+ /* Retrieves the almanac information for a given dayobs date, correcting for a known
+ * one-day offset between almanac dayobs and exposure dayobs.
+ *
+ * The function searches through the provided almanacInfo array, subtracts one day from each
+ * almanac dayobs entry to align with the exposure dayobs, and returns the matching almanac record.
+ *
+ * @param {string} dayobs - The exposure dayobs date string in 'yyyyLLdd' format.
+ * @param {Array<Object>} almanacInfo - Array of almanac records, each containing a 'dayobs' property
+ * and twilight times in iso format.
+ * @returns {Object|null} The matching almanac record for the given dayobs, or null if not found.
+ */
 const getDayobsAlmanac = (dayobs, almanacInfo) => {
   if (almanacInfo && Array.isArray(almanacInfo)) {
     for (const dayObsAlm of almanacInfo) {
@@ -340,8 +345,6 @@ const calculateSumExpTimeBetweenTwilights = (exposureFields, almanacInfo) => {
 
   for (const [dayobs, exps] of Object.entries(expsGroupedByDayobs)) {
     const dayobsAlm = getDayobsAlmanac(dayobs, almanacInfo);
-    // console.log(`dayobs ${dayobs}`);
-    // console.log(dayobsAlm);
     const groupExpTime = exps.reduce((sum, exposure) => {
       const eveningTwilight = DateTime.fromFormat(
         dayobsAlm.twilight_evening,
@@ -353,7 +356,6 @@ const calculateSumExpTimeBetweenTwilights = (exposureFields, almanacInfo) => {
       );
       const expTime = parseFloat(exposure["exp_time"]);
       const expObsStart = DateTime.fromISO(exposure["obs_start"]);
-      // console.log(`eve ${eveningTwilight}, obs_start ${expObsStart}, morn ${morningTwilight}, exp_time ${expTime}`);
       if (
         exposure["can_see_sky"] &&
         expObsStart >= eveningTwilight &&
@@ -366,14 +368,6 @@ const calculateSumExpTimeBetweenTwilights = (exposureFields, almanacInfo) => {
     totalExpTime += groupExpTime;
   }
   return totalExpTime;
-  // return exposureFields.reduce((sum, exposure) => {
-  //   const expTime = parseFloat(exposure["exp_time"]);
-  //   const expTimeDate = DateTime.fromISO(exposure["obs_start"]);
-  //   if (expTimeDate >= eveningTwilight && expTimeDate <= morningTwilight) {
-  //     return sum + (isNaN(expTime) ? 0 : expTime);
-  //   }
-  //   return sum;
-  // }, 0);
 };
 
 export {
@@ -392,4 +386,5 @@ export {
   DEFAULT_PIXEL_SCALE_MEDIAN,
   PSF_SIGMA_FACTOR,
   ISO_DATETIME_FORMAT,
+  getDayobsAlmanac,
 };

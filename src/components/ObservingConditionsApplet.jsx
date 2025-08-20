@@ -34,6 +34,7 @@ import {
   DEFAULT_PIXEL_SCALE_MEDIAN,
   PSF_SIGMA_FACTOR,
   ISO_DATETIME_FORMAT,
+  getDayobsAlmanac,
 } from "@/utils/utils";
 
 // Constants for gap detection
@@ -51,23 +52,19 @@ const CustomTooltip = ({ active, payload, label }) => {
   const tooltipData = [];
   const seenKeys = new Set(); // Only add one entry for zero_point_median, showing its value and band
 
-  payload.forEach((entry) => {
-    const key = entry.dataKey;
+  payload.forEach(({ dataKey, value, color }) => {
     if (
-      entry.value !== null &&
-      entry.value !== undefined &&
-      dataKeyTitles[entry.dataKey] &&
-      !seenKeys.has(key)
+      value !== null &&
+      value !== undefined &&
+      dataKeyTitles[dataKey] &&
+      !seenKeys.has(dataKey)
     ) {
       tooltipData.push({
-        name: dataKeyTitles[entry.dataKey],
-        value:
-          typeof entry.value === "number"
-            ? entry.value.toFixed(2)
-            : entry.value,
-        color: entry.color,
+        name: dataKeyTitles[dataKey],
+        value: typeof value === "number" ? value.toFixed(2) : value,
+        color,
       });
-      seenKeys.add(key);
+      seenKeys.add(dataKey);
     }
   });
 
@@ -356,26 +353,11 @@ function ObservingConditionsApplet({
     [chartData],
   );
 
-  const getDayobsAlmanac = (dayobs) => {
-    if (almanacInfo && Array.isArray(almanacInfo)) {
-      for (const dayObsAlm of almanacInfo) {
-        // minus one day from almanac dayobs to match the exposure dayobs
-        // to fix the issue with almanac dayobs being one day ahead
-        let actualAlmDayobs = DateTime.fromFormat(
-          dayObsAlm.dayobs.toString(),
-          "yyyyLLdd",
-        )
-          .minus({ days: 1 })
-          .toFormat("yyyyLLdd");
-        if (actualAlmDayobs === dayobs) return dayObsAlm;
-      }
-    }
-    return null;
-  };
   // Calculate open/close shutter time or observing gaps
   const gapAreas = useMemo(() => {
     const gaps = [];
     for (const [dayobs, exps] of Object.entries(groupedByDayobs)) {
+      const dayobsAlm = getDayobsAlmanac(dayobs, almanacInfo);
       for (let i = 0; i < exps.length; i++) {
         const curr = exps[i].obs_start_dt;
         // set the next time to the end of the dayobs almanac
@@ -384,7 +366,6 @@ function ObservingConditionsApplet({
         // otherwise use the current exp obs_start_dt (last gap will be zero)
         let next;
         if (i === exps.length - 1) {
-          const dayobsAlm = getDayobsAlmanac(dayobs);
           next = dayobsAlm
             ? DateTime.fromFormat(
                 dayobsAlm.twilight_morning,

@@ -258,7 +258,7 @@ export default function Digest() {
             icon={<EfficiencyChart value={efficiency} />}
             data={efficiencyText}
             label="Open-shutter (-weather) efficiency"
-            tooltip="Efficiency computed as total on-sky exposure time / (time between 18 degree twilights minus time lost to weather)"
+            tooltip="Efficiency computed as total on-sky exposure time / (time between 12 degree twilights minus time lost to weather). Exposures started outside the twilights are not counted in total time."
             loading={almanacLoading || exposuresLoading}
           />
           <MetricsCard
