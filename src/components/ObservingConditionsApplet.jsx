@@ -44,51 +44,70 @@ const BAND_COLORS = {
 };
 
 const CustomTooltip = ({ active, payload, label }) => {
-  const variableTitles = {
-    psf_median: "PSF Seeing",
+  const dataKeyTitles = {
+    psf_median: "PSF FWHM",
     zero_point_median: "Zero Point Median",
   };
-  // Check if the tooltip is active and has payload data
-  if (active && payload && payload.length) {
-    const uniqueData = new Map();
-    // Iterate through the payload to extract unique data points
-    // to avoid multiple tooltips
-    payload.forEach((entry) => {
-      if (entry.value !== null && entry.value !== undefined) {
-        uniqueData.set(entry.dataKey, {
-          name: variableTitles[entry.dataKey],
-          value:
-            typeof entry.value === "number"
-              ? entry.value.toFixed(2)
-              : entry.value,
-          color: entry.color,
-        });
-      }
-    });
-    // Add band information
-    if (uniqueData.size === 0) return null;
-    uniqueData.set("Band", {
-      name: "Band",
-      value: payload[0].payload.band || "N/A",
+
+  if (!active || !payload || !payload.length) return null;
+
+  const tooltipData = [];
+  const seenKeys = new Set(); // Only add one entry for zero_point_median, showing its value and band
+
+  payload.forEach((entry) => {
+    const key = entry.dataKey;
+    if (
+      entry.value !== null &&
+      entry.value !== undefined &&
+      dataKeyTitles[entry.dataKey] &&
+      !seenKeys.has(key)
+    ) {
+      tooltipData.push({
+        name: dataKeyTitles[entry.dataKey],
+        value:
+          typeof entry.value === "number"
+            ? entry.value.toFixed(2)
+            : entry.value,
+        color: entry.color,
+      });
+      seenKeys.add(key);
+    }
+  });
+
+  if (!tooltipData.length) return null;
+
+  // Add other information from the payload
+  const staticFields = [
+    { key: "band", name: "Band" },
+    { key: "exposure_id", name: "Exposure ID" },
+    { key: "seq_num", name: "Seq Num" },
+    { key: "science_program", name: "Science Program" },
+    { key: "observation_reason", name: "Observation Reason" },
+  ];
+
+  staticFields.forEach(({ key, name }) => {
+    tooltipData.push({
+      name,
+      value: payload[0].payload[key] ?? "N/A",
       color: "#ffffff",
     });
-    return (
-      <div className="bg-white text-black text-xs p-2 border border-white rounded text-black font-light mb-1">
-        <p>
-          Obs Start:{" "}
-          <span className="font-bold">
-            {DateTime.fromMillis(label).toFormat(ISO_DATETIME_FORMAT)}
-          </span>
+  });
+
+  return (
+    <div className="bg-white text-black text-xs p-2 border border-white rounded text-black font-light mb-1">
+      <p>
+        Obs Start:{" "}
+        <span className="font-bold">
+          {DateTime.fromMillis(label).toFormat(ISO_DATETIME_FORMAT)}
+        </span>
+      </p>
+      {tooltipData.map((item, index) => (
+        <p key={index}>
+          {item.name}: <span className="font-bold">{item.value}</span>
         </p>
-        {Array.from(uniqueData.values()).map((item, index) => (
-          <p key={index}>
-            {item.name}: <span className="font-bold">{item.value}</span>
-          </p>
-        ))}
-      </div>
-    );
-  }
-  return null;
+      ))}
+    </div>
+  );
 };
 
 // Custom legend to display band colors and shapes
@@ -331,7 +350,7 @@ function ObservingConditionsApplet({
     : "auto";
 
   const chartConfig = {
-    psf_median: { label: "PSF Seeing", color: "#ffffff" },
+    psf_median: { label: "PSF FWHM", color: "#ffffff" },
     zero_point_median: { label: "Zero Point Median", color: "#3b82f6" },
   };
 
@@ -433,7 +452,7 @@ function ObservingConditionsApplet({
               <img src={InfoIcon} />
             </PopoverTrigger>
             <PopoverContent className="bg-black text-white text-sm border-yellow-700 w-[300px]">
-              This chart visualizes Zero Point Median and PSF Seeing over the
+              This chart visualizes Zero Point Median and PSF FWHM over the
               selected dayobs range. It uses the following data columns from
               ConsDB <code className="font-bold uppercase">exposure</code> and{" "}
               <code className="font-bold uppercase">visit1_quicklook</code>{" "}
@@ -475,7 +494,7 @@ function ObservingConditionsApplet({
             <Skeleton className="w-full h-full min-h-[180px] bg-stone-900" />
           </div>
         ) : (
-          <div className="h-full overflow-hidden">
+          <div className="h-full overflow-visible">
             <div className="flex-grow min-w-0 h-full">
               <ChartContainer config={chartConfig} className="w-full h-full">
                 <ComposedChart>
@@ -500,14 +519,14 @@ function ObservingConditionsApplet({
                     }}
                     padding={{ left: 10, right: 10 }}
                   />
-                  /* Y axis for PSF Seeing */
+                  /* Y axis for PSF FWHM */
                   <YAxis
                     yAxisId="left"
                     tick={{ fill: "white" }}
                     domain={["auto", "auto"]}
                     tickFormatter={(tick) => Number(tick).toFixed(1)}
                     label={{
-                      value: "PSF Seeing (arcsec)",
+                      value: "PSF FWHM (arcsec)",
                       angle: -90,
                       position: "insideLeft",
                       fill: "white",
@@ -562,6 +581,9 @@ function ObservingConditionsApplet({
                   <ChartTooltip
                     content={<CustomTooltip />}
                     cursor={{ strokeDasharray: "3 3", stroke: "#ffffff" }}
+                    allowEscapeViewBox={{ x: true, y: true }}
+                    offset={20}
+                    wrapperStyle={{ opacity: 0.9 }}
                   />
                   /* line plots for zero point median filtered by band */
                   <Line
@@ -695,7 +717,7 @@ function ObservingConditionsApplet({
                     data={dataWithNightGaps(groupedChartData, "y")}
                     isAnimationActive={false}
                   />
-                  /* Scatter plot for PSF Seeing */
+                  /* Scatter plot for PSF FWHM */
                   <Scatter
                     name="psf_median"
                     dataKey="psf_median"
