@@ -1,0 +1,1 @@
+Fix NightSummary header layout when the day selector is not shown.
