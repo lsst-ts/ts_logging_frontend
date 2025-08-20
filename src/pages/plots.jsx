@@ -449,9 +449,7 @@ function Plots() {
                     data={filteredData}
                     twilightValues={twilightValues}
                     // Show moon rise/set only on sky-related plots
-                    {...(def.key.startsWith("sky")
-                      ? { moonIntervals: moonIntervals }
-                      : {})}
+                    {...(def?.showMoon ? { moonIntervals: moonIntervals } : {})}
                     fullTimeRange={fullTimeRange}
                     selectedTimeRange={selectedTimeRange}
                     setSelectedTimeRange={setSelectedTimeRange}
