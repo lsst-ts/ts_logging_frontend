@@ -69,6 +69,12 @@ export default function Digest() {
     setNightreportLoading(true);
     setJiraLoading(true);
     setFlagsLoading(true);
+    setExposureFields([]);
+    setAlmanacInfo([]);
+    setSumOnSkyExpTime(0.0);
+    setJiraTickets([]);
+    setWeatherLoss(0.0);
+    setFaultLoss(0.0);
 
     fetchExposures(startDayobs, queryEndDayobs, instrument, abortController)
       .then(
