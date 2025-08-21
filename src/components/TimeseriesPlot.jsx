@@ -93,9 +93,10 @@ function TimeseriesPlot({
   } = useClickDrag(setSelectedTimeRange, fullTimeRange);
   // --------------------------------------------------------
 
-  // TODO: This is sometimes being overridden.
   // Compute decimal places for y-axis ticks ================
-  const values = data.map((d) => d[dataKey]).filter((v) => v != null);
+  const values = data
+    .map((d) => d[dataKey])
+    .filter((v) => typeof v === "number" && Number.isFinite(v));
   // Get min/max
   const minVal = values.length > 0 ? Math.min(...values) : null;
   const maxVal = values.length > 0 ? Math.max(...values) : null;
@@ -105,7 +106,7 @@ function TimeseriesPlot({
   let decimalPlaces = 3;
   if (yRange > 5) decimalPlaces = 0;
   else if (yRange > 1.5) decimalPlaces = 1;
-  else if (yRange > 0.01) decimalPlaces = 2;
+  else if (yRange > 0.02) decimalPlaces = 2;
   else if (yRange == 0) decimalPlaces = 0;
   // ---------------------------------------------------------
 
