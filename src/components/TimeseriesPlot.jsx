@@ -111,7 +111,19 @@ function TimeseriesPlot({
   // ---------------------------------------------------------
 
   // Plot Formatting =========================================
-  const DOT_RADIUS = 2;
+  // Dynamically set dot radius based on number of data points
+  // plotted, for maximum visibility.
+  function scaleDotRadius(n) {
+    if (n > 500) return 0.5;
+    if (n > 200) return 0.75;
+    if (n > 100) return 1;
+    if (n > 50) return 2;
+    if (n > 20) return 3;
+    if (n > 10) return 4;
+    return 5;
+  }
+  const DOT_RADIUS = scaleDotRadius(values.length);
+
   let lineProps = {
     dataKey,
     activeDot: { r: 4, fill: "#ffffff" },
@@ -136,7 +148,6 @@ function TimeseriesPlot({
     lineProps.dot = ({ cx, cy, payload, index }) => {
       const fill = BAND_COLORS[payload.band] || selectedColor;
       if (cy == null) return null; // don't show a dot if undefined or null
-
       return (
         <circle
           key={`dot-${index}`}
