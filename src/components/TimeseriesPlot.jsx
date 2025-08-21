@@ -206,16 +206,23 @@ function TimeseriesPlot({
           }}
         />
         {/* Moon Up Area */}
-        {moonIntervals.map(([start, end], i) => (
-          <ReferenceArea
-            key={`moon-up-${i}`}
-            x1={start}
-            x2={end}
-            fillOpacity={0.2}
-            fill="#EAB308"
-            yAxisId="0"
-          />
-        ))}
+        {moonIntervals.map(([start, end], i) => {
+          // If entire moon-up area is not inside selected range,
+          // clamp start/end times so moon-up area is visible.
+          const clampedStart = Math.max(start, selectedMinMillis);
+          const clampedEnd = Math.min(end, selectedMaxMillis);
+
+          return (
+            <ReferenceArea
+              key={`moon-up-${i}`}
+              x1={clampedStart}
+              x2={clampedEnd}
+              fillOpacity={0.2}
+              fill="#EAB308"
+              yAxisId="0"
+            />
+          );
+        })}
         {/* Twilight lines */}
         {twilightValues.map((twi, i) =>
           selectedMinMillis <= twi && twi <= selectedMaxMillis ? (
