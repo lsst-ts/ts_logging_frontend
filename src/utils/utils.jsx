@@ -24,10 +24,18 @@ const calculateEfficiency = (
   if (!exposures || !Array.isArray(exposures)) {
     return 0;
   }
+  if (!Number.isFinite(weatherLoss) || weatherLoss < 0) {
+    console.error("weather loss is null, undefined or negative");
+    return null;
+  }
   let nightHours = 0;
   let totalExpTime = sumExpTime;
   if (almanacInfo && Array.isArray(almanacInfo)) {
     nightHours = almanacInfo.reduce((acc, day) => acc + day.night_hours, 0);
+    if (nightHours === 0) {
+      console.error("night hours is 0");
+      return null;
+    }
     totalExpTime = calculateSumExpTimeBetweenTwilights(exposures, almanacInfo);
   }
   let eff = 0.0;
@@ -300,12 +308,20 @@ const getDayobsAlmanac = (dayobs, almanacInfo) => {
     for (const dayObsAlm of almanacInfo) {
       // minus one day from almanac dayobs to match the exposure dayobs
       // to fix the issue with almanac dayobs being one day ahead
-      let actualAlmDayobs = DateTime.fromFormat(
-        dayObsAlm.dayobs.toString(),
-        "yyyyLLdd",
-      )
-        .minus({ days: 1 })
-        .toFormat("yyyyLLdd");
+      if (!dayObsAlm || !dayObsAlm.dayobs) continue;
+      let actualAlmDayobs = "";
+      try {
+        actualAlmDayobs = DateTime.fromFormat(
+          String(dayObsAlm.dayobs),
+          "yyyyLLdd",
+        )
+          .minus({ days: 1 })
+          .toFormat("yyyyLLdd");
+      } catch (e) {
+        // i.e. if time isn't the right format
+        console.error(e);
+        continue;
+      }
       if (actualAlmDayobs === dayobs) return dayObsAlm;
     }
   }
@@ -337,6 +353,7 @@ const getDayobsAlmanac = (dayobs, almanacInfo) => {
  *   between their corresponding evening and morning twilights.
  */
 const calculateSumExpTimeBetweenTwilights = (exposureFields, almanacInfo) => {
+  if (!Array.isArray(exposureFields) || !Array.isArray(almanacInfo)) return 0;
   const expsGroupedByDayobs = Object.groupBy(
     exposureFields,
     (exp) => exp.day_obs,
@@ -345,6 +362,16 @@ const calculateSumExpTimeBetweenTwilights = (exposureFields, almanacInfo) => {
 
   for (const [dayobs, exps] of Object.entries(expsGroupedByDayobs)) {
     const dayobsAlm = getDayobsAlmanac(dayobs, almanacInfo);
+    if (
+      !dayobsAlm ||
+      !dayobsAlm.twilight_evening ||
+      !dayobsAlm.twilight_morning
+    ) {
+      console.error(
+        `almanac for dayobs ${dayobs} doesn't exist or doesn't have twilight data in it.`,
+      );
+      continue;
+    }
     const groupExpTime = exps.reduce((sum, exposure) => {
       const eveningTwilight = DateTime.fromFormat(
         dayobsAlm.twilight_evening,
@@ -387,4 +414,5 @@ export {
   PSF_SIGMA_FACTOR,
   ISO_DATETIME_FORMAT,
   getDayobsAlmanac,
+  calculateSumExpTimeBetweenTwilights,
 };
