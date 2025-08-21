@@ -34,7 +34,6 @@ export default function Digest() {
     from: "__root__",
   });
 
-  const [nightHours, setNightHours] = useState(0.0);
   const [weatherLoss, setWeatherLoss] = useState(0.0);
   const [faultLoss, setFaultLoss] = useState(0.0);
   const [exposureFields, setExposureFields] = useState([]);
@@ -70,6 +69,17 @@ export default function Digest() {
     setNightreportLoading(true);
     setJiraLoading(true);
     setFlagsLoading(true);
+    setExposureFields([]);
+    setAlmanacInfo([]);
+    setSumOnSkyExpTime(0.0);
+    setSumExpTime(0);
+    setJiraTickets([]);
+    setWeatherLoss(0.0);
+    setFaultLoss(0.0);
+    setExposureCount(0);
+    setReports([]);
+    setOnSkyExpCount(0);
+    setFlags([]);
 
     fetchExposures(startDayobs, queryEndDayobs, instrument, abortController)
       .then(
@@ -109,8 +119,6 @@ export default function Digest() {
     fetchAlmanac(startDayobs, queryEndDayobs, abortController)
       .then((almanac) => {
         setAlmanacInfo(almanac);
-        const hours = almanac.reduce((acc, day) => acc + day.night_hours, 0);
-        setNightHours(hours);
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
@@ -229,11 +237,12 @@ export default function Digest() {
 
   // calculate open shutter efficiency
   const efficiency = calculateEfficiency(
-    nightHours,
+    exposureFields,
+    almanacInfo,
     sumOnSkyExpTime,
     weatherLoss,
   );
-  const efficiencyText = `${efficiency} %`;
+  const efficiencyText = efficiency ? `${efficiency} %` : "N/A";
   const [timeLoss, timeLossDetails] = calculateTimeLoss(weatherLoss, faultLoss);
   const newTicketsCount = jiraTickets.filter((tix) => tix.isNew).length;
 
@@ -254,7 +263,7 @@ export default function Digest() {
             icon={<EfficiencyChart value={efficiency} />}
             data={efficiencyText}
             label="Open-shutter (-weather) efficiency"
-            tooltip="Efficiency computed as total on-sky exposure time / (time between 18 degree twilights minus time lost to weather)"
+            tooltip="Efficiency computed as total on-sky exposure time / (time between 12 degree twilights minus time lost to weather). Exposures started outside the twilights are not counted in total time."
             loading={almanacLoading || exposuresLoading}
           />
           <MetricsCard
