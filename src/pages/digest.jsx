@@ -237,7 +237,7 @@ export default function Digest() {
     sumOnSkyExpTime,
     weatherLoss,
   );
-  const efficiencyText = `${efficiency} %`;
+  const efficiencyText = efficiency ? `${efficiency} %` : "N/A";
   const [timeLoss, timeLossDetails] = calculateTimeLoss(weatherLoss, faultLoss);
   const newTicketsCount = jiraTickets.filter((tix) => tix.isNew).length;
 
