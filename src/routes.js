@@ -7,6 +7,7 @@ import Layout from "./pages/layout";
 import DataLog from "./pages/data-log";
 import ContextFeed from "./pages/context-feed";
 import Digest from "./pages/digest";
+import Plots from "./pages/plots";
 import { z } from "zod";
 import { DateTime } from "luxon";
 
@@ -100,11 +101,20 @@ const contextFeedRoute = createRoute({
   errorComponent: SearchParamErrorComponent,
 });
 
+const plotsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/plots",
+  component: Plots,
+  validateSearch: searchParamsSchema,
+  errorComponent: SearchParamErrorComponent,
+});
+
 const router = createRouter({
   routeTree: rootRoute.addChildren([
     dashboardRoute,
     dataLogRoute,
     contextFeedRoute,
+    plotsRoute,
   ]),
   basepath: "/nightlydigest",
 
