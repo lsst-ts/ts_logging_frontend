@@ -133,6 +133,21 @@ const formatCellValue = (value, options = {}) => {
 };
 
 /**
+ * Converts a string key into a more human-readable title.
+ *
+ * Capitalises the first letter of each word, preserving spaces.
+ *
+ * @param {string} key - The key string to convert (e.g., "exposure time").
+ * @returns {string} The prettified title (e.g., "Exposure Time").
+ */
+const prettyTitleFromKey = (key) => {
+  return key
+    .split(" ")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+};
+
+/**
  * Infers a reasonable number of decimal places for a numeric value.
  * - If it's a large or whole number, round to 0.
  * - If it's small or fractional, round to 2.
@@ -246,6 +261,7 @@ export {
   getDisplayDateRange,
   getKeyByValue,
   formatCellValue,
+  prettyTitleFromKey,
   mergeDataLogSources,
   getRubinTVUrl,
   buildNavItemUrl,
