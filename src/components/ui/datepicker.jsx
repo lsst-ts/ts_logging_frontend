@@ -47,7 +47,7 @@ export function DatePicker({ selectedDate, onDateChange, mode = "single" }) {
         <Button
           variant={"outline"}
           className={cn(
-            "w-[200px] justify-between text-left font-normal rounded-s border-none shadow-[4px_4px_4px_0px_#3CAE3F] focus-visible:ring-4 focus-visible:ring-green-500/50",
+            "w-[200px] justify-between text-left font-normal rounded-md border-none shadow-[4px_4px_4px_0px_#3CAE3F] focus-visible:ring-4 focus-visible:ring-green-500/50",
             !date && "text-muted-foreground",
           )}
         >
