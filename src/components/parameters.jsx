@@ -44,7 +44,7 @@ function Parameters({
         <Select value={instrument} onValueChange={onInstrumentChange}>
           <SelectTrigger
             id="instrument"
-            className="w-[200px] bg-white justify-between font-normal rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] focus-visible:ring-4 focus-visible:ring-green-500/50"
+            className="w-[200px] bg-white justify-between font-normal shadow-[4px_4px_4px_0px_#3CAE3F] focus-visible:ring-4 focus-visible:ring-green-500/50"
           >
             <SelectValue />
           </SelectTrigger>
