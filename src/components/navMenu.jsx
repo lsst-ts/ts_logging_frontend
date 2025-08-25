@@ -11,7 +11,7 @@ import { GLOBAL_SEARCH_PARAMS } from "@/routes";
 
 const items = [
   { name: "digest", title: "Nightly Digest", url: "/nightlydigest/" },
-  { name: "plots", title: "Plots", url: "#" },
+  { name: "plots", title: "Plots", url: "/nightlydigest/plots" },
   { name: "data-log", title: "Data Log", url: "/nightlydigest/data-log" },
   {
     name: "context-feed",

@@ -28,20 +28,13 @@ import {
   StarShape,
   AsteriskShape,
 } from "./plotDotShapes";
+import { BAND_COLORS } from "@/components/PLOT_DEFINITIONS";
 
 import { DEFAULT_PIXEL_SCALE_MEDIAN, PSF_SIGMA_FACTOR } from "@/utils/utils";
 
 // Constants for gap detection
 const GAP_THRESHOLD = 5 * 60 * 1000;
 const ISO_DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
-const BAND_COLORS = {
-  u: "#3eb7ff",
-  g: "#30c39f",
-  r: "#ff7e00",
-  i: "#2af5ff",
-  z: "#a7f9c1",
-  y: "#fdc900",
-};
 
 const CustomTooltip = ({ active, payload, label }) => {
   const dataKeyTitles = {
