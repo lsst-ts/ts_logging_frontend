@@ -8,6 +8,7 @@ import { Toaster } from "@/components/ui/sonner";
 // For routing / querying
 import { useSearch } from "@tanstack/react-router";
 import { TELESCOPES } from "@/components/parameters";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Utils
 import { getDatetimeFromDayobsStr } from "@/utils/utils";
@@ -58,19 +59,19 @@ function ContextFeed() {
     setContextFeedLoading(true);
 
     // Fetch the Context Feed data
-    fetchContextFeed(startDayobs, queryEndDayobs, instrument, abortController)
+    fetchContextFeed(startDayobs, endDayobs, instrument, abortController)
       // Just collecting columns for now, until dataframe bug is sorted
       .then(([cols]) => {
         // Set the fetched cols to state.
         setContextFeedCols(cols);
         // setContextFeedData(data);
 
-        // Log to broswer's console
+        // Log to browser's console
         console.log("Context Feed cols: ", cols);
 
         // Warn if no data returned but no error
-        if (data.length === 0) {
-          toast.warning("No Narrative Log entries found in the date range.");
+        if (cols.length === 0) {
+          toast.warning("No Context Feed entries found in the date range.");
         }
       })
       .catch((err) => {
@@ -78,7 +79,7 @@ function ContextFeed() {
         // then toast the error message.
         if (!abortController.signal.aborted) {
           const msg = err?.message;
-          toast.error("Error fetching narrative log!", {
+          toast.error("Error fetching Context Feed data!", {
             description: msg,
             duration: Infinity,
           });
@@ -136,6 +137,23 @@ function ContextFeed() {
           page.
         </p>
       </div>
+
+        {/* Info section */}
+        <div className="min-h-[4.5rem] text-white font-thin text-center pb-4 flex flex-col items-center justify-center gap-2">
+          {contextFeedLoading? (
+            <>
+              <Skeleton className="h-5 w-3/4 max-w-xl bg-stone-700" />
+              <Skeleton className="h-5 w-[90%] max-w-2xl bg-stone-700" />
+            </>
+          ) : (
+            <>
+              <p>
+                Columns: {contextFeedCols} returned for Context Feed{" "}
+                between {startDayobs} and {endDayobs}.
+              </p>
+            </>
+          )}
+        </div>
 
       {/* Error / warning / info message pop-ups */}
       <Toaster expand={true} richColors closeButton />
