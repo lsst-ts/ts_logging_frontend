@@ -1,41 +1,137 @@
-// import { useRouter } from "@tanstack/react-router";
-import React from "react";
+// Standard React hooks
+import { useEffect, useState } from "react";
+
+// Libraries for the "toast" pop-up messages
+import { toast } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
+
+// For routing / querying
 import { useSearch } from "@tanstack/react-router";
 import { TELESCOPES } from "@/components/parameters";
-import { getDatetimeFromDayobsStr } from "@/utils/utils";
 
-function ContextFeed({ loading = false }) {
+// Utils
+import { getDatetimeFromDayobsStr } from "@/utils/utils";
+import { fetchNarrativeLog } from "@/utils/fetchUtils";
+
+// This is the page that gets rendered
+// as the Routing service's <Outlet /> in main.jsx
+function ContextFeed() {
+  // Get params from URL
   const { startDayobs, endDayobs, telescope } = useSearch({
-    from: "__root__",
+    from: "/context-feed",
   });
 
+  // Our dayobs inputs are inclusive, so we add one day to the
+  // endDayobs to get the correct range for the queries
+  // (which are exclusive of the end date).
   const queryEndDayobs = getDatetimeFromDayobsStr(endDayobs.toString())
     .plus({ days: 1 })
     .toFormat("yyyyMMdd");
   const instrument = TELESCOPES[telescope];
 
+  // // Time ranges for timeline
+  // const [selectedTimeRange, setSelectedTimeRange] = useState([null, null]);
+  // const [fullTimeRange, setFullTimeRange] = useState([null, null]);
+
+  // Data "state"
+  // - [variable, setting function]
+  // - inside useState() is the initial values for variable
+  const [narrativeLogData, setNarrativeLogData] = useState([]);
+  // const [narrativeLoading, setNarrativeLoading] = useState(true);
+
+  // This runs every time one of its dependencies changes.
+  // The dependencies are listed in [] after the {}
+  useEffect(() => {
+    // In case we need to cancel a fetch
+    const abortController = new AbortController();
+
+    // Here we will set loading state.
+    // Either one loading state to wait until all sources have loaded
+    // or one loading state per source.
+    // setNarrativeLoading(true);
+
+    // Fetch the Narrative Log data
+    fetchNarrativeLog(startDayobs, queryEndDayobs, instrument, abortController)
+      // Ignore the first two returned items, collect only the third
+      .then(([, , data]) => {
+        // Set the fetched data to the narrativeLogData state.
+        setNarrativeLogData(data);
+
+        // Log to broswer's console
+        console.log("Narrative Log data: ", narrativeLogData);
+
+        // Warn if no data returned but no error
+        if (data.length === 0) {
+          toast.warning("No Narrative Log entries found in the date range.");
+        }
+      })
+      .catch((err) => {
+        // If the error is not caused by the fetch being aborted
+        // then toast the error message.
+        if (!abortController.signal.aborted) {
+          const msg = err?.message;
+          toast.error("Error fetching narrative log!", {
+            description: msg,
+            duration: Infinity,
+          });
+        }
+      })
+      .finally(() => {
+        if (!abortController.signal.aborted) {
+          // If we use multiple loading states, we will set the
+          // loading state to false for this source here.
+          // setNarrativeLoading(false);
+        }
+      });
+
+    // If we use a global loading state for this page,
+    // we will set loading to be false here.
+
+    return () => {
+      // Aborting the cancelled/superceded fetch happens here.
+      abortController.abort();
+    };
+    // The dependencies for this useEffect() hook.
+    // If any of these change, this hook will run.
+  }, [startDayobs, endDayobs, telescope]);
+
+  // This is where we lay out what gets displayed.
+  // We return html elements, much like normal html,
+  // except to pop back into React code (to do some
+  // processing or conditional logic, etc.), we use { }.
   return (
-    <div>
-      <h2 className="text-lg font-semibold mb-2">Context Feed</h2>
-      {loading ? (
-        <div className="loading">Loading...</div>
-      ) : (
-        <div>
-          <div className="text-sm text-gray-500">
-            This is a placeholder for the ContextFeed
-          </div>
-          <div className="text-sm text-gray-500">
-            Nights Observed: {startDayobs} - {endDayobs}
-            <br />
-            Query: {startDayobs} - {queryEndDayobs}
-            <br />
-            Instrument: {instrument}
-            <br />
-            Telescope: {telescope}
-          </div>
-        </div>
-      )}
-    </div>
+    // Everything inside the return function must be
+    // contained in one <div> or <>.
+    <>
+      <div className="flex flex-col w-full p-8 gap-4">
+        {/* Page title */}
+        <h1 className="flex flex-row gap-3 text-white text-5xl uppercase justify-center">
+          <span className="tracking-[2px] font-extralight">Context</span>
+          <span className="font-extrabold">Feed</span>
+        </h1>
+
+        {/* Script Queue Miner notebook link */}
+        <p className="font-thin text-white text-center">
+          This page is under development. We are implementing a version of the{" "}
+          <a
+            href={`https://usdf-rsp.slac.stanford.edu/times-square/github/lsst/schedview_notebooks/nightly/EvaluateScriptQueue?day_obs_min=${startDayobs}&day_obs_max=${endDayobs}&time_order=newest+first&show_salIndex=all&show_table=true&show_timeline=false&ts_hide_code=1`}
+            className="underline text-blue-300 hover:text-blue-400"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Script Queue Miner Notebook
+          </a>
+          .
+        </p>
+        <p className="font-thin text-white text-center">
+          Please contact the Logging team if you have feature requests for this
+          page.
+        </p>
+      </div>
+
+      {/* Error / warning / info message pop-ups */}
+      <Toaster expand={true} richColors closeButton />
+    </>
   );
 }
 
