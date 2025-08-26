@@ -11,7 +11,10 @@ import { TELESCOPES } from "@/components/parameters";
 
 // Utils
 import { getDatetimeFromDayobsStr } from "@/utils/utils";
-import { fetchNarrativeLog } from "@/utils/fetchUtils";
+import {
+  // fetchNarrativeLog,
+  fetchContextFeed,
+} from "@/utils/fetchUtils";
 
 // This is the page that gets rendered
 // as the Routing service's <Outlet /> in main.jsx
@@ -36,8 +39,12 @@ function ContextFeed() {
   // Data "state"
   // - [variable, setting function]
   // - inside useState() is the initial values for variable
-  const [narrativeLogData, setNarrativeLogData] = useState([]);
+  // const [narrativeLogData, setNarrativeLogData] = useState([]);
   // const [narrativeLoading, setNarrativeLoading] = useState(true);
+
+  // const [contextFeedData, setContextFeedData] = useState([]);
+  const [contextFeedCols, setContextFeedCols] = useState([]);
+  const [contextFeedLoading, setContextFeedLoading] = useState(true);
 
   // This runs every time one of its dependencies changes.
   // The dependencies are listed in [] after the {}
@@ -48,17 +55,18 @@ function ContextFeed() {
     // Here we will set loading state.
     // Either one loading state to wait until all sources have loaded
     // or one loading state per source.
-    // setNarrativeLoading(true);
+    setContextFeedLoading(true);
 
-    // Fetch the Narrative Log data
-    fetchNarrativeLog(startDayobs, queryEndDayobs, instrument, abortController)
-      // Ignore the first two returned items, collect only the third
-      .then(([, , data]) => {
-        // Set the fetched data to the narrativeLogData state.
-        setNarrativeLogData(data);
+    // Fetch the Context Feed data
+    fetchContextFeed(startDayobs, queryEndDayobs, instrument, abortController)
+      // Just collecting columns for now, until dataframe bug is sorted
+      .then(([cols]) => {
+        // Set the fetched cols to state.
+        setContextFeedCols(cols);
+        // setContextFeedData(data);
 
         // Log to broswer's console
-        console.log("Narrative Log data: ", narrativeLogData);
+        console.log("Context Feed cols: ", cols);
 
         // Warn if no data returned but no error
         if (data.length === 0) {
@@ -80,12 +88,12 @@ function ContextFeed() {
         if (!abortController.signal.aborted) {
           // If we use multiple loading states, we will set the
           // loading state to false for this source here.
-          // setNarrativeLoading(false);
         }
       });
 
     // If we use a global loading state for this page,
     // we will set loading to be false here.
+    setContextFeedLoading(false);
 
     return () => {
       // Aborting the cancelled/superceded fetch happens here.

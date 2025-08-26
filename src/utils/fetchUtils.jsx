@@ -292,6 +292,39 @@ const fetchDataLogEntriesFromExposureLog = async (
   }
 };
 
+/**
+ * Fetches the context feed data for a specified date range.
+ *
+ * @async
+ * @function fetchContextFeed
+ * @param {string} start - The start date for the observation range (format: YYYYMMDD).
+ * @param {string} end - The end date for the observation range (format: YYYYMMDD).
+ * @param {AbortController} abortController - The AbortController used to cancel the request if needed.
+ * @returns {Promise<Object[]>} A promise that resolves to an array of objects with:
+ *   - efd_and_messages (Pandas dataframe):  A Dataframe of relevant logging and EFD messages.
+ *   - cols (string[]): The short-list of columns for display in the table.
+ * @throws {Error} Throws an error if the night reports cannot be fetched and the request was not aborted.
+ */
+const fetchContextFeed = async (start, end, abortController) => {
+  printf("CONTEXT FEED fetch begins.");
+  const url = `${backendLocation}/context-feed?dayObsStart=${start}&dayObsEnd=${end}`;
+  try {
+    const data = await fetchData(url, abortController);
+    printf("CONTEXT FEED cols: ", data.cols);
+    // printf("CONTEXT FEED DATA: ", data.efd_and_messages);
+    printf("CONTEXT FEED fetch completed.");
+    return [
+      // data.efd_and_messages,
+      data.cols,
+    ];
+  } catch (err) {
+    if (err.name !== "AbortError") {
+      console.error("Error fetching ContextFeed API:", err);
+    }
+    throw err;
+  }
+};
+
 export {
   fetchExposures,
   fetchAlmanac,
@@ -301,4 +334,5 @@ export {
   fetchJiraTickets,
   fetchDataLogEntriesFromConsDB,
   fetchDataLogEntriesFromExposureLog,
+  fetchContextFeed,
 };
