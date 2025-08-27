@@ -11,11 +11,7 @@ import { TELESCOPES } from "@/components/parameters";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // Utils
-import { getDatetimeFromDayobsStr } from "@/utils/utils";
-import {
-  // fetchNarrativeLog,
-  fetchContextFeed,
-} from "@/utils/fetchUtils";
+import { fetchContextFeed } from "@/utils/fetchUtils";
 
 // This is the page that gets rendered
 // as the Routing service's <Outlet /> in main.jsx
@@ -25,24 +21,17 @@ function ContextFeed() {
     from: "/context-feed",
   });
 
-  // Our dayobs inputs are inclusive, so we add one day to the
-  // endDayobs to get the correct range for the queries
-  // (which are exclusive of the end date).
-  const queryEndDayobs = getDatetimeFromDayobsStr(endDayobs.toString())
-    .plus({ days: 1 })
-    .toFormat("yyyyMMdd");
+  // In case we need the name of the instrument.
   const instrument = TELESCOPES[telescope];
+  console.log("Instrument: ", instrument); // just to keep precommit happy
 
   // // Time ranges for timeline
   // const [selectedTimeRange, setSelectedTimeRange] = useState([null, null]);
   // const [fullTimeRange, setFullTimeRange] = useState([null, null]);
 
-  // Data "state"
+  // Storing and setting "state"
   // - [variable, setting function]
   // - inside useState() is the initial values for variable
-  // const [narrativeLogData, setNarrativeLogData] = useState([]);
-  // const [narrativeLoading, setNarrativeLoading] = useState(true);
-
   // const [contextFeedData, setContextFeedData] = useState([]);
   const [contextFeedCols, setContextFeedCols] = useState([]);
   const [contextFeedLoading, setContextFeedLoading] = useState(true);
@@ -59,7 +48,7 @@ function ContextFeed() {
     setContextFeedLoading(true);
 
     // Fetch the Context Feed data
-    fetchContextFeed(startDayobs, endDayobs, instrument, abortController)
+    fetchContextFeed(startDayobs, endDayobs, abortController)
       // Just collecting columns for now, until dataframe bug is sorted
       .then(([cols]) => {
         // Set the fetched cols to state.
@@ -87,14 +76,10 @@ function ContextFeed() {
       })
       .finally(() => {
         if (!abortController.signal.aborted) {
-          // If we use multiple loading states, we will set the
-          // loading state to false for this source here.
+          // Stop loading
+          setContextFeedLoading(false);
         }
       });
-
-    // If we use a global loading state for this page,
-    // we will set loading to be false here.
-    setContextFeedLoading(false);
 
     return () => {
       // Aborting the cancelled/superceded fetch happens here.
@@ -102,7 +87,7 @@ function ContextFeed() {
     };
     // The dependencies for this useEffect() hook.
     // If any of these change, this hook will run.
-  }, [startDayobs, endDayobs, telescope]);
+  }, [startDayobs, endDayobs]);
 
   // This is where we lay out what gets displayed.
   // We return html elements, much like normal html,
@@ -138,22 +123,31 @@ function ContextFeed() {
         </p>
       </div>
 
-        {/* Info section */}
-        <div className="min-h-[4.5rem] text-white font-thin text-center pb-4 flex flex-col items-center justify-center gap-2">
-          {contextFeedLoading? (
-            <>
-              <Skeleton className="h-5 w-3/4 max-w-xl bg-stone-700" />
-              <Skeleton className="h-5 w-[90%] max-w-2xl bg-stone-700" />
-            </>
-          ) : (
-            <>
-              <p>
-                Columns: {contextFeedCols} returned for Context Feed{" "}
-                between {startDayobs} and {endDayobs}.
-              </p>
-            </>
-          )}
-        </div>
+      {/* TESTING */}
+      <div className="min-h-[4.5rem] text-white font-thin text-center pb-4 flex flex-col items-center justify-center gap-2">
+        {contextFeedLoading ? (
+          <>
+            <Skeleton className="h-5 w-3/4 max-w-xl bg-stone-700" />
+            <Skeleton className="h-5 w-[90%] max-w-2xl bg-stone-700" />
+          </>
+        ) : (
+          <>
+            <p>
+              Columns: {contextFeedCols} returned for Context Feed between{" "}
+              {startDayobs} and {endDayobs}.
+            </p>
+            <div>Columns: {contextFeedCols.join(", ")}</div>
+            <div className="font-thin text-white">
+              <h2>Columns:</h2>
+              <ul className="list-disc list-inside">
+                {contextFeedCols.map((col, i) => (
+                  <li key={i}>{col}</li>
+                ))}
+              </ul>
+            </div>
+          </>
+        )}
+      </div>
 
       {/* Error / warning / info message pop-ups */}
       <Toaster expand={true} richColors closeButton />
