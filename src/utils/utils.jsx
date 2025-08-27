@@ -133,6 +133,21 @@ const formatCellValue = (value, options = {}) => {
 };
 
 /**
+ * Converts a string key into a more human-readable title.
+ *
+ * Capitalises the first letter of each word, preserving spaces.
+ *
+ * @param {string} key - The key string to convert (e.g., "exposure time").
+ * @returns {string} The prettified title (e.g., "Exposure Time").
+ */
+const prettyTitleFromKey = (key) => {
+  return key
+    .split(" ")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+};
+
+/**
  * Infers a reasonable number of decimal places for a numeric value.
  * - If it's a large or whole number, round to 0.
  * - If it's small or fractional, round to 2.
@@ -238,6 +253,21 @@ const buildNavItemUrl = (
   return query ? `${itemUrl}?${query}` : itemUrl;
 };
 
+/**
+ * Generate the Scheduler night summary link info for a given dayobs.
+ *
+ * @param {string} dayobs - Dayobs string in "yyyyLLdd" format.
+ * @returns {{ url: string, label: string }} Object containing the URL and display label.
+ */
+const getNightSummaryLink = (dayobs) => {
+  const dt = DateTime.fromFormat(dayobs, "yyyyLLdd");
+  const pathFormat = dt.toFormat("yyyy/LL/dd");
+  const label = dt.toFormat("yyyy-LL-dd");
+  const url = `https://s3df.slac.stanford.edu/data/rubin/sim-data/schedview/reports/nightsum/lsstcam/${pathFormat}/nightsum_${label}.html`;
+
+  return { url, label };
+};
+
 export {
   calculateEfficiency,
   calculateTimeLoss,
@@ -246,9 +276,11 @@ export {
   getDisplayDateRange,
   getKeyByValue,
   formatCellValue,
+  prettyTitleFromKey,
   mergeDataLogSources,
   getRubinTVUrl,
   buildNavItemUrl,
+  getNightSummaryLink,
   DEFAULT_PIXEL_SCALE_MEDIAN,
   PSF_SIGMA_FACTOR,
 };

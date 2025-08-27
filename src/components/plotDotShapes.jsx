@@ -1,5 +1,7 @@
 import { memo } from "react";
 
+import { BAND_COLORS } from "@/components/PLOT_DEFINITIONS";
+
 const XShape = memo((props) => {
   const { cx, cy, fill, strokeOpacity = 1, fillOpacity = 1 } = props;
   const size = 1.5;
@@ -29,11 +31,12 @@ const XShape = memo((props) => {
   );
 });
 
+// g band
 const TriangleShape = memo((props) => {
   const {
     cx,
     cy,
-    fill = "#2af5ff",
+    fill = BAND_COLORS.g || "#30c39f",
     r = 2,
     strokeOpacity = 1,
     fillOpacity = 1,
@@ -55,11 +58,12 @@ const TriangleShape = memo((props) => {
   );
 });
 
+// r band
 const FlippedTriangleShape = memo((props) => {
   const {
     cx,
     cy,
-    fill = "#a7f9c1",
+    fill = BAND_COLORS.r || "#ff7e00",
     r = 2,
     strokeOpacity = 1,
     fillOpacity = 1,
@@ -81,11 +85,12 @@ const FlippedTriangleShape = memo((props) => {
   );
 });
 
+// y band
 const AsteriskShape = memo((props) => {
   const {
     cx,
     cy,
-    fill = "#fdc900",
+    fill = BAND_COLORS.y || "#fdc900",
     r = 4,
     strokeOpacity = 1,
     fillOpacity = 1,
@@ -116,11 +121,12 @@ const AsteriskShape = memo((props) => {
   return <g>{lines}</g>;
 });
 
+// i band
 const SquareShape = memo((props) => {
   const {
     cx,
     cy,
-    fill = "#ff7e00",
+    fill = BAND_COLORS.i || "#2af5ff",
     r = 2,
     strokeOpacity = 1,
     fillOpacity = 1,
@@ -143,11 +149,12 @@ const SquareShape = memo((props) => {
   );
 });
 
+// z band
 const StarShape = memo((props) => {
   const {
     cx,
     cy,
-    fill = "#30c39f",
+    fill = BAND_COLORS.z || "#a7f9c1",
     r = 4,
     strokeOpacity = 1,
     fillOpacity = 1,
