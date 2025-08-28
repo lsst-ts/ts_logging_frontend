@@ -9,6 +9,7 @@ import {
 import Parameters from "@/components/parameters";
 import NavMenu from "@/components/navMenu";
 import RubinIcon from "../assets/RubinIcon.svg";
+import packageJson from "../../package.json";
 
 export function AppSidebar({ ...props }) {
   return (
@@ -48,7 +49,10 @@ export function AppSidebar({ ...props }) {
       <SidebarFooter className="px-6 py-8">
         <div className="text-xs text-gray-500">
           <p>
-            Nightly Digest <strong>v0.7.1 (2025-08-07)</strong>
+            Nightly Digest{" "}
+            <strong>
+              v{packageJson.version} ({packageJson.lastUpdated})
+            </strong>
           </p>
           <p>
             Release Notes{" "}
