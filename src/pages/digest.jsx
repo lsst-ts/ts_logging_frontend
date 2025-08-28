@@ -29,6 +29,7 @@ import { useSearch } from "@tanstack/react-router";
 import { TELESCOPES } from "@/components/parameters";
 import ObservingConditionsApplet from "@/components/ObservingConditionsApplet";
 import NightSummary from "@/components/NightSummary.jsx";
+import TimeAccountingApplet from "@/components/TimeAccountingApplet";
 
 export default function Digest() {
   const { startDayobs, endDayobs, telescope } = useSearch({
@@ -334,7 +335,11 @@ export default function Digest() {
               reports={reports}
               nightreportLoading={nightreportLoading}
             />
-            <Applet />
+            <TimeAccountingApplet
+              exposuresLoading={exposuresLoading}
+              almanacLoading={almanacLoading}
+              efficiency={efficiency}
+            />
             <Applet />
           </div>
         </div>
