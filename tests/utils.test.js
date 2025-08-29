@@ -62,22 +62,6 @@ const sampleExposures = [
 ];
 
 describe("utils", () => {
-  // describe("calculateEfficiency", () => {
-  //   it("returns 0 if nightHours is 0", () => {
-  //     expect(calculateEfficiency(0, 1000, 0)).toBe(0);
-  //   });
-
-  //   it("calculates rounded efficiency correctly", () => {
-  //     // 2 hours available (7200s), 3600s exposure, no weather loss → 50%
-  //     expect(calculateEfficiency(2, 3600, 0)).toBe(50);
-  //   });
-
-  //   it("accounts for weather loss", () => {
-  //     // 2 hours available (7200s), 3600s exposure, 3600s lost → 100%
-  //     expect(calculateEfficiency(2, 3600, 3600)).toBe(100);
-  //   });
-  // });
-
   describe("calculateSumExpTimeBetweenTwilights", () => {
     it("returns correct sum for exposures within twilight bounds", () => {
       const result = calculateSumExpTimeBetweenTwilights(

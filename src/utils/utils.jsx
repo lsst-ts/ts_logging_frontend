@@ -1,11 +1,11 @@
 import { DateTime } from "luxon";
+import { TAI_OFFSET_SECONDS, ISO_DATETIME_FORMAT } from "./timeUtils.jsx";
 
 export const DEFAULT_EXTERNAL_INSTANCE_URL =
   "https://usdf-rsp.slac.stanford.edu";
 
 const DEFAULT_PIXEL_SCALE_MEDIAN = 0.2; // default median pixel scale in arcsec/pixel
 const PSF_SIGMA_FACTOR = 2.355; // factor for going from sigma (σ) to FWHM (2 sqrt(2 ln(2)))
-const ISO_DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
 /**
  * Calculates the efficiency of night hours usage, accounting for exposure time and weather loss.
@@ -371,24 +371,29 @@ const calculateSumExpTimeBetweenTwilights = (exposureFields, almanacInfo) => {
       !dayobsAlm.twilight_evening ||
       !dayobsAlm.twilight_morning
     ) {
-      console.error(
-        `almanac for dayobs ${dayobs} doesn't exist or doesn't have twilight data in it.`,
-      );
+      // almanac for dayobs doesn't exist or doesn't have twilight data in it.
       continue;
     }
     const groupExpTime = exps.reduce((sum, exposure) => {
       const eveningTwilight = DateTime.fromFormat(
         dayobsAlm.twilight_evening,
         ISO_DATETIME_FORMAT,
-      );
+        { zone: "utc" },
+      ).plus({ seconds: TAI_OFFSET_SECONDS }); // apply TAI offset to match obs_start TAI time
       const morningTwilight = DateTime.fromFormat(
         dayobsAlm.twilight_morning,
         ISO_DATETIME_FORMAT,
+        { zone: "utc" },
+      ).plus(
+        { seconds: TAI_OFFSET_SECONDS }, // apply TAI offset to match obs_start TAI time
       );
+
       const expTime = parseFloat(exposure["exp_time"]);
-      const expObsStart = DateTime.fromISO(exposure["obs_start"]);
+      const expObsStart = DateTime.fromISO(exposure["obs_start"], {
+        zone: "utc",
+      });
       if (
-        exposure["can_see_sky"] &&
+        exposure.can_see_sky &&
         expObsStart >= eveningTwilight &&
         expObsStart <= morningTwilight
       ) {
