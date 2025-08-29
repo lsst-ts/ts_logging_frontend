@@ -10,8 +10,17 @@ import { useSearch } from "@tanstack/react-router";
 import { TELESCOPES } from "@/components/parameters";
 import { Skeleton } from "@/components/ui/skeleton";
 
+// Components
+import ContextFeedTimeline from "@/components/ContextFeedTimeline";
+
 // Utils
-import { fetchContextFeed } from "@/utils/fetchUtils";
+import { fetchNarrativeLog, fetchContextFeed } from "@/utils/fetchUtils";
+import {
+  isoToTAI,
+  getDayobsStartTAI,
+  getDayobsEndTAI,
+} from "@/utils/timeUtils";
+import { getDatetimeFromDayobsStr } from "@/utils/utils";
 
 // This is the page that gets rendered
 // as the Routing service's <Outlet /> in main.jsx
@@ -21,20 +30,27 @@ function ContextFeed() {
     from: "/context-feed",
   });
 
-  // In case we need the name of the instrument.
+  // Our dayobs inputs are inclusive, so we add one day to the
+  // endDayobs to get the correct range for the queries
+  // (which are exclusive of the end date).
+  const queryEndDayobs = getDatetimeFromDayobsStr(endDayobs.toString())
+    .plus({ days: 1 })
+    .toFormat("yyyyMMdd");
   const instrument = TELESCOPES[telescope];
-  console.log("Instrument: ", instrument); // just to keep precommit happy
 
-  // // Time ranges for timeline
-  // const [selectedTimeRange, setSelectedTimeRange] = useState([null, null]);
-  // const [fullTimeRange, setFullTimeRange] = useState([null, null]);
+  // Time ranges for timeline
+  const [selectedTimeRange, setSelectedTimeRange] = useState([null, null]);
+  const [fullTimeRange, setFullTimeRange] = useState([null, null]);
 
   // Storing and setting "state"
   // - [variable, setting function]
   // - inside useState() is the initial values for variable
-  // const [contextFeedData, setContextFeedData] = useState([]);
+  const [contextFeedData, setContextFeedData] = useState([]);
   const [contextFeedCols, setContextFeedCols] = useState([]);
   const [contextFeedLoading, setContextFeedLoading] = useState(true);
+
+  const [narrativeLogData, setNarrativeLogData] = useState([]);
+  const [narrativeLogLoading, setNarrativeLogLoading] = useState(true);
 
   // This runs every time one of its dependencies changes.
   // The dependencies are listed in [] after the {}
@@ -46,17 +62,66 @@ function ContextFeed() {
     // Either one loading state to wait until all sources have loaded
     // or one loading state per source.
     setContextFeedLoading(true);
+    setNarrativeLogLoading(true);
+
+    // Just fetching this for now to use in Timeline.
+    // Fetch the Narrative Log data
+    fetchNarrativeLog(startDayobs, queryEndDayobs, instrument, abortController)
+      // Ignore the first two returned items, collect only the third
+      .then(([, , data]) => {
+        // Prepare data for timeline
+        const NLdata = data
+          .map((entry) => {
+            const dateBeginDt = isoToTAI(entry["date_begin"]);
+            return {
+              ...entry,
+              date_begin_dt: dateBeginDt,
+              date_begin_millis: dateBeginDt.toMillis(),
+            };
+          })
+          // Chronological order
+          .sort((a, b) => a.date_begin_millis - b.date_begin_millis);
+
+        // Set the fetched data to the narrativeLogData state.
+        setNarrativeLogData(NLdata);
+
+        // Log to broswer's console
+        console.log("Narrative Log data: ", narrativeLogData);
+
+        // Warn if no data returned but no error
+        if (data.length === 0) {
+          toast.warning("No Narrative Log entries found in the date range.");
+        }
+      })
+      .catch((err) => {
+        // If the error is not caused by the fetch being aborted
+        // then toast the error message.
+        if (!abortController.signal.aborted) {
+          const msg = err?.message;
+          toast.error("Error fetching narrative log!", {
+            description: msg,
+            duration: Infinity,
+          });
+        }
+      })
+      .finally(() => {
+        if (!abortController.signal.aborted) {
+          // Stop loading
+          setNarrativeLogLoading(false);
+        }
+      });
 
     // Fetch the Context Feed data
     fetchContextFeed(startDayobs, endDayobs, abortController)
       // Just collecting columns for now, until dataframe bug is sorted
-      .then(([cols]) => {
+      .then(([data, cols]) => {
         // Set the fetched cols to state.
         setContextFeedCols(cols);
-        // setContextFeedData(data);
+        setContextFeedData(data);
 
         // Log to browser's console
         console.log("Context Feed cols: ", cols);
+        console.log("Context Feed data: ", data);
 
         // Warn if no data returned but no error
         if (cols.length === 0) {
@@ -81,13 +146,19 @@ function ContextFeed() {
         }
       });
 
+    // Set time ranges based on dayobs selected
+    const startTimeRange = getDayobsStartTAI(String(startDayobs));
+    const endTimeRange = getDayobsEndTAI(String(endDayobs));
+    setFullTimeRange([startTimeRange, endTimeRange]);
+    setSelectedTimeRange([startTimeRange, endTimeRange]);
+
     return () => {
       // Aborting the cancelled/superceded fetch happens here.
       abortController.abort();
     };
     // The dependencies for this useEffect() hook.
     // If any of these change, this hook will run.
-  }, [startDayobs, endDayobs]);
+  }, [startDayobs, endDayobs, telescope]);
 
   // This is where we lay out what gets displayed.
   // We return html elements, much like normal html,
@@ -121,34 +192,39 @@ function ContextFeed() {
           Please contact the Logging team if you have feature requests for this
           page.
         </p>
-      </div>
 
-      {/* TESTING */}
-      <div className="min-h-[4.5rem] text-white font-thin text-center pb-4 flex flex-col items-center justify-center gap-2">
-        {contextFeedLoading ? (
-          <>
-            <Skeleton className="h-5 w-3/4 max-w-xl bg-stone-700" />
-            <Skeleton className="h-5 w-[90%] max-w-2xl bg-stone-700" />
-          </>
+        {/* TESTING ZONE */}
+        <div className="min-h-[4.5rem] text-white font-thin text-center pb-4 flex flex-col items-center justify-center gap-2">
+          {contextFeedLoading ? (
+            <>
+              <Skeleton className="h-5 w-3/4 max-w-xl bg-stone-700" />
+              <Skeleton className="h-5 w-[90%] max-w-2xl bg-stone-700" />
+            </>
+          ) : (
+            <>
+              <p>Columns: {contextFeedCols.join(", ")}</p>
+              <p>Data[0]: {contextFeedData[0].join(", ")}</p>
+            </>
+          )}
+        </div>
+
+        {/* Timeline */}
+        {narrativeLogLoading ? (
+          <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
         ) : (
           <>
-            <p>
-              Columns: {contextFeedCols} returned for Context Feed between{" "}
-              {startDayobs} and {endDayobs}.
-            </p>
-            <div>Columns: {contextFeedCols.join(", ")}</div>
-            <div className="font-thin text-white">
-              <h2>Columns:</h2>
-              <ul className="list-disc list-inside">
-                {contextFeedCols.map((col, i) => (
-                  <li key={i}>{col}</li>
-                ))}
-              </ul>
-            </div>
+            <ContextFeedTimeline
+              data={narrativeLogData}
+              // twilightValues={twilightValues}
+              // illumValues={illumValues}
+              // moonIntervals={moonIntervals}
+              fullTimeRange={fullTimeRange}
+              selectedTimeRange={selectedTimeRange}
+              setSelectedTimeRange={setSelectedTimeRange}
+            />
           </>
         )}
       </div>
-
       {/* Error / warning / info message pop-ups */}
       <Toaster expand={true} richColors closeButton />
     </>

@@ -306,17 +306,10 @@ const fetchDataLogEntriesFromExposureLog = async (
  * @throws {Error} Throws an error if the night reports cannot be fetched and the request was not aborted.
  */
 const fetchContextFeed = async (start, end, abortController) => {
-  //printf("CONTEXT FEED fetch begins.");
   const url = `${backendLocation}/context-feed?dayObsStart=${start}&dayObsEnd=${end}`;
   try {
     const data = await fetchData(url, abortController);
-    //printf("CONTEXT FEED cols: ", data.cols);
-    // printf("CONTEXT FEED DATA: ", data.efd_and_messages);
-    //printf("CONTEXT FEED fetch completed.");
-    return [
-      // data.efd_and_messages,
-      data.cols,
-    ];
+    return [data.data, data.cols];
   } catch (err) {
     if (err.name !== "AbortError") {
       console.error("Error fetching ContextFeed API:", err);
