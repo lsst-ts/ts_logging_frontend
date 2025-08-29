@@ -21,27 +21,31 @@ const calculateEfficiency = (
   sumExpTime,
   weatherLoss,
 ) => {
-  if (!exposures || !Array.isArray(exposures)) {
-    return 0;
-  }
-  if (!Number.isFinite(weatherLoss) || weatherLoss < 0) {
-    console.error("weather loss is null, undefined or negative");
+  if (
+    !(
+      almanacInfo?.length &&
+      exposures &&
+      Array.isArray(exposures) &&
+      Number.isFinite(weatherLoss) &&
+      weatherLoss >= 0
+    )
+  ) {
     return null;
   }
-  let nightHours = 0;
-  let totalExpTime = sumExpTime;
-  if (almanacInfo && Array.isArray(almanacInfo)) {
-    nightHours = almanacInfo.reduce((acc, day) => acc + day.night_hours, 0);
-    if (nightHours === 0) {
-      console.error("night hours is 0");
-      return null;
-    }
-    totalExpTime = calculateSumExpTimeBetweenTwilights(exposures, almanacInfo);
-  }
-  let eff = 0.0;
-  if (nightHours !== 0) {
-    eff = (100 * totalExpTime) / ((nightHours - weatherLoss) * 60 * 60);
-  }
+  if (exposures.length === 0 || sumExpTime === 0) return 0;
+
+  // let totalExpTime = sumExpTime;
+  const nightHours = almanacInfo.reduce((acc, day) => acc + day.night_hours, 0);
+
+  if (nightHours === 0) return null;
+  // let eff = 0.0;
+  const totalExpTimeBetweenTwilights = calculateSumExpTimeBetweenTwilights(
+    exposures,
+    almanacInfo,
+  );
+  const totalExpTime = totalExpTimeBetweenTwilights ?? sumExpTime;
+  const eff = (100 * totalExpTime) / ((nightHours - weatherLoss) * 60 * 60);
+
   return eff === 0 ? 0 : Math.round(eff);
 };
 
@@ -291,8 +295,8 @@ const getNightSummaryLink = (dayobs) => {
   return { url, label };
 };
 
-  // TODO: this function should be moved to utils and removed from Observing Conditions applet
- /* Retrieves the almanac information for a given dayobs date, correcting for a known
+// TODO: this function should be moved to utils and removed from Observing Conditions applet
+/* Retrieves the almanac information for a given dayobs date, correcting for a known
  * one-day offset between almanac dayobs and exposure dayobs.
  *
  * The function searches through the provided almanacInfo array, subtracts one day from each
@@ -304,7 +308,7 @@ const getNightSummaryLink = (dayobs) => {
  * @returns {Object|null} The matching almanac record for the given dayobs, or null if not found.
  */
 const getDayobsAlmanac = (dayobs, almanacInfo) => {
-  if (almanacInfo && Array.isArray(almanacInfo)) {
+  if (almanacInfo?.length) {
     for (const dayObsAlm of almanacInfo) {
       // minus one day from almanac dayobs to match the exposure dayobs
       // to fix the issue with almanac dayobs being one day ahead
@@ -353,7 +357,7 @@ const getDayobsAlmanac = (dayobs, almanacInfo) => {
  *   between their corresponding evening and morning twilights.
  */
 const calculateSumExpTimeBetweenTwilights = (exposureFields, almanacInfo) => {
-  if (!Array.isArray(exposureFields) || !Array.isArray(almanacInfo)) return 0;
+  if (!exposureFields?.length || !almanacInfo?.length) return 0;
   const expsGroupedByDayobs = Object.groupBy(
     exposureFields,
     (exp) => exp.day_obs,

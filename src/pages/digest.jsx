@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import Applet from "@/components/applet.jsx";
@@ -235,14 +235,31 @@ export default function Digest() {
     };
   }, [startDayobs, endDayobs, telescope]);
 
-  // calculate open shutter efficiency
-  const efficiency = calculateEfficiency(
+  // calculate open camera shutter efficiency
+  const efficiency = useMemo(() => {
+    if (
+      almanacLoading ||
+      exposuresLoading ||
+      !exposureFields ||
+      !almanacInfo?.length
+    )
+      return null;
+    return calculateEfficiency(
+      exposureFields,
+      almanacInfo,
+      sumOnSkyExpTime,
+      weatherLoss,
+    );
+  }, [
     exposureFields,
     almanacInfo,
-    sumOnSkyExpTime,
     weatherLoss,
-  );
-  const efficiencyText = efficiency ? `${efficiency} %` : "N/A";
+    sumOnSkyExpTime,
+    almanacLoading,
+    exposuresLoading,
+  ]);
+
+  const efficiencyText = efficiency >= 0 ? `${efficiency} %` : "N/A";
   const [timeLoss, timeLossDetails] = calculateTimeLoss(weatherLoss, faultLoss);
   const newTicketsCount = jiraTickets.filter((tix) => tix.isNew).length;
 

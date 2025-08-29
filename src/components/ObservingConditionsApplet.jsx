@@ -39,7 +39,6 @@ import {
 
 // Constants for gap detection
 const GAP_THRESHOLD = 5 * 60 * 1000;
-const ISO_DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
 const CustomTooltip = ({ active, payload, label }) => {
   const dataKeyTitles = {
@@ -386,7 +385,7 @@ function ObservingConditionsApplet({
       }
     }
     return gaps;
-  }, [groupedByDayobs]);
+  }, [groupedByDayobs, almanacInfo]);
 
   //group data by dayobs to handle multiple nights
   const groupedChartData = useMemo(() => {
