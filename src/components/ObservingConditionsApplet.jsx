@@ -123,7 +123,7 @@ const renderCustomLegend = (props) => (
       </div>
       <div className="flex items-center gap-2">
         <span className="inline-block w-3 h-5 ml-1 mr-2 bg-teal-800 bg-opacity-90 border border-teal-900" />
-        shutter closed (&gt; 5m)
+        inter-exposure &gt; 5mins
       </div>
 
       <div className="flex items-center gap-2">
@@ -352,7 +352,8 @@ function ObservingConditionsApplet({
     [chartData],
   );
 
-  // Calculate open/close shutter time or observing gaps
+  // Calculate observing gaps between exposures
+  // A gap is defined as a period longer than GAP_THRESHOLD (5 minutes)
   const gapAreas = useMemo(() => {
     const gaps = [];
     for (const [dayobs, exps] of Object.entries(groupedByDayobs)) {
@@ -378,8 +379,11 @@ function ObservingConditionsApplet({
         const delta = next - curr;
         if (GAP_THRESHOLD < delta) {
           gaps.push({
-            start: curr,
-            end: next,
+            // Add in a little buffer gap around single exposures
+            // that fall between two >5min gaps (to prevent the two "shutter closed"
+            // periods on either side appearing as one continuous block)
+            start: curr + 60000, // add 1 min buffer after the exposure
+            end: next - 60000, // subtract 1 min buffer before the next exposure/dayobs end
           });
         }
       }
@@ -462,11 +466,11 @@ function ObservingConditionsApplet({
                 <li>
                   - <code className="font-bold uppercase">obs_start</code> → for
                   time axis and detecting <strong>nighttime</strong> gaps (
-                  <strong>&gt; 5min</strong>)
+                  <strong>where gap between exposures &gt; 5mins</strong>)
                 </li>
               </ul>
               <br />
-              Twilight periods (<strong>18 degree</strong>) are marked with blue
+              Twilight periods (<strong>12 degree</strong>) are marked with blue
               dashed lines.
             </PopoverContent>
           </Popover>
