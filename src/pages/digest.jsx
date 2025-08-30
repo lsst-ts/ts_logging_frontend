@@ -21,6 +21,7 @@ import {
   calculateEfficiency,
   calculateTimeLoss,
   getDatetimeFromDayobsStr,
+  calculateSumExpTimeBetweenTwilights,
 } from "@/utils/utils";
 import DialogMetricsCard from "@/components/dialog-metrics-card";
 import JiraTicketsTable from "@/components/jira-tickets-table";
@@ -235,29 +236,34 @@ export default function Digest() {
     };
   }, [startDayobs, endDayobs, telescope]);
 
-  // calculate open camera shutter efficiency
-  const efficiency = useMemo(() => {
-    if (
-      almanacLoading ||
-      exposuresLoading ||
-      !exposureFields ||
-      !almanacInfo?.length
-    )
-      return null;
-    return calculateEfficiency(
-      exposureFields,
-      almanacInfo,
-      sumOnSkyExpTime,
-      weatherLoss,
-    );
-  }, [
-    exposureFields,
-    almanacInfo,
-    weatherLoss,
-    sumOnSkyExpTime,
-    almanacLoading,
-    exposuresLoading,
-  ]);
+  const nightHours = useMemo(
+    () => almanacInfo?.reduce((acc, day) => acc + day.night_hours, 0) ?? 0,
+    [almanacInfo],
+  );
+
+  const totalExpTimeBetweenTwilights = useMemo(
+    () => calculateSumExpTimeBetweenTwilights(exposureFields, almanacInfo),
+    [exposureFields, almanacInfo],
+  );
+
+  let efficiency = null;
+  if (
+    !almanacLoading &&
+    !exposuresLoading &&
+    almanacInfo?.length &&
+    exposureFields
+  ) {
+    if (exposureFields.length === 0) {
+      efficiency = 0;
+    } else {
+      efficiency = calculateEfficiency(
+        nightHours,
+        sumOnSkyExpTime,
+        totalExpTimeBetweenTwilights,
+        weatherLoss,
+      );
+    }
+  }
 
   const efficiencyText = efficiency >= 0 ? `${efficiency} %` : "N/A";
   const [timeLoss, timeLossDetails] = calculateTimeLoss(weatherLoss, faultLoss);

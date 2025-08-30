@@ -87,7 +87,7 @@ const CustomTooltip = ({ active, payload, label }) => {
   });
 
   return (
-    <div className="bg-white text-black text-xs p-2 border border-white rounded text-black font-light mb-1">
+    <div className="bg-white text-xs p-2 border border-white rounded text-black font-light mb-1">
       <p>
         Obs Start:{" "}
         <span className="font-bold">
@@ -106,7 +106,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 // Custom legend to display band colors and shapes
 const renderCustomLegend = (props) => (
   <div className="w-24 h-fit flex-shrink-0">
-    <div className="flex flex-wrap gap-1 px-4 py-2 bg-black shadow-[4px_4px_4px_0px_#c27aff] border text-white text-xxs justify-start ">
+    <div className="flex flex-wrap gap-1 pl-2 pr-4 py-2 bg-black shadow-[4px_4px_4px_0px_#c27aff] border text-white text-xxs justify-start ">
       <div className="flex items-center ml-0.5 gap-2">
         <svg width="6" height="20" className="mr-2">
           <line
@@ -135,8 +135,8 @@ const renderCustomLegend = (props) => (
         <span>seeing</span>
       </div>
 
-      <div className="w-full text-white mt-2 text-xxs">zero points</div>
-      <div className="p-1 pr-1 border border-white grid grid-cols-2">
+      <div className="w-full text-white mt-2 ml-2 text-xxs">zero points</div>
+      <div className="p-1 pr-1 ml-1 border border-white grid grid-cols-2">
         <div
           className="flex flex-row items-center gap-1 pr-1"
           onMouseEnter={() =>

@@ -9,44 +9,35 @@ const PSF_SIGMA_FACTOR = 2.355; // factor for going from sigma (σ) to FWHM (2 s
 
 /**
  * Calculates the efficiency of night hours usage, accounting for exposure time and weather loss.
+ * Efficiency is defined as the ratio of total exposure time to available night hours minus weather loss.
+ * If no exposures or zero exposure time, efficiency is 0.
+ * If inputs are invalid (e.g., non-finite numbers, negative weather loss, 0 night hours), returns null.
+ * Sum of exposure time between twilights is used if provided, otherwise total exposure time is used.
  *
  * @param {number} nightHours - The total number of night hours available.
  * @param {number} sumExpTime - The sum of exposure time in seconds.
+ * @param {number} totalExpTimeBetweenTwilights - The sum of exposure time between the twilights in seconds.
  * @param {number} weatherLoss - The total time lost due to weather in hours.
  * @returns {number} The calculated efficiency as a ratio (0 if nightHours is 0).
  */
 const calculateEfficiency = (
-  exposures,
-  almanacInfo,
+  nightHours,
   sumExpTime,
+  totalExpTimeBetweenTwilights,
   weatherLoss,
 ) => {
   if (
-    !(
-      almanacInfo?.length &&
-      exposures &&
-      Array.isArray(exposures) &&
-      Number.isFinite(weatherLoss) &&
-      weatherLoss >= 0
-    )
-  ) {
+    !Number.isFinite(nightHours) ||
+    !Number.isFinite(weatherLoss) ||
+    nightHours <= 0 ||
+    weatherLoss < 0
+  )
     return null;
-  }
-  if (exposures.length === 0 || sumExpTime === 0) return 0;
-
-  // let totalExpTime = sumExpTime;
-  const nightHours = almanacInfo.reduce((acc, day) => acc + day.night_hours, 0);
-
-  if (nightHours === 0) return null;
-  // let eff = 0.0;
-  const totalExpTimeBetweenTwilights = calculateSumExpTimeBetweenTwilights(
-    exposures,
-    almanacInfo,
-  );
+  if (sumExpTime === 0) return 0;
   const totalExpTime = totalExpTimeBetweenTwilights ?? sumExpTime;
-  const eff = (100 * totalExpTime) / ((nightHours - weatherLoss) * 60 * 60);
-
-  return eff === 0 ? 0 : Math.round(eff);
+  return Math.round(
+    (100 * totalExpTime) / ((nightHours - weatherLoss) * 60 * 60),
+  );
 };
 
 /**
@@ -295,7 +286,6 @@ const getNightSummaryLink = (dayobs) => {
   return { url, label };
 };
 
-// TODO: this function should be moved to utils and removed from Observing Conditions applet
 /* Retrieves the almanac information for a given dayobs date, correcting for a known
  * one-day offset between almanac dayobs and exposure dayobs.
  *

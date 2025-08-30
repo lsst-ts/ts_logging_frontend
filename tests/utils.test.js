@@ -60,6 +60,28 @@ const sampleExposures = [
     can_see_sky: false,
   },
 ];
+// Mock the Object.groupBy method for testing purposes
+// because the CI is using node 18 which doesn't support it
+if (!Object.groupBy) {
+  Object.groupBy = function (items, callback) {
+    if (items == null) {
+      throw new TypeError("Object.groupBy called on null or undefined");
+    }
+    if (typeof callback !== "function") {
+      throw new TypeError("callback must be a function");
+    }
+
+    const obj = {};
+    for (const item of items) {
+      const key = callback(item);
+      if (!Object.prototype.hasOwnProperty.call(obj, key)) {
+        obj[key] = [];
+      }
+      obj[key].push(item);
+    }
+    return obj;
+  };
+}
 
 describe("utils", () => {
   describe("calculateSumExpTimeBetweenTwilights", () => {
@@ -120,71 +142,62 @@ describe("utils", () => {
 
   describe("calculateEfficiency", () => {
     it("calculates efficiency with valid inputs", () => {
-      const exposures = sampleExposures;
-      const almanacInfo = sampleAlmanacInfo;
       const sumExpTime = 300;
+      const sumExpTimeBetweenTwilights = 280;
       const weatherLoss = 2;
-      // nightHours = 24, totalExpTime = 300
-      // eff = (100 * 300 / 3600) / (24 - 2)
-      const expected = Math.round((100 * 300) / 3600 / 22);
+      const nightHours = 11;
+      // eff = (100 * 280 / 3600) / (11 - 2)
+      const expected = Math.round((100 * 280) / 3600 / 9);
       expect(
-        calculateEfficiency(exposures, almanacInfo, sumExpTime, weatherLoss),
+        calculateEfficiency(
+          nightHours,
+          sumExpTime,
+          sumExpTimeBetweenTwilights,
+          weatherLoss,
+        ),
       ).toBe(expected);
     });
 
-    it("returns 0 if exposures is null", () => {
-      expect(calculateEfficiency(null, sampleAlmanacInfo, 300, 2)).toBe(null);
+    it("returns 0 if sumExpTime is 0", () => {
+      expect(calculateEfficiency(11, 0, null, 2)).toBe(0);
     });
 
-    it("returns 0 if exposures is not array", () => {
-      expect(calculateEfficiency({}, sampleAlmanacInfo, 300, 2)).toBe(null);
+    it("returns null if nightHours is 0", () => {
+      expect(calculateEfficiency(0, 310, 300, 2)).toBe(null);
     });
 
-    it("returns 0 if nightHours is 0", () => {
-      const almanacInfo = [{ night_hours: 0 }];
-      expect(calculateEfficiency(sampleExposures, almanacInfo, 300, 2)).toBe(
-        null,
-      );
-    });
-
-    it("returns 0 if totalExpTime is 0", () => {
+    it("uses sumExpTime if totalExpTimeBetweenTwilights is null", () => {
+      const sumExpTime = 280;
+      const sumExpTimeBetweenTwilights = null;
+      const weatherLoss = 2;
+      const nightHours = 11;
+      const expected = Math.round((100 * 280) / (3600 * 9));
       expect(
-        calculateEfficiency(sampleExposures, sampleAlmanacInfo, 0, 2),
-      ).toBe(0);
-    });
-
-    it("handles null almanacInfo by using sumExpTime", () => {
-      expect(calculateEfficiency(sampleExposures, null, 300, 2)).toBe(null);
+        calculateEfficiency(
+          nightHours,
+          sumExpTime,
+          sumExpTimeBetweenTwilights,
+          weatherLoss,
+        ),
+      ).toBe(expected);
     });
 
     it("handles null weatherLoss", () => {
-      expect(
-        calculateEfficiency(sampleExposures, sampleAlmanacInfo, 300, null),
-      ).toBe(null);
+      expect(calculateEfficiency(11, 280, 250, null)).toBe(null);
     });
 
     it("handles negative weatherLoss", () => {
-      expect(
-        calculateEfficiency(sampleExposures, sampleAlmanacInfo, 300, -2),
-      ).toBe(null);
-    });
-
-    it("handles null weatherLoss", () => {
-      expect(
-        calculateEfficiency(sampleExposures, sampleAlmanacInfo, 300, null),
-      ).toBe(null);
+      expect(calculateEfficiency(11, 300, 280, -2)).toBe(null);
     });
 
     it("handles undefined weatherLoss", () => {
-      expect(
-        calculateEfficiency(sampleExposures, sampleAlmanacInfo, 300, undefined),
-      ).toBe(null);
+      expect(calculateEfficiency(11, 300, 280, undefined)).toBe(null);
     });
 
     it("handles 0 weatherLoss", () => {
-      expect(
-        calculateEfficiency(sampleExposures, sampleAlmanacInfo, 300, 0),
-      ).toBe(Math.round((100 * 300) / 3600 / 24));
+      expect(calculateEfficiency(11, 300, 280, 0)).toBe(
+        Math.round((100 * 280) / 3600 / 11),
+      );
     });
   });
 
