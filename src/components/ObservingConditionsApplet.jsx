@@ -30,11 +30,15 @@ import {
 } from "./plotDotShapes";
 import { BAND_COLORS } from "@/components/PLOT_DEFINITIONS";
 
-import { DEFAULT_PIXEL_SCALE_MEDIAN, PSF_SIGMA_FACTOR } from "@/utils/utils";
+import {
+  DEFAULT_PIXEL_SCALE_MEDIAN,
+  PSF_SIGMA_FACTOR,
+  ISO_DATETIME_FORMAT,
+  getDayobsAlmanac,
+} from "@/utils/utils";
 
 // Constants for gap detection
 const GAP_THRESHOLD = 5 * 60 * 1000;
-const ISO_DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
 const CustomTooltip = ({ active, payload, label }) => {
   const dataKeyTitles = {
@@ -47,23 +51,19 @@ const CustomTooltip = ({ active, payload, label }) => {
   const tooltipData = [];
   const seenKeys = new Set(); // Only add one entry for zero_point_median, showing its value and band
 
-  payload.forEach((entry) => {
-    const key = entry.dataKey;
+  payload.forEach(({ dataKey, value, color }) => {
     if (
-      entry.value !== null &&
-      entry.value !== undefined &&
-      dataKeyTitles[entry.dataKey] &&
-      !seenKeys.has(key)
+      value !== null &&
+      value !== undefined &&
+      dataKeyTitles[dataKey] &&
+      !seenKeys.has(dataKey)
     ) {
       tooltipData.push({
-        name: dataKeyTitles[entry.dataKey],
-        value:
-          typeof entry.value === "number"
-            ? entry.value.toFixed(2)
-            : entry.value,
-        color: entry.color,
+        name: dataKeyTitles[dataKey],
+        value: typeof value === "number" ? value.toFixed(2) : value,
+        color,
       });
-      seenKeys.add(key);
+      seenKeys.add(dataKey);
     }
   });
 
@@ -87,7 +87,7 @@ const CustomTooltip = ({ active, payload, label }) => {
   });
 
   return (
-    <div className="bg-white text-black text-xs p-2 border border-white rounded text-black font-light mb-1">
+    <div className="bg-white text-xs p-2 border border-white rounded text-black font-light mb-1">
       <p>
         Obs Start:{" "}
         <span className="font-bold">
@@ -106,7 +106,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 // Custom legend to display band colors and shapes
 const renderCustomLegend = (props) => (
   <div className="w-24 h-fit flex-shrink-0">
-    <div className="flex flex-wrap gap-1 px-4 py-2 bg-black shadow-[4px_4px_4px_0px_#c27aff] border text-white text-xxs justify-start ">
+    <div className="flex flex-wrap gap-1 pl-2 pr-4 py-2 bg-black shadow-[4px_4px_4px_0px_#c27aff] border text-white text-xxs justify-start ">
       <div className="flex items-center ml-0.5 gap-2">
         <svg width="6" height="20" className="mr-2">
           <line
@@ -123,7 +123,7 @@ const renderCustomLegend = (props) => (
       </div>
       <div className="flex items-center gap-2">
         <span className="inline-block w-3 h-5 ml-1 mr-2 bg-teal-800 bg-opacity-90 border border-teal-900" />
-        shutter closed (&gt; 5m)
+        inter-exposure &gt; 5mins
       </div>
 
       <div className="flex items-center gap-2">
@@ -135,8 +135,8 @@ const renderCustomLegend = (props) => (
         <span>seeing</span>
       </div>
 
-      <div className="w-full text-white mt-2 text-xxs">zero points</div>
-      <div className="p-1 pr-1 border border-white grid grid-cols-2">
+      <div className="w-full text-white mt-2 ml-2 text-xxs">zero points</div>
+      <div className="p-1 pr-1 ml-1 border border-white grid grid-cols-2">
         <div
           className="flex flex-row items-center gap-1 pr-1"
           onMouseEnter={() =>
@@ -352,19 +352,12 @@ function ObservingConditionsApplet({
     [chartData],
   );
 
-  const getDayobsAlmanac = (dayobs) => {
-    if (almanacInfo && Array.isArray(almanacInfo)) {
-      for (const dayObsAlm of almanacInfo) {
-        if (parseInt(dayObsAlm.dayobs) === parseInt(dayobs) + 1)
-          return dayObsAlm;
-      }
-    }
-    return null;
-  };
-  // Calculate open/close shutter time or observing gaps
+  // Calculate observing gaps between exposures
+  // A gap is defined as a period longer than GAP_THRESHOLD (5 minutes)
   const gapAreas = useMemo(() => {
     const gaps = [];
     for (const [dayobs, exps] of Object.entries(groupedByDayobs)) {
+      const dayobsAlm = getDayobsAlmanac(dayobs, almanacInfo);
       for (let i = 0; i < exps.length; i++) {
         const curr = exps[i].obs_start_dt;
         // set the next time to the end of the dayobs almanac
@@ -373,7 +366,6 @@ function ObservingConditionsApplet({
         // otherwise use the current exp obs_start_dt (last gap will be zero)
         let next;
         if (i === exps.length - 1) {
-          const dayobsAlm = getDayobsAlmanac(dayobs);
           next = dayobsAlm
             ? DateTime.fromFormat(
                 dayobsAlm.twilight_morning,
@@ -387,14 +379,17 @@ function ObservingConditionsApplet({
         const delta = next - curr;
         if (GAP_THRESHOLD < delta) {
           gaps.push({
-            start: curr,
-            end: next,
+            // Add in a little buffer gap around single exposures
+            // that fall between two >5min gaps (to prevent the two "shutter closed"
+            // periods on either side appearing as one continuous block)
+            start: curr + 60000, // add 1 min buffer after the exposure
+            end: next - 60000, // subtract 1 min buffer before the next exposure/dayobs end
           });
         }
       }
     }
     return gaps;
-  }, [groupedByDayobs]);
+  }, [groupedByDayobs, almanacInfo]);
 
   //group data by dayobs to handle multiple nights
   const groupedChartData = useMemo(() => {
@@ -471,11 +466,11 @@ function ObservingConditionsApplet({
                 <li>
                   - <code className="font-bold uppercase">obs_start</code> → for
                   time axis and detecting <strong>nighttime</strong> gaps (
-                  <strong>&gt; 5min</strong>)
+                  <strong>where gap between exposures &gt; 5mins</strong>)
                 </li>
               </ul>
               <br />
-              Twilight periods (<strong>18 degree</strong>) are marked with blue
+              Twilight periods (<strong>12 degree</strong>) are marked with blue
               dashed lines.
             </PopoverContent>
           </Popover>

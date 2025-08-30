@@ -1,6 +1,7 @@
 import { DateTime } from "luxon";
 
 const TAI_OFFSET_SECONDS = 37;
+const ISO_DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss"; // Twilight time format string
 
 /**
  * Converts an ISO 8601 string (representing TAI time) to a Luxon DateTime object in TAI.
@@ -118,4 +119,6 @@ export {
   millisToHHmm,
   utcDateTimeStrToTAIMillis,
   dayobsAtMidnight,
+  ISO_DATETIME_FORMAT,
+  TAI_OFFSET_SECONDS,
 };

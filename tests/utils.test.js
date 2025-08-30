@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 
 import {
   calculateEfficiency,
+  calculateSumExpTimeBetweenTwilights,
   calculateTimeLoss,
   getDayobsStr,
   getDatetimeFromDayobsStr,
@@ -18,20 +19,185 @@ import {
   DEFAULT_EXTERNAL_INSTANCE_URL,
 } from "@/utils/utils";
 
+const sampleAlmanacInfo = [
+  {
+    dayobs: "20240602", // will match exposure day_obs "20240601"
+    twilight_evening: "2024-06-01 18:00:00",
+    twilight_morning: "2024-06-02 06:00:00",
+    night_hours: 12,
+  },
+  {
+    dayobs: "20240603", // will match exposure day_obs "20240602"
+    twilight_evening: "2024-06-02 18:00:00",
+    twilight_morning: "2024-06-03 06:00:00",
+    night_hours: 12,
+  },
+];
+
+const sampleExposures = [
+  {
+    day_obs: "20240601",
+    obs_start: "2024-06-01T19:00:00",
+    exp_time: 100,
+    can_see_sky: true,
+  },
+  {
+    day_obs: "20240601",
+    obs_start: "2024-06-01T17:00:00",
+    exp_time: 50,
+    can_see_sky: true,
+  },
+  {
+    day_obs: "20240602",
+    obs_start: "2024-06-02T19:00:00",
+    exp_time: 200,
+    can_see_sky: true,
+  },
+  {
+    day_obs: "20240602",
+    obs_start: "2024-06-02T17:00:00",
+    exp_time: 100,
+    can_see_sky: false,
+  },
+];
+// Mock the Object.groupBy method for testing purposes
+// because the CI is using node 18 which doesn't support it
+if (!Object.groupBy) {
+  Object.groupBy = function (items, callback) {
+    if (items == null) {
+      throw new TypeError("Object.groupBy called on null or undefined");
+    }
+    if (typeof callback !== "function") {
+      throw new TypeError("callback must be a function");
+    }
+
+    const obj = {};
+    for (const item of items) {
+      const key = callback(item);
+      if (!Object.prototype.hasOwnProperty.call(obj, key)) {
+        obj[key] = [];
+      }
+      obj[key].push(item);
+    }
+    return obj;
+  };
+}
+
 describe("utils", () => {
+  describe("calculateSumExpTimeBetweenTwilights", () => {
+    it("returns correct sum for exposures within twilight bounds", () => {
+      const result = calculateSumExpTimeBetweenTwilights(
+        sampleExposures,
+        sampleAlmanacInfo,
+      );
+      // Only exposures with can_see_sky true and obs_start between twilights are counted
+      // For 20240601: 19:00 is between 18:00 and 06:00 next day, 17:00 is not
+      // For 20240602: 19:00 is between 18:00 and 06:00 next day, 17:00 is not
+      expect(result).toBe(100 + 200);
+    });
+
+    it("returns 0 if exposuresFields is null", () => {
+      expect(calculateSumExpTimeBetweenTwilights(null, sampleAlmanacInfo)).toBe(
+        0,
+      );
+    });
+
+    it("returns 0 if exposuresFields is empty", () => {
+      expect(calculateSumExpTimeBetweenTwilights([], sampleAlmanacInfo)).toBe(
+        0,
+      );
+    });
+
+    it("returns 0 if almanacInfo is null", () => {
+      expect(calculateSumExpTimeBetweenTwilights(sampleExposures, null)).toBe(
+        0,
+      );
+    });
+
+    it("returns 0 if almanacInfo is empty", () => {
+      expect(calculateSumExpTimeBetweenTwilights(sampleExposures, [])).toBe(0);
+    });
+
+    it("ignores exposures with can_see_sky false", () => {
+      const exposures = [
+        {
+          day_obs: "20240601",
+          obs_start: "2024-06-01T19:00:00",
+          exp_time: 100,
+          can_see_sky: false,
+        },
+      ];
+      expect(
+        calculateSumExpTimeBetweenTwilights(exposures, sampleAlmanacInfo),
+      ).toBe(0);
+    });
+
+    it("handles missing exp_time or obs_start gracefully", () => {
+      const exposures = [{ day_obs: "20240601", can_see_sky: true }];
+      expect(
+        calculateSumExpTimeBetweenTwilights(exposures, sampleAlmanacInfo),
+      ).toBe(0);
+    });
+  });
+
   describe("calculateEfficiency", () => {
-    it("returns 0 if nightHours is 0", () => {
-      expect(calculateEfficiency(0, 1000, 0)).toBe(0);
+    it("calculates efficiency with valid inputs", () => {
+      const sumExpTime = 300;
+      const sumExpTimeBetweenTwilights = 280;
+      const weatherLoss = 2;
+      const nightHours = 11;
+      // eff = (100 * 280 / 3600) / (11 - 2)
+      const expected = Math.round((100 * 280) / 3600 / 9);
+      expect(
+        calculateEfficiency(
+          nightHours,
+          sumExpTime,
+          sumExpTimeBetweenTwilights,
+          weatherLoss,
+        ),
+      ).toBe(expected);
     });
 
-    it("calculates rounded efficiency correctly", () => {
-      // 2 hours available (7200s), 3600s exposure, no weather loss → 50%
-      expect(calculateEfficiency(2, 3600, 0)).toBe(50);
+    it("returns 0 if sumExpTime is 0", () => {
+      expect(calculateEfficiency(11, 0, null, 2)).toBe(0);
     });
 
-    it("accounts for weather loss", () => {
-      // 2 hours available (7200s), 3600s exposure, 3600s lost → 100%
-      expect(calculateEfficiency(2, 3600, 3600)).toBe(100);
+    it("returns null if nightHours is 0", () => {
+      expect(calculateEfficiency(0, 310, 300, 2)).toBe(null);
+    });
+
+    it("uses sumExpTime if totalExpTimeBetweenTwilights is null", () => {
+      const sumExpTime = 280;
+      const sumExpTimeBetweenTwilights = null;
+      const weatherLoss = 2;
+      const nightHours = 11;
+      const expected = Math.round((100 * 280) / (3600 * 9));
+      expect(
+        calculateEfficiency(
+          nightHours,
+          sumExpTime,
+          sumExpTimeBetweenTwilights,
+          weatherLoss,
+        ),
+      ).toBe(expected);
+    });
+
+    it("handles null weatherLoss", () => {
+      expect(calculateEfficiency(11, 280, 250, null)).toBe(null);
+    });
+
+    it("handles negative weatherLoss", () => {
+      expect(calculateEfficiency(11, 300, 280, -2)).toBe(null);
+    });
+
+    it("handles undefined weatherLoss", () => {
+      expect(calculateEfficiency(11, 300, 280, undefined)).toBe(null);
+    });
+
+    it("handles 0 weatherLoss", () => {
+      expect(calculateEfficiency(11, 300, 280, 0)).toBe(
+        Math.round((100 * 280) / 3600 / 11),
+      );
     });
   });
 

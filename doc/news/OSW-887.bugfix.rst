@@ -1,0 +1,1 @@
+Update `calculateEfficiency` util function to accept `weatherLoss` in hours not seconds.

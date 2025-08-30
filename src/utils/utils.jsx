@@ -1,4 +1,5 @@
 import { DateTime } from "luxon";
+import { TAI_OFFSET_SECONDS, ISO_DATETIME_FORMAT } from "./timeUtils.jsx";
 
 export const DEFAULT_EXTERNAL_INSTANCE_URL =
   "https://usdf-rsp.slac.stanford.edu";
@@ -8,25 +9,42 @@ const PSF_SIGMA_FACTOR = 2.355; // factor for going from sigma (σ) to FWHM (2 s
 
 /**
  * Calculates the efficiency of night hours usage, accounting for exposure time and weather loss.
+ * Efficiency is defined as the ratio of total exposure time to available night hours minus weather loss.
+ * If no exposures or zero exposure time, efficiency is 0.
+ * If inputs are invalid (e.g., non-finite numbers, negative weather loss, 0 night hours), returns null.
+ * Sum of exposure time between twilights is used if provided, otherwise total exposure time is used.
  *
  * @param {number} nightHours - The total number of night hours available.
  * @param {number} sumExpTime - The sum of exposure time in seconds.
- * @param {number} weatherLoss - The total time lost due to weather in seconds.
+ * @param {number} totalExpTimeBetweenTwilights - The sum of exposure time between the twilights in seconds.
+ * @param {number} weatherLoss - The total time lost due to weather in hours.
  * @returns {number} The calculated efficiency as a ratio (0 if nightHours is 0).
  */
-const calculateEfficiency = (nightHours, sumExpTime, weatherLoss) => {
-  let eff = 0.0;
-  if (nightHours !== 0) {
-    eff = (100 * sumExpTime) / (nightHours * 60 * 60 - weatherLoss);
-  }
-  return eff === 0 ? 0 : Math.round(eff);
+const calculateEfficiency = (
+  nightHours,
+  sumExpTime,
+  totalExpTimeBetweenTwilights,
+  weatherLoss,
+) => {
+  if (
+    !Number.isFinite(nightHours) ||
+    !Number.isFinite(weatherLoss) ||
+    nightHours <= 0 ||
+    weatherLoss < 0
+  )
+    return null;
+  if (sumExpTime === 0) return 0;
+  const totalExpTime = totalExpTimeBetweenTwilights ?? sumExpTime;
+  return Math.round(
+    (100 * totalExpTime) / ((nightHours - weatherLoss) * 60 * 60),
+  );
 };
 
 /**
  * Calculates the total time loss and provides a breakdown of the loss due to weather and faults.
  *
- * @param {number} weatherLoss - The amount of time lost due to weather (in seconds).
- * @param {number} faultLoss - The amount of time lost due to faults (in seconds).
+ * @param {number} weatherLoss - The amount of time lost due to weather (in hours).
+ * @param {number} faultLoss - The amount of time lost due to faults (in hours).
  * @returns {[string, string]} A tuple where the first element is the total time loss as a string (e.g., "5 seconds"),
  * and the second element is a string detailing the percentage breakdown of weather and fault losses.
  */
@@ -268,6 +286,116 @@ const getNightSummaryLink = (dayobs) => {
   return { url, label };
 };
 
+/* Retrieves the almanac information for a given dayobs date, correcting for a known
+ * one-day offset between almanac dayobs and exposure dayobs.
+ *
+ * The function searches through the provided almanacInfo array, subtracts one day from each
+ * almanac dayobs entry to align with the exposure dayobs, and returns the matching almanac record.
+ *
+ * @param {string} dayobs - The exposure dayobs date string in 'yyyyLLdd' format.
+ * @param {Array<Object>} almanacInfo - Array of almanac records, each containing a 'dayobs' property
+ * and twilight times in iso format.
+ * @returns {Object|null} The matching almanac record for the given dayobs, or null if not found.
+ */
+const getDayobsAlmanac = (dayobs, almanacInfo) => {
+  if (almanacInfo?.length) {
+    for (const dayObsAlm of almanacInfo) {
+      // minus one day from almanac dayobs to match the exposure dayobs
+      // to fix the issue with almanac dayobs being one day ahead
+      if (!dayObsAlm || !dayObsAlm.dayobs) continue;
+      let actualAlmDayobs = "";
+      try {
+        actualAlmDayobs = DateTime.fromFormat(
+          String(dayObsAlm.dayobs),
+          "yyyyLLdd",
+        )
+          .minus({ days: 1 })
+          .toFormat("yyyyLLdd");
+      } catch (e) {
+        // i.e. if time isn't the right format
+        console.error(e);
+        continue;
+      }
+      if (actualAlmDayobs === dayobs) return dayObsAlm;
+    }
+  }
+  return null;
+};
+
+/**
+ * Calculate the total exposure time that starts between evening and morning twilights.
+ *
+ * For each `day_obs`, this function looks up its corresponding twilight times
+ * from `almanacInfo`. It then sums the exposure times (`exp_time`) of exposures
+ * whose start time (`obs_start`) falls between that night's evening twilight
+ * and the following morning's twilight.
+ *
+ *
+ * @param {Array<Object>} exposureFields - Array of exposure records.
+ *   Each record should contain:
+ *     - {string} day_obs: the observing date key
+ *     - {string} obs_start: ISO date string of exposure start
+ *     - {string|number} exp_time: exposure duration in seconds
+ *
+ * @param {Array<Object>} almanacInfo - Array of almanac records.
+ *   Each record should contain:
+ *     - {string} dayobs: the observing date key
+ *     - {string} twilight_evening: ISO date string of evening twilight
+ *     - {string} twilight_morning: ISO date string of next morning twilight
+ *
+ * @returns {number} Total exposure time (seconds) for all exposures that start
+ *   between their corresponding evening and morning twilights.
+ */
+const calculateSumExpTimeBetweenTwilights = (exposureFields, almanacInfo) => {
+  if (!exposureFields?.length || !almanacInfo?.length) return 0;
+  const expsGroupedByDayobs = Object.groupBy(
+    exposureFields,
+    (exp) => exp.day_obs,
+  );
+  let totalExpTime = 0;
+
+  for (const [dayobs, exps] of Object.entries(expsGroupedByDayobs)) {
+    const dayobsAlm = getDayobsAlmanac(dayobs, almanacInfo);
+    if (
+      !dayobsAlm ||
+      !dayobsAlm.twilight_evening ||
+      !dayobsAlm.twilight_morning
+    ) {
+      // almanac for dayobs doesn't exist or doesn't have twilight data in it.
+      continue;
+    }
+    const groupExpTime = exps.reduce((sum, exposure) => {
+      const eveningTwilight = DateTime.fromFormat(
+        dayobsAlm.twilight_evening,
+        ISO_DATETIME_FORMAT,
+        { zone: "utc" },
+      ).plus({ seconds: TAI_OFFSET_SECONDS }); // apply TAI offset to match obs_start TAI time
+      const morningTwilight = DateTime.fromFormat(
+        dayobsAlm.twilight_morning,
+        ISO_DATETIME_FORMAT,
+        { zone: "utc" },
+      ).plus(
+        { seconds: TAI_OFFSET_SECONDS }, // apply TAI offset to match obs_start TAI time
+      );
+
+      const expTime = parseFloat(exposure["exp_time"]);
+      const expObsStart = DateTime.fromISO(exposure["obs_start"], {
+        zone: "utc",
+      });
+      if (
+        exposure.can_see_sky &&
+        expObsStart >= eveningTwilight &&
+        expObsStart <= morningTwilight
+      ) {
+        return sum + (isNaN(expTime) ? 0 : expTime);
+      }
+      return sum;
+    }, 0);
+    totalExpTime += groupExpTime;
+  }
+  return totalExpTime;
+};
+
 export {
   calculateEfficiency,
   calculateTimeLoss,
@@ -283,4 +411,7 @@ export {
   getNightSummaryLink,
   DEFAULT_PIXEL_SCALE_MEDIAN,
   PSF_SIGMA_FACTOR,
+  ISO_DATETIME_FORMAT,
+  getDayobsAlmanac,
+  calculateSumExpTimeBetweenTwilights,
 };

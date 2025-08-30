@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import Applet from "@/components/applet.jsx";
@@ -21,6 +21,7 @@ import {
   calculateEfficiency,
   calculateTimeLoss,
   getDatetimeFromDayobsStr,
+  calculateSumExpTimeBetweenTwilights,
 } from "@/utils/utils";
 import DialogMetricsCard from "@/components/dialog-metrics-card";
 import JiraTicketsTable from "@/components/jira-tickets-table";
@@ -34,7 +35,6 @@ export default function Digest() {
     from: "__root__",
   });
 
-  const [nightHours, setNightHours] = useState(0.0);
   const [weatherLoss, setWeatherLoss] = useState(0.0);
   const [faultLoss, setFaultLoss] = useState(0.0);
   const [exposureFields, setExposureFields] = useState([]);
@@ -70,6 +70,17 @@ export default function Digest() {
     setNightreportLoading(true);
     setJiraLoading(true);
     setFlagsLoading(true);
+    setExposureFields([]);
+    setAlmanacInfo([]);
+    setSumOnSkyExpTime(0.0);
+    setSumExpTime(0);
+    setJiraTickets([]);
+    setWeatherLoss(0.0);
+    setFaultLoss(0.0);
+    setExposureCount(0);
+    setReports([]);
+    setOnSkyExpCount(0);
+    setFlags([]);
 
     fetchExposures(startDayobs, queryEndDayobs, instrument, abortController)
       .then(
@@ -109,8 +120,6 @@ export default function Digest() {
     fetchAlmanac(startDayobs, queryEndDayobs, abortController)
       .then((almanac) => {
         setAlmanacInfo(almanac);
-        const hours = almanac.reduce((acc, day) => acc + day.night_hours, 0);
-        setNightHours(hours);
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
@@ -227,13 +236,36 @@ export default function Digest() {
     };
   }, [startDayobs, endDayobs, telescope]);
 
-  // calculate open shutter efficiency
-  const efficiency = calculateEfficiency(
-    nightHours,
-    sumOnSkyExpTime,
-    weatherLoss,
+  const nightHours = useMemo(
+    () => almanacInfo?.reduce((acc, day) => acc + day.night_hours, 0) ?? 0,
+    [almanacInfo],
   );
-  const efficiencyText = `${efficiency} %`;
+
+  const totalExpTimeBetweenTwilights = useMemo(
+    () => calculateSumExpTimeBetweenTwilights(exposureFields, almanacInfo),
+    [exposureFields, almanacInfo],
+  );
+
+  let efficiency = null;
+  if (
+    !almanacLoading &&
+    !exposuresLoading &&
+    almanacInfo?.length &&
+    exposureFields
+  ) {
+    if (exposureFields.length === 0) {
+      efficiency = 0;
+    } else {
+      efficiency = calculateEfficiency(
+        nightHours,
+        sumOnSkyExpTime,
+        totalExpTimeBetweenTwilights,
+        weatherLoss,
+      );
+    }
+  }
+
+  const efficiencyText = efficiency >= 0 ? `${efficiency} %` : "N/A";
   const [timeLoss, timeLossDetails] = calculateTimeLoss(weatherLoss, faultLoss);
   const newTicketsCount = jiraTickets.filter((tix) => tix.isNew).length;
 
@@ -254,7 +286,7 @@ export default function Digest() {
             icon={<EfficiencyChart value={efficiency} />}
             data={efficiencyText}
             label="Open-shutter (-weather) efficiency"
-            tooltip="Efficiency computed as total on-sky exposure time / (time between 18 degree twilights minus time lost to weather)"
+            tooltip="Efficiency computed as total on-sky exposure time / (time between 12 degree twilights minus time lost to weather). Exposures started outside the twilights are not counted in total time."
             loading={almanacLoading || exposuresLoading}
           />
           <MetricsCard
