@@ -338,7 +338,8 @@ export default function Digest() {
             <TimeAccountingApplet
               exposuresLoading={exposuresLoading}
               almanacLoading={almanacLoading}
-              efficiency={efficiency}
+              sumExpTime={sumExpTime}
+              nightHours={nightHours}
             />
             <Applet />
           </div>

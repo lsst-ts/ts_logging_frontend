@@ -12,8 +12,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 function TimeAccountingApplet({
   exposuresLoading,
   almanacLoading,
-  efficiency,
+  sumExpTime,
+  nightHours,
 }) {
+  const expPercent = Math.round((sumExpTime / (nightHours * 3600)) * 100);
+  const nonExpPercent = 100 - expPercent;
+
   return (
     <Card className="border-none p-0 bg-stone-800 gap-2">
       <CardHeader className="grid-cols-3 bg-teal-900 p-4 rounded-sm align-center gap-0">
@@ -47,22 +51,34 @@ function TimeAccountingApplet({
         ) : (
           <div className="h-full w-full flex-grow min-w-0 grid grid-cols-3">
             <div className="col-span-1 flex flex-col items-center">
-              <div>Not exposures</div>
+              {nonExpPercent > 0 && (
+                <div className="text-neutral-200 font-thin">Not exposures</div>
+              )}
               <div className="h-56 w-18 text-black font-bold rounded-sm py-2">
-                <div
-                  className="bg-sky-100 rounded-t-sm  flex items-center justify-center"
-                  style={{ height: `${100 - efficiency}%` }}
-                >
-                  {100 - efficiency} %
-                </div>
-                <div
-                  className="h-4/5 bg-teal-900 rounded-b-sm flex items-center justify-center"
-                  style={{ height: `${efficiency}%` }}
-                >
-                  {efficiency} %
-                </div>
+                {nonExpPercent > 0 && (
+                  <div
+                    className={`bg-sky-100 ${
+                      nonExpPercent === 100 ? "rounded-sm" : "rounded-t-sm"
+                    } flex items-center justify-center`}
+                    style={{ height: `${nonExpPercent}%` }}
+                  >
+                    {nonExpPercent} %
+                  </div>
+                )}
+                {expPercent > 0 && (
+                  <div
+                    className={`h-4/5 bg-teal-900 ${
+                      expPercent === 100 ? "rounded-sm" : "rounded-b-sm"
+                    } flex items-center justify-center`}
+                    style={{ height: `${expPercent}%` }}
+                  >
+                    {expPercent} %
+                  </div>
+                )}
               </div>
-              <div>Exposures</div>
+              {expPercent > 0 && (
+                <div className="text-neutral-200 font-thin">Exposures</div>
+              )}
             </div>
             <div className="col col-span-2">Hello Hellloooooooooooo</div>
           </div>
