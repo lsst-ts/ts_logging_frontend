@@ -340,6 +340,7 @@ export default function Digest() {
               almanacLoading={almanacLoading}
               sumExpTime={sumExpTime}
               nightHours={nightHours}
+              exposureFields={exposureFields}
             />
             <Applet />
           </div>
