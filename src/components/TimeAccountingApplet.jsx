@@ -63,17 +63,15 @@ function TimeAccountingApplet({
     for (let i = 0; i < sortedData.length - 1; i++) {
       const currentExp = sortedData[i];
       const nextExp = sortedData[i + 1];
-      const gap =
-        nextExp.day_obs === currentExp.day_obs
-          ? nextExp.obs_start_dt - currentExp.obs_end_dt
-          : 0;
+      if (nextExp.day_obs !== currentExp.day_obs) continue; // skip if not the same night
+      const gap = nextExp.obs_start_dt - currentExp.obs_end_dt;
       if (currentExp.band === nextExp.band) {
         noFilterChange += gap;
       } else {
         filterChange += gap;
       }
     }
-    return [filterChange / 3600000, noFilterChange / 3600000];
+    return [filterChange / 3600000, noFilterChange / 3600000]; // convert ms to hours
   }, [sortedData]);
 
   const chartConfig = {
@@ -92,28 +90,24 @@ function TimeAccountingApplet({
     {
       name: "Gaps",
       value: gapWithoutFilterChange,
-      type: "gaps",
       color: "hsl(200, 70%, 50%)",
       label: "Inter-Exposure time (same filter)",
     },
     {
       name: "Gaps(Filter)",
       value: gapWithFilterChange,
-      type: "gaps_filter_change",
       color: "hsl(40, 70%, 50%)",
       label: "Inter-Exposure time (with filter change)",
     },
     {
-      name: "fault",
+      name: "Fault",
       value: faultLoss,
-      type: "fault",
       color: "hsl(0, 70%, 50%)",
       label: "Time Lost to Faults",
     },
     {
-      name: "weather",
+      name: "Weather",
       value: weatherLoss,
-      type: "weather",
       color: "hsl(80, 70%, 50%)",
       label: "Time lost to Weather",
     },
@@ -156,7 +150,7 @@ function TimeAccountingApplet({
               {nonExpPercent > 0 && (
                 <div className="text-neutral-200 font-thin">Not exposures</div>
               )}
-              <div className="h-56 w-18 text-black font-bold rounded-sm py-2">
+              <div className="h-56 w-15 text-black font-bold rounded-sm py-2">
                 {nonExpPercent > 0 && (
                   <div
                     className={`bg-sky-100 ${
