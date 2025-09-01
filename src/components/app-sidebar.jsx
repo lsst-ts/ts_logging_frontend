@@ -4,10 +4,12 @@ import {
   SidebarGroup,
   SidebarHeader,
   SidebarGroupContent,
+  SidebarFooter,
 } from "@/components/ui/sidebar.jsx";
 import Parameters from "@/components/parameters";
 import NavMenu from "@/components/navMenu";
 import RubinIcon from "../assets/RubinIcon.svg";
+import packageJson from "../../package.json";
 
 export function AppSidebar({ ...props }) {
   return (
@@ -44,6 +46,34 @@ export function AppSidebar({ ...props }) {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter className="px-10 py-8">
+        <div className="text-xs text-gray-500">
+          <p>
+            Nightly Digest{" "}
+            <strong>
+              v{packageJson.version} ({packageJson.lastUpdated})
+            </strong>
+          </p>
+          <p>
+            Release Notes{" "}
+            <a
+              className="text-blue-500 hover:underline"
+              target="_blank"
+              href="https://github.com/lsst-ts/ts_logging_frontend/blob/develop/doc/version_history.rst"
+            >
+              Frontend
+            </a>
+            {" | "}
+            <a
+              className="text-blue-500 hover:underline"
+              target="_blank"
+              href="https://github.com/lsst-ts/ts_logging_and_reporting/blob/develop/doc/version_history.rst"
+            >
+              Backend
+            </a>
+          </p>
+        </div>
+      </SidebarFooter>
     </Sidebar>
   );
 }
