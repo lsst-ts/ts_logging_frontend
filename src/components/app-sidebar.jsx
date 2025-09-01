@@ -46,7 +46,7 @@ export function AppSidebar({ ...props }) {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="px-6 py-8">
+      <SidebarFooter className="px-10 py-8">
         <div className="text-xs text-gray-500">
           <p>
             Nightly Digest{" "}
@@ -59,7 +59,7 @@ export function AppSidebar({ ...props }) {
             <a
               className="text-blue-500 hover:underline"
               target="_blank"
-              href="../assets/version_history.rst"
+              href="https://github.com/lsst-ts/ts_logging_frontend/blob/develop/doc/version_history.rst"
             >
               Frontend
             </a>
