@@ -18,6 +18,8 @@ function TimeAccountingApplet({
   sumExpTime,
   nightHours,
   exposureFields,
+  weatherLoss,
+  faultLoss,
 }) {
   const expPercent = Math.round((sumExpTime / (nightHours * 3600)) * 100);
   const nonExpPercent = 100 - expPercent;
@@ -55,8 +57,6 @@ function TimeAccountingApplet({
     [data],
   );
 
-  // console.log("Sorted Data:", sortedData);
-
   const [gapWithFilterChange, gapWithoutFilterChange] = useMemo(() => {
     let filterChange = 0;
     let noFilterChange = 0;
@@ -77,27 +77,46 @@ function TimeAccountingApplet({
   }, [sortedData]);
 
   const chartConfig = {
-    gaps: { label: "Inter-Exposure", color: "hsl(80, 70%, 50%)" },
+    gaps: {
+      label: "Inter-Exposure time (same filter)",
+      color: "hsl(80, 70%, 50%)",
+    },
     gaps_filter_change: {
-      label: "Inter-Exposure w/Filter Change",
+      label: "Inter-Exposure time (with filter change)",
       color: "hsl(40, 70%, 50%)",
     },
     fault: { label: "Fault", color: "hsl(0, 70%, 50%)" },
+    weather: { label: "Weather", color: "hsl(80, 70%, 50%)" },
   };
   const chartData = [
     {
-      name: "Gaps(Same Filter)",
+      name: "Gaps",
       value: gapWithoutFilterChange,
       type: "gaps",
       color: "hsl(200, 70%, 50%)",
+      label: "Inter-Exposure time (same filter)",
     },
     {
-      name: "Gaps(Filter Change)",
+      name: "Gaps(Filter)",
       value: gapWithFilterChange,
       type: "gaps_filter_change",
       color: "hsl(40, 70%, 50%)",
+      label: "Inter-Exposure time (with filter change)",
     },
-    { name: "Fault", value: 0, type: "fault", color: "hsl(0, 70%, 50%)" },
+    {
+      name: "fault",
+      value: faultLoss,
+      type: "fault",
+      color: "hsl(0, 70%, 50%)",
+      label: "Time Lost to Faults",
+    },
+    {
+      name: "weather",
+      value: weatherLoss,
+      type: "weather",
+      color: "hsl(80, 70%, 50%)",
+      label: "Time lost to Weather",
+    },
   ];
 
   return (
@@ -132,8 +151,8 @@ function TimeAccountingApplet({
             <Skeleton className="col-span-2 h-full min-h-[180px] bg-stone-900" />
           </div>
         ) : (
-          <div className="h-full w-full flex-grow min-w-0 grid grid-cols-3">
-            <div className="col-span-1 flex flex-col items-center">
+          <div className="h-full w-full flex-grow min-w-0 grid grid-cols-3 grid-rows-5">
+            <div className="col-span-1 flex flex-col items-center row-span-4">
               {nonExpPercent > 0 && (
                 <div className="text-neutral-200 font-thin">Not exposures</div>
               )}
@@ -163,17 +182,28 @@ function TimeAccountingApplet({
                 <div className="text-neutral-200 font-thin">Exposures</div>
               )}
             </div>
-            <div className="col col-span-2">
+            <div className="col col-span-2 row-span-4">
               <ChartContainer config={chartConfig} className="w-full h-full">
                 <BarChart
-                  width={400}
+                  width={380}
                   height={250}
                   data={chartData}
-                  margin={{ top: 10, right: 10, left: 20, bottom: 5 }}
+                  margin={{ top: 10, right: 10, left: 25, bottom: 0 }}
                 >
                   <XAxis dataKey="name" tick={{ fill: "#ffffff" }} />
-                  <YAxis width={5} tick={{ fill: "#ffffff" }} />
-                  <Bar dataKey="value" barSize="20" stackId="a">
+                  <YAxis
+                    width={5}
+                    tick={{ fill: "#ffffff" }}
+                    label={{
+                      value: "Hours",
+                      angle: -90,
+                      position: "insideLeft",
+                      fill: "white",
+                      dx: -22,
+                      dy: 10,
+                    }}
+                  />
+                  <Bar dataKey="value" barSize="30" stackId="a">
                     {chartData.map((entry, index) => (
                       <Cell
                         key={`cell-${index}`}
@@ -185,12 +215,31 @@ function TimeAccountingApplet({
                     /
                   </Bar>
                   <ChartTooltip
-                    // cursor={{ fill: 'rgba(0, 0, 255, 0.1)', opacity: 0.2}}
                     cursor={false}
                     wrapperStyle={{ opacity: 0.9 }}
+                    content={({ active, payload }) => {
+                      if (!active || !payload || !payload.length) return null;
+                      return (
+                        <div className="bg-white text-xs p-2 border border-white rounded text-black font-light mb-1">
+                          <div className="font-semibold">{`${payload[0].payload.label}`}</div>
+                          <div>
+                            Hours:{" "}
+                            <span className="font-semibold">{`${payload[0].value.toFixed(
+                              2,
+                            )}`}</span>
+                          </div>
+                        </div>
+                      );
+                    }}
                   />
                 </BarChart>
               </ChartContainer>
+            </div>
+            <div className="col-span-1 text-center flex flex-col pt-4 text-neutral-200">
+              Total observable time
+            </div>
+            <div className="col col-span-2 text-center pt-4 text-neutral-200">
+              Time not exposing
             </div>
           </div>
         )}

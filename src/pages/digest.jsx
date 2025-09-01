@@ -341,6 +341,8 @@ export default function Digest() {
               sumExpTime={sumExpTime}
               nightHours={nightHours}
               exposureFields={exposureFields}
+              weatherLoss={weatherLoss}
+              faultLoss={faultLoss}
             />
             <Applet />
           </div>
