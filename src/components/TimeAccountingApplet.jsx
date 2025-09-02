@@ -77,7 +77,7 @@ function TimeAccountingApplet({
   const chartConfig = {
     gaps: {
       label: "Inter-Exposure time (same filter)",
-      color: "hsl(80, 70%, 50%)",
+      color: "hsl(200, 70%, 50%)",
     },
     gaps_filter_change: {
       label: "Inter-Exposure time (with filter change)",
@@ -94,7 +94,7 @@ function TimeAccountingApplet({
       label: "Inter-Exposure time (same filter)",
     },
     {
-      name: "Gaps(Filter)",
+      name: "Gaps (Filter)",
       value: gapWithFilterChange,
       color: "hsl(40, 70%, 50%)",
       label: "Inter-Exposure time (with filter change)",
@@ -135,18 +135,18 @@ function TimeAccountingApplet({
             <PopoverContent className="bg-black text-white text-sm border-yellow-700 w-[300px]">
               <p>
                 Breakdown of observable and non-observable time during selected
-                range.
+                dayobs range.
               </p>
               <br />
 
               <p>
-                <strong>Total Observable Time:</strong> Total time between
-                nautical twilights.
+                <strong>Observable Time:</strong> Total time between nautical
+                twilights.
               </p>
               <br />
 
               <p>
-                <strong>Exposures:</strong> Total Exposure time where{" "}
+                <strong>Exposures:</strong> Total exposure time where{" "}
                 <code>can_see_sky</code> is <code>true</code>.
               </p>
               <br />
@@ -155,7 +155,7 @@ function TimeAccountingApplet({
                 <strong>Not Exposures:</strong> Total inter-exposure time
                 between nautical twilights.
               </p>
-              <p>
+              <div>
                 <ul className="p-2 list-inside list-disc">
                   <li>
                     <strong>Gaps:</strong> Inter-exposure time between exposures
@@ -174,7 +174,7 @@ function TimeAccountingApplet({
                     narrative log)
                   </li>
                 </ul>
-              </p>
+              </div>
             </PopoverContent>
           </Popover>
         </div>
@@ -186,15 +186,17 @@ function TimeAccountingApplet({
             <Skeleton className="col-span-2 h-full min-h-[180px] bg-stone-900" />
           </div>
         ) : (
-          <div className="h-full w-full flex-grow min-w-0 grid grid-cols-3 grid-rows-5">
-            <div className="col-span-1 flex flex-col items-center row-span-4">
+          <div className="h-full w-full flex-grow min-w-0 grid grid-cols-3 grid-rows-6">
+            <div className="col-span-1 flex flex-col items-center row-span-5">
               {nonExpPercent > 0 && (
-                <div className="text-neutral-200 font-thin">Not exposures</div>
+                <div className="text-neutral-200 font-thin text-center">
+                  Not exposures
+                </div>
               )}
-              <div className="h-56 w-15 text-black font-bold rounded-sm py-2">
+              <div className="h-56 w-15 text-teal-900 font-bold rounded-sm py-2">
                 {nonExpPercent > 0 && (
                   <div
-                    className={`bg-sky-100 ${
+                    className={`bg-teal-100 max-h-36 min-h-6 ${
                       nonExpPercent === 100 ? "rounded-sm" : "rounded-t-sm"
                     } flex items-center justify-center`}
                     style={{ height: `${nonExpPercent}%` }}
@@ -204,7 +206,7 @@ function TimeAccountingApplet({
                 )}
                 {expPercent > 0 && (
                   <div
-                    className={`h-4/5 bg-teal-900 ${
+                    className={`h-4/5 bg-teal-900 text-teal-100 max-h-36 min-h-6 ${
                       expPercent === 100 ? "rounded-sm" : "rounded-b-sm"
                     } flex items-center justify-center`}
                     style={{ height: `${expPercent}%` }}
@@ -217,7 +219,7 @@ function TimeAccountingApplet({
                 <div className="text-neutral-200 font-thin">Exposures</div>
               )}
             </div>
-            <div className="col col-span-2 row-span-4">
+            <div className="col col-span-2 row-span-5">
               <ChartContainer config={chartConfig} className="w-full h-full">
                 <BarChart
                   width={380}
@@ -225,7 +227,14 @@ function TimeAccountingApplet({
                   data={chartData}
                   margin={{ top: 10, right: 10, left: 25, bottom: 0 }}
                 >
-                  <XAxis dataKey="name" tick={{ fill: "#ffffff" }} />
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fill: "#ffffff" }}
+                    angle={45}
+                    interval={0}
+                    height={60}
+                    textAnchor="start"
+                  />
                   <YAxis
                     width={5}
                     tick={{ fill: "#ffffff" }}
@@ -271,7 +280,7 @@ function TimeAccountingApplet({
               </ChartContainer>
             </div>
             <div className="col-span-1 text-center flex flex-col pt-4 text-neutral-200">
-              Total observable time
+              Observable time
             </div>
             <div className="col col-span-2 text-center pt-4 text-neutral-200">
               Time not exposing
