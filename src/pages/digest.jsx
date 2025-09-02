@@ -16,6 +16,7 @@ import {
   fetchNightreport,
   fetchExposureFlags,
   fetchJiraTickets,
+  fetchVisitsWithOverhead,
 } from "@/utils/fetchUtils";
 import {
   calculateEfficiency,
@@ -56,6 +57,8 @@ export default function Digest() {
 
   const [flagsLoading, setFlagsLoading] = useState(true);
   const [almanacInfo, setAlmanacInfo] = useState([]);
+  const [visitsLoading, setVisitsLoading] = useState(true);
+  const [visits, setVisits] = useState([]);
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -82,6 +85,8 @@ export default function Digest() {
     setReports([]);
     setOnSkyExpCount(0);
     setFlags([]);
+    setVisits([]);
+    setVisitsLoading(true);
 
     fetchExposures(startDayobs, queryEndDayobs, instrument, abortController)
       .then(
@@ -232,6 +237,35 @@ export default function Digest() {
         }
       });
 
+    fetchVisitsWithOverhead(
+      startDayobs,
+      queryEndDayobs,
+      instrument,
+      abortController,
+    )
+      .then((visits) => {
+        setVisits(visits);
+        if (visits.length === 0) {
+          toast.warning(
+            "No visits found through rubin-nights for the selected date range.",
+          );
+        }
+      })
+      .catch((err) => {
+        if (!abortController.signal.aborted) {
+          const msg = err?.message;
+          toast.error("Error fetching time accounting data!", {
+            description: msg,
+            duration: Infinity,
+          });
+        }
+      })
+      .finally(() => {
+        if (!abortController.signal.aborted) {
+          setVisitsLoading(false);
+        }
+      });
+
     return () => {
       abortController.abort();
     };
@@ -336,12 +370,11 @@ export default function Digest() {
               nightreportLoading={nightreportLoading}
             />
             <TimeAccountingApplet
-              exposuresLoading={exposuresLoading}
-              almanacLoading={almanacLoading}
+              visits={visits}
+              visitsLoading={visitsLoading}
               sumExpTime={sumExpTime}
               nightHours={nightHours}
-              exposureFields={exposureFields}
-              weatherLoss={weatherLoss}
+              // weatherLoss={weatherLoss}
               faultLoss={faultLoss}
             />
             <Applet />
