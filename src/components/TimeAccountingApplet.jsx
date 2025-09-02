@@ -133,7 +133,48 @@ function TimeAccountingApplet({
               <img src={InfoIcon} />
             </PopoverTrigger>
             <PopoverContent className="bg-black text-white text-sm border-yellow-700 w-[300px]">
-              Time Accounting Description.
+              <p>
+                Breakdown of observable and non-observable time during selected
+                range.
+              </p>
+              <br />
+
+              <p>
+                <strong>Total Observable Time:</strong> Total time between
+                nautical twilights.
+              </p>
+              <br />
+
+              <p>
+                <strong>Exposures:</strong> Total Exposure time where{" "}
+                <code>can_see_sky</code> is <code>true</code>.
+              </p>
+              <br />
+
+              <p>
+                <strong>Not Exposures:</strong> Total inter-exposure time
+                between nautical twilights.
+              </p>
+              <p>
+                <ul className="p-2 list-inside list-disc">
+                  <li>
+                    <strong>Gaps:</strong> Inter-exposure time between exposures
+                    (includes readout & slew)
+                  </li>
+                  <li>
+                    <strong>Gaps (Filter):</strong> Inter-exposure time with
+                    filter change
+                  </li>
+                  <li>
+                    <strong>Fault:</strong> Time lost to faults (from narrative
+                    log)
+                  </li>
+                  <li>
+                    <strong>Weather:</strong> Time lost to weather (from
+                    narrative log)
+                  </li>
+                </ul>
+              </p>
             </PopoverContent>
           </Popover>
         </div>
