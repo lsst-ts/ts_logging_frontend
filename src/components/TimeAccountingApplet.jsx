@@ -103,7 +103,7 @@ function TimeAccountingApplet({
       name: "Fault",
       value: faultLoss,
       color: "hsl(0, 70%, 50%)",
-      label: "Time Lost to Faults",
+      label: "Time lost to Faults",
     },
     {
       name: "Weather",
