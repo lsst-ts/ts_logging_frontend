@@ -13,11 +13,13 @@ import { Cell, Bar, BarChart, XAxis, YAxis } from "recharts";
 import { DateTime } from "luxon";
 
 function TimeAccountingApplet({
-  visits,
-  visitsLoading,
+  exposuresLoading,
+  almanacLoading,
   sumExpTime,
   nightHours,
-  // weatherLoss,
+  exposureFields,
+  weatherLoss,
+  faultLoss,
 }) {
   const expPercent = Math.round((sumExpTime / (nightHours * 3600)) * 100);
   const nonExpPercent = 100 - expPercent;
@@ -25,7 +27,7 @@ function TimeAccountingApplet({
   const data = useMemo(
     () =>
       // fallback to empty array if exposureFields is undefined
-      (visits ?? []).map((entry) => {
+      (exposureFields ?? []).map((entry) => {
         // Convert obs_start and obs_end to DateTime objects
         const obsStart = entry["obs_start"];
         const obsEnd = entry["obs_end"];
@@ -43,45 +45,34 @@ function TimeAccountingApplet({
         }
         return { ...entry, obs_start_dt, obs_end_dt };
       }),
-    [visits],
+    [exposureFields],
   );
 
-  const canSeeSkyData = useMemo(
+  const sortedData = useMemo(
     () =>
       // fallback to empty array if data is undefined
-      (data ?? []).filter(
-        (d) => d.obs_start_dt.isValid && d.obs_end_dt.isValid && d.can_see_sky,
-      ),
+      (data ?? [])
+        .filter((d) => d.obs_start_dt.isValid && d.obs_end_dt.isValid)
+        .sort((a, b) => a.obs_start_dt - b.obs_start_dt),
     [data],
   );
 
-  const [gapWithFilterChange, gapWithoutFilterChange, calculatedOverhead] =
-    useMemo(() => {
-      let filterChange = 0;
-      let noFilterChange = 0;
-      let overhead = 0;
-      for (let i = 0; i < canSeeSkyData.length - 1; i++) {
-        const currentExp = canSeeSkyData[i];
-        const nextExp = canSeeSkyData[i + 1];
-        overhead += currentExp.overhead || 0;
-        if (nextExp.day_obs !== currentExp.day_obs) continue; // skip if not the same night
-        const gap = nextExp.obs_start_dt - currentExp.obs_end_dt;
-        if (currentExp.band === nextExp.band) {
-          noFilterChange += gap;
-        } else {
-          filterChange += gap;
-        }
+  const [gapWithFilterChange, gapWithoutFilterChange] = useMemo(() => {
+    let filterChange = 0;
+    let noFilterChange = 0;
+    for (let i = 0; i < sortedData.length - 1; i++) {
+      const currentExp = sortedData[i];
+      const nextExp = sortedData[i + 1];
+      if (nextExp.day_obs !== currentExp.day_obs) continue; // skip if not the same night
+      const gap = nextExp.obs_start_dt - currentExp.obs_end_dt;
+      if (currentExp.band === nextExp.band) {
+        noFilterChange += gap;
+      } else {
+        filterChange += gap;
       }
-      overhead += canSeeSkyData[canSeeSkyData.length - 1]?.overhead || 0;
-      return [
-        filterChange / 3600000,
-        noFilterChange / 3600000,
-        overhead / 3600,
-      ]; // convert gaps from ms to hours and overhead from seconds to hours
-    }, [canSeeSkyData]);
-
-  const calculatedFaultTime =
-    nightHours - sumExpTime / 3600 - calculatedOverhead;
+    }
+    return [filterChange / 3600000, noFilterChange / 3600000]; // convert ms to hours
+  }, [sortedData]);
 
   const chartConfig = {
     gaps: {
@@ -109,23 +100,17 @@ function TimeAccountingApplet({
       label: "Inter-Exposure time (with filter change)",
     },
     {
-      name: "Overhead",
-      value: calculatedOverhead,
-      color: "hsl(80, 70%, 50%)",
-      label: "Calculated Overhead (readout and filter change)",
+      name: "Fault",
+      value: faultLoss,
+      color: "hsl(0, 70%, 50%)",
+      label: "Time Lost to Faults",
     },
     {
-      name: "Fault",
-      value: calculatedFaultTime,
-      color: "hsl(0, 70%, 50%)",
-      label: "Calculated Fault time between exposures",
+      name: "Weather",
+      value: weatherLoss,
+      color: "hsl(80, 70%, 50%)",
+      label: "Time lost to Weather",
     },
-    // {
-    //   name: "Weather",
-    //   value: weatherLoss,
-    //   color: "#c27aff",
-    //   label: "Time lost to Weather",
-    // },
   ];
 
   return (
@@ -181,18 +166,13 @@ function TimeAccountingApplet({
                     filter change
                   </li>
                   <li>
-                    <strong>Overhead:</strong> Calculated Readout time when not
-                    slewing + filter change time if applicable + any setting
-                    time after slewing
+                    <strong>Fault:</strong> Time lost to faults (from narrative
+                    log)
                   </li>
                   <li>
-                    <strong>Fault:</strong> Calculated fault time between
-                    exposures
-                  </li>
-                  {/* <li>
                     <strong>Weather:</strong> Time lost to weather (from
                     narrative log)
-                  </li> */}
+                  </li>
                 </ul>
               </div>
             </PopoverContent>
@@ -200,7 +180,7 @@ function TimeAccountingApplet({
         </div>
       </CardHeader>
       <CardContent className="flex flex-col gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 h-[320px] font-thin">
-        {visitsLoading ? (
+        {exposuresLoading || almanacLoading ? (
           <div className="flex-grow grid grid-cols-3 w-full h-full gap-2">
             <Skeleton className="col-span-1 h-full min-h-[180px] bg-stone-900" />
             <Skeleton className="col-span-2 h-full min-h-[180px] bg-stone-900" />

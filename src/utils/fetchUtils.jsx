@@ -292,40 +292,6 @@ const fetchDataLogEntriesFromExposureLog = async (
   }
 };
 
-/**
- * Fetches exposures with calculated valid overhead using rubin-nights
- * for a given date range and instrument.
- *
- * @async
- * @function fetchVisitsWithOverhead
- * @param {string} start - The start date of the observation range (format: YYYY-MM-DD).
- * @param {string} end - The end date of the observation range (format: YYYY-MM-DD).
- * @param {string} instrument - The instrument to filter exposure entries.
- * @param {AbortController} abortController - The AbortController used to cancel the request if needed.
- * @returns {Promise<Object[]>} A promise that resolves to an array of exposures.
- * @throws {Error} Throws an error if the fetch fails or returns invalid data and the request was not aborted.
- */
-const fetchVisitsWithOverhead = async (
-  start,
-  end,
-  instrument,
-  abortController,
-) => {
-  const url = `${backendLocation}/visits-with-valid-overhead?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
-  try {
-    const data = await fetchData(url, abortController);
-    return data.visits;
-  } catch (err) {
-    if (err.name !== "AbortError") {
-      console.error(
-        "Error fetching visits with valid overhead from rubin-nights:",
-        err,
-      );
-    }
-    throw err;
-  }
-};
-
 export {
   fetchExposures,
   fetchAlmanac,
@@ -335,5 +301,4 @@ export {
   fetchJiraTickets,
   fetchDataLogEntriesFromConsDB,
   fetchDataLogEntriesFromExposureLog,
-  fetchVisitsWithOverhead,
 };
