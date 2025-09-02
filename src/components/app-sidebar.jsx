@@ -46,7 +46,7 @@ export function AppSidebar({ ...props }) {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="pl-10 pr-8 py-8">
+      <SidebarFooter className="px-10 py-8">
         <div className="text-xs text-gray-500">
           <p>
             Nightly Digest{" "}
