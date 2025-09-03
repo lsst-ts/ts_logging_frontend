@@ -1,1 +1,0 @@
-Discard exposure time that starts outside the nautical twilights when calculating efficiency.

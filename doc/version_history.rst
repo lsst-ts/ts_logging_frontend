@@ -1,3 +1,32 @@
+v0.8.0 (2025-09-02)
+===================
+
+New Features
+------------
+
+- Plots page added (`OSW-664 <https://rubinobs.atlassian.net//browse/OSW-664>`_)
+- Add the Time Accounting applet. (`OSW-665 <https://rubinobs.atlassian.net//browse/OSW-665>`_)
+- Add night summary applet. (`OSW-667 <https://rubinobs.atlassian.net//browse/OSW-667>`_)
+- Add dome temperature column to data log. (`OSW-780 <https://rubinobs.atlassian.net//browse/OSW-780>`_)
+- Discard exposure time that starts outside the nautical twilights when calculating efficiency. (`OSW-832 <https://rubinobs.atlassian.net//browse/OSW-832>`_)
+- Add context feed in progress page. (`OSW-945 <https://rubinobs.atlassian.net//browse/OSW-945>`_)
+
+
+Bug Fixes
+---------
+
+- Fix NightSummary header layout when the day selector is not shown. (`OSW-667 <https://rubinobs.atlassian.net//browse/OSW-667>`_)
+- Update `calculateEfficiency` util function to accept `weatherLoss` in hours not seconds. (`OSW-887 <https://rubinobs.atlassian.net//browse/OSW-887>`_)
+
+
+Other Changes and Additions
+---------------------------
+
+- Change PSF Seeing label as requested, add other exp data to the tooltip (`OSW-853 <https://rubinobs.atlassian.net//browse/OSW-853>`_)
+- Add Nightly Digest release no and links to frontend and backend version history in the footer of the sidebar. (`OSW-867 <https://rubinobs.atlassian.net//browse/OSW-867>`_)
+- Update content labels in upcoming applets. (`OSW-937 <https://rubinobs.atlassian.net//browse/OSW-937>`_)
+
+
 v0.7.1 (2025-08-07)
 ===================
 

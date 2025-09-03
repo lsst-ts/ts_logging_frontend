@@ -1,1 +1,0 @@
-Add Nightly Digest release no and links to frontend and backend version history in the footer of the sidebar.
