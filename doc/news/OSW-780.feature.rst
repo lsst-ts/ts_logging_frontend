@@ -1,1 +1,0 @@
-Add dome temperature column to data log.
