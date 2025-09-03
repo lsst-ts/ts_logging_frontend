@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
-import Applet from "@/components/applet.jsx";
 import AppletExposures from "@/components/applet-exposures.jsx";
 import MetricsCard from "@/components/metrics-card.jsx";
+import VisitMap from "@/components/applet-visit-map.jsx";
 
 import { EfficiencyChart } from "@/components/ui/RadialChart.jsx";
 import ShutterIcon from "../assets/ShutterIcon.svg";
@@ -344,7 +344,7 @@ export default function Digest() {
               weatherLoss={weatherLoss}
               faultLoss={faultLoss}
             />
-            <Applet />
+            <VisitMap endDayobs={endDayobs} />
           </div>
         </div>
       </div>
