@@ -59,7 +59,7 @@ export function AppSidebar({ ...props }) {
             <a
               className="text-blue-500 hover:underline"
               target="_blank"
-              href="https://github.com/lsst-ts/ts_logging_frontend/blob/develop/doc/version_history.rst"
+              href="https://github.com/lsst-ts/ts_logging_frontend/blob/main/doc/version_history.rst"
             >
               Frontend
             </a>
@@ -67,7 +67,7 @@ export function AppSidebar({ ...props }) {
             <a
               className="text-blue-500 hover:underline"
               target="_blank"
-              href="https://github.com/lsst-ts/ts_logging_and_reporting/blob/develop/doc/version_history.rst"
+              href="https://github.com/lsst-ts/ts_logging_and_reporting/blob/main/doc/version_history.rst"
             >
               Backend
             </a>
