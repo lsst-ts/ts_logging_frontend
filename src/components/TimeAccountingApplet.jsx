@@ -17,10 +17,11 @@ function TimeAccountingApplet({
   visitsLoading,
   sumExpTime,
   nightHours,
-  // weatherLoss,
+  openDomeHours,
 }) {
   const expPercent = Math.round((sumExpTime / (nightHours * 3600)) * 100);
   const nonExpPercent = 100 - expPercent;
+  const closeDomeHours = nightHours - openDomeHours;
 
   const data = useMemo(
     () =>
@@ -93,7 +94,7 @@ function TimeAccountingApplet({
       color: "hsl(40, 70%, 50%)",
     },
     fault: { label: "Fault", color: "hsl(0, 70%, 50%)" },
-    weather: { label: "Weather", color: "hsl(80, 70%, 50%)" },
+    domeClose: { label: "dome_close", color: "hsl(80, 70%, 50%)" },
   };
   const chartData = [
     {
@@ -115,17 +116,17 @@ function TimeAccountingApplet({
       label: "Calculated Overhead (readout and filter change)",
     },
     {
+      name: "Closed Dome",
+      value: closeDomeHours < 0 ? 0 : closeDomeHours,
+      color: "#c27aff",
+      label: "Closed Dome",
+    },
+    {
       name: "Fault",
       value: calculatedFaultTime,
       color: "hsl(0, 70%, 50%)",
       label: "Calculated Fault time between exposures",
     },
-    // {
-    //   name: "Weather",
-    //   value: weatherLoss,
-    //   color: "#c27aff",
-    //   label: "Time lost to Weather",
-    // },
   ];
 
   return (
@@ -189,10 +190,10 @@ function TimeAccountingApplet({
                     <strong>Fault:</strong> Calculated fault time between
                     exposures
                   </li>
-                  {/* <li>
-                    <strong>Weather:</strong> Time lost to weather (from
-                    narrative log)
-                  </li> */}
+                  <li>
+                    <strong>Closed Dome:</strong> Calculated time where the dome
+                    was closed (from ~50% positionActual shutter values)
+                  </li>
                 </ul>
               </div>
             </PopoverContent>
@@ -245,7 +246,7 @@ function TimeAccountingApplet({
                   width={380}
                   height={250}
                   data={chartData}
-                  margin={{ top: 10, right: 10, left: 25, bottom: 0 }}
+                  margin={{ top: 10, right: 10, left: 20, bottom: 0 }}
                 >
                   <XAxis
                     dataKey="name"
@@ -267,7 +268,7 @@ function TimeAccountingApplet({
                       dy: 10,
                     }}
                   />
-                  <Bar dataKey="value" barSize="30" stackId="a">
+                  <Bar dataKey="value" barSize="25" stackId="a">
                     {chartData.map((entry, index) => (
                       <Cell
                         key={`cell-${index}`}

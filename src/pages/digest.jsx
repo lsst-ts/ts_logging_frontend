@@ -16,7 +16,6 @@ import {
   fetchNightreport,
   fetchExposureFlags,
   fetchJiraTickets,
-  fetchVisitsWithOverhead,
 } from "@/utils/fetchUtils";
 import {
   calculateEfficiency,
@@ -57,8 +56,7 @@ export default function Digest() {
 
   const [flagsLoading, setFlagsLoading] = useState(true);
   const [almanacInfo, setAlmanacInfo] = useState([]);
-  const [visitsLoading, setVisitsLoading] = useState(true);
-  const [visits, setVisits] = useState([]);
+  const [openDomeHours, setOpenDomeHours] = useState(0.0);
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -85,8 +83,7 @@ export default function Digest() {
     setReports([]);
     setOnSkyExpCount(0);
     setFlags([]);
-    setVisits([]);
-    setVisitsLoading(true);
+    setOpenDomeHours(0.0);
 
     fetchExposures(startDayobs, queryEndDayobs, instrument, abortController)
       .then(
@@ -96,6 +93,7 @@ export default function Digest() {
           exposureTime,
           onSkyExpNo,
           totalOnSkyExpTime,
+          openDome,
         ]) => {
           setExposureFields(exposureFields);
           setExposureCount(exposuresNo);
@@ -103,6 +101,7 @@ export default function Digest() {
           setOnSkyExpCount(onSkyExpNo);
           setSumOnSkyExpTime(totalOnSkyExpTime);
           setExposuresLoading(false);
+          setOpenDomeHours(openDome);
           if (exposuresNo === 0) {
             toast.warning("No exposures found for the selected date range.");
           }
@@ -237,35 +236,6 @@ export default function Digest() {
         }
       });
 
-    fetchVisitsWithOverhead(
-      startDayobs,
-      queryEndDayobs,
-      instrument,
-      abortController,
-    )
-      .then((visits) => {
-        setVisits(visits);
-        if (visits.length === 0) {
-          toast.warning(
-            "No visits found through rubin-nights for the selected date range.",
-          );
-        }
-      })
-      .catch((err) => {
-        if (!abortController.signal.aborted) {
-          const msg = err?.message;
-          toast.error("Error fetching time accounting data!", {
-            description: msg,
-            duration: Infinity,
-          });
-        }
-      })
-      .finally(() => {
-        if (!abortController.signal.aborted) {
-          setVisitsLoading(false);
-        }
-      });
-
     return () => {
       abortController.abort();
     };
@@ -370,12 +340,11 @@ export default function Digest() {
               nightreportLoading={nightreportLoading}
             />
             <TimeAccountingApplet
-              visits={visits}
-              visitsLoading={visitsLoading}
-              sumExpTime={sumExpTime}
+              visits={exposureFields}
+              visitsLoading={almanacLoading || exposuresLoading}
+              sumExpTime={sumOnSkyExpTime}
               nightHours={nightHours}
-              // weatherLoss={weatherLoss}
-              faultLoss={faultLoss}
+              openDomeHours={openDomeHours}
             />
             <VisitMap endDayobs={endDayobs} />
           </div>
