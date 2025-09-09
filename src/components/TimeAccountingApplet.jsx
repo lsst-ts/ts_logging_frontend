@@ -253,11 +253,11 @@ function TimeAccountingApplet({
                     tick={{ fill: "#ffffff" }}
                     angle={45}
                     interval={0}
-                    height={60}
+                    height={65}
                     textAnchor="start"
                   />
                   <YAxis
-                    width={5}
+                    width={15}
                     tick={{ fill: "#ffffff" }}
                     label={{
                       value: "Hours",
