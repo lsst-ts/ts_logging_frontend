@@ -149,10 +149,7 @@ function TimeAccountingApplet({
               <img src={InfoIcon} />
             </PopoverTrigger>
             <PopoverContent className="bg-black text-white text-sm border-yellow-700 w-[300px]">
-              <p>
-                Breakdown of observable and non-observable time during selected
-                dayobs range.
-              </p>
+              <p>Breakdown of observable time during selected dayobs range.</p>
               <br />
 
               <p>
