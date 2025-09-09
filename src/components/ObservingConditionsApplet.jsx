@@ -355,7 +355,7 @@ function ObservingConditionsApplet({
   // A gap is defined as a period longer than GAP_THRESHOLD (5 minutes)
   const gapAreas = useMemo(() => {
     const gaps = [];
-    for (const [_, all_exps] of Object.entries(groupedByDayobs)) {
+    for (const all_exps of Object.values(groupedByDayobs)) {
       const exps = all_exps.filter(
         (d) =>
           isValidNumber(d.psf_median) && isValidNumber(d.zero_point_median),
