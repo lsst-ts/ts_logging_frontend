@@ -1,0 +1,1 @@
+In observing conditions applet, don't show gaps if the exposure is off sky or if psf_median and zero_point_median are null 
