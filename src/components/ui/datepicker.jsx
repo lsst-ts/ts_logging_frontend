@@ -63,6 +63,7 @@ export function DatePicker({ selectedDate, onDateChange, mode = "single" }) {
           mode={mode}
           selected={date}
           onSelect={handleChange}
+          defaultMonth={new Date(date?.getFullYear(), date?.getMonth())}
           initialFocus
         />
       </PopoverContent>
