@@ -340,8 +340,8 @@ export default function Digest() {
               nightreportLoading={nightreportLoading}
             />
             <TimeAccountingApplet
-              visits={exposureFields}
-              visitsLoading={almanacLoading || exposuresLoading}
+              exposures={exposureFields}
+              loading={almanacLoading || exposuresLoading}
               sumExpTime={sumOnSkyExpTime}
               nightHours={nightHours}
               openDomeHours={openDomeHours}

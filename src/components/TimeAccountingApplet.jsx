@@ -13,8 +13,8 @@ import { Cell, Bar, BarChart, XAxis, YAxis } from "recharts";
 import { DateTime } from "luxon";
 
 function TimeAccountingApplet({
-  visits,
-  visitsLoading,
+  exposures,
+  loading,
   sumExpTime,
   nightHours,
   openDomeHours,
@@ -26,7 +26,7 @@ function TimeAccountingApplet({
   const data = useMemo(
     () =>
       // fallback to empty array if exposureFields is undefined
-      (visits ?? []).map((entry) => {
+      (exposures ?? []).map((entry) => {
         // Convert obs_start and obs_end to DateTime objects
         const obsStart = entry["obs_start"];
         const obsEnd = entry["obs_end"];
@@ -44,7 +44,7 @@ function TimeAccountingApplet({
         }
         return { ...entry, obs_start_dt, obs_end_dt };
       }),
-    [visits],
+    [exposures],
   );
 
   const canSeeSkyData = useMemo(
@@ -201,7 +201,7 @@ function TimeAccountingApplet({
         </div>
       </CardHeader>
       <CardContent className="flex flex-col gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 h-[320px] font-thin">
-        {visitsLoading ? (
+        {loading ? (
           <div className="flex-grow grid grid-cols-3 w-full h-full gap-2">
             <Skeleton className="col-span-1 h-full min-h-[180px] bg-stone-900" />
             <Skeleton className="col-span-2 h-full min-h-[180px] bg-stone-900" />
