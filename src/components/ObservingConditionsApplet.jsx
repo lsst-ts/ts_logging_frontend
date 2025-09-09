@@ -34,7 +34,6 @@ import {
   DEFAULT_PIXEL_SCALE_MEDIAN,
   PSF_SIGMA_FACTOR,
   ISO_DATETIME_FORMAT,
-  getDayobsAlmanac,
 } from "@/utils/utils";
 
 // Constants for gap detection
@@ -287,7 +286,7 @@ function ObservingConditionsApplet({
     () =>
       // fallback to empty array if data is undefined
       (data ?? [])
-        .filter((d) => isValidNumber(d.obs_start_dt))
+        .filter((d) => isValidNumber(d.obs_start_dt) && d.can_see_sky)
         .sort((a, b) => a.obs_start_dt - b.obs_start_dt),
     [data],
   );
@@ -356,26 +355,14 @@ function ObservingConditionsApplet({
   // A gap is defined as a period longer than GAP_THRESHOLD (5 minutes)
   const gapAreas = useMemo(() => {
     const gaps = [];
-    for (const [dayobs, exps] of Object.entries(groupedByDayobs)) {
-      const dayobsAlm = getDayobsAlmanac(dayobs, almanacInfo);
-      for (let i = 0; i < exps.length; i++) {
+    for (const [_, all_exps] of Object.entries(groupedByDayobs)) {
+      const exps = all_exps.filter(
+        (d) =>
+          isValidNumber(d.psf_median) && isValidNumber(d.zero_point_median),
+      );
+      for (let i = 0; i < exps.length - 1; i++) {
         const curr = exps[i].obs_start_dt;
-        // set the next time to the end of the dayobs almanac
-        // if it is the last exposure of the dayobs
-        // use twilight_morning as next time (if almanac is available)
-        // otherwise use the current exp obs_start_dt (last gap will be zero)
-        let next;
-        if (i === exps.length - 1) {
-          next = dayobsAlm
-            ? DateTime.fromFormat(
-                dayobsAlm.twilight_morning,
-                ISO_DATETIME_FORMAT,
-              ).toMillis()
-            : exps[i].obs_start_dt;
-        } else {
-          next = exps[i + 1].obs_start_dt;
-        }
-
+        const next = exps[i + 1].obs_start_dt;
         const delta = next - curr;
         if (GAP_THRESHOLD < delta) {
           gaps.push({
@@ -389,12 +376,12 @@ function ObservingConditionsApplet({
       }
     }
     return gaps;
-  }, [groupedByDayobs, almanacInfo]);
+  }, [groupedByDayobs]);
 
   //group data by dayobs to handle multiple nights
   const groupedChartData = useMemo(() => {
     return Object.values(groupedByDayobs);
-  }, [chartData]);
+  }, [groupedByDayobs]);
 
   // Function to filter data by band
   // and return data with null values for other bands
