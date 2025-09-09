@@ -101,31 +101,31 @@ function TimeAccountingApplet({
       name: "Gaps",
       value: gapWithoutFilterChange,
       color: "hsl(200, 70%, 50%)",
-      label: "Inter-Exposure time (same filter)",
+      label: "Inter-exposure time (same filter)",
     },
     {
       name: "Gaps (Filter)",
       value: gapWithFilterChange,
       color: "hsl(40, 70%, 50%)",
-      label: "Inter-Exposure time (with filter change)",
+      label: "Inter-exposure time (with filter change)",
     },
     {
       name: "Overhead",
       value: calculatedOverhead,
       color: "hsl(80, 70%, 50%)",
-      label: "Calculated Overhead (readout and filter change)",
+      label: "Calculated overhead (readout and filter change)",
     },
     {
       name: "Closed Dome",
       value: closeDomeHours < 0 ? 0 : closeDomeHours,
       color: "#c27aff",
-      label: "Closed Dome",
+      label: "Closed dome",
     },
     {
       name: "Fault",
       value: calculatedFaultTime,
       color: "hsl(0, 70%, 50%)",
-      label: "Calculated Fault time between exposures",
+      label: "Calculated fault time between exposures",
     },
   ];
 
