@@ -179,7 +179,7 @@ function TimeAccountingApplet({
                     filter change
                   </li>
                   <li>
-                    <strong>Overhead:</strong> Calculated Readout time when not
+                    <strong>Overhead:</strong> Calculated readout time when not
                     slewing + filter change time if applicable + any setting
                     time after slewing
                   </li>
@@ -189,7 +189,8 @@ function TimeAccountingApplet({
                   </li>
                   <li>
                     <strong>Closed Dome:</strong> Calculated time where the dome
-                    was closed (from ~50% positionActual shutter values)
+                    was closed (from ~50% <code>positionActual</code> shutter
+                    values)
                   </li>
                 </ul>
               </div>
