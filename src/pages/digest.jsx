@@ -56,6 +56,7 @@ export default function Digest() {
 
   const [flagsLoading, setFlagsLoading] = useState(true);
   const [almanacInfo, setAlmanacInfo] = useState([]);
+  const [openDomeHours, setOpenDomeHours] = useState(0.0);
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -82,6 +83,7 @@ export default function Digest() {
     setReports([]);
     setOnSkyExpCount(0);
     setFlags([]);
+    setOpenDomeHours(0.0);
 
     fetchExposures(startDayobs, queryEndDayobs, instrument, abortController)
       .then(
@@ -91,6 +93,7 @@ export default function Digest() {
           exposureTime,
           onSkyExpNo,
           totalOnSkyExpTime,
+          openDome,
         ]) => {
           setExposureFields(exposureFields);
           setExposureCount(exposuresNo);
@@ -98,6 +101,7 @@ export default function Digest() {
           setOnSkyExpCount(onSkyExpNo);
           setSumOnSkyExpTime(totalOnSkyExpTime);
           setExposuresLoading(false);
+          setOpenDomeHours(openDome);
           if (exposuresNo === 0) {
             toast.warning("No exposures found for the selected date range.");
           }
@@ -336,13 +340,11 @@ export default function Digest() {
               nightreportLoading={nightreportLoading}
             />
             <TimeAccountingApplet
-              exposuresLoading={exposuresLoading}
-              almanacLoading={almanacLoading}
-              sumExpTime={sumExpTime}
+              exposures={exposureFields}
+              loading={almanacLoading || exposuresLoading}
+              sumExpTime={sumOnSkyExpTime}
               nightHours={nightHours}
-              exposureFields={exposureFields}
-              weatherLoss={weatherLoss}
-              faultLoss={faultLoss}
+              openDomeHours={openDomeHours}
             />
             <VisitMap endDayobs={endDayobs} />
           </div>

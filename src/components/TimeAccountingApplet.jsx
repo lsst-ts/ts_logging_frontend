@@ -13,21 +13,20 @@ import { Cell, Bar, BarChart, XAxis, YAxis } from "recharts";
 import { DateTime } from "luxon";
 
 function TimeAccountingApplet({
-  exposuresLoading,
-  almanacLoading,
+  exposures,
+  loading,
   sumExpTime,
   nightHours,
-  exposureFields,
-  weatherLoss,
-  faultLoss,
+  openDomeHours,
 }) {
   const expPercent = Math.round((sumExpTime / (nightHours * 3600)) * 100);
   const nonExpPercent = 100 - expPercent;
+  const closeDomeHours = nightHours - openDomeHours;
 
   const data = useMemo(
     () =>
       // fallback to empty array if exposureFields is undefined
-      (exposureFields ?? []).map((entry) => {
+      (exposures ?? []).map((entry) => {
         // Convert obs_start and obs_end to DateTime objects
         const obsStart = entry["obs_start"];
         const obsEnd = entry["obs_end"];
@@ -45,34 +44,45 @@ function TimeAccountingApplet({
         }
         return { ...entry, obs_start_dt, obs_end_dt };
       }),
-    [exposureFields],
+    [exposures],
   );
 
-  const sortedData = useMemo(
+  const canSeeSkyData = useMemo(
     () =>
       // fallback to empty array if data is undefined
-      (data ?? [])
-        .filter((d) => d.obs_start_dt.isValid && d.obs_end_dt.isValid)
-        .sort((a, b) => a.obs_start_dt - b.obs_start_dt),
+      (data ?? []).filter(
+        (d) => d.obs_start_dt.isValid && d.obs_end_dt.isValid && d.can_see_sky,
+      ),
     [data],
   );
 
-  const [gapWithFilterChange, gapWithoutFilterChange] = useMemo(() => {
-    let filterChange = 0;
-    let noFilterChange = 0;
-    for (let i = 0; i < sortedData.length - 1; i++) {
-      const currentExp = sortedData[i];
-      const nextExp = sortedData[i + 1];
-      if (nextExp.day_obs !== currentExp.day_obs) continue; // skip if not the same night
-      const gap = nextExp.obs_start_dt - currentExp.obs_end_dt;
-      if (currentExp.band === nextExp.band) {
-        noFilterChange += gap;
-      } else {
-        filterChange += gap;
+  const [gapWithFilterChange, gapWithoutFilterChange, calculatedOverhead] =
+    useMemo(() => {
+      let filterChange = 0;
+      let noFilterChange = 0;
+      let overhead = 0;
+      for (let i = 0; i < canSeeSkyData.length - 1; i++) {
+        const currentExp = canSeeSkyData[i];
+        const nextExp = canSeeSkyData[i + 1];
+        overhead += currentExp.overhead || 0;
+        if (nextExp.day_obs !== currentExp.day_obs) continue; // skip if not the same night
+        const gap = nextExp.obs_start_dt - currentExp.obs_end_dt;
+        if (currentExp.band === nextExp.band) {
+          noFilterChange += gap;
+        } else {
+          filterChange += gap;
+        }
       }
-    }
-    return [filterChange / 3600000, noFilterChange / 3600000]; // convert ms to hours
-  }, [sortedData]);
+      overhead += canSeeSkyData[canSeeSkyData.length - 1]?.overhead || 0;
+      return [
+        filterChange / 3600000,
+        noFilterChange / 3600000,
+        overhead / 3600,
+      ]; // convert gaps from ms to hours and overhead from seconds to hours
+    }, [canSeeSkyData]);
+
+  const calculatedFaultTime =
+    nightHours - sumExpTime / 3600 - calculatedOverhead;
 
   const chartConfig = {
     gaps: {
@@ -84,32 +94,38 @@ function TimeAccountingApplet({
       color: "hsl(40, 70%, 50%)",
     },
     fault: { label: "Fault", color: "hsl(0, 70%, 50%)" },
-    weather: { label: "Weather", color: "hsl(80, 70%, 50%)" },
+    domeClose: { label: "dome_close", color: "hsl(80, 70%, 50%)" },
   };
   const chartData = [
     {
       name: "Gaps",
       value: gapWithoutFilterChange,
       color: "hsl(200, 70%, 50%)",
-      label: "Inter-Exposure time (same filter)",
+      label: "Inter-exposure time (same filter)",
     },
     {
       name: "Gaps (Filter)",
       value: gapWithFilterChange,
       color: "hsl(40, 70%, 50%)",
-      label: "Inter-Exposure time (with filter change)",
+      label: "Inter-exposure time (with filter change)",
+    },
+    {
+      name: "Overhead",
+      value: calculatedOverhead,
+      color: "hsl(80, 70%, 50%)",
+      label: "Calculated overhead (readout and filter change)",
+    },
+    {
+      name: "Closed Dome",
+      value: closeDomeHours < 0 ? 0 : closeDomeHours,
+      color: "#c27aff",
+      label: "Closed dome",
     },
     {
       name: "Fault",
-      value: faultLoss,
+      value: calculatedFaultTime,
       color: "hsl(0, 70%, 50%)",
-      label: "Time lost to Faults",
-    },
-    {
-      name: "Weather",
-      value: weatherLoss,
-      color: "hsl(80, 70%, 50%)",
-      label: "Time lost to Weather",
+      label: "Calculated fault time between exposures",
     },
   ];
 
@@ -133,10 +149,7 @@ function TimeAccountingApplet({
               <img src={InfoIcon} />
             </PopoverTrigger>
             <PopoverContent className="bg-black text-white text-sm border-yellow-700 w-[300px]">
-              <p>
-                Breakdown of observable and non-observable time during selected
-                dayobs range.
-              </p>
+              <p>Breakdown of observable time during selected dayobs range.</p>
               <br />
 
               <p>
@@ -166,12 +179,18 @@ function TimeAccountingApplet({
                     filter change
                   </li>
                   <li>
-                    <strong>Fault:</strong> Time lost to faults (from narrative
-                    log)
+                    <strong>Overhead:</strong> Calculated readout time when not
+                    slewing + filter change time if applicable + any setting
+                    time after slewing
                   </li>
                   <li>
-                    <strong>Weather:</strong> Time lost to weather (from
-                    narrative log)
+                    <strong>Fault:</strong> Calculated fault time between
+                    exposures
+                  </li>
+                  <li>
+                    <strong>Closed Dome:</strong> Calculated time where the dome
+                    was closed (from ~50% <code>positionActual</code> shutter
+                    values)
                   </li>
                 </ul>
               </div>
@@ -180,7 +199,7 @@ function TimeAccountingApplet({
         </div>
       </CardHeader>
       <CardContent className="flex flex-col gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 h-[320px] font-thin">
-        {exposuresLoading || almanacLoading ? (
+        {loading ? (
           <div className="flex-grow grid grid-cols-3 w-full h-full gap-2">
             <Skeleton className="col-span-1 h-full min-h-[180px] bg-stone-900" />
             <Skeleton className="col-span-2 h-full min-h-[180px] bg-stone-900" />
@@ -225,18 +244,18 @@ function TimeAccountingApplet({
                   width={380}
                   height={250}
                   data={chartData}
-                  margin={{ top: 10, right: 10, left: 25, bottom: 0 }}
+                  margin={{ top: 10, right: 10, left: 20, bottom: 0 }}
                 >
                   <XAxis
                     dataKey="name"
                     tick={{ fill: "#ffffff" }}
                     angle={45}
                     interval={0}
-                    height={60}
+                    height={65}
                     textAnchor="start"
                   />
                   <YAxis
-                    width={5}
+                    width={15}
                     tick={{ fill: "#ffffff" }}
                     label={{
                       value: "Hours",
@@ -247,7 +266,7 @@ function TimeAccountingApplet({
                       dy: 10,
                     }}
                   />
-                  <Bar dataKey="value" barSize="30" stackId="a">
+                  <Bar dataKey="value" barSize="25" stackId="a">
                     {chartData.map((entry, index) => (
                       <Cell
                         key={`cell-${index}`}
