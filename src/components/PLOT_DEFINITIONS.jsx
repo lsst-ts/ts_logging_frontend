@@ -163,6 +163,7 @@ export const PLOT_DEFINITIONS = [
   { key: "aos fwhm", unit: "arcsec" },
   { key: "donut blur fwhm", unit: "arcsec" },
   { key: "physical rotator angle", unit: "degree" },
+  { key: "dimm seeing", unit: "arcsec", title: "DIMM Seeing" },
 ];
 
 export const PLOT_COLOR_OPTIONS = [
