@@ -1,3 +1,20 @@
+v1.2.3 (2025-09-16)
+===================
+
+New Features
+------------
+
+- Show fault time in Time accounting applet based on the calculated overhead for each exposure as well as calculated dome closed time from rubin-nights (`OSW-992 <https://rubinobs.atlassian.net//browse/OSW-992>`_)
+
+
+Other Changes and Additions
+---------------------------
+
+- The calendar defaults to the date last entered (`OSW-909 <https://rubinobs.atlassian.net//browse/OSW-909>`_)
+- In observing conditions applet, don't show gaps if the exposure is off sky or if psf_median and zero_point_median are null (`OSW-994 <https://rubinobs.atlassian.net//browse/OSW-994>`_)
+- Update sidebar link to go to main instead of develop. (`OSW-998 <https://rubinobs.atlassian.net//browse/OSW-998>`_)
+
+
 v0.8.0 (2025-09-02)
 ===================
 
