@@ -1,0 +1,1 @@
+The calendar defaults to the date last entered
