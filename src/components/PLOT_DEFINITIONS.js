@@ -184,6 +184,14 @@ export const PLOT_DOT_OPTIONS = [
   { key: "dots", label: "Dots" },
 ];
 
+export const PLOT_KEY_TIME = "time";
+export const PLOT_KEY_SEQUENCE = "seq";
+
+export const PLOT_X_AXIS_OPTIONS = [
+  { key: PLOT_KEY_TIME, label: "Time" },
+  { key: PLOT_KEY_SEQUENCE, label: "Sequence Number" },
+];
+
 export const PLOT_BAND_MARKER_OPTIONS = [
   { key: "none", label: "None" },
   { key: "bandColor", label: "Colors" },

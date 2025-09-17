@@ -185,6 +185,22 @@ function getValidTimeRange(startMillis, endMillis, fullTimeRange) {
     }
   }
   return fullTimeRange;
+ * Generates an array of strings representing dayObs between two dayObs (inclusive).
+ * Both parameters are strings or ints in the format "yyyyMMdd"
+ *
+ * @param {String|Int} start - The first dayObs
+ * @param {String|Int} end - The final dayObs in the range
+ * @returns {[String]} - All dayObs between the two parameters, inclusive.
+ */
+function generateDayObsRange(start, end) {
+  const startDate = DateTime.fromFormat(start.toString(), "yyyyMMdd");
+  const endDate = DateTime.fromFormat(end.toString(), "yyyyMMdd");
+
+  let dates = [];
+  for (let d = startDate; d <= endDate; d = d.plus({ days: 1 })) {
+    dates.push(d.toFormat("yyyyMMdd"));
+  }
+  return dates;
 }
 
 export {
@@ -203,4 +219,5 @@ export {
   getValidTimeRange,
   ISO_DATETIME_FORMAT,
   TAI_OFFSET_SECONDS,
+  generateDayObsRange,
 };

@@ -19,7 +19,11 @@ import {
 
 import Timeline from "@/components/Timeline";
 import TimeseriesPlot from "@/components/TimeseriesPlot";
-import { PLOT_DEFINITIONS, BAND_COLORS } from "@/components/PLOT_DEFINITIONS";
+import {
+  PLOT_DEFINITIONS,
+  BAND_COLORS,
+  PLOT_KEY_TIME,
+} from "@/components/PLOT_DEFINITIONS";
 
 import {
   fetchAlmanac,
@@ -38,6 +42,7 @@ import {
   getDayobsEndTAI,
   almanacDayobsForPlot,
   utcDateTimeStrToTAIMillis,
+  generateDayObsRange,
 } from "@/utils/timeUtils";
 
 function Plots() {
@@ -60,7 +65,7 @@ function Plots() {
 
   // Data
   const [dataLogEntries, setDataLogEntries] = useState([]);
-  const [availableDayobs, setAvailableDayobs] = useState([]);
+  const [availableDayObs, setAvailableDayObs] = useState([]);
   const [dataLogLoading, setDataLogLoading] = useState(true);
 
   // Twilights, moonrise/set and brightness
@@ -80,7 +85,8 @@ function Plots() {
   );
 
   // Plot format
-  const [plotShape, setPlotShape] = useState("dots");
+  const [xAxisType, setXAxisType] = useState(PLOT_KEY_TIME);
+  const [plotShape, setPlotShape] = useState("line");
   const [plotColor, setPlotColor] = useState("assorted");
   const [bandMarker, setBandMarker] = useState("bandColorsIcons");
 
@@ -106,17 +112,7 @@ function Plots() {
       .sort((a, b) => a.obs_start_millis - b.obs_start_millis);
 
     // Get all available dayobs
-    const dayobsRange = [
-      ...new Set(
-        data
-          .map((entry) => entry["day obs"].toString())
-          .filter((str) => {
-            // Don't include NaNs
-            const num = Number(str);
-            return Number.isInteger(num);
-          }),
-      ),
-    ].sort((a, b) => Number(a) - Number(b));
+    const dayObsRange = generateDayObsRange(startDayobs, endDayobs);
 
     // Get first and last observations
     const firstObs = data.at(0)?.obs_start_dt ?? 0;
@@ -124,9 +120,9 @@ function Plots() {
 
     // Set static timeline axis to boundaries of queried dayobs
     let fullXRange = [];
-    if (dayobsRange.length > 0) {
-      const firstDayobs = dayobsRange[0];
-      const lastDayobs = dayobsRange[dayobsRange.length - 1];
+    if (dayObsRange.length > 0) {
+      const firstDayobs = dayObsRange[0];
+      const lastDayobs = dayObsRange[dayObsRange.length - 1];
 
       const startTimeOfFirstDayobs = getDayobsStartTAI(firstDayobs);
       const endTimeOfLastDayobs = getDayobsEndTAI(lastDayobs);
@@ -137,7 +133,7 @@ function Plots() {
         endTimeOfLastDayobs.plus({ minute: 1 }),
       ];
 
-      setAvailableDayobs(dayobsRange);
+      setAvailableDayObs(dayObsRange);
       setFullTimeRange(fullXRange);
       setSelectedTimeRange([firstObs, lastObs]);
     }
@@ -219,7 +215,7 @@ function Plots() {
   function resetState() {
     // ConsDB
     setDataLogEntries([]);
-    setAvailableDayobs([]);
+    setAvailableDayObs([]);
     setFullTimeRange([null, null]);
     setSelectedTimeRange([null, null]);
     // Almanac
@@ -448,6 +444,8 @@ function Plots() {
 
             {/* Plot format controls */}
             <PlotFormatPopover
+              xAxisType={xAxisType}
+              setXAxisType={setXAxisType}
               plotShape={plotShape}
               setPlotShape={setPlotShape}
               plotColor={plotColor}
@@ -486,6 +484,7 @@ function Plots() {
                     twilightValues={twilightValues}
                     // Show moon rise/set only on sky-related plots
                     {...(def?.showMoon ? { moonIntervals: moonIntervals } : {})}
+                    xAxisType={xAxisType}
                     fullTimeRange={fullTimeRange}
                     selectedTimeRange={selectedTimeRange}
                     setSelectedTimeRange={setSelectedTimeRange}
@@ -494,6 +493,7 @@ function Plots() {
                     bandMarker={bandMarker}
                     isBandPlot={!!def?.bandMarker}
                     plotIndex={idx}
+                    availableDayObs={availableDayObs}
                   />
                 );
               })}
@@ -513,7 +513,7 @@ function Plots() {
             <>
               <p>
                 For visit maps, visit the Scheduler-oriented night summaries:{" "}
-                {availableDayobs.map((dayobs, idx) => {
+                {availableDayObs.map((dayobs, idx) => {
                   const { url, label } = getNightSummaryLink(dayobs);
                   return (
                     <span key={dayobs}>
@@ -525,7 +525,7 @@ function Plots() {
                       >
                         {label}
                       </a>
-                      {idx < availableDayobs.length - 1 && ", "}
+                      {idx < availableDayObs.length - 1 && ", "}
                     </span>
                   );
                 })}
