@@ -80,9 +80,9 @@ function Plots() {
   );
 
   // Plot format
-  const [plotShape, setPlotShape] = useState("line");
+  const [plotShape, setPlotShape] = useState("dots");
   const [plotColor, setPlotColor] = useState("assorted");
-  const [bandMarker, setBandMarker] = useState("none");
+  const [bandMarker, setBandMarker] = useState("bandColorsIcons");
 
   function prepareExposureData(dataLog) {
     // Prepare data for plots
