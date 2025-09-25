@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar.jsx";
-import { AppSidebar } from "@/components/app-sidebar.jsx";
 import { DateTime } from "luxon";
 import { Outlet, useRouter, useSearch } from "@tanstack/react-router";
+
+import { SidebarProvider } from "@/components/ui/sidebar.jsx";
+import { SidebarToggle } from "@/components/SidebarToggle.jsx";
+import { AppSidebar } from "@/components/app-sidebar.jsx";
 import { TELESCOPES } from "@/components/parameters";
 import { getKeyByValue } from "@/utils/utils";
 
@@ -77,8 +79,8 @@ export default function Layout({ children }) {
           onInstrumentChange={handleInstrumentChange}
         />
         <main className="flex-1 bg-stone-800 overflow-x-hidden">
-          {/* Show/Hide Sidebar button */}
-          <SidebarTrigger className="color-teal-500 fixed hover:bg-sky-900 transition-colors duration-200" />
+          {/* Show/Hide Sidebar toggle */}
+          <SidebarToggle />
           {children}
           {/* Main content */}
           <Outlet />

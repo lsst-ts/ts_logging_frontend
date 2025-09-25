@@ -1,0 +1,1 @@
+Sidebar toggle displays, on hover, the keyboard shortcut.
