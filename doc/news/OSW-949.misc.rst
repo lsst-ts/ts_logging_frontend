@@ -1,0 +1,1 @@
+Plots default view uses dots and shows band markers and colors.
