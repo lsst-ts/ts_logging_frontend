@@ -81,26 +81,32 @@ function PlotVisibilityPopover({
             </button>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 max-h-[400px] overflow-y-auto pr-5">
-            {PLOT_DEFINITIONS.map(({ key, title }) => (
-              <div
-                key={key}
-                className="flex items-center space-x-2 opacity-100"
-              >
-                <Checkbox
-                  checked={visiblePlots.includes(key)}
-                  onCheckedChange={(checked) => togglePlot(key, !!checked)}
-                  disabled={!fieldStatus[key]}
-                />
-                <span
-                  className={`text-sm ${
-                    !fieldStatus[key] ? "text-gray-400 italic" : ""
-                  }`}
+            {[...PLOT_DEFINITIONS]
+              .sort((a, b) => {
+                const titleA = a.title || prettyTitleFromKey(a.key);
+                const titleB = b.title || prettyTitleFromKey(b.key);
+                return titleA.localeCompare(titleB);
+              })
+              .map(({ key, title }) => (
+                <div
+                  key={key}
+                  className="flex items-center space-x-2 opacity-100"
                 >
-                  {title || prettyTitleFromKey(key)}
-                  {!fieldStatus[key] && " (null)"}
-                </span>
-              </div>
-            ))}
+                  <Checkbox
+                    checked={visiblePlots.includes(key)}
+                    onCheckedChange={(checked) => togglePlot(key, !!checked)}
+                    disabled={!fieldStatus[key]}
+                  />
+                  <span
+                    className={`text-sm ${
+                      !fieldStatus[key] ? "text-gray-400 italic" : ""
+                    }`}
+                  >
+                    {title || prettyTitleFromKey(key)}
+                    {!fieldStatus[key] && " (null)"}
+                  </span>
+                </div>
+              ))}
           </div>
         </DialogContent>
       </Dialog>
