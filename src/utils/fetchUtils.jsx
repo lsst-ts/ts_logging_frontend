@@ -322,6 +322,38 @@ const fetchContextFeed = async (start, end, abortController) => {
   }
 };
 
+const fetchVisitMaps = async (start, end, instrument, abortController) => {
+  const url = `${backendLocation}/multi-night-visit-maps?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
+  try {
+    const data = await fetchData(url, abortController);
+    if (!data) {
+      throw new Error("No data returned for interactive visit maps");
+    }
+    return data.interactive;
+  } catch (err) {
+    if (err.name !== "AbortError") {
+      console.error("Error fetching visit maps:", err);
+    }
+    throw err;
+  }
+};
+
+const fetchSurveyProgressMap = async (end, instrument, abortController) => {
+  const url = `${backendLocation}/survey-progress-map?dayObs=${end}&instrument=${instrument}`;
+  try {
+    const data = await fetchData(url, abortController);
+    if (!data) {
+      throw new Error("No data returned for survey progress map");
+    }
+    return data.static;
+  } catch (err) {
+    if (err.name !== "AbortError") {
+      console.error("Error fetching survey progress map:", err);
+    }
+    throw err;
+  }
+};
+
 export {
   fetchExposures,
   fetchAlmanac,
@@ -332,4 +364,6 @@ export {
   fetchDataLogEntriesFromConsDB,
   fetchDataLogEntriesFromExposureLog,
   fetchContextFeed,
+  fetchVisitMaps,
+  fetchSurveyProgressMap,
 };
