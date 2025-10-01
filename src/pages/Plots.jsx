@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 import { toast } from "sonner";
 import { useSearch } from "@tanstack/react-router";
@@ -29,6 +29,8 @@ import {
 import {
   fetchAlmanac,
   fetchDataLogEntriesFromConsDB,
+  fetchVisitMaps,
+  // fetchSurveyProgressMap,
 } from "@/utils/fetchUtils";
 import {
   DEFAULT_PIXEL_SCALE_MEDIAN,
@@ -45,6 +47,36 @@ import {
   utcDateTimeStrToTAIMillis,
   generateDayObsRange,
 } from "@/utils/timeUtils";
+
+import * as Bokeh from "@bokeh/bokehjs";
+
+const MyBokehPlot = ({ plotData }) => {
+  const plotRef = useRef(null);
+  const embeddedRef = useRef(false);
+
+  useEffect(() => {
+    if (!plotData || embeddedRef.current === true) return;
+
+    if (plotRef.current) {
+      plotRef.current.innerHTML = "";
+      try {
+        Bokeh.embed.embed_item(plotData, plotRef.current);
+        embeddedRef.current = true;
+      } catch (error) {
+        console.error("Error embedding Bokeh plot:", error);
+      }
+    }
+
+    return () => {
+      if (plotRef.current) {
+        plotRef.current.innerHTML = "";
+        embeddedRef.current = false;
+      }
+    };
+  }, [plotData]);
+
+  return <div ref={plotRef} style={{ height: "auto", minHeight: "300px" }} />;
+};
 
 function Plots() {
   // Routing and URL params
@@ -91,6 +123,11 @@ function Plots() {
   const [plotShape, setPlotShape] = useState("dots");
   const [plotColor, setPlotColor] = useState("assorted");
   const [bandMarker, setBandMarker] = useState("bandColorsIcons");
+
+  const [interactiveMap, setInteractiveMap] = useState(null);
+  // const [staticMap, setStaticMap] = useState({});
+  const [visitMapsLoading, setVisitMapsLoading] = useState(false);
+  const [progressMapLoading, _] = useState(false);
 
   function prepareExposureData(dataLog) {
     // Prepare data for plots
@@ -234,6 +271,11 @@ function Plots() {
     setDataLogLoading(true);
     setAlmanacLoading(true);
 
+    setVisitMapsLoading(true);
+    setInteractiveMap(null);
+    // setProgressMapLoading(true);
+    // setStaticMap(null);
+
     resetState();
 
     fetchDataLogEntriesFromConsDB(
@@ -289,6 +331,47 @@ function Plots() {
           setAlmanacLoading(false);
         }
       });
+
+    fetchVisitMaps(startDayobs, queryEndDayobs, instrument, abortController)
+      .then((interactivePlot) => {
+        // console.log(interactivePlot);
+        // console.log(staticPlot);
+        setInteractiveMap(interactivePlot);
+        // setStaticMap(staticPlot);
+        // console.log(staticPlot);
+      })
+      .catch((err) => {
+        if (!abortController.signal.aborted) {
+          toast.error("Error fetching visit maps!", {
+            description: err?.message,
+            duration: Infinity,
+          });
+        }
+      })
+      .finally(() => {
+        if (!abortController.signal.aborted) {
+          setVisitMapsLoading(false);
+        }
+      });
+
+    // fetchSurveyProgressMap(endDayobs, instrument, abortController)
+    // .then((progressMapPlot) => {
+    //   // console.log(interactivePlot);
+    //   // console.log(staticPlot);
+    //   setStaticMap(progressMapPlot);
+    //   // console.log(staticPlot);
+    // }).catch((err) => {
+    //   if (!abortController.signal.aborted) {
+    //     toast.error("Error fetching survey progress map!", {
+    //       description: err?.message,
+    //       duration: Infinity,
+    //     });
+    //   }
+    // }).finally(() => {
+    //   if (!abortController.signal.aborted) {
+    //     setProgressMapLoading(false);
+    //   }
+    // });
 
     return () => {
       abortController.abort();
@@ -359,7 +442,7 @@ function Plots() {
               </p>
             </>
           )}
-          <div className="flex flex-col max-w-xxl mt-6 border border-1 border-white rounded-md p-2 gap-2">
+          <div className="flex flex-col max-w-xxl mt-6 border-1 border-white rounded-md p-2 gap-2">
             <p>
               <span className="font-medium">Click & Drag</span> on the timeline
               or on any plot to zoom in, and{" "}
@@ -419,7 +502,7 @@ function Plots() {
 
             {/* Conditionally display band icon/color key */}
             {bandMarker !== "none" && (
-              <div className="flex flex-row h-10 px-4 justify-between items-center gap-3 border border-1 border-white rounded-md text-white font-thin">
+              <div className="flex flex-row h-10 px-4 justify-between items-center gap-3 border-1 border-white rounded-md text-white font-thin">
                 <div>Bands:</div>
                 {Object.entries(BAND_COLORS).map(([band, color]) => {
                   const shapeMap = {
@@ -546,6 +629,52 @@ function Plots() {
                 error, the summary might not have been created for that day.
               </p>
             </>
+          )}
+        </div>
+
+        {/* Actual Visit Maps */}
+        <div className="mt-16 mxb-8 text-white font-thin text-center">
+          <h1 className="flex flex-row gap-2 text-white text-3xl uppercase justify-center pb-4">
+            <span className="tracking-[2px] font-extralight">Visit</span>
+            <span className="font-extrabold"> Maps</span>
+          </h1>
+          {visitMapsLoading ? (
+            <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
+          ) : (
+            <div className="flex flex-col w-full px-4 space-y-4 items-center">
+              {interactiveMap && (
+                <MyBokehPlot id="interactive-plot" plotData={interactiveMap} />
+              )}
+            </div>
+          )}
+          {/* <h1 className="flex flex-row gap-2 text-white text-3xl uppercase justify-center pb-4">
+            <span className="tracking-[2px] font-extralight">Survey</span>
+            <span className="font-extrabold"> Progress</span>
+          </h1> */}
+          {progressMapLoading ? (
+            <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
+          ) : (
+            <div className="flex flex-col w-full px-4 space-y-4 items-center">
+              {/* {staticMap &&
+                Object.entries(staticMap).map(([key, value]) => (
+                  <>
+                    <div className="text-xl">{key}</div>
+                    <MyBokehPlot id={`hpix_grid_${key}`} plotData={value} />
+                  </>
+                ))
+              } */}
+
+              {/* {staticMap && 
+                <MyBokehPlot id="hpix_grid" plotData={staticMap} /> 
+              } */}
+
+              {/* {staticMap && 
+                <img
+                  src={`data:image/png;base64,${staticMap}`}
+                  alt="Static matplotlib plot"
+                />
+              } */}
+            </div>
           )}
         </div>
       </div>
