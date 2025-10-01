@@ -411,22 +411,25 @@ function Plots() {
             {bandMarker !== "none" && (
               <div className="flex flex-row h-10 px-4 justify-between items-center gap-3 border border-1 border-white rounded-md text-white font-thin">
                 <div>Bands:</div>
-
                 {Object.entries(BAND_COLORS).map(([band, color]) => {
-                  // Map each band to its shape component
-                  const ShapeComponent = {
-                    u: "circle",
+                  const shapeMap = {
                     g: TriangleShape,
                     r: FlippedTriangleShape,
                     i: SquareShape,
                     z: StarShape,
                     y: AsteriskShape,
-                  }[band];
+                  };
+
+                  const ShapeComponent = shapeMap[band];
 
                   return (
                     <div key={band} className="flex items-center gap-1">
                       <svg width="16" height="16">
-                        <ShapeComponent cx={8} cy={8} fill={color} r={4} />
+                        {bandMarker === "bandColorsIcons" && ShapeComponent ? (
+                          <ShapeComponent cx={8} cy={8} fill={color} r={4} />
+                        ) : (
+                          <circle cx={8} cy={8} fill={color} r={5} />
+                        )}
                       </svg>
                       <span>{band}</span>
                     </div>
