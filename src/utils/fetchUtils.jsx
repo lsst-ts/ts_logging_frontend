@@ -322,8 +322,14 @@ const fetchContextFeed = async (start, end, abortController) => {
   }
 };
 
-const fetchVisitMaps = async (start, end, instrument, abortController) => {
-  const url = `${backendLocation}/multi-night-visit-maps?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
+const fetchVisitMaps = async (
+  start,
+  end,
+  instrument,
+  planisphereOnly,
+  abortController,
+) => {
+  const url = `${backendLocation}/multi-night-visit-maps?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}&planisphereOnly=${planisphereOnly}`;
   try {
     const data = await fetchData(url, abortController);
     if (!data) {

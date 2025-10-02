@@ -331,14 +331,16 @@ function Plots() {
           setAlmanacLoading(false);
         }
       });
-
-    fetchVisitMaps(startDayobs, queryEndDayobs, instrument, abortController)
+    // Visit maps, planisphereOnly = false
+    fetchVisitMaps(
+      startDayobs,
+      queryEndDayobs,
+      instrument,
+      false,
+      abortController,
+    )
       .then((interactivePlot) => {
-        // console.log(interactivePlot);
-        // console.log(staticPlot);
         setInteractiveMap(interactivePlot);
-        // setStaticMap(staticPlot);
-        // console.log(staticPlot);
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
@@ -684,3 +686,4 @@ function Plots() {
 }
 
 export default Plots;
+export { MyBokehPlot };
