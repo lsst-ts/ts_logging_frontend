@@ -3,7 +3,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import AppletExposures from "@/components/applet-exposures.jsx";
 import MetricsCard from "@/components/metrics-card.jsx";
-import VisitMap from "@/components/applet-visit-map.jsx";
+// import VisitMap from "@/components/applet-visit-map.jsx";
+import VisitMapApplet from "@/components/VisitMapApplet";
 
 import { EfficiencyChart } from "@/components/ui/RadialChart.jsx";
 import ShutterIcon from "../assets/ShutterIcon.svg";
@@ -16,6 +17,7 @@ import {
   fetchNightreport,
   fetchExposureFlags,
   fetchJiraTickets,
+  fetchVisitMaps,
 } from "@/utils/fetchUtils";
 import {
   calculateEfficiency,
@@ -46,17 +48,20 @@ export default function Digest() {
   const [flags, setFlags] = useState([]);
   const [reports, setReports] = useState([]);
 
-  const [exposuresLoading, setExposuresLoading] = useState(true);
-  const [almanacLoading, setAlmanacLoading] = useState(true);
-  const [narrativeLoading, setNarrativeLoading] = useState(true);
-  const [nightreportLoading, setNightreportLoading] = useState(true);
+  const [exposuresLoading, setExposuresLoading] = useState(false);
+  const [almanacLoading, setAlmanacLoading] = useState(false);
+  const [narrativeLoading, setNarrativeLoading] = useState(false);
+  const [nightreportLoading, setNightreportLoading] = useState(false);
 
   const [jiraTickets, setJiraTickets] = useState([]);
-  const [jiraLoading, setJiraLoading] = useState(true);
+  const [jiraLoading, setJiraLoading] = useState(false);
 
-  const [flagsLoading, setFlagsLoading] = useState(true);
+  const [flagsLoading, setFlagsLoading] = useState(false);
   const [almanacInfo, setAlmanacInfo] = useState([]);
   const [openDomeHours, setOpenDomeHours] = useState(0.0);
+
+  const [interactiveMap, setInteractiveMap] = useState(null);
+  const [visitMapLoading, setVisitMapLoading] = useState(false);
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -84,6 +89,9 @@ export default function Digest() {
     setOnSkyExpCount(0);
     setFlags([]);
     setOpenDomeHours(0.0);
+
+    setVisitMapLoading(true);
+    setInteractiveMap(null);
 
     fetchExposures(startDayobs, queryEndDayobs, instrument, abortController)
       .then(
@@ -235,6 +243,30 @@ export default function Digest() {
           setFlagsLoading(false);
         }
       });
+    // Visit maps, planisphereOnly = true
+    fetchVisitMaps(
+      startDayobs,
+      queryEndDayobs,
+      instrument,
+      true,
+      abortController,
+    )
+      .then((interactivePlot) => {
+        setInteractiveMap(interactivePlot);
+      })
+      .catch((err) => {
+        if (!abortController.signal.aborted) {
+          toast.error("Error fetching visit maps!", {
+            description: err?.message,
+            duration: Infinity,
+          });
+        }
+      })
+      .finally(() => {
+        if (!abortController.signal.aborted) {
+          setVisitMapLoading(false);
+        }
+      });
 
     return () => {
       abortController.abort();
@@ -346,7 +378,11 @@ export default function Digest() {
               nightHours={nightHours}
               openDomeHours={openDomeHours}
             />
-            <VisitMap endDayobs={endDayobs} />
+            {/* <VisitMap endDayobs={endDayobs} /> */}
+            <VisitMapApplet
+              mapData={interactiveMap}
+              mapLoading={visitMapLoading}
+            />
           </div>
         </div>
       </div>
