@@ -206,3 +206,30 @@ export const BAND_COLORS = {
   z: "#a7f9c1",
   y: "#fdc900",
 };
+
+// Plot styling constants
+export const PLOT_COLORS = {
+  gridStroke: "#555",
+  moonFill: "#EAB308",
+  twilightStroke: "#0ea5e9",
+  noDataFill: "#ccc",
+  defaultColor: "#ffffff",
+  activeDotFill: "#ffffff",
+};
+
+export const PLOT_DIMENSIONS = {
+  activeDotRadius: 4,
+  yAxisWidth: 70,
+  yAxisLabelFontSize: 16,
+  chartMargins: { top: 10, right: 0, left: 5, bottom: 0 },
+};
+
+export const PLOT_OPACITIES = {
+  overlay: 0.2,
+  selection: 0.3,
+};
+
+export const AXIS_TICK_STYLE = {
+  fill: "white",
+  style: { userSelect: "none" },
+};
