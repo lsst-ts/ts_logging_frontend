@@ -349,10 +349,10 @@ const fetchVisitMaps = async (
   start,
   end,
   instrument,
-  planisphereOnly,
   abortController,
+  { planisphereOnly = false, appletMode = false } = {},
 ) => {
-  const url = `${backendLocation}/multi-night-visit-maps?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}&planisphereOnly=${planisphereOnly}`;
+  const url = `${backendLocation}/multi-night-visit-maps?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}&planisphereOnly=${planisphereOnly}&appletMode=${appletMode}`;
   try {
     const data = await fetchData(url, abortController);
     if (!data) {

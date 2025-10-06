@@ -243,14 +243,10 @@ export default function Digest() {
           setFlagsLoading(false);
         }
       });
-    // Visit maps, planisphereOnly = true
-    fetchVisitMaps(
-      startDayobs,
-      queryEndDayobs,
-      instrument,
-      true,
-      abortController,
-    )
+    // Visit maps
+    fetchVisitMaps(startDayobs, queryEndDayobs, instrument, abortController, {
+      appletMode: true,
+    })
       .then((interactivePlot) => {
         setInteractiveMap(interactivePlot);
       })
