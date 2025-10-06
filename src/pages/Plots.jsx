@@ -75,7 +75,12 @@ const MyBokehPlot = ({ plotData }) => {
     };
   }, [plotData]);
 
-  return <div ref={plotRef} style={{ height: "auto", minHeight: "300px" }} />;
+  return (
+    <div
+      ref={plotRef}
+      style={{ height: "auto", width: "auto", minHeight: "300px" }}
+    />
+  );
 };
 
 function Plots() {
@@ -331,14 +336,8 @@ function Plots() {
           setAlmanacLoading(false);
         }
       });
-    // Visit maps, planisphereOnly = false
-    fetchVisitMaps(
-      startDayobs,
-      queryEndDayobs,
-      instrument,
-      false,
-      abortController,
-    )
+    // Visit maps
+    fetchVisitMaps(startDayobs, queryEndDayobs, instrument, abortController)
       .then((interactivePlot) => {
         setInteractiveMap(interactivePlot);
       })
