@@ -142,6 +142,17 @@ export const dataLogColumns = [
       tooltip: "Target of the observation.",
     },
   }),
+  columnHelper.accessor("physical_filter", {
+    header: "Filter",
+    cell: (info) => formatCellValue(info.getValue()),
+    size: 100,
+    filterFn: matchValueOrInList,
+    filterType: "string",
+    meta: {
+      tooltip:
+        "ID of physical filter, the filter associated with a particular instrument.",
+    },
+  }),
 
   // Flag Info
   columnHelper.accessor("exposure_flag", {
