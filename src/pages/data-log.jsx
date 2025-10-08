@@ -115,12 +115,13 @@ function DataLog() {
             const pixelScale = !isNaN(entry.pixel_scale_median)
               ? entry.pixel_scale_median
               : DEFAULT_PIXEL_SCALE_MEDIAN;
+            const psf_median = !isNaN(psfSigma)
+              ? psfSigma * PSF_SIGMA_FACTOR * pixelScale
+              : null;
 
             return {
               ...normalisedEntry,
-              "psf median": !isNaN(psfSigma)
-                ? psfSigma * PSF_SIGMA_FACTOR * pixelScale
-                : null,
+              psf_median,
             };
           })
           .sort((a, b) => Number(b["exposure id"]) - Number(a["exposure id"]));
