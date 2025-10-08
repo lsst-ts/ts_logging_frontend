@@ -107,8 +107,16 @@ function Plots() {
 
     // Get all available dayobs
     const dayobsRange = [
-      ...new Set(data.map((entry) => entry["day obs"].toString())),
-    ].sort();
+      ...new Set(
+        data
+          .map((entry) => entry["day obs"].toString())
+          .filter((str) => {
+            // Don't include NaNs
+            const num = Number(str);
+            return Number.isInteger(num);
+          }),
+      ),
+    ].sort((a, b) => Number(a) - Number(b));
 
     // Get first and last observations
     const firstObs = data.at(0)?.obs_start_dt ?? 0;
