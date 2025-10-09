@@ -1,1 +1,0 @@
-Band key on Plots page shows colored circles when ‘Colors’ is selected and colored shapes when ‘Colors and Icons’ is selected.
