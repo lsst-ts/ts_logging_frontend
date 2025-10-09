@@ -17,6 +17,14 @@ const isoToTAI = (isoStr) =>
   });
 
 /**
+ * Converts an ISO 8601 string to a Luxon DateTime object in UTC.
+ *
+ * @param {string} isoStr - The ISO date-time string (e.g., "2025-08-27T12:34:56Z").
+ * @returns {DateTime} A Luxon DateTime object in UTC.
+ */
+const isoToUTC = (isoStr) => DateTime.fromISO(isoStr, { zone: "utc" });
+
+/**
  * Converts a dayobs string to the "start" boundary (12:00 noon) in TAI.
  *
  * @param {string} dayobsStr - The dayobs date string in "yyyyLLdd" format (e.g., "20250827").
@@ -32,6 +40,8 @@ const getDayobsStartTAI = (dayobsStr) => {
 /**
  * Converts a dayobs string to the "end" boundary (11:59 AM next day) in TAI.
  *
+ * Each dayobs ends at midday UTC the next day, so we add a day and return that midday.
+ *
  * @param {string} dayobsStr - The dayobs date string in "yyyyLLdd" format (e.g., "20250827").
  * @returns {DateTime} A Luxon DateTime object in UTC with TAI offset seconds applied.
  */
@@ -42,6 +52,34 @@ const getDayobsEndTAI = (dayobsStr) => {
   return dayobsDate
     .plus({ days: 1 })
     .set({ hour: 11, minute: 59, second: TAI_OFFSET_SECONDS });
+};
+
+/**
+ * Converts a dayobs string to the "start" boundary (12:00 noon) in UTC.
+ *
+ * @param {string} dayobsStr - The dayobs date string in "yyyyLLdd" format (e.g., "20250827").
+ * @returns {DateTime} A Luxon DateTime object in UTC at 12:00:00.
+ */
+const getDayobsStartUTC = (dayobsStr) => {
+  const dayobsDate = DateTime.fromFormat(dayobsStr, "yyyyLLdd", {
+    zone: "utc",
+  });
+  return dayobsDate.set({ hour: 12, minute: 0, second: 0 });
+};
+
+/**
+ * Converts a dayobs string to the "end" boundary (11:59:59 AM next day) in UTC.
+ *
+ * Each dayobs ends at midday UTC the next day, so we add a day and return that midday.
+ *
+ * @param {string} dayobsStr - The dayobs date string in "yyyyLLdd" format (e.g., "20250827").
+ * @returns {DateTime} A Luxon DateTime object in UTC at 11:59:59 next day.
+ */
+const getDayobsEndUTC = (dayobsStr) => {
+  const dayobsDate = DateTime.fromFormat(dayobsStr, "yyyyLLdd", {
+    zone: "utc",
+  });
+  return dayobsDate.plus({ days: 1 }).set({ hour: 11, minute: 59, second: 59 });
 };
 
 /**
@@ -97,6 +135,18 @@ const utcDateTimeStrToTAIMillis = (dateTimeStr) =>
     .toMillis();
 
 /**
+ * Converts a UTC date-time string in "yyyy-MM-dd HH:mm:ss" format
+ * to milliseconds since the epoch.
+ *
+ * @param {string} dateTimeStr - The UTC date-time string (e.g., "2025-08-27 15:42:00").
+ * @returns {number} The corresponding timestamp in milliseconds.
+ */
+const utcDateTimeStrToMillis = (dateTimeStr) =>
+  DateTime.fromFormat(dateTimeStr, "yyyy-MM-dd HH:mm:ss", {
+    zone: "utc",
+  }).toMillis();
+
+/**
  * Converts a Luxon DateTime to a formatted dayobs string,
  * subtracting 1 minute to capture the previous day's date.
  *
@@ -110,15 +160,47 @@ const dayobsAtMidnight = (dt, format = "yyyy-LL-dd") => {
   return dt.minus({ minutes: 1 }).toFormat(format);
 };
 
+/**
+ * Validate start/end millis and convert to Luxon DateTime objects if valid.
+ * Otherwise return the provided fullTimeRange.
+ *
+ * @param {number} startMillis
+ * @param {number} endMillis
+ * @param {[DateTime, DateTime]} fullTimeRange
+ * @returns {[DateTime, DateTime]} start/end DateTimes
+ */
+function getValidTimeRange(startMillis, endMillis, fullTimeRange) {
+  if (
+    startMillis != null &&
+    endMillis != null &&
+    !Number.isNaN(startMillis) &&
+    !Number.isNaN(endMillis)
+  ) {
+    const [fullStart, fullEnd] = fullTimeRange;
+    if (
+      startMillis >= fullStart.toMillis() &&
+      endMillis <= fullEnd.toMillis()
+    ) {
+      return [millisToDateTime(startMillis), millisToDateTime(endMillis)];
+    }
+  }
+  return fullTimeRange;
+}
+
 export {
   isoToTAI,
+  isoToUTC,
   getDayobsStartTAI,
   getDayobsEndTAI,
+  getDayobsStartUTC,
+  getDayobsEndUTC,
   almanacDayobsForPlot,
   millisToDateTime,
   millisToHHmm,
   utcDateTimeStrToTAIMillis,
+  utcDateTimeStrToMillis,
   dayobsAtMidnight,
+  getValidTimeRange,
   ISO_DATETIME_FORMAT,
   TAI_OFFSET_SECONDS,
 };

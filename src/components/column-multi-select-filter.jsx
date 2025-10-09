@@ -44,22 +44,24 @@ function ColumnMultiSelectFilter({ column, closeDropdown }) {
       <p className="text-sm">Filter:</p>
 
       {/* Scrollable multi-select checkboxes */}
-      <div className="max-h-40 overflow-y-auto pr-6 space-y-1">
+      <div className="max-h-80 overflow-y-auto pr-6 space-y-1">
         {sortedUniqueValues.map((value) => (
           <label
             key={value}
-            className="flex items-center space-x-2 text-sm cursor-pointer"
+            className="flex items-start space-x-2 text-sm cursor-pointer"
           >
             <Checkbox
               checked={selected.has(value)}
               onCheckedChange={() => toggleValue(value)}
+              className="mt-0.5"
             />
-            <span>{String(value)}</span>
+            <span className="break-words whitespace-normal max-w-[300px]">
+              {String(value)}
+            </span>
           </label>
         ))}
       </div>
 
-      {/* TODO: Only show once data has loaded? */}
       {/* Clear and Apply buttons */}
       <div className="flex justify-between items-center pt-2 text-xs">
         <button
