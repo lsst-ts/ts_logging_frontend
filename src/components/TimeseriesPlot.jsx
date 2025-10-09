@@ -36,9 +36,8 @@ import {
 } from "@/components/PLOT_DEFINITIONS";
 
 import { useClickDrag } from "@/hooks/useClickDrag";
-import { millisToHHmm } from "@/utils/timeUtils";
 import { scaleDotRadius, calculateDecimalPlaces } from "@/utils/plotUtils";
-import { calculateSequenceModeData } from "@/utils/sequenceModeCalculations";
+import { calculateChartData } from "@/utils/chartCalculations";
 
 // Band markers for the timeseries plots
 const CustomisedDotWithShape = ({ cx, cy, band, r = 2 }) => {
@@ -178,23 +177,28 @@ function TimeseriesPlot({
   }
   // ---------------------------------------------------------
 
-  // Use calculateSequenceModeData to get all sequence mode transformations
+  // Use calculateChartData to get all chart transformations
   const {
     chartData,
     chartMoon,
     chartDayObsBreaks,
     ticks,
-    tickMappings,
     dayObsTicks,
     dayObsTickMappings,
     noDataX,
     fakeX,
     chartDayObsSpacing,
-  } = calculateSequenceModeData({
+    chartDataKey,
+    domain,
+    tickFormatter,
+    scale,
+  } = calculateChartData({
     xAxisType,
     data,
     moonIntervals,
     availableDayObs,
+    selectedMinMillis,
+    selectedMaxMillis,
   });
 
   // Click & Drag plot hooks ================================
@@ -230,43 +234,30 @@ function TimeseriesPlot({
         onDoubleClick={handleDoubleClick}
       >
         <CartesianGrid strokeDasharray="3 3" stroke={PLOT_COLORS.gridStroke} />
-        {xAxisType === PLOT_KEY_TIME ? (
-          <XAxis
-            dataKey="obs_start_millis"
-            type="number"
-            domain={[selectedMinMillis, selectedMaxMillis]}
-            scale="time"
-            tickFormatter={(tick) => millisToHHmm(tick)}
-            tick={AXIS_TICK_STYLE}
-            allowDuplicatedCategory={false}
-          />
-        ) : (
-          <>
-            <XAxis
-              dataKey="fakeX"
-              type="number"
-              domain={[0, fakeX]}
-              allowDuplicatedCategory={false}
-              ticks={ticks}
-              tickFormatter={(e) => tickMappings.get(e)}
-              xAxisId={0}
-              tick={AXIS_TICK_STYLE}
-            />
-            <XAxis
-              dataKey="fakeX"
-              type="number"
-              domain={[0, fakeX]}
-              allowDuplicatedCategory={false}
-              ticks={dayObsTicks}
-              tickFormatter={(e) => dayObsTickMappings.get(e)}
-              xAxisId={1}
-              tickLine={false}
-              axisLine={false}
-              dy={-14}
-              tick={AXIS_TICK_STYLE}
-            />
-          </>
-        )}
+        <XAxis
+          dataKey={chartDataKey}
+          type="number"
+          domain={domain}
+          scale={scale}
+          ticks={ticks}
+          tickFormatter={tickFormatter}
+          tick={AXIS_TICK_STYLE}
+          allowDuplicatedCategory={false}
+          xAxisId={0}
+        />
+        <XAxis
+          dataKey={chartDataKey}
+          type="number"
+          domain={domain}
+          allowDuplicatedCategory={false}
+          ticks={dayObsTicks}
+          tickFormatter={(e) => dayObsTickMappings.get(e)}
+          xAxisId={1}
+          tickLine={false}
+          axisLine={false}
+          dy={-14}
+          tick={AXIS_TICK_STYLE}
+        />
         <YAxis
           tick={AXIS_TICK_STYLE}
           tickFormatter={(value) => value.toFixed(decimalPlaces)}

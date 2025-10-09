@@ -1,8 +1,9 @@
 import { PLOT_KEY_SEQUENCE } from "@/components/PLOT_DEFINITIONS";
 import { groupBy } from "@/utils/plotUtils";
+import { millisToHHmm } from "@/utils/timeUtils";
 
 /**
- * Calculate all data transformations needed for sequence mode plotting.
+ * Calculate all data transformations needed for chart plotting.
  * This function transforms time-series data into sequence-indexed data with
  * properly positioned ticks, moon intervals, and day observation breaks.
  *
@@ -11,13 +12,17 @@ import { groupBy } from "@/utils/plotUtils";
  * @param {Array} params.data - Raw ungrouped data array
  * @param {Array<Array>} params.moonIntervals - Moon rise/set intervals [[start, end], ...]
  * @param {Array<string>} params.availableDayObs - List of available day observations
- * @returns {Object} Transformed data for sequence mode plotting
+ * @param {number} params.selectedMinMillis - Minimum time in milliseconds for time mode
+ * @param {number} params.selectedMaxMillis - Maximum time in milliseconds for time mode
+ * @returns {Object} Transformed data for chart plotting
  */
-export function calculateSequenceModeData({
+export function calculateChartData({
   xAxisType,
   data,
   moonIntervals,
   availableDayObs,
+  selectedMinMillis,
+  selectedMaxMillis,
 }) {
   // Group data by day obs and trim empty entries
   const chartData = groupBy(
@@ -49,19 +54,44 @@ export function calculateSequenceModeData({
         )
       : 1;
 
-  // If not in sequence mode, return defaults with grouped data
+  // If not in sequence mode, return grouped time data
+  // Some blank things are included to ensure the return type is consistent
   if (xAxisType !== PLOT_KEY_SEQUENCE) {
+    const dayObsTicks = [];
+    const dayObsTickMappings = new Map();
+
+    // Calculate dayobs ticks for time mode
+    chartData.forEach((dayObsGroup, dIdx) => {
+      // Only add tick if there's data for this dayobs
+      if (dayObsGroup.length > 0) {
+        const dayObsValue = availableDayObs[dIdx];
+        const dayObsStart = Math.min(
+          ...dayObsGroup.map((e) => e.obs_start_millis),
+        );
+        const dayObsEnd = Math.max(
+          ...dayObsGroup.map((e) => e.obs_start_millis),
+        );
+        const dayObsMidpoint = Math.floor((dayObsStart + dayObsEnd) / 2);
+
+        dayObsTicks.push(dayObsMidpoint);
+        dayObsTickMappings.set(dayObsMidpoint, dayObsValue);
+      }
+    });
+
     return {
       chartData: chartData,
       chartMoon: moonIntervals,
       chartDayObsBreaks: [],
-      ticks: [],
-      tickMappings: new Map(),
-      dayObsTicks: [],
-      dayObsTickMappings: new Map(),
+      ticks: undefined,
+      dayObsTicks,
+      dayObsTickMappings,
       noDataX: [],
       fakeX: 0,
       chartDayObsSpacing,
+      chartDataKey: "obs_start_millis",
+      domain: [selectedMinMillis, selectedMaxMillis],
+      tickFormatter: (tick) => millisToHHmm(tick),
+      scale: "time",
     };
   }
 
@@ -133,6 +163,7 @@ export function calculateSequenceModeData({
     // If there is no data for the day, add a NO DATA label
     if (dayObsGroup.length === 0) {
       noDataX.push(fakeX);
+      dayObsTickMappings.set(dayObsMidFakeX, "");
     }
 
     // After each dayobs group, add some spacing on the graph
@@ -152,11 +183,14 @@ export function calculateSequenceModeData({
     chartMoon,
     chartDayObsBreaks,
     ticks,
-    tickMappings,
     dayObsTicks,
     dayObsTickMappings,
     noDataX,
     fakeX,
     chartDayObsSpacing,
+    chartDataKey: "fakeX",
+    domain: [0, fakeX],
+    tickFormatter: (e) => tickMappings.get(e),
+    scale: "auto",
   };
 }

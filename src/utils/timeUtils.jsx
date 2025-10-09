@@ -185,6 +185,9 @@ function getValidTimeRange(startMillis, endMillis, fullTimeRange) {
     }
   }
   return fullTimeRange;
+}
+
+/**
  * Generates an array of strings representing dayObs between two dayObs (inclusive).
  * Both parameters are strings or ints in the format "yyyyMMdd"
  *

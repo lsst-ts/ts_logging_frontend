@@ -86,7 +86,7 @@ function Plots() {
 
   // Plot format
   const [xAxisType, setXAxisType] = useState(PLOT_KEY_TIME);
-  const [plotShape, setPlotShape] = useState("line");
+  const [plotShape, setPlotShape] = useState("dots");
   const [plotColor, setPlotColor] = useState("assorted");
   const [bandMarker, setBandMarker] = useState("bandColorsIcons");
 
