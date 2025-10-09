@@ -1,8 +1,8 @@
 {
   "name": "nightly-digest",
   "private": true,
-  "version": "0.9.0-alpha.2",
-  "lastUpdated": "2025-10-3",
+  "version": "0.10.0",
+  "lastUpdated": "2025-10-09",
   "type": "module",
   "scripts": {
     "dev": "vite",
