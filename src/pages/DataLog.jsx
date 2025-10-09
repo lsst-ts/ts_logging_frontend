@@ -5,7 +5,7 @@ import { useSearch } from "@tanstack/react-router";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { TELESCOPES } from "@/components/parameters";
-import DataLogTable from "@/components/dataLogTable.jsx";
+import DataLogTable from "@/components/DataLogTable.jsx";
 import {
   fetchDataLogEntriesFromConsDB,
   fetchDataLogEntriesFromExposureLog,
@@ -13,7 +13,6 @@ import {
 import {
   getDatetimeFromDayobsStr,
   mergeDataLogSources,
-  DEFAULT_EXTERNAL_INSTANCE_URL,
   DEFAULT_PIXEL_SCALE_MEDIAN,
   PSF_SIGMA_FACTOR,
 } from "@/utils/utils";
@@ -38,8 +37,6 @@ function DataLog() {
   const instrument = TELESCOPES[telescope];
 
   // For display on page
-  const baseUrl = DEFAULT_EXTERNAL_INSTANCE_URL;
-  const instrumentName = telescope;
   const dateRangeString =
     startDayobs === endDayobs
       ? `on dayobs ${startDayobs}`
@@ -65,10 +62,6 @@ function DataLog() {
   const [dataLogLoading, setDataLogLoading] = useState(true);
 
   useEffect(() => {
-    if (telescope === "AuxTel") {
-      return;
-    }
-
     // To cancel previous fetch if still in progress
     const abortController = new AbortController();
 
@@ -152,36 +145,6 @@ function DataLog() {
     };
   }, [startDayobs, queryEndDayobs, instrument]);
 
-  // Temporary display message for AuxTel queries
-  if (telescope === "AuxTel") {
-    return (
-      <div className="flex flex-col w-full p-8 gap-4">
-        <h1 className="flex flex-row gap-3 text-white text-5xl uppercase justify-center">
-          <span className="tracking-[2px] font-extralight">Data</span>
-          <span className="font-extrabold">Log</span>
-        </h1>
-        <div className="min-h-[4.5rem] text-white font-thin text-center pb-4 flex flex-col items-center justify-center gap-2">
-          <p>
-            <strong>AuxTel is currently not supported in this page.</strong>
-          </p>
-          <p>
-            Please refer to the{" "}
-            <a
-              href={`${baseUrl}/times-square/github/lsst-ts/ts_logging_and_reporting/ExposureDetail?instrument=LATISS`}
-              className="underline text-blue-300 hover:text-blue-400"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Exposure Detail notebook
-            </a>{" "}
-            for AuxTel exposures.
-          </p>
-        </div>
-        <Toaster expand={true} richColors closeButton />
-      </div>
-    );
-  }
-
   return (
     <>
       <div className="flex flex-col w-full p-8 gap-4">
@@ -201,7 +164,7 @@ function DataLog() {
           ) : (
             <>
               <p>
-                {dataLogEntries.length} exposures returned for {instrumentName}{" "}
+                {dataLogEntries.length} exposures returned for {telescope}{" "}
                 {dateRangeString}.
               </p>
               <p className="max-w-2xl">
@@ -217,6 +180,7 @@ function DataLog() {
 
         {/* Table */}
         <DataLogTable
+          telescope={telescope}
           data={dataLogEntries}
           dataLogLoading={dataLogLoading}
           tableFilters={tableFilters}

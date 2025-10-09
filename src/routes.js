@@ -4,15 +4,15 @@ import {
   createRoute,
 } from "@tanstack/react-router";
 import Layout from "./pages/layout";
-import DataLog from "./pages/data-log";
-import ContextFeed from "./pages/ContextFeed";
+import DataLog from "./pages/DataLog";
+import ContextFeed from "./pages/context-feed";
 import Digest from "./pages/digest";
 import Plots from "./pages/plots";
 import { z } from "zod";
 import { DateTime } from "luxon";
 
 import SearchParamErrorComponent from "./components/search-param-error-component";
-import { dataLogColumns } from "@/components/dataLogColumns";
+import { dataLogColumns } from "@/components/DataLogColumns";
 
 export const GLOBAL_SEARCH_PARAMS = ["startDayobs", "endDayobs", "telescope"];
 
@@ -60,9 +60,11 @@ const searchParamsSchema = baseSearchParamsSchema.refine(
 );
 
 // Convert table columns to url filter keys
-const arrayKeys = dataLogColumns
-  .map((col) => col.meta?.urlParam)
-  .filter(Boolean);
+const columns = [];
+for (const cols of Object.values(dataLogColumns)) {
+  if (Array.isArray(cols)) columns.push(...cols);
+}
+const arrayKeys = columns.map((col) => col.meta?.urlParam).filter(Boolean);
 
 // Get schema for multi-valued search fields
 const filtersShape = Object.fromEntries(

@@ -319,21 +319,37 @@ describe("utils", () => {
     });
 
     it("returns null if inputs invalid", () => {
-      expect(getRubinTVUrl(null, 123)).toBeNull();
-      expect(getRubinTVUrl("20240607", null)).toBeNull();
+      expect(getRubinTVUrl("Simonyi", null, 123)).toBeNull();
+      expect(getRubinTVUrl("AuxTel", "20240607", null)).toBeNull();
     });
 
     it("uses dev base URL on localhost", () => {
-      const url = getRubinTVUrl("20240607", 42);
-      expect(url.startsWith(DEFAULT_EXTERNAL_INSTANCE_URL)).toBe(true);
-      expect(url).toContain("seq_num=42");
+      const urlSimonyi = getRubinTVUrl("Simonyi", "20240607", 42);
+      expect(urlSimonyi.startsWith(DEFAULT_EXTERNAL_INSTANCE_URL)).toBe(true);
+      expect(urlSimonyi).toContain("seq_num=42");
+      expect(urlSimonyi).toContain("lsstcam");
+      expect(urlSimonyi).toContain("focal_plane_mosaic");
+
+      const urlAuxTel = getRubinTVUrl("AuxTel", "20240607", 43);
+      expect(urlAuxTel.startsWith(DEFAULT_EXTERNAL_INSTANCE_URL)).toBe(true);
+      expect(urlAuxTel).toContain("seq_num=43");
+      expect(urlAuxTel).toContain("auxtel");
+      expect(urlAuxTel).toContain("monitor");
     });
 
     it("uses production origin if not localhost", () => {
       window.location.host = "example.com";
       window.location.origin = "https://example.com";
-      const url = getRubinTVUrl("20240607", 99);
-      expect(url.startsWith("https://example.com")).toBe(true);
+
+      const urlSimonyi = getRubinTVUrl("Simonyi", "20240607", 99);
+      expect(urlSimonyi.startsWith("https://example.com")).toBe(true);
+      expect(urlSimonyi).toContain("lsstcam");
+      expect(urlSimonyi).toContain("focal_plane_mosaic");
+
+      const urlAuxTel = getRubinTVUrl("AuxTel", "20240607", 100);
+      expect(urlAuxTel.startsWith("https://example.com")).toBe(true);
+      expect(urlAuxTel).toContain("auxtel");
+      expect(urlAuxTel).toContain("monitor");
     });
   });
 

@@ -210,12 +210,17 @@ const mergeDataLogSources = (consDbRows, exposureLogRows) => {
 /**
  * Generates a RubinTV URL based on dayObs and seqNum values.
  *
+ * @param {string} telescope - The telescope; either "Simonyi" or "AuxTel".
  * @param {string|number} dayObs - The observation date in YYYYMMDD format.
  * @param {string|number} seqNum - The sequence number of the observation.
  * @returns {string|null} A formatted RubinTV URL, or null if inputs are invalid.
  */
-const getRubinTVUrl = (dayObs, seqNum) => {
+const getRubinTVUrl = (telescope, dayObs, seqNum) => {
   if (!dayObs || !seqNum) return null;
+
+  // Set url params based on telescope
+  const instr = telescope === "Simonyi" ? "lsstcam" : "auxtel";
+  const channel = telescope === "Simonyi" ? "focal_plane_mosaic" : "monitor";
 
   // Local development URL
   let baseUrl = DEFAULT_EXTERNAL_INSTANCE_URL;
@@ -226,7 +231,7 @@ const getRubinTVUrl = (dayObs, seqNum) => {
   }
 
   const dateStr = getDatetimeFromDayobsStr(`${dayObs}`).toFormat("yyyy-MM-dd");
-  return `${baseUrl}/rubintv/summit-usdf/lsstcam/event?channel_name=calexp_mosaic&date_str=${dateStr}&seq_num=${seqNum}`;
+  return `${baseUrl}/rubintv/summit-usdf/${instr}/event?channel_name=${channel}&date_str=${dateStr}&seq_num=${seqNum}`;
 };
 
 /**
