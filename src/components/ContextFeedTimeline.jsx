@@ -247,12 +247,7 @@ function ContextFeedTimeline({
         ) : null}
         {/* Data Points & Lines */}
         {Object.values(SAL_INDEX_INFO)
-          .filter(
-            (info) =>
-              info.displayIndex != null &&
-              info.label !== "AUTOLOG" &&
-              info.label !== "Narrative Log",
-          )
+          .filter((info) => info.displayIndex != null) // exclude AUTOLOG
           .map((info) => {
             const { displayIndex, label, color } = info;
             const isActive =

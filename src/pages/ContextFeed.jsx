@@ -17,10 +17,7 @@ import {
 import ContextFeedTimeline from "@/components/ContextFeedTimeline";
 import ContextFeedTable from "@/components/ContextFeedTable.jsx";
 import EditableDateTimeInput from "@/components/EditableDateTimeInput.jsx";
-import {
-  SAL_INDEX_INFO,
-  NARRATIVE_LOG_MAP,
-} from "@/components/context-feed-definitions.js";
+import { SAL_INDEX_INFO } from "@/components/context-feed-definitions.js";
 import DownloadIcon from "../assets/DownloadIcon.svg";
 import { fetchAlmanac, fetchContextFeed } from "@/utils/fetchUtils";
 import {
@@ -39,8 +36,18 @@ const filterDefaultEventsByTelescope = (telescope) => {
 
   // Define which labels to exclude per telescope
   const exclusions = {
-    Simonyi: ["AT Queue", "AuxTel Exposure", "Narrative Log (AuxTel)"],
-    AuxTel: ["MT Queue", "Simonyi Exposure", "Narrative Log (Simonyi)"],
+    Simonyi: [
+      "AT Queue",
+      "AuxTel Exposure",
+      "Narrative Log (AuxTel)",
+      "AUTOLOG - AuxTel",
+    ],
+    AuxTel: [
+      "MT Queue",
+      "Simonyi Exposure",
+      "Narrative Log (Simonyi)",
+      "AUTOLOG - Simonyi",
+    ],
   };
 
   if (telescope && exclusions[telescope]) {
@@ -247,40 +254,19 @@ function ContextFeed() {
 
         const preparedData = data
           .map((entry) => {
-            let salInfo = SAL_INDEX_INFO[entry.salIndex] || {};
-            let displayIndex = salInfo.displayIndex;
-            let eventType = salInfo.label;
-            let eventColor = salInfo.color ?? "#ffffff";
-
-            // Split Narrative Log into variants
-            // TODO: Adapt when this comes from rubin_nights (OSW-1119)
-            if (salInfo.label === "Narrative Log") {
-              if (NARRATIVE_LOG_MAP.AuxTel.includes(entry.name)) {
-                salInfo = SAL_INDEX_INFO[7];
-              } else if (NARRATIVE_LOG_MAP.Simonyi.includes(entry.name)) {
-                salInfo = SAL_INDEX_INFO[8];
-              } else {
-                salInfo = SAL_INDEX_INFO[9];
-              }
-              displayIndex = salInfo.displayIndex;
-              eventType = salInfo.label;
-              eventColor = salInfo.color;
-            }
-
-            if (
-              // TODO: swap to "Task Change" (OSW-1119)
-              entry.finalStatus === "Job Change"
-            ) {
+            if (entry.finalStatus === "Task Change") {
               currentTask = entry.name;
             }
+
+            let salInfo = SAL_INDEX_INFO[entry.salIndex] || {};
 
             return {
               ...entry,
               event_time_dt: isoToUTC(entry["time"]),
               event_time_millis: isoToUTC(entry["time"]).toMillis(),
-              event_type: eventType,
-              event_color: eventColor,
-              displayIndex,
+              event_type: salInfo.label,
+              event_color: salInfo.color ?? "#ffffff",
+              displayIndex: salInfo.displayIndex,
               current_task: currentTask,
             };
           })
@@ -395,7 +381,7 @@ function ContextFeed() {
                   {/* Event Type Checkboxes */}
                   <div className="mt-2 flex flex-col gap-1 w-45">
                     {Object.entries(SAL_INDEX_INFO)
-                      .filter(([key]) => key !== "10" && key !== "0") // exclude AUTOLOG & NL
+                      .filter(([, info]) => info.displayIndex != null) // exclude AUTOLOG
                       .sort(
                         // sort on displayIndex
                         ([, aInfo], [, bInfo]) =>
