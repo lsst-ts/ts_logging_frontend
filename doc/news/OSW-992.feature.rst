@@ -1,1 +1,0 @@
-Show fault time in Time accounting applet based on the calculated overhead for each exposure as well as calculated dome closed time from rubin-nights

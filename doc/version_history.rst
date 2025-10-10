@@ -1,3 +1,36 @@
+v0.9.0 (2025-10-09)
+====================
+
+New Features
+------------
+
+- Add a Context Feed page to Nightly Digest that uses rubin-nights to get consolidated data. (`OSW-666 <https://rubinobs.atlassian.net//browse/OSW-666>`_)
+- Show fault time in Time accounting applet based on the calculated overhead for each exposure as well as calculated dome closed time from rubin-nights (`OSW-992 <https://rubinobs.atlassian.net//browse/OSW-992>`_)
+
+
+Bug Fixes
+---------
+
+- Data Log now supports AuxTel data. (`OSW-764 <https://rubinobs.atlassian.net//browse/OSW-764>`_)
+- Fix bug in Data Log's psf median column. (`OSW-1047 <https://rubinobs.atlassian.net//browse/OSW-1047>`_)
+
+
+Other Changes and Additions
+---------------------------
+
+- The calendar defaults to the date last entered (`OSW-909 <https://rubinobs.atlassian.net//browse/OSW-909>`_)
+- Plots default view uses dots and shows band markers and colors. (`OSW-949 <https://rubinobs.atlassian.net//browse/OSW-949>`_)
+- Band key on Plots page shows colored circles when ‘Colors’ is selected and colored shapes when ‘Colors and Icons’ is selected. (`OSW-967 <https://rubinobs.atlassian.net//browse/OSW-967>`_)
+- Added DIMM seeing to the Data Log. (`OSW-968 <https://rubinobs.atlassian.net//browse/OSW-968>`_)
+- Show/Hide Plots pop-up lists fields in alphabetical order. (`OSW-969 <https://rubinobs.atlassian.net//browse/OSW-969>`_)
+- In observing conditions applet, don't show gaps if the exposure is off sky or if psf_median and zero_point_median are null (`OSW-994 <https://rubinobs.atlassian.net//browse/OSW-994>`_)
+- Update sidebar link to go to main instead of develop. (`OSW-998 <https://rubinobs.atlassian.net//browse/OSW-998>`_)
+- Add physical filter column to Data Log. (`OSW-1003 <https://rubinobs.atlassian.net//browse/OSW-1003>`_)
+- Add make_release.py script to handle releases. (`OSW-1005 <https://rubinobs.atlassian.net//browse/OSW-1005>`_)
+- Sidebar toggle displays, on hover, the keyboard shortcut. (`OSW-1092 <https://rubinobs.atlassian.net//browse/OSW-1092>`_)
+- Context Feed supports rubin_nights v0.6.1 data. (`OSW-1119 <https://rubinobs.atlassian.net//browse/OSW-1119>`_)
+
+
 v0.8.0 (2025-09-02)
 ===================
 

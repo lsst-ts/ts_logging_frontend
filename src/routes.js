@@ -5,7 +5,7 @@ import {
 } from "@tanstack/react-router";
 import Layout from "./pages/layout";
 import DataLog from "./pages/DataLog";
-import ContextFeed from "./pages/context-feed";
+import ContextFeed from "./pages/ContextFeed";
 import Digest from "./pages/digest";
 import Plots from "./pages/plots";
 import { z } from "zod";

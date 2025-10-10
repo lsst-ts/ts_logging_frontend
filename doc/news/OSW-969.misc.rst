@@ -1,1 +1,0 @@
-Show/Hide Plots pop-up lists fields in alphabetical order.
