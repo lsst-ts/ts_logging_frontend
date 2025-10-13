@@ -23,7 +23,8 @@ import {
 import {
   DayObsBreakLine,
   NoDataReferenceArea,
-} from "@/components/customPlotShapes";
+  MoonReferenceArea,
+} from "@/components/CustomPlotShapes";
 import {
   PLOT_COLOR_OPTIONS,
   BAND_COLORS,
@@ -100,13 +101,9 @@ function TimeseriesPlot({
         PLOT_COLORS.defaultColor;
 
   // Compute decimal places for y-axis ticks ================
-  const values = data.reduce((acc, d) => {
-    const value = d[dataKey];
-    if (typeof value === "number" && Number.isFinite(value)) {
-      acc.push(value);
-    }
-    return acc;
-  }, []);
+  const values = data
+    .map((d) => d[dataKey])
+    .filter((v) => typeof v === "number" && Number.isFinite(v));
   // Get min/max
   const minVal = values.length > 0 ? Math.min(...values) : null;
   const maxVal = values.length > 0 ? Math.max(...values) : null;
@@ -223,7 +220,7 @@ function TimeseriesPlot({
 
   // Plot =================================================
   return (
-    <ChartContainer className="pt-8 h-50 w-full" title={title} config={{}}>
+    <ChartContainer className="pt-8 h-51 w-full" title={title} config={{}}>
       <h1 className="text-white text-lg font-thin text-center">{title}</h1>
       <LineChart
         width={500}
@@ -244,6 +241,7 @@ function TimeseriesPlot({
           tick={AXIS_TICK_STYLE}
           allowDuplicatedCategory={false}
           xAxisId={0}
+          height={16}
         />
         <XAxis
           dataKey={chartDataKey}
@@ -255,8 +253,8 @@ function TimeseriesPlot({
           xAxisId={1}
           tickLine={false}
           axisLine={false}
-          dy={-14}
           tick={AXIS_TICK_STYLE}
+          height={18}
         />
         <YAxis
           tick={AXIS_TICK_STYLE}
@@ -276,7 +274,7 @@ function TimeseriesPlot({
           }}
         />
         {/* Moon Up Area */}
-        {chartMoon.map(([start, end], i) => {
+        {chartMoon.map(({ start, end, startIsZigzag, endIsZigzag }, i) => {
           // If entire moon-up area is not inside selected range,
           // clamp start/end times so moon-up area is visible.
           const clampedStart =
@@ -296,6 +294,12 @@ function TimeseriesPlot({
               fillOpacity={PLOT_OPACITIES.overlay}
               fill={PLOT_COLORS.moonFill}
               yAxisId="0"
+              shape={
+                <MoonReferenceArea
+                  startIsZigzag={startIsZigzag}
+                  endIsZigzag={endIsZigzag}
+                />
+              }
             />
           );
         })}

@@ -198,8 +198,11 @@ function getValidTimeRange(startMillis, endMillis, fullTimeRange) {
 function generateDayObsRange(start, end) {
   const startDate = DateTime.fromFormat(start.toString(), "yyyyMMdd");
   const endDate = DateTime.fromFormat(end.toString(), "yyyyMMdd");
+  if (!startDate.isValid || !endDate.isValid || startDate > endDate) {
+    throw new Error("Invalid dayobs passed to generateDayObsRange");
+  }
 
-  let dates = [];
+  const dates = [];
   for (let d = startDate; d <= endDate; d = d.plus({ days: 1 })) {
     dates.push(d.toFormat("yyyyMMdd"));
   }

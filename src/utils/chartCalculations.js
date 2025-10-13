@@ -1,6 +1,6 @@
 import { PLOT_KEY_SEQUENCE } from "@/components/PLOT_DEFINITIONS";
 import { groupBy } from "@/utils/plotUtils";
-import { millisToHHmm } from "@/utils/timeUtils";
+import { getDayobsStartTAI, millisToHHmm } from "@/utils/timeUtils";
 
 /**
  * Calculate all data transformations needed for chart plotting.
@@ -62,9 +62,9 @@ export function calculateChartData({
 
     // Calculate dayobs ticks for time mode
     chartData.forEach((dayObsGroup, dIdx) => {
-      // Only add tick if there's data for this dayobs
+      const dayObsValue = availableDayObs[dIdx];
+      // Add tick if there's data for this dayobs
       if (dayObsGroup.length > 0) {
-        const dayObsValue = availableDayObs[dIdx];
         const dayObsStart = Math.min(
           ...dayObsGroup.map((e) => e.obs_start_millis),
         );
@@ -75,12 +75,25 @@ export function calculateChartData({
 
         dayObsTicks.push(dayObsMidpoint);
         dayObsTickMappings.set(dayObsMidpoint, dayObsValue);
+      } else {
+        // If theres no data, then add a dayobs tick at midnight Chile time
+        const dayObsMidpoint = getDayobsStartTAI(dayObsValue).plus({
+          hours: 15,
+        });
+
+        dayObsTicks.push(dayObsMidpoint);
+        dayObsTickMappings.set(dayObsMidpoint, dayObsValue);
       }
     });
 
     return {
       chartData: chartData,
-      chartMoon: moonIntervals,
+      chartMoon: moonIntervals.map(([start, end]) => ({
+        start,
+        end,
+        startIsZigzag: false,
+        endIsZigzag: false,
+      })),
       chartDayObsBreaks: [],
       ticks: undefined,
       dayObsTicks,
@@ -97,16 +110,13 @@ export function calculateChartData({
 
   let fakeX = 0;
   const transformedChartData = [];
-  const chartMoon = [];
   const chartDayObsBreaks = [];
   const ticks = [];
   const tickMappings = new Map();
   const dayObsTicks = [];
   const dayObsTickMappings = new Map();
   const noDataX = [];
-
-  let moonUp = 0;
-  let moonIdx = 0;
+  const dayObsMetadata = [];
 
   chartData.forEach((dayObsGroup, dIdx) => {
     const transformedGroup = [];
@@ -119,28 +129,6 @@ export function calculateChartData({
       const entry = { ...e, fakeX };
       transformedGroup.push(entry);
 
-      // We use while instead of if here to handle the case where
-      // the interval is contained within consecutive data elements e.g., between dayobs
-      while (
-        moonIntervals[moonIdx] &&
-        entry.obs_start_millis > moonIntervals[moonIdx][moonUp]
-      ) {
-        if (!moonUp) {
-          chartMoon.push([]);
-        }
-        if (i === 0) {
-          // If the moon event occurred before the start of this dayobs
-          // place the start in the middle of the spacing
-          chartMoon[moonIdx].push(fakeX - chartDayObsSpacing / 2);
-        } else {
-          chartMoon[moonIdx].push(fakeX);
-        }
-        if (moonUp) {
-          moonIdx++;
-        }
-        moonUp = moonUp ? 0 : 1;
-      }
-
       if (i % tickSpacing === 0) {
         ticks.push(fakeX);
         tickMappings.set(fakeX, entry["seq num"]);
@@ -151,7 +139,20 @@ export function calculateChartData({
 
     transformedChartData.push(transformedGroup);
 
+    // Store metadata for this dayobs group
     const dayObsEndFakeX = fakeX;
+    const boundaryBefore = dayObsStartFakeX - chartDayObsSpacing / 2;
+    const boundaryAfter = fakeX + chartDayObsSpacing / 2;
+
+    dayObsMetadata.push({
+      firstFakeX: dayObsStartFakeX,
+      lastFakeX: dayObsEndFakeX - 1,
+      firstMillis: dayObsGroup[0]?.obs_start_millis,
+      lastMillis: dayObsGroup[dayObsGroup.length - 1]?.obs_start_millis,
+      boundaryBefore,
+      boundaryAfter,
+    });
+
     const dayObsMidFakeX = Math.floor(
       (dayObsEndFakeX - dayObsStartFakeX) / 2 + dayObsStartFakeX,
     );
@@ -160,7 +161,7 @@ export function calculateChartData({
     dayObsTicks.push(dayObsMidFakeX);
     dayObsTickMappings.set(dayObsMidFakeX, availableDayObs[dIdx]);
 
-    // If there is no data for the day, add a NO DATA label
+    // If there is no data for the day, add a no data reference area
     if (dayObsGroup.length === 0) {
       noDataX.push(fakeX);
       dayObsTickMappings.set(dayObsMidFakeX, "");
@@ -171,12 +172,99 @@ export function calculateChartData({
     chartDayObsBreaks.push(fakeX - chartDayObsSpacing / 2);
   });
 
-  // Close the moon if required (and other sentences for the utterly deranged)
-  if (chartMoon.length && chartMoon.at(-1).length < 2) {
-    chartMoon.at(-1).push(fakeX);
-  }
   // We don't want a daytime-like gap in the sequence at the end
   fakeX -= chartDayObsSpacing;
+
+  // Process moon intervals after all fakeX have been assigned
+  const flatData = transformedChartData.flat();
+  const chartMoon = [];
+
+  moonIntervals.forEach(([moonUp, moonDown]) => {
+    // Object describing the moon ReferenceArea
+    const moonObj = {
+      start: 0,
+      end: 0,
+      startIsZigzag: false,
+      endIsZigzag: false,
+    };
+
+    // Process moonUp event (index 0)
+    let closestUp = null;
+    let closestUpDiff = Infinity;
+    flatData.forEach((entry) => {
+      const diff = Math.abs(entry.obs_start_millis - moonUp);
+      if (diff < closestUpDiff) {
+        closestUpDiff = diff;
+        closestUp = entry;
+      }
+    });
+
+    if (closestUp) {
+      // Check if moonUp is before first obs of a dayobs
+      let isBeforeDayobs = false;
+      dayObsMetadata.forEach((meta) => {
+        if (
+          meta.firstFakeX === closestUp.fakeX &&
+          meta.firstMillis &&
+          moonUp < meta.firstMillis
+        ) {
+          // Use the before-dayobs boundary
+          moonObj.start = meta.boundaryBefore;
+          moonObj.startIsZigzag = true;
+          isBeforeDayobs = true;
+        }
+      });
+      if (!isBeforeDayobs) {
+        moonObj.start = closestUp.fakeX;
+      }
+    }
+
+    // Process moonDown event (index 1)
+    let closestDown = null;
+    let closestDownDiff = Infinity;
+    flatData.forEach((entry) => {
+      const diff = Math.abs(entry.obs_start_millis - moonDown);
+      if (diff < closestDownDiff) {
+        closestDownDiff = diff;
+        closestDown = entry;
+      }
+    });
+
+    if (closestDown) {
+      // Check if moonDown is after last obs of a dayobs
+      let isAfterDayobs = false;
+      dayObsMetadata.forEach((meta) => {
+        if (
+          meta.lastFakeX === closestDown.fakeX &&
+          meta.lastMillis &&
+          moonDown > meta.lastMillis
+        ) {
+          // use the after-dayobs bondary
+          moonObj.end = meta.boundaryAfter;
+          moonObj.endIsZigzag = true;
+          isAfterDayobs = true;
+        }
+      });
+      if (!isAfterDayobs) {
+        moonObj.end = closestDown.fakeX;
+      }
+    }
+
+    // Ensure that the edges of the graph are correct
+    if (moonObj.start <= 0) {
+      moonObj.startIsZigzag = false;
+    }
+    if (moonObj.end >= fakeX) {
+      moonObj.endIsZigzag = false;
+    }
+
+    // If there the moonObj is twice the width of chartDayObsSpacing,
+    // that means there is nothing in that dayobs, so don't
+    // show the moon at all.
+    if (moonObj.end - moonObj.start !== chartDayObsSpacing * 2 + 1) {
+      chartMoon.push(moonObj);
+    }
+  });
 
   return {
     chartData: transformedChartData,

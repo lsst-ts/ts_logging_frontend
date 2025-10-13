@@ -82,3 +82,63 @@ export function NoDataReferenceArea({
     </g>
   );
 }
+
+/**
+ * Custom shape component for moon reference areas in timeseries plots.
+ * Renders a filled area with conditional squiggly edges based on whether
+ * the moon event occurs at a dayobs boundary.
+ */
+export function MoonReferenceArea({
+  x,
+  y,
+  width,
+  height,
+  fill,
+  fillOpacity,
+  startIsZigzag,
+  endIsZigzag,
+}) {
+  const step = height / SQUIGGLE_SEGMENTS;
+
+  const x1 = x;
+  const x2 = x + width;
+  const yMin = y;
+  const yMax = y + height;
+
+  // Create closed path for filled area
+  let areaPath = `M ${x1} ${yMin}`;
+
+  // Left edge (going up)
+  if (startIsZigzag) {
+    for (let i = 1; i <= SQUIGGLE_SEGMENTS; i++) {
+      const yy = yMin + i * step;
+      const offset = i % 2 === 0 ? SQUIGGLE_AMPLITUDE : -SQUIGGLE_AMPLITUDE;
+      areaPath += ` L ${x1 + offset} ${yy}`;
+    }
+  } else {
+    areaPath += ` L ${x1} ${yMax}`;
+  }
+
+  // Top edge
+  areaPath += ` L ${x2} ${yMax}`;
+
+  // Right edge (going down)
+  if (endIsZigzag) {
+    for (let i = SQUIGGLE_SEGMENTS; i >= 0; i--) {
+      const yy = yMin + i * step;
+      const offset = i % 2 === 0 ? SQUIGGLE_AMPLITUDE : -SQUIGGLE_AMPLITUDE;
+      areaPath += ` L ${x2 + offset} ${yy}`;
+    }
+  } else {
+    areaPath += ` L ${x2} ${yMin}`;
+  }
+
+  // Bottom edge
+  areaPath += ` L ${x1} ${yMin}`;
+
+  return (
+    <g>
+      <path d={areaPath} fill={fill} fillOpacity={fillOpacity} />
+    </g>
+  );
+}

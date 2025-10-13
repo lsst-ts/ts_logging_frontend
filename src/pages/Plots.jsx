@@ -23,6 +23,7 @@ import {
   PLOT_DEFINITIONS,
   BAND_COLORS,
   PLOT_KEY_TIME,
+  PLOT_KEY_SEQUENCE,
 } from "@/components/PLOT_DEFINITIONS";
 
 import {
@@ -378,6 +379,12 @@ function Plots() {
               Formatting options are found by clicking the{" "}
               <span className="font-medium">Plot Format</span> button. Future
               features include remembering your plot preferences.
+            </p>
+            <p>
+              When plotting multiple nights by{" "}
+              <span className="font-medium">Sequence Number</span>, nights are
+              separated by single zig-zag lines; double zig-zags represent
+              nights with no data taken.
             </p>
           </div>
         </div>
