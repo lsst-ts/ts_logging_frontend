@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 
 import { toast } from "sonner";
 import { useSearch } from "@tanstack/react-router";
@@ -25,12 +25,13 @@ import {
   PLOT_KEY_TIME,
   PLOT_KEY_SEQUENCE,
 } from "@/components/PLOT_DEFINITIONS";
+import { PLOT_DEFINITIONS, BAND_COLORS } from "@/components/PLOT_DEFINITIONS";
+import BokehPlot from "@/components/BokehPlot";
 
 import {
   fetchAlmanac,
   fetchDataLogEntriesFromConsDB,
   fetchVisitMaps,
-  // fetchSurveyProgressMap,
 } from "@/utils/fetchUtils";
 import {
   DEFAULT_PIXEL_SCALE_MEDIAN,
@@ -47,41 +48,6 @@ import {
   utcDateTimeStrToTAIMillis,
   generateDayObsRange,
 } from "@/utils/timeUtils";
-
-import * as Bokeh from "@bokeh/bokehjs";
-
-const MyBokehPlot = ({ plotData }) => {
-  const plotRef = useRef(null);
-  const embeddedRef = useRef(false);
-
-  useEffect(() => {
-    if (!plotData || embeddedRef.current === true) return;
-
-    if (plotRef.current) {
-      plotRef.current.innerHTML = "";
-      try {
-        Bokeh.embed.embed_item(plotData, plotRef.current);
-        embeddedRef.current = true;
-      } catch (error) {
-        console.error("Error embedding Bokeh plot:", error);
-      }
-    }
-
-    return () => {
-      if (plotRef.current) {
-        plotRef.current.innerHTML = "";
-        embeddedRef.current = false;
-      }
-    };
-  }, [plotData]);
-
-  return (
-    <div
-      ref={plotRef}
-      style={{ height: "auto", width: "auto", minHeight: "300px" }}
-    />
-  );
-};
 
 function Plots() {
   // Routing and URL params
@@ -130,9 +96,7 @@ function Plots() {
   const [bandMarker, setBandMarker] = useState("bandColorsIcons");
 
   const [interactiveMap, setInteractiveMap] = useState(null);
-  // const [staticMap, setStaticMap] = useState({});
   const [visitMapsLoading, setVisitMapsLoading] = useState(false);
-  const [progressMapLoading, _] = useState(false);
 
   function prepareExposureData(dataLog) {
     // Prepare data for plots
@@ -278,8 +242,6 @@ function Plots() {
 
     setVisitMapsLoading(true);
     setInteractiveMap(null);
-    // setProgressMapLoading(true);
-    // setStaticMap(null);
 
     resetState();
 
@@ -354,25 +316,6 @@ function Plots() {
           setVisitMapsLoading(false);
         }
       });
-
-    // fetchSurveyProgressMap(endDayobs, instrument, abortController)
-    // .then((progressMapPlot) => {
-    //   // console.log(interactivePlot);
-    //   // console.log(staticPlot);
-    //   setStaticMap(progressMapPlot);
-    //   // console.log(staticPlot);
-    // }).catch((err) => {
-    //   if (!abortController.signal.aborted) {
-    //     toast.error("Error fetching survey progress map!", {
-    //       description: err?.message,
-    //       duration: Infinity,
-    //     });
-    //   }
-    // }).finally(() => {
-    //   if (!abortController.signal.aborted) {
-    //     setProgressMapLoading(false);
-    //   }
-    // });
 
     return () => {
       abortController.abort();
@@ -632,8 +575,6 @@ function Plots() {
             </>
           )}
         </div>
-
-        {/* Actual Visit Maps */}
         <div className="mt-16 mxb-8 text-white font-thin text-center">
           <h1 className="flex flex-row gap-2 text-white text-3xl uppercase justify-center pb-4">
             <span className="tracking-[2px] font-extralight">Visit</span>
@@ -642,41 +583,160 @@ function Plots() {
           {visitMapsLoading ? (
             <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
           ) : (
-            <div className="flex flex-col w-full px-4 space-y-4 items-center">
-              {interactiveMap && (
-                <MyBokehPlot id="interactive-plot" plotData={interactiveMap} />
-              )}
+            <div className="w-full">
+              <div class="prose max-w-none text-natural-200 text-left">
+                <p>
+                  These plots show the visits collected during the night in two
+                  different representations, modeled after physical observing
+                  tools.
+                </p>
+                <ul class="list-disc pl-6">
+                  <li>
+                    <strong>Armillary sphere</strong> (left): a model of the
+                    celestial sphere, with the Earth at its center, and the sky
+                    projected onto it.
+                  </li>
+                  <li>
+                    <strong>Planisphere</strong> (right): a flat representation
+                    of the sky, as seen from a specific location on Earth at a
+                    specific time.
+                  </li>
+                </ul>
+                <p>
+                  Both plots show the footprints of camera pointings taken up to
+                  the time set by the MJD slider, with the most recent three
+                  pointings outlined in{" "}
+                  <span class="text-cyan-500 font-semibold">cyan</span>. The
+                  fill colors are set according to the RTN-45:
+                </p>
+                <div class="flex flex-wrap justify-center gap-4 items-center">
+                  <div class="flex items-center gap-1">
+                    <span className="w-3 h-3 bg-band-u"></span>
+                    <span>u band</span>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <span className="w-3 h-3 bg-band-g"></span>
+                    <span>g band</span>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <span className="w-3 h-3 bg-band-r"></span>
+                    <span>r band</span>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <span className="w-3 h-3 bg-band-i"></span>
+                    <span>i band</span>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <span className="w-3 h-3 bg-band-z"></span>
+                    <span>z band</span>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <span className="w-3 h-3 bg-band-y"></span>
+                    <span>y band</span>
+                  </div>
+                </div>
+                <p class="mt-4">
+                  Both plots have the following additional annotations:
+                </p>
+                <ul class="list-disc pl-6 space-y-1">
+                  <li>
+                    The gray background shows the planned final depth of the
+                    LSST survey.
+                  </li>
+                  <li>
+                    The{" "}
+                    <span class="text-orange-500 font-semibold">
+                      orange disk
+                    </span>{" "}
+                    shows the coordinates of the moon.
+                  </li>
+                  <li>
+                    The{" "}
+                    <span class="text-yellow-400 font-semibold">
+                      yellow disk
+                    </span>{" "}
+                    shows the coordinates of the sun.
+                  </li>
+                  <li>
+                    The{" "}
+                    <span class="text-green-500 font-semibold">green line</span>{" "}
+                    (oval) shows the ecliptic.
+                  </li>
+                  <ul class="list-disc pl-6 mt-1">
+                    <li>
+                      The sun moves along the ecliptic in the direction of
+                      increasing R.A. (counter-clockwise in the planisphere
+                      figure) such that it makes a full revolution in one year.
+                    </li>
+                    <li>
+                      The moon moves roughly (within 5.14°) along the ecliptic
+                      in the direction of increasing R.A. (counter-clockwise in
+                      the planisphere figure), completing a full revolution in
+                      one sidereal month (a bit over 27 days), about 14° per
+                      day.
+                    </li>
+                  </ul>
+                  <li>
+                    The{" "}
+                    <span class="text-blue-500 font-semibold">blue line</span>{" "}
+                    (oval) shows the plane of the Milky Way.
+                  </li>
+                  <li>
+                    The <span class="text-white font-semibold">white line</span>{" "}
+                    shows the horizon at the time set by the MJD slider.
+                  </li>
+                  <li>
+                    The <span class="text-red-500 font-semibold">red line</span>{" "}
+                    shows a zenith distance of 70° (airmass = 2.9) at the time
+                    set by the MJD slider.
+                  </li>
+                </ul>
+              </div>
+              <div className="flex flex-col w-full px-4 pt-2 space-y-4 items-center">
+                {interactiveMap && (
+                  <BokehPlot id="interactive-plot" plotData={interactiveMap} />
+                )}
+              </div>
             </div>
           )}
-          {/* <h1 className="flex flex-row gap-2 text-white text-3xl uppercase justify-center pb-4">
-            <span className="tracking-[2px] font-extralight">Survey</span>
-            <span className="font-extrabold"> Progress</span>
-          </h1> */}
-          {progressMapLoading ? (
-            <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
-          ) : (
-            <div className="flex flex-col w-full px-4 space-y-4 items-center">
-              {/* {staticMap &&
-                Object.entries(staticMap).map(([key, value]) => (
-                  <>
-                    <div className="text-xl">{key}</div>
-                    <MyBokehPlot id={`hpix_grid_${key}`} plotData={value} />
-                  </>
-                ))
-              } */}
-
-              {/* {staticMap && 
-                <MyBokehPlot id="hpix_grid" plotData={staticMap} /> 
-              } */}
-
-              {/* {staticMap && 
-                <img
-                  src={`data:image/png;base64,${staticMap}`}
-                  alt="Static matplotlib plot"
-                />
-              } */}
-            </div>
-          )}
+          {/* Link to nightsum reports */}
+          <div className="mt-16 mxb-8 text-white font-thin text-center">
+            <h1 className="flex flex-row gap-2 text-white text-3xl uppercase justify-center pb-4">
+              <span className="tracking-[2px] font-extralight">Survey</span>
+              <span className="font-extrabold"> Progress</span>
+            </h1>
+            {dataLogLoading || almanacLoading ? (
+              <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
+            ) : (
+              <>
+                <p>
+                  For survey progress, visit the Scheduler-oriented night
+                  summaries:{" "}
+                  {availableDayobs.map((dayobs, idx) => {
+                    const { url, label } = getNightSummaryLink(dayobs);
+                    return (
+                      <span key={dayobs}>
+                        <a
+                          href={url}
+                          className="underline text-blue-300 hover:text-blue-400"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {label}
+                        </a>
+                        {idx < availableDayobs.length - 1 && ", "}
+                      </span>
+                    );
+                  })}
+                  .
+                </p>
+                <p className="pt-2">
+                  <span className="font-medium">Note: </span>If you see a 404
+                  error, the summary might not have been created for that day.
+                </p>
+              </>
+            )}
+          </div>
         </div>
       </div>
       <Toaster expand={true} richColors closeButton />
@@ -685,4 +745,3 @@ function Plots() {
 }
 
 export default Plots;
-export { MyBokehPlot };
