@@ -3,7 +3,6 @@ import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import AppletExposures from "@/components/applet-exposures.jsx";
 import MetricsCard from "@/components/metrics-card.jsx";
-// import VisitMap from "@/components/applet-visit-map.jsx";
 import VisitMapApplet from "@/components/VisitMapApplet";
 
 import { EfficiencyChart } from "@/components/ui/RadialChart.jsx";

@@ -5,7 +5,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MyBokehPlot } from "@/pages/plots";
+import BokehPlot from "@/components/BokehPlot";
 
 import InfoIcon from "../assets/InfoIcon.svg";
 import DownloadIcon from "../assets/DownloadIcon.svg";
@@ -33,9 +33,45 @@ function VisitMapApplet({ mapData, mapLoading }) {
               <img src={InfoIcon} />
             </PopoverTrigger>
             <PopoverContent className="bg-black text-white text-sm border-yellow-700">
-              The Visit Map Applet will display the location of the visits for
-              the selected dayObs range, based on what is calculated from the
-              Schedview and Scheduler simulations teams.
+              <p>
+                <strong>Planisphere</strong> is a flat representation of the
+                sky, as seen from a specific location on Earth at a specific
+                time.
+              </p>
+              <ul class="list-disc pl-6 space-y-1">
+                <li>
+                  The gray background shows the planned final depth of the LSST
+                  survey.
+                </li>
+                <li>
+                  The{" "}
+                  <span class="text-orange-500 font-semibold">orange disk</span>
+                  : the coordinates of the moon.
+                </li>
+                <li>
+                  The{" "}
+                  <span class="text-yellow-400 font-semibold">yellow disk</span>
+                  : the coordinates of the sun.
+                </li>
+                <li>
+                  The{" "}
+                  <span class="text-green-500 font-semibold">green line</span>{" "}
+                  (oval): the ecliptic.
+                </li>
+                <li>
+                  The <span class="text-blue-500 font-semibold">blue line</span>{" "}
+                  (oval): the plane of the Milky Way.
+                </li>
+                <li>
+                  The <span class="text-white font-semibold">white line</span>:
+                  The horizon at the time set by the MJD slider.
+                </li>
+                <li>
+                  The <span class="text-red-500 font-semibold">red line</span>:
+                  a zenith distance of 70° (airmass = 2.9) at the time set by
+                  the MJD slider.
+                </li>
+              </ul>
             </PopoverContent>
           </Popover>
         </div>
@@ -45,9 +81,7 @@ function VisitMapApplet({ mapData, mapLoading }) {
           <Skeleton className="w-full h-full bg-stone-900 rounded-md" />
         ) : (
           <div className="flex flex-col w-full px-4 space-y-4 items-center">
-            {mapData && (
-              <MyBokehPlot id="interactive-plot" plotData={mapData} />
-            )}
+            {mapData && <BokehPlot id="interactive-plot" plotData={mapData} />}
           </div>
         )}
       </CardContent>
