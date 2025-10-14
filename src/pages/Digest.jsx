@@ -11,6 +11,7 @@ import TimeLossIcon from "../assets/TimeLossIcon.svg";
 import JiraIcon from "../assets/JiraIcon.svg";
 import {
   fetchExposures,
+  fetchExpectedExposures,
   fetchAlmanac,
   fetchNarrativeLog,
   fetchNightreport,
@@ -48,11 +49,14 @@ export default function Digest() {
   const [exposureCount, setExposureCount] = useState(0);
   const [sumExpTime, setSumExpTime] = useState(0.0);
   const [onSkyExpCount, setOnSkyExpCount] = useState(0);
+  const [expectedOnSkyExpCount, setExpectedOnSkyExpCount] = useState(0);
   const [sumOnSkyExpTime, setSumOnSkyExpTime] = useState(0.0);
   const [flags, setFlags] = useState([]);
   const [reports, setReports] = useState([]);
 
   const [exposuresLoading, setExposuresLoading] = useState(false);
+  const [expectedExposuresLoading, setExpectedExposuresLoading] =
+    useState(false);
   const [almanacLoading, setAlmanacLoading] = useState(false);
   const [narrativeLoading, setNarrativeLoading] = useState(false);
   const [nightreportLoading, setNightreportLoading] = useState(false);
@@ -76,6 +80,7 @@ export default function Digest() {
       .toFormat("yyyyMMdd");
     const instrument = TELESCOPES[telescope];
     setExposuresLoading(true);
+    setExpectedExposuresLoading(true);
     setAlmanacLoading(true);
     setNarrativeLoading(true);
     setNightreportLoading(true);
@@ -91,6 +96,7 @@ export default function Digest() {
     setExposureCount(0);
     setReports([]);
     setOnSkyExpCount(0);
+    setExpectedOnSkyExpCount(0);
     setFlags([]);
     setOpenDomeHours(0.0);
 
@@ -131,6 +137,33 @@ export default function Digest() {
       .finally(() => {
         if (!abortController.signal.aborted) {
           setExposuresLoading(false);
+        }
+      });
+
+    fetchExpectedExposures(startDayobs, endDayobs, abortController)
+      .then(
+        ([
+          // expectedNightlyExposures,
+          expectedSumExposures,
+        ]) => {
+          setExpectedOnSkyExpCount(expectedSumExposures);
+          if (expectedSumExposures === 0) {
+            toast.warning("No exposures expected for the selected date range.");
+          }
+        },
+      )
+      .catch((err) => {
+        if (!abortController.signal.aborted) {
+          const msg = err?.message;
+          toast.error("Error fetching expected exposures!", {
+            description: msg,
+            duration: Infinity,
+          });
+        }
+      })
+      .finally(() => {
+        if (!abortController.signal.aborted) {
+          setExpectedExposuresLoading(false);
         }
       });
 
@@ -315,9 +348,9 @@ export default function Digest() {
             icon={ShutterIcon}
             data={onSkyExpCount}
             label="Nighttime exposures taken"
-            metadata="(TBD expected)"
-            tooltip="On-sky exposures taken during the specified date range."
-            loading={exposuresLoading}
+            metadata={`(${expectedOnSkyExpCount} expected)`}
+            tooltip="On-sky exposures taken during the specified date range, and the expected number of exposures, as given by the latest simulated nominal night."
+            loading={exposuresLoading || expectedExposuresLoading}
           />
           <MetricsCard
             icon={<EfficiencyChart value={efficiency} />}
