@@ -10,12 +10,8 @@ const BokehPlot = ({ plotData }) => {
 
     if (plotRef.current) {
       plotRef.current.innerHTML = "";
-      try {
-        Bokeh.embed.embed_item(plotData, plotRef.current);
-        embeddedRef.current = true;
-      } catch (error) {
-        console.error("Error embedding Bokeh plot:", error);
-      }
+      Bokeh.embed.embed_item(plotData, plotRef.current);
+      embeddedRef.current = true;
     }
 
     return () => {
