@@ -203,11 +203,9 @@ function Plots() {
     }
 
     // Handle moon still up at end
-    if (sorted[sorted.length - 1].type === "rise") {
-      intervals.push([
-        Math.max(sorted[sorted.length - 1].time, xMinMillis),
-        xMaxMillis,
-      ]);
+    const last = sorted.at(-1);
+    if (last.type === "rise" && last.time < xMaxMillis) {
+      intervals.push([last.time, xMaxMillis]);
     }
 
     return intervals;
@@ -302,8 +300,8 @@ function Plots() {
     if (moonValues && xMinMillis != null && xMaxMillis != null) {
       const intervals = prepareMoonIntervals(
         moonValues,
-        xMinMillis,
-        xMaxMillis,
+        xMinMillis.toMillis(),
+        xMaxMillis.toMillis(),
       );
       setMoonIntervals(intervals);
     }
@@ -500,6 +498,7 @@ function Plots() {
                     bandMarker={bandMarker}
                     isBandPlot={!!def?.bandMarker}
                     plotIndex={idx}
+                    nPlots={visiblePlots.length}
                     availableDayObs={availableDayObs}
                   />
                 );

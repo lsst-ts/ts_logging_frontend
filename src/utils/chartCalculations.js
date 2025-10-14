@@ -3,6 +3,63 @@ import { groupBy } from "@/utils/plotUtils";
 import { getDayobsStartTAI, millisToHHmm } from "@/utils/timeUtils";
 
 /**
+ * Helper function to find fakeX position for a moon event (moonUp or moonDown).
+ * Finds the closest data point by timestamp and checks if the event occurs
+ * at a dayobs boundary.
+ *
+ * @param {number} moonEventMillis - Moon event timestamp in milliseconds
+ * @param {Array} flatData - Flattened array of all data entries with fakeX
+ * @param {Array} dayObsMetadata - Metadata for each dayobs group
+ * @returns {Object} Object with fakeX position and isZigzag flag
+ */
+function findMoonEventFakeX(moonEventMillis, flatData, dayObsMetadata) {
+  // Find closest data point by timestamp
+  let closestEntry = null;
+  let closestDiff = Infinity;
+  flatData.forEach((entry) => {
+    const diff = Math.abs(entry.obs_start_millis - moonEventMillis);
+    if (diff < closestDiff) {
+      closestDiff = diff;
+      closestEntry = entry;
+    }
+  });
+
+  if (!closestEntry) {
+    return { fakeX: 0, isZigzag: false };
+  }
+
+  // Check if moon event is at a dayobs boundary
+  let isAtBoundary = false;
+  let boundaryFakeX = closestEntry.fakeX;
+
+  dayObsMetadata.forEach((meta) => {
+    // Check if moon event is before first obs of a dayobs
+    if (
+      meta.firstFakeX === closestEntry.fakeX &&
+      meta.firstMillis &&
+      moonEventMillis < meta.firstMillis
+    ) {
+      boundaryFakeX = meta.boundaryBefore;
+      isAtBoundary = true;
+    }
+    // Check if moon event is after last obs of a dayobs
+    if (
+      meta.lastFakeX === closestEntry.fakeX &&
+      meta.lastMillis &&
+      moonEventMillis > meta.lastMillis
+    ) {
+      boundaryFakeX = meta.boundaryAfter;
+      isAtBoundary = true;
+    }
+  });
+
+  return {
+    fakeX: isAtBoundary ? boundaryFakeX : closestEntry.fakeX,
+    isZigzag: isAtBoundary,
+  };
+}
+
+/**
  * Calculate all data transformations needed for chart plotting.
  * This function transforms time-series data into sequence-indexed data with
  * properly positioned ticks, moon intervals, and day observation breaks.
@@ -41,7 +98,7 @@ export function calculateChartData({
   // Calculate size of spacing between dayobs in PLOT_KEY_SEQUENCE mode
   // We use the smaller of two numbers based off the number of data points
   // or the number of dayObs, but no less than 8 (otherwise the squiggle lines overlap)
-  const chartDayObsSpacing =
+  let chartDayObsSpacing =
     chartData.length > 1
       ? Math.ceil(
           Math.max(
@@ -53,6 +110,9 @@ export function calculateChartData({
           ),
         )
       : 1;
+
+  // We also don't want dayObsSpacing to be an odd number
+  if (chartDayObsSpacing % 2) chartDayObsSpacing++;
 
   // If not in sequence mode, return grouped time data
   // Some blank things are included to ensure the return type is consistent
@@ -108,7 +168,8 @@ export function calculateChartData({
     };
   }
 
-  let fakeX = 0;
+  // Don't have the first point on the left Y axis
+  let fakeX = 1;
   const transformedChartData = [];
   const chartDayObsBreaks = [];
   const ticks = [];
@@ -180,75 +241,21 @@ export function calculateChartData({
   const chartMoon = [];
 
   moonIntervals.forEach(([moonUp, moonDown]) => {
+    // Find fakeX positions for moonUp and moonDown events
+    const moonUpResult = findMoonEventFakeX(moonUp, flatData, dayObsMetadata);
+    const moonDownResult = findMoonEventFakeX(
+      moonDown,
+      flatData,
+      dayObsMetadata,
+    );
+
     // Object describing the moon ReferenceArea
     const moonObj = {
-      start: 0,
-      end: 0,
-      startIsZigzag: false,
-      endIsZigzag: false,
+      start: moonUpResult.fakeX,
+      end: moonDownResult.fakeX,
+      startIsZigzag: moonUpResult.isZigzag,
+      endIsZigzag: moonDownResult.isZigzag,
     };
-
-    // Process moonUp event (index 0)
-    let closestUp = null;
-    let closestUpDiff = Infinity;
-    flatData.forEach((entry) => {
-      const diff = Math.abs(entry.obs_start_millis - moonUp);
-      if (diff < closestUpDiff) {
-        closestUpDiff = diff;
-        closestUp = entry;
-      }
-    });
-
-    if (closestUp) {
-      // Check if moonUp is before first obs of a dayobs
-      let isBeforeDayobs = false;
-      dayObsMetadata.forEach((meta) => {
-        if (
-          meta.firstFakeX === closestUp.fakeX &&
-          meta.firstMillis &&
-          moonUp < meta.firstMillis
-        ) {
-          // Use the before-dayobs boundary
-          moonObj.start = meta.boundaryBefore;
-          moonObj.startIsZigzag = true;
-          isBeforeDayobs = true;
-        }
-      });
-      if (!isBeforeDayobs) {
-        moonObj.start = closestUp.fakeX;
-      }
-    }
-
-    // Process moonDown event (index 1)
-    let closestDown = null;
-    let closestDownDiff = Infinity;
-    flatData.forEach((entry) => {
-      const diff = Math.abs(entry.obs_start_millis - moonDown);
-      if (diff < closestDownDiff) {
-        closestDownDiff = diff;
-        closestDown = entry;
-      }
-    });
-
-    if (closestDown) {
-      // Check if moonDown is after last obs of a dayobs
-      let isAfterDayobs = false;
-      dayObsMetadata.forEach((meta) => {
-        if (
-          meta.lastFakeX === closestDown.fakeX &&
-          meta.lastMillis &&
-          moonDown > meta.lastMillis
-        ) {
-          // use the after-dayobs bondary
-          moonObj.end = meta.boundaryAfter;
-          moonObj.endIsZigzag = true;
-          isAfterDayobs = true;
-        }
-      });
-      if (!isAfterDayobs) {
-        moonObj.end = closestDown.fakeX;
-      }
-    }
 
     // Ensure that the edges of the graph are correct
     if (moonObj.start <= 0) {
@@ -258,10 +265,12 @@ export function calculateChartData({
       moonObj.endIsZigzag = false;
     }
 
-    // If there the moonObj is twice the width of chartDayObsSpacing,
-    // that means there is nothing in that dayobs, so don't
-    // show the moon at all.
-    if (moonObj.end - moonObj.start !== chartDayObsSpacing * 2 + 1) {
+    // If there are no observations inside a moon interval don't
+    // show it, as this means it encompasses an empty dayobs
+    if (
+      flatData.filter((d) => d.fakeX >= moonObj.start && d.fakeX <= moonObj.end)
+        .length
+    ) {
       chartMoon.push(moonObj);
     }
   });

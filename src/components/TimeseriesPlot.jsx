@@ -88,6 +88,7 @@ function TimeseriesPlot({
   availableDayObs,
   isBandPlot = false,
   plotIndex = 0,
+  nPlots = 1,
   xAxisType = PLOT_KEY_TIME,
 }) {
   const selectedMinMillis = selectedTimeRange[0]?.toMillis();
@@ -220,7 +221,12 @@ function TimeseriesPlot({
 
   // Plot =================================================
   return (
-    <ChartContainer className="pt-8 h-51 w-full" title={title} config={{}}>
+    <ChartContainer
+      className="pt-8 h-51 w-full"
+      title={title}
+      config={{}}
+      style={{ zIndex: nPlots - plotIndex }}
+    >
       <h1 className="text-white text-lg font-thin text-center">{title}</h1>
       <LineChart
         width={500}
