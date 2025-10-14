@@ -29,6 +29,7 @@ services:
       - "8080:8080"
     volumes:
       - ${BACKEND_PATH}:/home/saluser/develop
+      - ~/.aws:/home/saluser/.aws:ro
 
   nginx:
     container_name: nightlydigest-nginx
