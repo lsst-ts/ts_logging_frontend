@@ -1,0 +1,1 @@
+Add interactive visit maps to the Plots page.
