@@ -1,0 +1,1 @@
+Display expected number of exposures for Simonyi.
