@@ -347,8 +347,16 @@ export default function Digest() {
             icon={ShutterIcon}
             data={onSkyExpCount}
             label="Nighttime exposures taken"
-            metadata={`(${expectedOnSkyExpCount} expected)`}
-            tooltip="On-sky exposures taken during the specified date range, and the expected number of exposures, as given by the latest simulated nominal night."
+            metadata={
+              telescope === "Simonyi"
+                ? `(${expectedOnSkyExpCount} expected)`
+                : undefined
+            }
+            tooltip={
+              telescope === "Simonyi"
+                ? "On-sky exposures taken during the specified date range, and the expected number of exposures, as given by the latest simulated nominal night."
+                : "On-sky exposures taken during the specified date range."
+            }
             loading={exposuresLoading || expectedExposuresLoading}
           />
           <MetricsCard
