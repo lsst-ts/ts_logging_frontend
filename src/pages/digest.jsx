@@ -373,7 +373,6 @@ export default function Digest() {
               nightHours={nightHours}
               openDomeHours={openDomeHours}
             />
-            {/* <VisitMap endDayobs={endDayobs} /> */}
             <VisitMapApplet
               mapData={interactiveMap}
               mapLoading={visitMapLoading}

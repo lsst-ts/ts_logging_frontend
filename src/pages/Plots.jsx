@@ -607,7 +607,15 @@ function Plots() {
                   the time set by the MJD slider, with the most recent three
                   pointings outlined in{" "}
                   <span class="text-cyan-500 font-semibold">cyan</span>. The
-                  fill colors are set according to the RTN-45:
+                  fill colors are set according to the{" "}
+                  <a
+                    className="text-blue-600 font-semibold underline"
+                    href="https://rtn-045.lsst.io/"
+                    target="_blank"
+                  >
+                    RTN-45
+                  </a>
+                  :
                 </p>
                 <div class="flex flex-wrap justify-center gap-4 items-center">
                   <div class="flex items-center gap-1">
