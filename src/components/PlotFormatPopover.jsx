@@ -15,10 +15,13 @@ import {
   PLOT_BAND_MARKER_OPTIONS,
   PLOT_X_AXIS_OPTIONS,
 } from "@/components/PLOT_DEFINITIONS";
+import { Checkbox } from "./ui/checkbox";
 
 function PlotFormatPopover({
   xAxisType,
   setXAxisType,
+  xAxisShow,
+  setXAxisShow,
   plotShape,
   setPlotShape,
   plotColor,
@@ -65,7 +68,16 @@ function PlotFormatPopover({
               </div>
             ))}
           </RadioGroup>
-
+          <div className="flex pl-16 items-center space-x-2">
+            <Checkbox
+              id="xaxis-show"
+              checked={xAxisShow}
+              onCheckedChange={(checked) => setXAxisShow(checked)}
+            />
+            <Label htmlFor="xaxis-show" className="text-sm">
+              Show X Axis Label
+            </Label>
+          </div>
           <Separator className="bg-sky-700/50 mt-4 mb-2" />
           {/* Shape Selection */}
           <h2 className="text-md font-thin">Shape</h2>
