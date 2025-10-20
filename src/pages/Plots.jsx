@@ -584,13 +584,13 @@ function Plots() {
             <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
           ) : (
             <div className="w-full">
-              <div class="prose max-w-none text-natural-200 text-left">
+              <div className="prose max-w-none text-natural-200 text-left">
                 <p>
                   These plots show the visits collected during the night in two
                   different representations, modeled after physical observing
                   tools.
                 </p>
-                <ul class="list-disc pl-6">
+                <ul className="list-disc pl-6">
                   <li>
                     <strong>Armillary sphere</strong> (left): a model of the
                     celestial sphere, with the Earth at its center, and the sky
@@ -606,10 +606,10 @@ function Plots() {
                   Both plots show the footprints of camera pointings taken up to
                   the time set by the MJD slider, with the most recent three
                   pointings outlined in{" "}
-                  <span class="text-cyan-500 font-semibold">cyan</span>. The
+                  <span className="text-cyan-500 font-normal">cyan</span>. The
                   fill colors are set according to the{" "}
                   <a
-                    className="text-blue-600 font-semibold underline"
+                    className="text-blue-600 font-normal underline"
                     href="https://rtn-045.lsst.io/"
                     target="_blank"
                   >
@@ -617,60 +617,62 @@ function Plots() {
                   </a>
                   :
                 </p>
-                <div class="flex flex-wrap justify-center gap-4 items-center">
-                  <div class="flex items-center gap-1">
+                <div className="flex flex-wrap justify-center gap-4 items-center">
+                  <div className="flex items-center gap-1">
                     <span className="w-3 h-3 bg-band-u"></span>
                     <span>u band</span>
                   </div>
-                  <div class="flex items-center gap-1">
+                  <div className="flex items-center gap-1">
                     <span className="w-3 h-3 bg-band-g"></span>
                     <span>g band</span>
                   </div>
-                  <div class="flex items-center gap-1">
+                  <div className="flex items-center gap-1">
                     <span className="w-3 h-3 bg-band-r"></span>
                     <span>r band</span>
                   </div>
-                  <div class="flex items-center gap-1">
+                  <div className="flex items-center gap-1">
                     <span className="w-3 h-3 bg-band-i"></span>
                     <span>i band</span>
                   </div>
-                  <div class="flex items-center gap-1">
+                  <div className="flex items-center gap-1">
                     <span className="w-3 h-3 bg-band-z"></span>
                     <span>z band</span>
                   </div>
-                  <div class="flex items-center gap-1">
+                  <div className="flex items-center gap-1">
                     <span className="w-3 h-3 bg-band-y"></span>
                     <span>y band</span>
                   </div>
                 </div>
-                <p class="mt-4">
+                <p className="mt-4">
                   Both plots have the following additional annotations:
                 </p>
-                <ul class="list-disc pl-6 space-y-1">
+                <ul className="list-disc pl-6 space-y-1">
                   <li>
                     The gray background shows the planned final depth of the
                     LSST survey.
                   </li>
                   <li>
                     The{" "}
-                    <span class="text-orange-500 font-semibold">
+                    <span className="text-orange-500 font-normal">
                       orange disk
                     </span>{" "}
                     shows the coordinates of the moon.
                   </li>
                   <li>
                     The{" "}
-                    <span class="text-yellow-400 font-semibold">
+                    <span className="text-yellow-400 font-normal">
                       yellow disk
                     </span>{" "}
                     shows the coordinates of the sun.
                   </li>
                   <li>
                     The{" "}
-                    <span class="text-green-500 font-semibold">green line</span>{" "}
+                    <span className="text-green-500 font-normal">
+                      green line
+                    </span>{" "}
                     (oval) shows the ecliptic.
                   </li>
-                  <ul class="list-disc pl-6 mt-1">
+                  <ul className="list-disc pl-6 mt-1">
                     <li>
                       The sun moves along the ecliptic in the direction of
                       increasing R.A. (counter-clockwise in the planisphere
@@ -686,17 +688,44 @@ function Plots() {
                   </ul>
                   <li>
                     The{" "}
-                    <span class="text-blue-500 font-semibold">blue line</span>{" "}
+                    <span className="text-blue-500 font-normal">blue line</span>{" "}
                     (oval) shows the plane of the Milky Way.
                   </li>
                   <li>
-                    The <span class="text-white font-semibold">white line</span>{" "}
+                    The{" "}
+                    <span className="text-white font-normal">white line</span>{" "}
                     shows the horizon at the time set by the MJD slider.
                   </li>
                   <li>
-                    The <span class="text-red-500 font-semibold">red line</span>{" "}
+                    The{" "}
+                    <span className="text-red-500 font-normal">red line</span>{" "}
                     shows a zenith distance of 70° (airmass = 2.9) at the time
                     set by the MJD slider.
+                  </li>
+                </ul>
+                <h3 className="text-lg font-normal mt-6 mb-2">
+                  Multi-night Visits
+                </h3>
+                <p>
+                  When data from several nights are loaded, all visits are
+                  plotted together, and the <strong>MJD slider</strong> lets you
+                  step through time continuously across the full date range.
+                </p>
+
+                <p>As you move the slider:</p>
+                <ul className="list-disc pl-6 space-y-1">
+                  <li>
+                    Visits from earlier nights fade out while more recent ones
+                    appear.
+                  </li>
+                  <li>
+                    A <strong>night label</strong> below the map updates to
+                    indicate the currently active night (between twilights) and
+                    disappears otherwise.
+                  </li>
+                  <li>
+                    The <strong>Sun and Moon positions</strong> update
+                    dynamically based on the selected MJD.
                   </li>
                 </ul>
               </div>
