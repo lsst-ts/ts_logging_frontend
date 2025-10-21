@@ -3,7 +3,7 @@ import {
   createRouter,
   createRoute,
 } from "@tanstack/react-router";
-import Layout from "./pages/layout";
+import Layout from "./pages/Layout";
 import DataLog from "./pages/DataLog";
 import ContextFeed from "./pages/ContextFeed";
 import Digest from "./pages/Digest";
