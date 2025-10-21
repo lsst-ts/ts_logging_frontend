@@ -1,1 +1,1 @@
-Add interactive visit maps to the Plots page.
+Add a new page for interactive visit maps and remove the links to night summary reports from the plots page.

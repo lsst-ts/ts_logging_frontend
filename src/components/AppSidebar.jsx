@@ -7,7 +7,7 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar.jsx";
 import Parameters from "@/components/parameters";
-import NavMenu from "@/components/navMenu";
+import NavMenu from "@/components/NavMenu";
 import RubinIcon from "../assets/RubinIcon.svg";
 import packageJson from "../../package.json";
 
