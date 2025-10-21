@@ -45,31 +45,49 @@ function VisitMapApplet({ mapData, mapLoading }) {
                 </li>
                 <li>
                   The{" "}
-                  <span class="text-orange-500 font-semibold">orange disk</span>
-                  : the coordinates of the moon.
+                  <span class="text-orange-500 font-normal">orange disk</span>:
+                  the coordinates of the moon.
                 </li>
                 <li>
                   The{" "}
-                  <span class="text-yellow-400 font-semibold">yellow disk</span>
-                  : the coordinates of the sun.
+                  <span class="text-yellow-400 font-normal">yellow disk</span>:
+                  the coordinates of the sun.
                 </li>
                 <li>
-                  The{" "}
-                  <span class="text-green-500 font-semibold">green line</span>{" "}
+                  The <span class="text-green-500 font-normal">green line</span>{" "}
                   (oval): the ecliptic.
                 </li>
                 <li>
-                  The <span class="text-blue-500 font-semibold">blue line</span>{" "}
+                  The <span class="text-blue-500 font-normal">blue line</span>{" "}
                   (oval): the plane of the Milky Way.
                 </li>
                 <li>
-                  The <span class="text-white font-semibold">white line</span>:
+                  The <span class="text-white font-normal">white line</span>:
                   The horizon at the time set by the MJD slider.
                 </li>
                 <li>
-                  The <span class="text-red-500 font-semibold">red line</span>:
-                  a zenith distance of 70° (airmass = 2.9) at the time set by
-                  the MJD slider.
+                  The <span class="text-red-500 font-normal">red line</span>: a
+                  zenith distance of 70° (airmass = 2.9) at the time set by the
+                  MJD slider.
+                </li>
+              </ul>
+              <p>
+                Visits from <strong>several nights</strong> are plotted
+                together. As you move the slider:
+              </p>
+              <ul className="list-disc pl-6 space-y-1">
+                <li>
+                  Visits from earlier nights fade out while more recent ones
+                  appear.
+                </li>
+                <li>
+                  A <strong>night label </strong>
+                  indicates the currently active night (between twilights) and
+                  disappears otherwise.
+                </li>
+                <li>
+                  The <strong>Sun and Moon positions</strong> update
+                  dynamically.
                 </li>
               </ul>
             </PopoverContent>
@@ -81,7 +99,13 @@ function VisitMapApplet({ mapData, mapLoading }) {
           <Skeleton className="w-full h-full bg-stone-900 rounded-md" />
         ) : (
           <div className="flex flex-col w-full px-4 space-y-4 items-center">
-            {mapData && <BokehPlot id="interactive-plot" plotData={mapData} />}
+            {mapData ? (
+              <BokehPlot id="interactive-plot" plotData={mapData} />
+            ) : (
+              <div className="flex items-center justify-center font-normal w-full h-full text-stone-400">
+                No visit map data available
+              </div>
+            )}
           </div>
         )}
       </CardContent>

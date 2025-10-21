@@ -22,11 +22,6 @@ const BokehPlot = ({ plotData }) => {
     };
   }, [plotData]);
 
-  return (
-    <div
-      ref={plotRef}
-      style={{ height: "auto", width: "auto", minHeight: "300px" }}
-    />
-  );
+  return <div ref={plotRef} style={{ height: "auto", width: "auto" }} />;
 };
 export default BokehPlot;

@@ -23,21 +23,16 @@ import {
   PLOT_DEFINITIONS,
   BAND_COLORS,
   PLOT_KEY_TIME,
-  PLOT_KEY_SEQUENCE,
 } from "@/components/PLOT_DEFINITIONS";
-import { PLOT_DEFINITIONS, BAND_COLORS } from "@/components/PLOT_DEFINITIONS";
-import BokehPlot from "@/components/BokehPlot";
 
 import {
   fetchAlmanac,
   fetchDataLogEntriesFromConsDB,
-  fetchVisitMaps,
 } from "@/utils/fetchUtils";
 import {
   DEFAULT_PIXEL_SCALE_MEDIAN,
   PSF_SIGMA_FACTOR,
   getDatetimeFromDayobsStr,
-  getNightSummaryLink,
   prettyTitleFromKey,
 } from "@/utils/utils";
 import {
@@ -94,9 +89,6 @@ function Plots() {
   const [plotShape, setPlotShape] = useState("dots");
   const [plotColor, setPlotColor] = useState("assorted");
   const [bandMarker, setBandMarker] = useState("bandColorsIcons");
-
-  const [interactiveMap, setInteractiveMap] = useState(null);
-  const [visitMapsLoading, setVisitMapsLoading] = useState(false);
 
   function prepareExposureData(dataLog) {
     // Prepare data for plots
@@ -240,9 +232,6 @@ function Plots() {
     setDataLogLoading(true);
     setAlmanacLoading(true);
 
-    setVisitMapsLoading(true);
-    setInteractiveMap(null);
-
     resetState();
 
     fetchDataLogEntriesFromConsDB(
@@ -296,24 +285,6 @@ function Plots() {
       .finally(() => {
         if (!abortController.signal.aborted) {
           setAlmanacLoading(false);
-        }
-      });
-    // Visit maps
-    fetchVisitMaps(startDayobs, queryEndDayobs, instrument, abortController)
-      .then((interactivePlot) => {
-        setInteractiveMap(interactivePlot);
-      })
-      .catch((err) => {
-        if (!abortController.signal.aborted) {
-          toast.error("Error fetching visit maps!", {
-            description: err?.message,
-            duration: Infinity,
-          });
-        }
-      })
-      .finally(() => {
-        if (!abortController.signal.aborted) {
-          setVisitMapsLoading(false);
         }
       });
 
@@ -386,7 +357,7 @@ function Plots() {
               </p>
             </>
           )}
-          <div className="flex flex-col max-w-xxl mt-6 border-1 border-white rounded-md p-2 gap-2">
+          <div className="flex flex-col max-w-xxl mt-6 border border-1 border-white rounded-md p-2 gap-2">
             <p>
               <span className="font-medium">Click & Drag</span> on the timeline
               or on any plot to zoom in, and{" "}
@@ -446,7 +417,7 @@ function Plots() {
 
             {/* Conditionally display band icon/color key */}
             {bandMarker !== "none" && (
-              <div className="flex flex-row h-10 px-4 justify-between items-center gap-3 border-1 border-white rounded-md text-white font-thin">
+              <div className="flex flex-row h-10 px-4 justify-between items-center gap-3 border border-1 border-white rounded-md text-white font-thin">
                 <div>Bands:</div>
                 {Object.entries(BAND_COLORS).map(([band, color]) => {
                   const shapeMap = {
@@ -536,244 +507,6 @@ function Plots() {
               })}
             </>
           )}
-        </div>
-
-        {/* Visit Maps */}
-        <div className="mt-16 mxb-8 text-white font-thin text-center">
-          <h1 className="flex flex-row gap-2 text-white text-3xl uppercase justify-center pb-4">
-            <span className="tracking-[2px] font-extralight">Visit</span>
-            <span className="font-extrabold"> Maps</span>
-          </h1>
-          {dataLogLoading || almanacLoading ? (
-            <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
-          ) : (
-            <>
-              <p>
-                For visit maps, visit the Scheduler-oriented night summaries:{" "}
-                {availableDayObs.map((dayobs, idx) => {
-                  const { url, label } = getNightSummaryLink(dayobs);
-                  return (
-                    <span key={dayobs}>
-                      <a
-                        href={url}
-                        className="underline text-blue-300 hover:text-blue-400"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {label}
-                      </a>
-                      {idx < availableDayObs.length - 1 && ", "}
-                    </span>
-                  );
-                })}
-                .
-              </p>
-              <p className="pt-2">
-                <span className="font-medium">Note: </span>If you see a 404
-                error, the summary might not have been created for that day.
-              </p>
-            </>
-          )}
-        </div>
-        <div className="mt-16 mxb-8 text-white font-thin text-center">
-          <h1 className="flex flex-row gap-2 text-white text-3xl uppercase justify-center pb-4">
-            <span className="tracking-[2px] font-extralight">Visit</span>
-            <span className="font-extrabold"> Maps</span>
-          </h1>
-          {visitMapsLoading ? (
-            <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
-          ) : (
-            <div className="w-full">
-              <div className="prose max-w-none text-natural-200 text-left">
-                <p>
-                  These plots show the visits collected during the night in two
-                  different representations, modeled after physical observing
-                  tools.
-                </p>
-                <ul className="list-disc pl-6">
-                  <li>
-                    <strong>Armillary sphere</strong> (left): a model of the
-                    celestial sphere, with the Earth at its center, and the sky
-                    projected onto it.
-                  </li>
-                  <li>
-                    <strong>Planisphere</strong> (right): a flat representation
-                    of the sky, as seen from a specific location on Earth at a
-                    specific time.
-                  </li>
-                </ul>
-                <p>
-                  Both plots show the footprints of camera pointings taken up to
-                  the time set by the MJD slider, with the most recent three
-                  pointings outlined in{" "}
-                  <span className="text-cyan-500 font-normal">cyan</span>. The
-                  fill colors are set according to the{" "}
-                  <a
-                    className="text-blue-600 font-normal underline"
-                    href="https://rtn-045.lsst.io/"
-                    target="_blank"
-                  >
-                    RTN-45
-                  </a>
-                  :
-                </p>
-                <div className="flex flex-wrap justify-center gap-4 items-center">
-                  <div className="flex items-center gap-1">
-                    <span className="w-3 h-3 bg-band-u"></span>
-                    <span>u band</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="w-3 h-3 bg-band-g"></span>
-                    <span>g band</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="w-3 h-3 bg-band-r"></span>
-                    <span>r band</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="w-3 h-3 bg-band-i"></span>
-                    <span>i band</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="w-3 h-3 bg-band-z"></span>
-                    <span>z band</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="w-3 h-3 bg-band-y"></span>
-                    <span>y band</span>
-                  </div>
-                </div>
-                <p className="mt-4">
-                  Both plots have the following additional annotations:
-                </p>
-                <ul className="list-disc pl-6 space-y-1">
-                  <li>
-                    The gray background shows the planned final depth of the
-                    LSST survey.
-                  </li>
-                  <li>
-                    The{" "}
-                    <span className="text-orange-500 font-normal">
-                      orange disk
-                    </span>{" "}
-                    shows the coordinates of the moon.
-                  </li>
-                  <li>
-                    The{" "}
-                    <span className="text-yellow-400 font-normal">
-                      yellow disk
-                    </span>{" "}
-                    shows the coordinates of the sun.
-                  </li>
-                  <li>
-                    The{" "}
-                    <span className="text-green-500 font-normal">
-                      green line
-                    </span>{" "}
-                    (oval) shows the ecliptic.
-                  </li>
-                  <ul className="list-disc pl-6 mt-1">
-                    <li>
-                      The sun moves along the ecliptic in the direction of
-                      increasing R.A. (counter-clockwise in the planisphere
-                      figure) such that it makes a full revolution in one year.
-                    </li>
-                    <li>
-                      The moon moves roughly (within 5.14°) along the ecliptic
-                      in the direction of increasing R.A. (counter-clockwise in
-                      the planisphere figure), completing a full revolution in
-                      one sidereal month (a bit over 27 days), about 14° per
-                      day.
-                    </li>
-                  </ul>
-                  <li>
-                    The{" "}
-                    <span className="text-blue-500 font-normal">blue line</span>{" "}
-                    (oval) shows the plane of the Milky Way.
-                  </li>
-                  <li>
-                    The{" "}
-                    <span className="text-white font-normal">white line</span>{" "}
-                    shows the horizon at the time set by the MJD slider.
-                  </li>
-                  <li>
-                    The{" "}
-                    <span className="text-red-500 font-normal">red line</span>{" "}
-                    shows a zenith distance of 70° (airmass = 2.9) at the time
-                    set by the MJD slider.
-                  </li>
-                </ul>
-                <h3 className="text-lg font-normal mt-6 mb-2">
-                  Multi-night Visits
-                </h3>
-                <p>
-                  When data from several nights are loaded, all visits are
-                  plotted together, and the <strong>MJD slider</strong> lets you
-                  step through time continuously across the full date range.
-                </p>
-
-                <p>As you move the slider:</p>
-                <ul className="list-disc pl-6 space-y-1">
-                  <li>
-                    Visits from earlier nights fade out while more recent ones
-                    appear.
-                  </li>
-                  <li>
-                    A <strong>night label</strong> below the map updates to
-                    indicate the currently active night (between twilights) and
-                    disappears otherwise.
-                  </li>
-                  <li>
-                    The <strong>Sun and Moon positions</strong> update
-                    dynamically based on the selected MJD.
-                  </li>
-                </ul>
-              </div>
-              <div className="flex flex-col w-full px-4 pt-2 space-y-4 items-center">
-                {interactiveMap && (
-                  <BokehPlot id="interactive-plot" plotData={interactiveMap} />
-                )}
-              </div>
-            </div>
-          )}
-          {/* Link to nightsum reports */}
-          <div className="mt-16 mxb-8 text-white font-thin text-center">
-            <h1 className="flex flex-row gap-2 text-white text-3xl uppercase justify-center pb-4">
-              <span className="tracking-[2px] font-extralight">Survey</span>
-              <span className="font-extrabold"> Progress</span>
-            </h1>
-            {dataLogLoading || almanacLoading ? (
-              <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
-            ) : (
-              <>
-                <p>
-                  For survey progress, visit the Scheduler-oriented night
-                  summaries:{" "}
-                  {availableDayobs.map((dayobs, idx) => {
-                    const { url, label } = getNightSummaryLink(dayobs);
-                    return (
-                      <span key={dayobs}>
-                        <a
-                          href={url}
-                          className="underline text-blue-300 hover:text-blue-400"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {label}
-                        </a>
-                        {idx < availableDayobs.length - 1 && ", "}
-                      </span>
-                    );
-                  })}
-                  .
-                </p>
-                <p className="pt-2">
-                  <span className="font-medium">Note: </span>If you see a 404
-                  error, the summary might not have been created for that day.
-                </p>
-              </>
-            )}
-          </div>
         </div>
       </div>
       <Toaster expand={true} richColors closeButton />
