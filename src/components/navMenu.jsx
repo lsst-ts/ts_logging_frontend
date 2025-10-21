@@ -18,6 +18,11 @@ const items = [
     title: "Context Feed",
     url: "/nightlydigest/context-feed",
   },
+  {
+    name: "visit-maps",
+    title: "Visit Maps",
+    url: "/nightlydigest/visit-maps",
+  },
 ];
 
 export default function NavMenu() {
