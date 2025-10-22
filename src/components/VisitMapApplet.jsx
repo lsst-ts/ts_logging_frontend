@@ -94,7 +94,7 @@ function VisitMapApplet({ mapData, mapLoading }) {
           </Popover>
         </div>
       </CardHeader>
-      <CardContent className="grid gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 h-80 font-thin">
+      <CardContent className="grid gap-4 bg-black p-4 text-neutral-700 rounded-sm border-2 border-teal-900 h-80 font-thin">
         {mapLoading ? (
           <Skeleton className="w-full h-full bg-stone-900 rounded-md" />
         ) : (

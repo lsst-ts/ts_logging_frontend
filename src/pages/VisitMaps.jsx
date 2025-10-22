@@ -231,7 +231,7 @@ function VisitMaps() {
           {visitMapsLoading ? (
             <Skeleton className="w-full h-200 bg-stone-700 rounded-md" />
           ) : (
-            <div className="flex flex-col w-full p-4 space-y-4 items-center">
+            <div className="flex flex-col w-full p-4 space-y-4 items-center text-neutral-700">
               {interactiveMap ? (
                 <BokehPlot id="interactive-plot" plotData={interactiveMap} />
               ) : (
