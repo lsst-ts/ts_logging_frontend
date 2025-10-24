@@ -322,6 +322,29 @@ const fetchContextFeed = async (start, end, abortController) => {
   }
 };
 
+/**
+ * Fetches the backend package version.
+ *
+ * @async
+ * @function fetchBackendVersion
+ * @param {AbortController} abortController - The AbortController used to cancel the request if needed.
+ * @returns {Promise<Object[]>} A promise that resolves to an object with:
+ *   - version (string):  The deployed backend (ts_logging_and_reporting) package version.
+ * @throws {Error} Throws an error if the package version cannot be fetched and the request was not aborted.
+ */
+const fetchBackendVersion = async (abortController) => {
+  const url = `${backendLocation}/version`;
+  try {
+    const data = await fetchData(url, abortController);
+    return data.version;
+  } catch (err) {
+    if (err.name !== "AbortError") {
+      console.error("Error fetching the backend package version:", err);
+    }
+    throw err;
+  }
+};
+
 export {
   fetchExposures,
   fetchAlmanac,
@@ -332,4 +355,5 @@ export {
   fetchDataLogEntriesFromConsDB,
   fetchDataLogEntriesFromExposureLog,
   fetchContextFeed,
+  fetchBackendVersion,
 };

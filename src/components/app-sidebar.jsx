@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -8,10 +9,32 @@ import {
 } from "@/components/ui/sidebar.jsx";
 import Parameters from "@/components/parameters";
 import NavMenu from "@/components/navMenu";
+import { fetchBackendVersion } from "@/utils/fetchUtils";
+import { parseBackendVersion } from "@/utils/utils";
 import RubinIcon from "../assets/RubinIcon.svg";
 import packageJson from "../../package.json";
 
 export function AppSidebar({ ...props }) {
+  const [backendVersion, setBackendVersion] = useState("main");
+  useEffect(() => {
+    const abortController = new AbortController();
+    fetchBackendVersion(abortController.signal).then((backendVersionString) => {
+      const parsedVersion = parseBackendVersion(backendVersionString);
+      setBackendVersion(parsedVersion);
+    });
+    return () => {
+      abortController.abort();
+    };
+  }, []);
+
+  const frontendReleaseNotesHref =
+    "https://github.com/lsst-ts/ts_logging_frontend" +
+    `/blob/v${packageJson.version}/doc/version_history.rst`;
+
+  const backendReleaseNotesHref =
+    "https://github.com/lsst-ts/ts_logging_and_reporting" +
+    `/blob/v${backendVersion}/doc/version_history.rst`;
+
   return (
     <Sidebar variant="sidebar">
       <SidebarHeader className="px-6 py-8">
@@ -59,7 +82,7 @@ export function AppSidebar({ ...props }) {
             <a
               className="text-blue-500 hover:underline"
               target="_blank"
-              href="https://github.com/lsst-ts/ts_logging_frontend/blob/main/doc/version_history.rst"
+              href={frontendReleaseNotesHref}
             >
               Frontend
             </a>
@@ -67,7 +90,7 @@ export function AppSidebar({ ...props }) {
             <a
               className="text-blue-500 hover:underline"
               target="_blank"
-              href="https://github.com/lsst-ts/ts_logging_and_reporting/blob/main/doc/version_history.rst"
+              href={backendReleaseNotesHref}
             >
               Backend
             </a>
