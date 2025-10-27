@@ -93,18 +93,20 @@ function PlotVisibilityPopover({
                   className="flex items-center space-x-2 opacity-100"
                 >
                   <Checkbox
+                    id={`plot-selected-${key}`}
                     checked={visiblePlots.includes(key)}
                     onCheckedChange={(checked) => togglePlot(key, !!checked)}
                     disabled={!fieldStatus[key]}
                   />
-                  <span
+                  <label
+                    htmlFor={`plot-selected-${key}`}
                     className={`text-sm ${
                       !fieldStatus[key] ? "text-gray-400 italic" : ""
                     }`}
                   >
                     {title || prettyTitleFromKey(key)}
                     {!fieldStatus[key] && " (null)"}
-                  </span>
+                  </label>
                 </div>
               ))}
           </div>

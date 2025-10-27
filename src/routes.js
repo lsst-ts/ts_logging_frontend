@@ -7,7 +7,7 @@ import Layout from "./pages/layout";
 import DataLog from "./pages/DataLog";
 import ContextFeed from "./pages/ContextFeed";
 import Digest from "./pages/digest";
-import Plots from "./pages/plots";
+import Plots from "./pages/Plots";
 import { z } from "zod";
 import { DateTime } from "luxon";
 

@@ -7,9 +7,14 @@ import { millisToDateTime } from "@/utils/timeUtils";
  * @param {Function} setSelectedTimeRange - Setter for the selected time range state.
  *   Expects an array of Luxon DateTime objects [start, end].
  * @param {[number, number]} fullTimeRange - The full resettable time range, in TAI milliseconds.
+ * @param {Function} [indexToMillis] - A function which maps points on the X axis to TAI milliseconds
  * @returns {object} Handlers and refs for use in a Recharts chart.
  */
-export const useClickDrag = (setSelectedTimeRange, fullTimeRange) => {
+export const useClickDrag = (
+  setSelectedTimeRange,
+  fullTimeRange,
+  indexToMillis = (i) => i,
+) => {
   const [refAreaLeft, setRefAreaLeft] = useState(null);
   const [refAreaRight, setRefAreaRight] = useState(null);
 
@@ -37,8 +42,8 @@ export const useClickDrag = (setSelectedTimeRange, fullTimeRange) => {
         : [refAreaRight, refAreaLeft];
 
     // Convert millis to DateTime objects
-    const startDT = millisToDateTime(startMillis);
-    const endDT = millisToDateTime(endMillis);
+    const startDT = millisToDateTime(indexToMillis(startMillis));
+    const endDT = millisToDateTime(indexToMillis(endMillis));
 
     // Push selection back to parent component
     setSelectedTimeRange([startDT, endDT]);
@@ -46,7 +51,7 @@ export const useClickDrag = (setSelectedTimeRange, fullTimeRange) => {
     // Reset
     setRefAreaLeft(null);
     setRefAreaRight(null);
-  }, [refAreaLeft, refAreaRight, setSelectedTimeRange]);
+  }, [refAreaLeft, refAreaRight, setSelectedTimeRange, indexToMillis]);
 
   const handleDoubleClick = useCallback(() => {
     setSelectedTimeRange(fullTimeRange);

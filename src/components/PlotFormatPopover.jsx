@@ -13,9 +13,12 @@ import {
   PLOT_COLOR_OPTIONS,
   PLOT_DOT_OPTIONS,
   PLOT_BAND_MARKER_OPTIONS,
+  PLOT_X_AXIS_OPTIONS,
 } from "@/components/PLOT_DEFINITIONS";
 
 function PlotFormatPopover({
+  xAxisType,
+  setXAxisType,
   plotShape,
   setPlotShape,
   plotColor,
@@ -42,6 +45,28 @@ function PlotFormatPopover({
           <DialogDescription className="sr-only">
             Make changes to how the plot is displayed.
           </DialogDescription>
+          {/* Set which X axis to use */}
+          <h2 className="text-md font-thin">X Axis Type</h2>
+          <RadioGroup
+            value={xAxisType}
+            onValueChange={setXAxisType}
+            className="pl-16 pr-5 grid grid-cols-2 gap-x-4"
+          >
+            {PLOT_X_AXIS_OPTIONS.map(({ key, label }) => (
+              <div key={key} className="flex items-center space-x-2">
+                <RadioGroupItem
+                  id={`xaxis-${key}`}
+                  value={key}
+                  className="border border-sky-700 hover:bg-sky-700/20 hover:text-white focus:ring-2 focus:ring-sky-700 focus:ring-offset-2 focus:ring-offset-white"
+                />
+                <Label htmlFor={`xaxis-${key}`} className="text-sm">
+                  {label}
+                </Label>
+              </div>
+            ))}
+          </RadioGroup>
+
+          <Separator className="bg-sky-700/50 mt-4 mb-2" />
           {/* Shape Selection */}
           <h2 className="text-md font-thin">Shape</h2>
           <RadioGroup

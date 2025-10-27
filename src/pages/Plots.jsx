@@ -19,7 +19,12 @@ import {
 
 import Timeline from "@/components/Timeline";
 import TimeseriesPlot from "@/components/TimeseriesPlot";
-import { PLOT_DEFINITIONS, BAND_COLORS } from "@/components/PLOT_DEFINITIONS";
+import {
+  PLOT_DEFINITIONS,
+  BAND_COLORS,
+  PLOT_KEY_TIME,
+  PLOT_KEY_SEQUENCE,
+} from "@/components/PLOT_DEFINITIONS";
 
 import {
   fetchAlmanac,
@@ -38,6 +43,7 @@ import {
   getDayobsEndTAI,
   almanacDayobsForPlot,
   utcDateTimeStrToTAIMillis,
+  generateDayObsRange,
 } from "@/utils/timeUtils";
 
 function Plots() {
@@ -60,7 +66,7 @@ function Plots() {
 
   // Data
   const [dataLogEntries, setDataLogEntries] = useState([]);
-  const [availableDayobs, setAvailableDayobs] = useState([]);
+  const [availableDayObs, setAvailableDayObs] = useState([]);
   const [dataLogLoading, setDataLogLoading] = useState(true);
 
   // Twilights, moonrise/set and brightness
@@ -80,6 +86,7 @@ function Plots() {
   );
 
   // Plot format
+  const [xAxisType, setXAxisType] = useState(PLOT_KEY_TIME);
   const [plotShape, setPlotShape] = useState("dots");
   const [plotColor, setPlotColor] = useState("assorted");
   const [bandMarker, setBandMarker] = useState("bandColorsIcons");
@@ -106,17 +113,7 @@ function Plots() {
       .sort((a, b) => a.obs_start_millis - b.obs_start_millis);
 
     // Get all available dayobs
-    const dayobsRange = [
-      ...new Set(
-        data
-          .map((entry) => entry["day obs"].toString())
-          .filter((str) => {
-            // Don't include NaNs
-            const num = Number(str);
-            return Number.isInteger(num);
-          }),
-      ),
-    ].sort((a, b) => Number(a) - Number(b));
+    const dayObsRange = generateDayObsRange(startDayobs, endDayobs);
 
     // Get first and last observations
     const firstObs = data.at(0)?.obs_start_dt ?? 0;
@@ -124,9 +121,9 @@ function Plots() {
 
     // Set static timeline axis to boundaries of queried dayobs
     let fullXRange = [];
-    if (dayobsRange.length > 0) {
-      const firstDayobs = dayobsRange[0];
-      const lastDayobs = dayobsRange[dayobsRange.length - 1];
+    if (dayObsRange.length > 0) {
+      const firstDayobs = dayObsRange[0];
+      const lastDayobs = dayObsRange[dayObsRange.length - 1];
 
       const startTimeOfFirstDayobs = getDayobsStartTAI(firstDayobs);
       const endTimeOfLastDayobs = getDayobsEndTAI(lastDayobs);
@@ -137,7 +134,7 @@ function Plots() {
         endTimeOfLastDayobs.plus({ minute: 1 }),
       ];
 
-      setAvailableDayobs(dayobsRange);
+      setAvailableDayObs(dayObsRange);
       setFullTimeRange(fullXRange);
       setSelectedTimeRange([firstObs, lastObs]);
     }
@@ -206,11 +203,9 @@ function Plots() {
     }
 
     // Handle moon still up at end
-    if (sorted[sorted.length - 1].type === "rise") {
-      intervals.push([
-        Math.max(sorted[sorted.length - 1].time, xMinMillis),
-        xMaxMillis,
-      ]);
+    const last = sorted.at(-1);
+    if (last.type === "rise" && last.time < xMaxMillis) {
+      intervals.push([last.time, xMaxMillis]);
     }
 
     return intervals;
@@ -219,7 +214,7 @@ function Plots() {
   function resetState() {
     // ConsDB
     setDataLogEntries([]);
-    setAvailableDayobs([]);
+    setAvailableDayObs([]);
     setFullTimeRange([null, null]);
     setSelectedTimeRange([null, null]);
     // Almanac
@@ -305,8 +300,8 @@ function Plots() {
     if (moonValues && xMinMillis != null && xMaxMillis != null) {
       const intervals = prepareMoonIntervals(
         moonValues,
-        xMinMillis,
-        xMaxMillis,
+        xMinMillis.toMillis(),
+        xMaxMillis.toMillis(),
       );
       setMoonIntervals(intervals);
     }
@@ -383,6 +378,12 @@ function Plots() {
               <span className="font-medium">Plot Format</span> button. Future
               features include remembering your plot preferences.
             </p>
+            <p>
+              When plotting multiple nights by{" "}
+              <span className="font-medium">Sequence Number</span>, nights are
+              separated by single zig-zag lines; double zig-zags represent
+              nights with no data taken.
+            </p>
           </div>
         </div>
 
@@ -448,6 +449,8 @@ function Plots() {
 
             {/* Plot format controls */}
             <PlotFormatPopover
+              xAxisType={xAxisType}
+              setXAxisType={setXAxisType}
               plotShape={plotShape}
               setPlotShape={setPlotShape}
               plotColor={plotColor}
@@ -486,6 +489,7 @@ function Plots() {
                     twilightValues={twilightValues}
                     // Show moon rise/set only on sky-related plots
                     {...(def?.showMoon ? { moonIntervals: moonIntervals } : {})}
+                    xAxisType={xAxisType}
                     fullTimeRange={fullTimeRange}
                     selectedTimeRange={selectedTimeRange}
                     setSelectedTimeRange={setSelectedTimeRange}
@@ -494,6 +498,8 @@ function Plots() {
                     bandMarker={bandMarker}
                     isBandPlot={!!def?.bandMarker}
                     plotIndex={idx}
+                    nPlots={visiblePlots.length}
+                    availableDayObs={availableDayObs}
                   />
                 );
               })}
@@ -513,7 +519,7 @@ function Plots() {
             <>
               <p>
                 For visit maps, visit the Scheduler-oriented night summaries:{" "}
-                {availableDayobs.map((dayobs, idx) => {
+                {availableDayObs.map((dayobs, idx) => {
                   const { url, label } = getNightSummaryLink(dayobs);
                   return (
                     <span key={dayobs}>
@@ -525,7 +531,7 @@ function Plots() {
                       >
                         {label}
                       </a>
-                      {idx < availableDayobs.length - 1 && ", "}
+                      {idx < availableDayObs.length - 1 && ", "}
                     </span>
                   );
                 })}

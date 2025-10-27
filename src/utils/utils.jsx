@@ -1,5 +1,5 @@
 import { DateTime } from "luxon";
-import { TAI_OFFSET_SECONDS, ISO_DATETIME_FORMAT } from "./timeUtils.jsx";
+import { TAI_OFFSET_SECONDS, ISO_DATETIME_FORMAT } from "./timeUtils";
 
 export const DEFAULT_EXTERNAL_INSTANCE_URL =
   "https://usdf-rsp.slac.stanford.edu";
