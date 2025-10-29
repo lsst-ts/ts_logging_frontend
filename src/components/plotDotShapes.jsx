@@ -2,13 +2,71 @@ import { memo } from "react";
 
 import { BAND_COLORS } from "@/components/PLOT_DEFINITIONS";
 
+// no band
+const NoBandCircleShape = memo((props) => {
+  const {
+    cx,
+    cy,
+    fill,
+    r = 2,
+    strokeOpacity = 1,
+    fillOpacity = 1,
+    ...shapeProps
+  } = props;
+  if (typeof cx !== "number" || typeof cy !== "number") return null;
+  return (
+    <circle
+      {...shapeProps}
+      cx={cx}
+      cy={cy}
+      r={r}
+      fill={fill}
+      stroke={fill}
+      strokeOpacity={strokeOpacity}
+      fillOpacity={fillOpacity}
+    />
+  );
+});
+
+// u band
+const CircleShape = memo((props) => {
+  const {
+    cx,
+    cy,
+    fill = BAND_COLORS.u || "#4d4dff",
+    r = 2,
+    strokeOpacity = 1,
+    fillOpacity = 1,
+    ...shapeProps
+  } = props;
+  if (typeof cx !== "number" || typeof cy !== "number") return null;
+  return (
+    <circle
+      {...shapeProps}
+      cx={cx}
+      cy={cy}
+      r={r}
+      fill={fill}
+      strokeOpacity={strokeOpacity}
+      fillOpacity={fillOpacity}
+    />
+  );
+});
+
 const XShape = memo((props) => {
-  const { cx, cy, fill, strokeOpacity = 1, fillOpacity = 1 } = props;
+  const {
+    cx,
+    cy,
+    fill,
+    strokeOpacity = 1,
+    fillOpacity = 1,
+    ...shapeProps
+  } = props;
   const size = 1.5;
   if (cx < size || cy < size) return null;
   let color = fill;
   return (
-    <g>
+    <g {...shapeProps}>
       <line
         x1={cx - size}
         y1={cy - size}
@@ -40,10 +98,12 @@ const TriangleShape = memo((props) => {
     r = 2,
     strokeOpacity = 1,
     fillOpacity = 1,
+    ...shapeProps
   } = props;
   if (typeof cx !== "number" || typeof cy !== "number") return null;
   return (
     <polygon
+      {...shapeProps}
       points={`
         ${cx},${cy - r}
         ${cx - r},${cy + r}
@@ -67,10 +127,12 @@ const FlippedTriangleShape = memo((props) => {
     r = 2,
     strokeOpacity = 1,
     fillOpacity = 1,
+    ...shapeProps
   } = props;
   if (typeof cx !== "number" || typeof cy !== "number") return null;
   return (
     <polygon
+      {...shapeProps}
       points={`
         ${cx},${cy + r}
         ${cx - r},${cy - r}
@@ -94,6 +156,7 @@ const AsteriskShape = memo((props) => {
     r = 4,
     strokeOpacity = 1,
     fillOpacity = 1,
+    ...shapeProps
   } = props;
   if (typeof cx !== "number" || typeof cy !== "number") return null;
   const lines = [];
@@ -118,7 +181,7 @@ const AsteriskShape = memo((props) => {
       />,
     );
   }
-  return <g>{lines}</g>;
+  return <g {...shapeProps}>{lines}</g>;
 });
 
 // i band
@@ -130,11 +193,13 @@ const SquareShape = memo((props) => {
     r = 2,
     strokeOpacity = 1,
     fillOpacity = 1,
+    ...shapeProps
   } = props;
   if (typeof cx !== "number" || typeof cy !== "number") return null;
   const size = r;
   return (
     <rect
+      {...shapeProps}
       x={cx - size}
       y={cy - size}
       width={size * 2}
@@ -158,6 +223,7 @@ const StarShape = memo((props) => {
     r = 4,
     strokeOpacity = 1,
     fillOpacity = 1,
+    ...shapeProps
   } = props;
   if (typeof cx !== "number" || typeof cy !== "number") return null;
   const spikes = 5;
@@ -185,15 +251,73 @@ const StarShape = memo((props) => {
       strokeWidth={0.8}
       strokeOpacity={strokeOpacity}
       fillOpacity={fillOpacity}
+      {...shapeProps}
     />
   );
 });
 
+// Band markers for the timeseries plots
+const CustomisedDotWithShape = ({
+  cx,
+  cy,
+  band,
+  color,
+  r = 2,
+  graphID,
+  obsID,
+}) => {
+  if (cx == null || cy == null) return null;
+
+  const fill = BAND_COLORS[band] || color;
+
+  // Choose shape based on band
+  let ShapeComponent;
+  switch (band) {
+    case "u":
+      ShapeComponent = CircleShape;
+      break;
+    case "g":
+      ShapeComponent = TriangleShape;
+      break;
+    case "r":
+      ShapeComponent = FlippedTriangleShape;
+      break;
+    case "i":
+      ShapeComponent = SquareShape;
+      break;
+    case "z":
+      ShapeComponent = StarShape;
+      break;
+    case "y":
+      ShapeComponent = AsteriskShape;
+      break;
+    default:
+      ShapeComponent = NoBandCircleShape;
+  }
+
+  return (
+    <ShapeComponent
+      cx={cx}
+      cy={cy}
+      r={r}
+      fill={fill}
+      style={{ pointerEvents: "all" }}
+      // Include data-* attributes to allow this dot to be looked up for hover
+      data-cx={cx}
+      data-cy={cy}
+      data-graphid={graphID}
+      data-obsid={obsID}
+    />
+  );
+};
+
 export {
+  CircleShape,
   XShape,
   TriangleShape,
   FlippedTriangleShape,
   AsteriskShape,
   SquareShape,
   StarShape,
+  CustomisedDotWithShape,
 };
