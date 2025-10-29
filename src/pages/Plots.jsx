@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 
 import { toast } from "sonner";
 import { useSearch } from "@tanstack/react-router";
@@ -45,6 +45,8 @@ import {
   utcDateTimeStrToTAIMillis,
   generateDayObsRange,
 } from "@/utils/timeUtils";
+import { calculateChartData } from "@/utils/chartCalculations";
+import { PlotDataContext } from "@/contexts/PlotDataContext";
 
 function Plots() {
   // Routing and URL params
@@ -68,6 +70,10 @@ function Plots() {
   const [dataLogEntries, setDataLogEntries] = useState([]);
   const [availableDayObs, setAvailableDayObs] = useState([]);
   const [dataLogLoading, setDataLogLoading] = useState(true);
+
+  // Pre-computed chart data for both time and sequence modes
+  const [timeChartData, setTimeChartData] = useState(null);
+  const [sequenceChartData, setSequenceChartData] = useState(null);
 
   // Twilights, moonrise/set and brightness
   const [twilightValues, setTwilightValues] = useState([]);
@@ -222,6 +228,9 @@ function Plots() {
     setTwilightValues([]);
     setIllumValues([]);
     setMoonValues([]);
+    // Chart data
+    setTimeChartData(null);
+    setSequenceChartData(null);
   }
 
   useEffect(() => {
@@ -308,6 +317,127 @@ function Plots() {
     }
   }, [moonValues, fullTimeRange]);
 
+  // Pre-compute chart data for both Time and Sequence modes once all data is available
+  useEffect(() => {
+    const [xMinMillis, xMaxMillis] = fullTimeRange;
+    if (
+      dataLogEntries.length > 0 &&
+      availableDayObs.length > 0 &&
+      xMinMillis != null &&
+      xMaxMillis != null
+    ) {
+      const chartCalculations = calculateChartData({
+        data: dataLogEntries,
+        moonIntervals,
+        availableDayObs,
+        selectedMinMillis: xMinMillis.toMillis(),
+        selectedMaxMillis: xMaxMillis.toMillis(),
+      });
+
+      setTimeChartData(chartCalculations.time);
+      setSequenceChartData(chartCalculations.sequence);
+    }
+  }, [dataLogEntries, moonIntervals, availableDayObs, fullTimeRange]);
+
+  // Select chart data based on current xAxisType and prepare context value
+  const plotDataContextValue = useMemo(() => {
+    // Select the appropriate pre-computed chart data
+    const baseChartData =
+      xAxisType === PLOT_KEY_SEQUENCE ? sequenceChartData : timeChartData;
+
+    if (!baseChartData) return null;
+
+    const selectedMinMillis = selectedTimeRange[0]?.toMillis();
+    const selectedMaxMillis = selectedTimeRange[1]?.toMillis();
+
+    // Filter flat data based on selected time range
+    const filteredData = dataLogEntries.filter(
+      (entry) =>
+        entry.obs_start_dt >= selectedTimeRange[0] &&
+        entry.obs_start_dt <= selectedTimeRange[1],
+    );
+
+    // Create indexToMillis function for click-drag in sequence mode
+    const flatChartData = baseChartData.chartData.flat();
+    const indexToMillis =
+      xAxisType === PLOT_KEY_SEQUENCE
+        ? (e) => flatChartData.find((d) => d.fakeX === e)?.obs_start_millis
+        : (e) => e;
+
+    // Calculate domain based on mode
+    let domain;
+    if (xAxisType === PLOT_KEY_SEQUENCE) {
+      // For sequence mode, find min/max fakeX in filtered data
+      const filteredFakeX = flatChartData
+        .filter(
+          (d) =>
+            d.obs_start_millis >= selectedMinMillis &&
+            d.obs_start_millis <= selectedMaxMillis,
+        )
+        .map((d) => d.fakeX);
+
+      const minFakeX =
+        filteredFakeX.length > 0 ? Math.min(...filteredFakeX) : 0;
+      const maxFakeX =
+        filteredFakeX.length > 0
+          ? Math.max(...filteredFakeX)
+          : baseChartData.fakeX;
+
+      domain = [minFakeX, maxFakeX];
+    } else {
+      // For time mode, use selected time range
+      domain = [selectedMinMillis, selectedMaxMillis];
+    }
+
+    // Filter grouped chartData to only include points within the selected domain
+    const visibleChartData = baseChartData.chartData.map((dayObsGroup) =>
+      dayObsGroup.filter((point) => {
+        const xValue = point[baseChartData.chartDataKey];
+        return xValue >= domain[0] && xValue <= domain[1];
+      }),
+    );
+
+    // Filter ticks to only show ticks within the visible domain
+    const visibleTicks = baseChartData.ticks
+      ? baseChartData.ticks.filter(
+          (tick) => tick >= domain[0] && tick <= domain[1],
+        )
+      : undefined;
+
+    const visibleDayObsTicks = baseChartData.dayObsTicks.filter(
+      (tick) => tick >= domain[0] && tick <= domain[1],
+    );
+
+    // Filter moon intervals to only include those that overlap with visible domain
+    const visibleChartMoon = baseChartData.chartMoon.filter(
+      ({ start, end }) => {
+        // Keep interval if it overlaps with the domain at all
+        return end >= domain[0] && start <= domain[1];
+      },
+    );
+
+    return {
+      ...baseChartData,
+      domain,
+      ticks: visibleTicks,
+      dayObsTicks: visibleDayObsTicks,
+      chartData: visibleChartData,
+      chartMoon: visibleChartMoon,
+      filteredData,
+      twilightValues,
+      selectedMinMillis,
+      selectedMaxMillis,
+      indexToMillis,
+    };
+  }, [
+    xAxisType,
+    timeChartData,
+    sequenceChartData,
+    dataLogEntries,
+    selectedTimeRange,
+    twilightValues,
+  ]);
+
   // Temporary display message for AuxTel queries
   if (telescope === "AuxTel") {
     return (
@@ -326,13 +456,6 @@ function Plots() {
       </div>
     );
   }
-
-  // Filter data based on selected time range
-  const filteredData = dataLogEntries.filter(
-    (entry) =>
-      entry.obs_start_dt >= selectedTimeRange[0] &&
-      entry.obs_start_dt <= selectedTimeRange[1],
-  );
 
   return (
     <>
@@ -479,7 +602,7 @@ function Plots() {
                 ))}
             </>
           ) : (
-            <>
+            <PlotDataContext.Provider value={plotDataContextValue}>
               {visiblePlots.map((key, idx) => {
                 const def = PLOT_DEFINITIONS.find((p) => p.key === key);
                 return (
@@ -488,12 +611,6 @@ function Plots() {
                     unit={def?.unit}
                     dataKey={def.key}
                     key={def.key}
-                    data={filteredData}
-                    twilightValues={twilightValues}
-                    // Show moon rise/set only on sky-related plots
-                    {...(def?.showMoon ? { moonIntervals: moonIntervals } : {})}
-                    xAxisType={xAxisType}
-                    xAxisShow={xAxisShow}
                     fullTimeRange={fullTimeRange}
                     selectedTimeRange={selectedTimeRange}
                     setSelectedTimeRange={setSelectedTimeRange}
@@ -501,13 +618,14 @@ function Plots() {
                     plotColor={plotColor}
                     bandMarker={bandMarker}
                     isBandPlot={!!def?.bandMarker}
+                    showMoon={!!def?.showMoon}
                     plotIndex={idx}
                     nPlots={visiblePlots.length}
-                    availableDayObs={availableDayObs}
+                    xAxisShow={xAxisShow}
                   />
                 );
               })}
-            </>
+            </PlotDataContext.Provider>
           )}
         </div>
 

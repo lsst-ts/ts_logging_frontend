@@ -1,3 +1,4 @@
+import { useContext } from "react";
 import {
   CartesianGrid,
   Line,
@@ -13,6 +14,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { PlotDataContext } from "@/contexts/PlotDataContext";
 import {
   TriangleShape,
   FlippedTriangleShape,
@@ -39,7 +41,6 @@ import {
 
 import { useClickDrag } from "@/hooks/useClickDrag";
 import { scaleDotRadius, calculateDecimalPlaces } from "@/utils/plotUtils";
-import { calculateChartData } from "@/utils/chartCalculations";
 
 // Band markers for the timeseries plots
 const CustomisedDotWithShape = ({ cx, cy, band, r = 2 }) => {
@@ -77,24 +78,54 @@ function TimeseriesPlot({
   title,
   unit = null,
   dataKey,
-  data,
-  twilightValues,
-  moonIntervals = [],
   fullTimeRange,
-  selectedTimeRange,
   setSelectedTimeRange,
   plotShape,
   plotColor,
   bandMarker,
-  availableDayObs,
   isBandPlot = false,
+  showMoon = false,
   plotIndex = 0,
   nPlots = 1,
-  xAxisType = PLOT_KEY_TIME,
   xAxisShow = false,
 }) {
-  const selectedMinMillis = selectedTimeRange[0]?.toMillis();
-  const selectedMaxMillis = selectedTimeRange[1]?.toMillis();
+  // Get pre-computed chart data from context
+  const plotData = useContext(PlotDataContext);
+
+  // Destructure with defaults to handle null case
+  const {
+    chartData = [],
+    chartMoon = [],
+    chartDayObsBreaks = [],
+    ticks = [],
+    dayObsTicks = [],
+    dayObsTickMappings = new Map(),
+    noDataX = [],
+    chartDayObsSpacing = 1,
+    chartDataKey = "obs_start_millis",
+    domain = [0, 0],
+    tickFormatter = (e) => e,
+    scale = "time",
+    filteredData = [],
+    twilightValues = [],
+    selectedMinMillis = 0,
+    selectedMaxMillis = 0,
+    indexToMillis = (e) => e, // Default identity function
+  } = plotData || {};
+
+  // Click & Drag plot hooks
+  const {
+    refAreaLeft,
+    refAreaRight,
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
+    handleDoubleClick,
+  } = useClickDrag(setSelectedTimeRange, fullTimeRange, indexToMillis);
+
+  if (!plotData) {
+    return null;
+  }
 
   // Get color, either from options or generated based on index (for assorted colors)
   const selectedColor =
@@ -104,7 +135,7 @@ function TimeseriesPlot({
         PLOT_COLORS.defaultColor;
 
   // Compute decimal places for y-axis ticks ================
-  const values = data
+  const values = filteredData
     .map((d) => d[dataKey])
     .filter((v) => typeof v === "number" && Number.isFinite(v));
   // Get min/max
@@ -176,50 +207,6 @@ function TimeseriesPlot({
     };
   }
   // ---------------------------------------------------------
-
-  // Use calculateChartData to get all chart transformations
-  const {
-    chartData,
-    chartMoon,
-    chartDayObsBreaks,
-    ticks,
-    dayObsTicks,
-    dayObsTickMappings,
-    noDataX,
-    fakeX,
-    chartDayObsSpacing,
-    chartDataKey,
-    domain,
-    tickFormatter,
-    scale,
-  } = calculateChartData({
-    xAxisType,
-    data,
-    moonIntervals,
-    availableDayObs,
-    selectedMinMillis,
-    selectedMaxMillis,
-  });
-
-  // Click & Drag plot hooks ================================
-  // Flatten chartData for sequence mode lookup (chartData is array of arrays)
-  const flatChartData = chartData.flat();
-
-  const {
-    refAreaLeft,
-    refAreaRight,
-    handleMouseDown,
-    handleMouseMove,
-    handleMouseUp,
-    handleDoubleClick,
-  } = useClickDrag(
-    setSelectedTimeRange,
-    fullTimeRange,
-    xAxisType === PLOT_KEY_SEQUENCE
-      ? (e) => flatChartData.find((d) => d.fakeX === e)?.obs_start_millis
-      : (e) => e,
-  );
-  // --------------------------------------------------------
 
   // Plot =================================================
   return (
@@ -296,36 +283,30 @@ function TimeseriesPlot({
           }}
         />
         {/* Moon Up Area */}
-        {chartMoon.map(({ start, end, startIsZigzag, endIsZigzag }, i) => {
-          // If entire moon-up area is not inside selected range,
-          // clamp start/end times so moon-up area is visible.
-          const clampedStart =
-            xAxisType === PLOT_KEY_SEQUENCE
-              ? Math.max(start, 0)
-              : Math.max(start, selectedMinMillis);
-          const clampedEnd =
-            xAxisType === PLOT_KEY_SEQUENCE
-              ? Math.min(end, fakeX)
-              : Math.min(end, selectedMaxMillis);
+        {showMoon &&
+          chartMoon.map(({ start, end, startIsZigzag, endIsZigzag }, i) => {
+            // Clamp moon intervals to the visible domain
+            const clampedStart = Math.max(start, domain[0]);
+            const clampedEnd = Math.min(end, domain[1]);
 
-          return (
-            <ReferenceArea
-              key={`moon-up-${i}`}
-              x1={clampedStart}
-              x2={clampedEnd}
-              fillOpacity={PLOT_OPACITIES.overlay}
-              fill={PLOT_COLORS.moonFill}
-              yAxisId="0"
-              shape={
-                <MoonReferenceArea
-                  startIsZigzag={startIsZigzag}
-                  endIsZigzag={endIsZigzag}
-                />
-              }
-            />
-          );
-        })}
-        {xAxisType === PLOT_KEY_TIME &&
+            return (
+              <ReferenceArea
+                key={`moon-up-${i}`}
+                x1={clampedStart}
+                x2={clampedEnd}
+                fillOpacity={PLOT_OPACITIES.overlay}
+                fill={PLOT_COLORS.moonFill}
+                yAxisId="0"
+                shape={
+                  <MoonReferenceArea
+                    startIsZigzag={startIsZigzag}
+                    endIsZigzag={endIsZigzag}
+                  />
+                }
+              />
+            );
+          })}
+        {chartDataKey === "obs_start_millis" &&
           twilightValues.map((twi, i) =>
             selectedMinMillis <= twi &&
             twi <= selectedMaxMillis &&
@@ -350,7 +331,7 @@ function TimeseriesPlot({
             shape={<NoDataReferenceArea />}
           />
         ))}
-        {xAxisType === PLOT_KEY_SEQUENCE &&
+        {chartDataKey === "fakeX" &&
           chartDayObsBreaks.map((dayObsBreak, i) => (
             <ReferenceLine
               key={`day-obs-break-${i}`}
