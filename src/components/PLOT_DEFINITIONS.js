@@ -220,8 +220,10 @@ export const PLOT_COLORS = {
 export const PLOT_DIMENSIONS = {
   activeDotRadius: 4,
   yAxisWidth: 70,
-  yAxisLabelFontSize: 16,
-  chartMargins: { top: 10, right: 0, left: 5, bottom: 0 },
+  axisLabelFontSize: 16,
+  axisLabelFontWeight: 100,
+  axisLabelFill: "white",
+  chartMargins: { top: 10, right: 0, left: 5, bottom: 24 },
 };
 
 export const PLOT_OPACITIES = {
