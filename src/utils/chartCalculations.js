@@ -143,6 +143,7 @@ export function calculateChartData({
 
   const timeData = {
     chartData: chartData,
+    flatChartData: chartData.flat(),
     chartMoon: moonIntervals.map(([start, end]) => ({
       start,
       end,
@@ -275,6 +276,7 @@ export function calculateChartData({
 
   const sequenceData = {
     chartData: transformedChartData,
+    flatChartData: transformedChartData.flat(),
     chartMoon,
     chartDayObsBreaks,
     ticks,

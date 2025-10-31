@@ -45,6 +45,7 @@ import {
 } from "@/utils/timeUtils";
 import { calculateChartData } from "@/utils/chartCalculations";
 import { PlotDataContext } from "@/contexts/PlotDataContext";
+import { HoverContextProvider } from "@/contexts/HoverContext";
 
 function Plots() {
   // Routing and URL params
@@ -349,24 +350,25 @@ function Plots() {
     const selectedMaxMillis = selectedTimeRange[1]?.toMillis();
 
     // Filter flat data based on selected time range
-    const filteredData = dataLogEntries.filter(
+    const filteredData = baseChartData.flatChartData.filter(
       (entry) =>
         entry.obs_start_dt >= selectedTimeRange[0] &&
         entry.obs_start_dt <= selectedTimeRange[1],
     );
 
     // Create indexToMillis function for click-drag in sequence mode
-    const flatChartData = baseChartData.chartData.flat();
     const indexToMillis =
       xAxisType === PLOT_KEY_SEQUENCE
-        ? (e) => flatChartData.find((d) => d.fakeX === e)?.obs_start_millis
+        ? (e) =>
+          baseChartData.flatChartData.find((d) => d.fakeX === e)
+            ?.obs_start_millis
         : (e) => e;
 
     // Calculate domain based on mode
     let domain;
     if (xAxisType === PLOT_KEY_SEQUENCE) {
       // For sequence mode, find min/max fakeX in filtered data
-      const filteredFakeX = flatChartData
+      const filteredFakeX = baseChartData.flatChartData
         .filter(
           (d) =>
             d.obs_start_millis >= selectedMinMillis &&
@@ -398,8 +400,8 @@ function Plots() {
     // Filter ticks to only show ticks within the visible domain
     const visibleTicks = baseChartData.ticks
       ? baseChartData.ticks.filter(
-          (tick) => tick >= domain[0] && tick <= domain[1],
-        )
+        (tick) => tick >= domain[0] && tick <= domain[1],
+      )
       : undefined;
 
     const visibleDayObsTicks = baseChartData.dayObsTicks.filter(
@@ -431,7 +433,6 @@ function Plots() {
     xAxisType,
     timeChartData,
     sequenceChartData,
-    dataLogEntries,
     selectedTimeRange,
     twilightValues,
   ]);
@@ -600,30 +601,32 @@ function Plots() {
                 ))}
             </>
           ) : (
-            <PlotDataContext.Provider value={plotDataContextValue}>
-              {visiblePlots.map((key, idx) => {
-                const def = PLOT_DEFINITIONS.find((p) => p.key === key);
-                return (
-                  <TimeseriesPlot
-                    title={def?.title || prettyTitleFromKey(key)}
-                    unit={def?.unit}
-                    dataKey={def.key}
-                    key={def.key}
-                    fullTimeRange={fullTimeRange}
-                    selectedTimeRange={selectedTimeRange}
-                    setSelectedTimeRange={setSelectedTimeRange}
-                    plotShape={plotShape}
-                    plotColor={plotColor}
-                    bandMarker={bandMarker}
-                    isBandPlot={!!def?.bandMarker}
-                    showMoon={!!def?.showMoon}
-                    plotIndex={idx}
-                    nPlots={visiblePlots.length}
-                    xAxisShow={xAxisShow}
-                  />
-                );
-              })}
-            </PlotDataContext.Provider>
+            <HoverContextProvider>
+              <PlotDataContext.Provider value={plotDataContextValue}>
+                {visiblePlots.map((key, idx) => {
+                  const def = PLOT_DEFINITIONS.find((p) => p.key === key);
+                  return (
+                    <TimeseriesPlot
+                      title={def?.title || prettyTitleFromKey(key)}
+                      unit={def?.unit}
+                      dataKey={def.key}
+                      key={def.key}
+                      fullTimeRange={fullTimeRange}
+                      selectedTimeRange={selectedTimeRange}
+                      setSelectedTimeRange={setSelectedTimeRange}
+                      plotShape={plotShape}
+                      plotColor={plotColor}
+                      bandMarker={bandMarker}
+                      isBandPlot={!!def?.bandMarker}
+                      showMoon={!!def?.showMoon}
+                      plotIndex={idx}
+                      nPlots={visiblePlots.length}
+                      xAxisShow={xAxisShow}
+                    />
+                  );
+                })}
+              </PlotDataContext.Provider>
+            </HoverContextProvider>
           )}
         </div>
       </div>
