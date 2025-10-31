@@ -25,6 +25,7 @@ import {
   NoDataReferenceArea,
   MoonReferenceArea,
 } from "@/components/CustomPlotShapes";
+import { plotTooltipFormatter } from "@/components/PlotTooltip";
 import {
   PLOT_COLOR_OPTIONS,
   BAND_COLORS,
@@ -352,47 +353,7 @@ function TimeseriesPlot({
           content={(props) => (
             <ChartTooltipContent
               {...props}
-              formatter={(value, name, item, index, payload) => {
-                const exposureId = payload["exposure id"];
-                const physicalFilter = payload["physical filter"];
-                const scienceProgram = payload["science program"];
-                const obsReason = payload["observation reason"];
-
-                const formattedValue =
-                  typeof value === "number" && !Number.isInteger(value)
-                    ? value.toFixed(4)
-                    : value;
-
-                return (
-                  <div className="flex flex-col gap-1 select-none">
-                    <div>
-                      <span className="text-muted-foreground">{title}:</span>{" "}
-                      <span className="font-mono">{formattedValue}</span>
-                    </div>
-                    <hr className="m-1 text-cyan-700/50" />
-                    <div>
-                      <span className="text-muted-foreground">Exposure:</span>{" "}
-                      <span className="font-mono">{exposureId}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">
-                        Science Program:
-                      </span>{" "}
-                      <span className="font-mono">{scienceProgram}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">
-                        Obs. Reason:
-                      </span>{" "}
-                      <span className="font-mono">{obsReason}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Filter:</span>{" "}
-                      <span className="font-mono">{physicalFilter}</span>
-                    </div>
-                  </div>
-                );
-              }}
+              formatter={plotTooltipFormatter(title)}
               hideLabel
             />
           )}
