@@ -353,8 +353,8 @@ function Plots() {
     // Filter flat data based on selected time range
     const filteredData = baseChartData.flatChartData.filter(
       (entry) =>
-        entry.obs_start_dt >= selectedTimeRange[0] &&
-        entry.obs_start_dt <= selectedTimeRange[1],
+        entry.obs_start_dt >= selectedMinMillis &&
+        entry.obs_start_dt <= selectedMaxMillis,
     );
 
     // Create indexToMillis function for click-drag in sequence mode
@@ -369,13 +369,7 @@ function Plots() {
     let domain;
     if (xAxisType === PLOT_KEY_SEQUENCE) {
       // For sequence mode, find min/max fakeX in filtered data
-      const filteredFakeX = baseChartData.flatChartData
-        .filter(
-          (d) =>
-            d.obs_start_millis >= selectedMinMillis &&
-            d.obs_start_millis <= selectedMaxMillis,
-        )
-        .map((d) => d.fakeX);
+      const filteredFakeX = filteredData.map((d) => d.fakeX);
 
       const minFakeX =
         filteredFakeX.length > 0 ? Math.min(...filteredFakeX) : 0;
