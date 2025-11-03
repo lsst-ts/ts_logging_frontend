@@ -42,6 +42,7 @@ import {
   almanacDayobsForPlot,
   utcDateTimeStrToTAIMillis,
   generateDayObsRange,
+  millisToHHmm,
 } from "@/utils/timeUtils";
 import { calculateChartData } from "@/utils/chartCalculations";
 import { PlotDataContext } from "@/contexts/PlotDataContext";
@@ -359,8 +360,8 @@ function Plots() {
     const indexToMillis =
       xAxisType === PLOT_KEY_SEQUENCE
         ? (e) =>
-          baseChartData.flatChartData.find((d) => d.fakeX === e)
-            ?.obs_start_millis
+            baseChartData.flatChartData.find((d) => d.fakeX === e)
+              ?.obs_start_millis
         : (e) => e;
 
     // Calculate domain based on mode
@@ -390,17 +391,6 @@ function Plots() {
       }),
     );
 
-    // Filter ticks to only show ticks within the visible domain
-    const visibleTicks = baseChartData.ticks
-      ? baseChartData.ticks.filter(
-        (tick) => tick >= domain[0] && tick <= domain[1],
-      )
-      : undefined;
-
-    const visibleDayObsTicks = baseChartData.dayObsTicks.filter(
-      (tick) => tick >= domain[0] && tick <= domain[1],
-    );
-
     // Filter moon intervals to only include those that overlap with visible domain
     const visibleChartMoon = baseChartData.chartMoon.filter(
       ({ start, end }) => {
@@ -409,11 +399,89 @@ function Plots() {
       },
     );
 
+    // Calculate ticks and dayObsTicks based on mode
+    let ticks;
+    let tickFormatter;
+    let dayObsTicks;
+    let dayObsTickMappings;
+
+    if (xAxisType === PLOT_KEY_SEQUENCE) {
+      // SEQUENCE MODE: Calculate ticks from visible data
+      const tickMappings = new Map();
+      ticks = [];
+      dayObsTicks = [];
+      dayObsTickMappings = new Map();
+
+      visibleChartData.forEach((dayObsGroup) => {
+        if (dayObsGroup.length === 0) {
+          // Skip empty dayobs groups in visible data
+          return;
+        }
+
+        // Calculate tick spacing for this dayObs
+        const tickSpacing = Math.ceil(Math.min(dayObsGroup.length / 6, 50));
+        const dayObsStartFakeX = dayObsGroup[0].fakeX;
+        const dayObsEndFakeX = dayObsGroup[dayObsGroup.length - 1].fakeX;
+
+        // Add ticks for individual data points
+        dayObsGroup.forEach((entry, i) => {
+          if (i % tickSpacing === 0) {
+            ticks.push(entry.fakeX);
+            tickMappings.set(entry.fakeX, entry["seq num"]);
+          }
+        });
+
+        // Add dayobs tick
+        const dayObsMidFakeX = (dayObsEndFakeX + dayObsStartFakeX) / 2;
+        dayObsTicks.push(dayObsMidFakeX);
+        dayObsTickMappings.set(dayObsMidFakeX, dayObsGroup[0]["day obs"]);
+      });
+
+      tickFormatter = (tick) => tickMappings.get(tick);
+    } else {
+      // TIME MODE: Calculate dayObsTicks from visible data
+      ticks = undefined;
+      dayObsTicks = [];
+      dayObsTickMappings = new Map();
+
+      visibleChartData.forEach((dayObsGroup, dIdx) => {
+        const dayObsValue = availableDayObs[dIdx];
+        // Add tick if there's data for this dayobs
+        if (dayObsGroup.length > 0) {
+          const dayObsStart = Math.min(
+            ...dayObsGroup.map((e) => e.obs_start_millis),
+          );
+          const dayObsEnd = Math.max(
+            ...dayObsGroup.map((e) => e.obs_start_millis),
+          );
+          const dayObsMidpoint = Math.floor((dayObsStart + dayObsEnd) / 2);
+
+          dayObsTicks.push(dayObsMidpoint);
+          dayObsTickMappings.set(dayObsMidpoint, dayObsValue);
+        } else {
+          // If there's no data, then add a dayobs tick at midnight Chile time
+          const dayObsMidpoint = getDayobsStartTAI(dayObsValue).plus({
+            hours: 15,
+          });
+
+          dayObsTicks.push(dayObsMidpoint.toMillis());
+          dayObsTickMappings.set(dayObsMidpoint.toMillis(), dayObsValue);
+        }
+      });
+      dayObsTicks = dayObsTicks.filter(
+        (t) => t >= selectedMinMillis && t <= selectedMaxMillis,
+      );
+
+      tickFormatter = (tick) => millisToHHmm(tick);
+    }
+
     return {
       ...baseChartData,
       domain,
-      ticks: visibleTicks,
-      dayObsTicks: visibleDayObsTicks,
+      ticks,
+      tickFormatter,
+      dayObsTicks,
+      dayObsTickMappings,
       chartData: visibleChartData,
       chartMoon: visibleChartMoon,
       filteredData,
@@ -428,6 +496,7 @@ function Plots() {
     sequenceChartData,
     selectedTimeRange,
     twilightValues,
+    availableDayObs,
   ]);
 
   // Temporary display message for AuxTel queries
