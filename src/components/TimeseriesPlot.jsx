@@ -25,6 +25,7 @@ import {
   NoDataReferenceArea,
   MoonReferenceArea,
 } from "@/components/CustomPlotShapes";
+import { plotTooltipFormatter } from "@/components/PlotTooltip";
 import {
   PLOT_COLOR_OPTIONS,
   BAND_COLORS,
@@ -90,6 +91,7 @@ function TimeseriesPlot({
   plotIndex = 0,
   nPlots = 1,
   xAxisType = PLOT_KEY_TIME,
+  xAxisShow = false,
 }) {
   const selectedMinMillis = selectedTimeRange[0]?.toMillis();
   const selectedMaxMillis = selectedTimeRange[1]?.toMillis();
@@ -222,7 +224,7 @@ function TimeseriesPlot({
   // Plot =================================================
   return (
     <ChartContainer
-      className="pt-8 h-51 w-full"
+      className="pt-8 h-57 w-full"
       title={title}
       config={{}}
       style={{ zIndex: nPlots - plotIndex }}
@@ -261,6 +263,21 @@ function TimeseriesPlot({
           axisLine={false}
           tick={AXIS_TICK_STYLE}
           height={18}
+          label={
+            xAxisShow
+              ? {
+                  value:
+                    chartDataKey === "fakeX"
+                      ? "Sequence Number"
+                      : "Observation Start Time (TAI)",
+                  position: "center",
+                  fill: PLOT_DIMENSIONS.axisLabelFill,
+                  dy: 24,
+                  fontSize: PLOT_DIMENSIONS.axisLabelFontSize,
+                  fontWeight: PLOT_DIMENSIONS.axisLabelFontWeight,
+                }
+              : undefined
+          }
         />
         <YAxis
           tick={AXIS_TICK_STYLE}
@@ -270,12 +287,11 @@ function TimeseriesPlot({
           label={{
             value: unit,
             angle: -90,
+            fill: PLOT_DIMENSIONS.axisLabelFill,
             position: "insideLeft",
-            fill: "white",
-            dx: 0,
-            dy: 30,
-            fontSize: PLOT_DIMENSIONS.yAxisLabelFontSize,
-            fontWeight: 100,
+            style: { textAnchor: "middle" },
+            fontSize: PLOT_DIMENSIONS.axisLabelFontSize,
+            fontWeight: PLOT_DIMENSIONS.axisLabelFontWeight,
             letterSpacing: 1,
           }}
         />
@@ -352,47 +368,7 @@ function TimeseriesPlot({
           content={(props) => (
             <ChartTooltipContent
               {...props}
-              formatter={(value, name, item, index, payload) => {
-                const exposureId = payload["exposure id"];
-                const physicalFilter = payload["physical filter"];
-                const scienceProgram = payload["science program"];
-                const obsReason = payload["observation reason"];
-
-                const formattedValue =
-                  typeof value === "number" && !Number.isInteger(value)
-                    ? value.toFixed(4)
-                    : value;
-
-                return (
-                  <div className="flex flex-col gap-1 select-none">
-                    <div>
-                      <span className="text-muted-foreground">{title}:</span>{" "}
-                      <span className="font-mono">{formattedValue}</span>
-                    </div>
-                    <hr className="m-1 text-cyan-700/50" />
-                    <div>
-                      <span className="text-muted-foreground">Exposure:</span>{" "}
-                      <span className="font-mono">{exposureId}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">
-                        Science Program:
-                      </span>{" "}
-                      <span className="font-mono">{scienceProgram}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">
-                        Obs. Reason:
-                      </span>{" "}
-                      <span className="font-mono">{obsReason}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Filter:</span>{" "}
-                      <span className="font-mono">{physicalFilter}</span>
-                    </div>
-                  </div>
-                );
-              }}
+              formatter={plotTooltipFormatter(title)}
               hideLabel
             />
           )}

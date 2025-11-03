@@ -87,6 +87,7 @@ function Plots() {
 
   // Plot format
   const [xAxisType, setXAxisType] = useState(PLOT_KEY_TIME);
+  const [xAxisShow, setXAxisShow] = useState(true);
   const [plotShape, setPlotShape] = useState("dots");
   const [plotColor, setPlotColor] = useState("assorted");
   const [bandMarker, setBandMarker] = useState("bandColorsIcons");
@@ -451,6 +452,8 @@ function Plots() {
             <PlotFormatPopover
               xAxisType={xAxisType}
               setXAxisType={setXAxisType}
+              xAxisShow={xAxisShow}
+              setXAxisShow={setXAxisShow}
               plotShape={plotShape}
               setPlotShape={setPlotShape}
               plotColor={plotColor}
@@ -490,6 +493,7 @@ function Plots() {
                     // Show moon rise/set only on sky-related plots
                     {...(def?.showMoon ? { moonIntervals: moonIntervals } : {})}
                     xAxisType={xAxisType}
+                    xAxisShow={xAxisShow}
                     fullTimeRange={fullTimeRange}
                     selectedTimeRange={selectedTimeRange}
                     setSelectedTimeRange={setSelectedTimeRange}
