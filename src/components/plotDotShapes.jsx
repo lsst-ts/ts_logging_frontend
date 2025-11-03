@@ -3,12 +3,19 @@ import { memo } from "react";
 import { BAND_COLORS } from "@/components/PLOT_DEFINITIONS";
 
 const XShape = memo((props) => {
-  const { cx, cy, fill, strokeOpacity = 1, fillOpacity = 1 } = props;
+  const {
+    cx,
+    cy,
+    fill,
+    strokeOpacity = 1,
+    fillOpacity = 1,
+    ...shapeProps
+  } = props;
   const size = 1.5;
   if (cx < size || cy < size) return null;
   let color = fill;
   return (
-    <g>
+    <g {...shapeProps}>
       <line
         x1={cx - size}
         y1={cy - size}
@@ -40,10 +47,12 @@ const TriangleShape = memo((props) => {
     r = 2,
     strokeOpacity = 1,
     fillOpacity = 1,
+    ...shapeProps
   } = props;
   if (typeof cx !== "number" || typeof cy !== "number") return null;
   return (
     <polygon
+      {...shapeProps}
       points={`
         ${cx},${cy - r}
         ${cx - r},${cy + r}
@@ -67,10 +76,12 @@ const FlippedTriangleShape = memo((props) => {
     r = 2,
     strokeOpacity = 1,
     fillOpacity = 1,
+    ...shapeProps
   } = props;
   if (typeof cx !== "number" || typeof cy !== "number") return null;
   return (
     <polygon
+      {...shapeProps}
       points={`
         ${cx},${cy + r}
         ${cx - r},${cy - r}
@@ -94,6 +105,7 @@ const AsteriskShape = memo((props) => {
     r = 4,
     strokeOpacity = 1,
     fillOpacity = 1,
+    ...shapeProps
   } = props;
   if (typeof cx !== "number" || typeof cy !== "number") return null;
   const lines = [];
@@ -118,7 +130,7 @@ const AsteriskShape = memo((props) => {
       />,
     );
   }
-  return <g>{lines}</g>;
+  return <g {...shapeProps}>{lines}</g>;
 });
 
 // i band
@@ -130,11 +142,13 @@ const SquareShape = memo((props) => {
     r = 2,
     strokeOpacity = 1,
     fillOpacity = 1,
+    ...shapeProps
   } = props;
   if (typeof cx !== "number" || typeof cy !== "number") return null;
   const size = r;
   return (
     <rect
+      {...shapeProps}
       x={cx - size}
       y={cy - size}
       width={size * 2}
@@ -158,6 +172,7 @@ const StarShape = memo((props) => {
     r = 4,
     strokeOpacity = 1,
     fillOpacity = 1,
+    ...shapeProps
   } = props;
   if (typeof cx !== "number" || typeof cy !== "number") return null;
   const spikes = 5;
@@ -185,6 +200,7 @@ const StarShape = memo((props) => {
       strokeWidth={0.8}
       strokeOpacity={strokeOpacity}
       fillOpacity={fillOpacity}
+      {...shapeProps}
     />
   );
 });

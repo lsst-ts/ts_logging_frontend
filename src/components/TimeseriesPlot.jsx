@@ -1,9 +1,10 @@
-import { useContext } from "react";
+import { useContext, useEffect, useId } from "react";
 import {
   CartesianGrid,
   Line,
   LineChart,
   ReferenceArea,
+  ReferenceDot,
   ReferenceLine,
   XAxis,
   YAxis,
@@ -15,7 +16,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { PlotDataContext } from "@/contexts/PlotDataContext";
-import { HoverContext } from "@/contexts/HoverContext";
+import { hoverStore } from "@/stores/hoverStore";
 import {
   TriangleShape,
   FlippedTriangleShape,
@@ -44,11 +45,10 @@ import { useClickDrag } from "@/hooks/useClickDrag";
 import { scaleDotRadius, calculateDecimalPlaces } from "@/utils/plotUtils";
 
 // Band markers for the timeseries plots
-const CustomisedDotWithShape = ({ cx, cy, band, r = 2, isHovered = false }) => {
+const CustomisedDotWithShape = ({ cx, cy, band, r = 2, graphID, obsID }) => {
   if (cx == null || cy == null) return null;
 
-  const hoverR = isHovered ? PLOT_DIMENSIONS.hoveredDotRadius : r;
-  const fill = isHovered ? PLOT_COLORS.hoveredDotFill : BAND_COLORS[band];
+  const fill = BAND_COLORS[band];
 
   // Band "u" is a blue circle
   if (band === "u") {
@@ -56,9 +56,13 @@ const CustomisedDotWithShape = ({ cx, cy, band, r = 2, isHovered = false }) => {
       <circle
         cx={cx}
         cy={cy}
-        r={hoverR || 2}
+        r={r}
         fill={fill}
         style={{ pointerEvents: "all" }}
+        data-cx={cx}
+        data-cy={cy}
+        data-graphid={graphID}
+        data-obsid={obsID}
       />
     );
   }
@@ -87,9 +91,13 @@ const CustomisedDotWithShape = ({ cx, cy, band, r = 2, isHovered = false }) => {
     <ShapeComponent
       cx={cx}
       cy={cy}
-      r={hoverR}
+      r={r}
       fill={fill}
       style={{ pointerEvents: "all" }}
+      data-cx={cx}
+      data-cy={cy}
+      data-graphid={graphID}
+      data-obsid={obsID}
     />
   );
 };
@@ -112,8 +120,8 @@ function TimeseriesPlot({
   // Get pre-computed chart data from context
   const plotData = useContext(PlotDataContext);
 
-  // Get hover state from context
-  const { hoveredExposureId, setHoveredExposureId } = useContext(HoverContext);
+  // Generate unique ID for this graph
+  const graphID = useId();
 
   // Destructure with defaults to handle null case
   const {
@@ -153,22 +161,32 @@ function TimeseriesPlot({
 
     // If we're dragging, don't update hover state
     if (refAreaLeft) {
-      setHoveredExposureId(null);
+      hoverStore.setHover(null);
       return;
     }
 
     if (!state || !state.activePayload || state.activePayload.length === 0) {
-      setHoveredExposureId(null);
+      hoverStore.setHover(null);
       return;
     }
 
-    const exposureId = state.activePayload[0].payload["exposure id"];
-    setHoveredExposureId(exposureId);
+    hoverStore.setHover(state.activePayload[0].payload["exposure id"]);
   };
 
   const handleChartMouseLeave = () => {
-    setHoveredExposureId(null);
+    hoverStore.setHover(null);
   };
+
+  // Register this graph with the hover store for DOM manipulation
+  useEffect(() => {
+    if (filteredData) {
+      hoverStore.registerGraph(graphID);
+    }
+
+    return () => {
+      hoverStore.unregisterGraph(graphID);
+    };
+  }, [graphID]);
 
   if (!plotData) {
     return null;
@@ -208,7 +226,6 @@ function TimeseriesPlot({
     // Band markers (colours and icons)
     lineProps.stroke = "";
     lineProps.dot = ({ index, payload, cx, cy, r }) => {
-      const isHovered = hoveredExposureId === payload["exposure id"];
       return (
         <CustomisedDotWithShape
           cx={cx}
@@ -216,7 +233,8 @@ function TimeseriesPlot({
           r={r}
           key={`dot-${index}`}
           band={payload.band}
-          isHovered={isHovered}
+          obsID={payload["exposure id"]}
+          graphID={graphID}
         />
       );
     };
@@ -225,62 +243,66 @@ function TimeseriesPlot({
     lineProps.stroke = "";
     lineProps.dot = ({ cx, cy, payload, index }) => {
       if (cy == null) return null; // don't show a dot if undefined or null
-      const isHovered = hoveredExposureId === payload["exposure id"];
-      const radius = isHovered ? PLOT_DIMENSIONS.hoveredDotRadius : DOT_RADIUS;
-      const fill = isHovered
-        ? PLOT_COLORS.hoveredDotFill
-        : BAND_COLORS[payload.band] || selectedColor;
+      const fill = BAND_COLORS[payload.band] || selectedColor;
       return (
         <circle
           key={`dot-${index}`}
           cx={cx}
           cy={cy}
-          r={radius}
+          r={DOT_RADIUS}
           fill={fill}
           stroke={fill}
           style={{ pointerEvents: "all" }}
+          data-cx={cx}
+          data-cy={cy}
+          data-graphid={graphID}
+          data-obsid={payload["exposure id"]}
         />
       );
     };
   } else if (plotShape === "line") {
-    // Lines - show highlight dot when hovered
+    // Lines
     lineProps.connectNulls = true;
     lineProps.isAnimationActive = true;
     lineProps.type = "linear";
     lineProps.stroke = selectedColor;
-    lineProps.dot = ({ cx, cy, payload, index }) => {
+    lineProps.dot = ({ cx, cy, index, payload }) => {
       if (cy == null) return null;
-      const isHovered = hoveredExposureId === payload["exposure id"];
-      // Only show a dot when hovered
-      if (!isHovered) return null;
+      // We do not display any dot, however we need to have an
+      // actual (invisble) dot there so we can correctly
+      // calculation the position of the hover indicator
       return (
         <circle
           key={`dot-${index}`}
           cx={cx}
           cy={cy}
-          r={PLOT_DIMENSIONS.hoveredDotRadius}
-          fill={PLOT_COLORS.hoveredDotFill}
-          style={{ pointerEvents: "all" }}
+          r={DOT_RADIUS}
+          fill={"rgba(0,0,0,0)"}
+          data-cx={cx}
+          data-cy={cy}
+          data-graphid={graphID}
+          data-obsid={payload["exposure id"]}
         />
       );
     };
   } else {
     // Dots
     lineProps.stroke = "";
-    lineProps.dot = ({ cx, cy, payload, index }) => {
+    lineProps.dot = ({ cx, cy, index, payload }) => {
       if (cy == null) return null;
-      const isHovered = hoveredExposureId === payload["exposure id"];
-      const radius = isHovered ? PLOT_DIMENSIONS.hoveredDotRadius : DOT_RADIUS;
-      const fill = isHovered ? PLOT_COLORS.hoveredDotFill : selectedColor;
       return (
         <circle
           key={`dot-${index}`}
           cx={cx}
           cy={cy}
-          r={radius}
-          fill={fill}
-          stroke={fill}
+          r={DOT_RADIUS}
+          fill={selectedColor}
+          stroke={selectedColor}
           style={{ pointerEvents: "all" }}
+          data-cx={cx}
+          data-cy={cy}
+          data-graphid={graphID}
+          data-obsid={payload["exposure id"]}
         />
       );
     };
@@ -452,6 +474,16 @@ function TimeseriesPlot({
             fillOpacity={PLOT_OPACITIES.selection}
           />
         ) : null}
+        {/* Hover indicator - positioned via direct DOM manipulation */}
+        <ReferenceDot
+          x={-9999}
+          y={-9999}
+          r={PLOT_DIMENSIONS.hoveredDotRadius}
+          fill={PLOT_COLORS.hoveredDotFill}
+          stroke={PLOT_COLORS.hoveredDotFill}
+          ifOverflow={"visible"}
+          data-hover-indicator={graphID}
+        />
       </LineChart>
     </ChartContainer>
   );

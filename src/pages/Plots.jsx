@@ -47,7 +47,6 @@ import {
 } from "@/utils/timeUtils";
 import { calculateChartData } from "@/utils/chartCalculations";
 import { PlotDataContext } from "@/contexts/PlotDataContext";
-import { HoverContextProvider } from "@/contexts/HoverContext";
 
 function Plots() {
   // Routing and URL params
@@ -603,32 +602,30 @@ function Plots() {
                 ))}
             </>
           ) : (
-            <HoverContextProvider>
-              <PlotDataContext.Provider value={plotDataContextValue}>
-                {visiblePlots.map((key, idx) => {
-                  const def = PLOT_DEFINITIONS.find((p) => p.key === key);
-                  return (
-                    <TimeseriesPlot
-                      title={def?.title || prettyTitleFromKey(key)}
-                      unit={def?.unit}
-                      dataKey={def.key}
-                      key={def.key}
-                      fullTimeRange={fullTimeRange}
-                      selectedTimeRange={selectedTimeRange}
-                      setSelectedTimeRange={setSelectedTimeRange}
-                      plotShape={plotShape}
-                      plotColor={plotColor}
-                      bandMarker={bandMarker}
-                      isBandPlot={!!def?.bandMarker}
-                      showMoon={!!def?.showMoon}
-                      plotIndex={idx}
-                      nPlots={visiblePlots.length}
-                      xAxisShow={xAxisShow}
-                    />
-                  );
-                })}
-              </PlotDataContext.Provider>
-            </HoverContextProvider>
+            <PlotDataContext.Provider value={plotDataContextValue}>
+              {visiblePlots.map((key, idx) => {
+                const def = PLOT_DEFINITIONS.find((p) => p.key === key);
+                return (
+                  <TimeseriesPlot
+                    title={def?.title || prettyTitleFromKey(key)}
+                    unit={def?.unit}
+                    dataKey={def.key}
+                    key={def.key}
+                    fullTimeRange={fullTimeRange}
+                    selectedTimeRange={selectedTimeRange}
+                    setSelectedTimeRange={setSelectedTimeRange}
+                    plotShape={plotShape}
+                    plotColor={plotColor}
+                    bandMarker={bandMarker}
+                    isBandPlot={!!def?.bandMarker}
+                    showMoon={!!def?.showMoon}
+                    plotIndex={idx}
+                    nPlots={visiblePlots.length}
+                    xAxisShow={xAxisShow}
+                  />
+                );
+              })}
+            </PlotDataContext.Provider>
           )}
         </div>
 
