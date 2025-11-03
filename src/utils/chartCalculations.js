@@ -1,6 +1,4 @@
-import { PLOT_KEY_SEQUENCE } from "@/components/PLOT_DEFINITIONS";
 import { groupBy } from "@/utils/plotUtils";
-import { getDayobsStartTAI, millisToHHmm } from "@/utils/timeUtils";
 
 /**
  * Helper function to find fakeX position for a moon event (moonUp or moonDown).
@@ -78,19 +76,12 @@ export function calculateChartData({
   selectedMinMillis,
   selectedMaxMillis,
 }) {
-  // Group data by day obs and trim empty entries
+  // Group data by day obs
   const chartData = groupBy(
     data,
     "day obs",
     new Map(availableDayObs.map((e) => [parseInt(e, 10), []])),
   );
-
-  while (chartData.length && chartData[0].length === 0) {
-    chartData.shift();
-  }
-  while (chartData.length && chartData.at(-1).length === 0) {
-    chartData.pop();
-  }
 
   // Calculate size of spacing between dayobs in PLOT_KEY_SEQUENCE mode
   // We use the smaller of two numbers based off the number of data points
@@ -114,33 +105,6 @@ export function calculateChartData({
   // ============================================================
   // TIME MODE DATA
   // ============================================================
-  const timeDayObsTicks = [];
-  const timeDayObsTickMappings = new Map();
-
-  // Calculate dayobs ticks for time mode
-  chartData.forEach((dayObsGroup, dIdx) => {
-    const dayObsValue = availableDayObs[dIdx];
-    // Add tick if there's data for this dayobs
-    if (dayObsGroup.length > 0) {
-      const dayObsStart = Math.min(
-        ...dayObsGroup.map((e) => e.obs_start_millis),
-      );
-      const dayObsEnd = Math.max(...dayObsGroup.map((e) => e.obs_start_millis));
-      const dayObsMidpoint = Math.floor((dayObsStart + dayObsEnd) / 2);
-
-      timeDayObsTicks.push(dayObsMidpoint);
-      timeDayObsTickMappings.set(dayObsMidpoint, dayObsValue);
-    } else {
-      // If theres no data, then add a dayobs tick at midnight Chile time
-      const dayObsMidpoint = getDayobsStartTAI(dayObsValue).plus({
-        hours: 15,
-      });
-
-      timeDayObsTicks.push(dayObsMidpoint);
-      timeDayObsTickMappings.set(dayObsMidpoint, dayObsValue);
-    }
-  });
-
   const timeData = {
     chartData: chartData,
     flatChartData: chartData.flat(),
@@ -151,15 +115,11 @@ export function calculateChartData({
       endIsZigzag: false,
     })),
     chartDayObsBreaks: [],
-    ticks: undefined,
-    dayObsTicks: timeDayObsTicks,
-    dayObsTickMappings: timeDayObsTickMappings,
     noDataX: [],
     fakeX: 0,
     chartDayObsSpacing,
     chartDataKey: "obs_start_millis",
     domain: [selectedMinMillis, selectedMaxMillis],
-    tickFormatter: (tick) => millisToHHmm(tick),
     scale: "time",
   };
 
@@ -171,28 +131,17 @@ export function calculateChartData({
   let fakeX = 1;
   const transformedChartData = [];
   const chartDayObsBreaks = [];
-  const ticks = [];
-  const tickMappings = new Map();
-  const dayObsTicks = [];
-  const dayObsTickMappings = new Map();
   const noDataX = [];
   const dayObsMetadata = [];
 
-  chartData.forEach((dayObsGroup, dIdx) => {
+  chartData.forEach((dayObsGroup) => {
     const transformedGroup = [];
-    // Calculate tick size for this dayObs
-    const tickSpacing = Math.ceil(Math.min(dayObsGroup.length / 6, 50));
     const dayObsStartFakeX = fakeX;
 
-    dayObsGroup.forEach((e, i) => {
+    dayObsGroup.forEach((e) => {
       // Create new object with fakeX property - NO MUTATION
       const entry = { ...e, fakeX };
       transformedGroup.push(entry);
-
-      if (i % tickSpacing === 0) {
-        ticks.push(fakeX);
-        tickMappings.set(fakeX, entry["seq num"]);
-      }
 
       fakeX++;
     });
@@ -213,18 +162,9 @@ export function calculateChartData({
       boundaryAfter,
     });
 
-    const dayObsMidFakeX = Math.floor(
-      (dayObsEndFakeX - dayObsStartFakeX) / 2 + dayObsStartFakeX,
-    );
-
-    // Add a tick to display the dayobs on the second x axis
-    dayObsTicks.push(dayObsMidFakeX);
-    dayObsTickMappings.set(dayObsMidFakeX, availableDayObs[dIdx]);
-
     // If there is no data for the day, add a no data reference area
     if (dayObsGroup.length === 0) {
       noDataX.push(fakeX);
-      dayObsTickMappings.set(dayObsMidFakeX, "");
     }
 
     // After each dayobs group, add some spacing on the graph
@@ -279,15 +219,11 @@ export function calculateChartData({
     flatChartData: transformedChartData.flat(),
     chartMoon,
     chartDayObsBreaks,
-    ticks,
-    dayObsTicks,
-    dayObsTickMappings,
     noDataX,
     fakeX,
     chartDayObsSpacing,
     chartDataKey: "fakeX",
     domain: [0, fakeX],
-    tickFormatter: (e) => tickMappings.get(e),
     scale: "auto",
   };
 
