@@ -10,6 +10,7 @@ import PlotVisibilityPopover from "@/components/PlotVisibilityPopover";
 import PlotFormatPopover from "@/components/PlotFormatPopover";
 import { TELESCOPES } from "@/components/parameters";
 import {
+  CircleShape,
   TriangleShape,
   FlippedTriangleShape,
   SquareShape,
@@ -448,6 +449,7 @@ function Plots() {
                 <div>Bands:</div>
                 {Object.entries(BAND_COLORS).map(([band, color]) => {
                   const shapeMap = {
+                    u: CircleShape,
                     g: TriangleShape,
                     r: FlippedTriangleShape,
                     i: SquareShape,
@@ -463,7 +465,7 @@ function Plots() {
                         {bandMarker === "bandColorsIcons" && ShapeComponent ? (
                           <ShapeComponent cx={8} cy={8} fill={color} r={4} />
                         ) : (
-                          <circle cx={8} cy={8} fill={color} r={5} />
+                          <CircleShape cx={8} cy={8} fill={color} r={5} />
                         )}
                       </svg>
                       <span>{band}</span>
