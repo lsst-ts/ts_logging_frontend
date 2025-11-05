@@ -17,6 +17,7 @@ import {
   DEFAULT_PIXEL_SCALE_MEDIAN,
   PSF_SIGMA_FACTOR,
   DEFAULT_EXTERNAL_INSTANCE_URL,
+  parseBackendVersion,
 } from "@/utils/utils";
 
 const sampleAlmanacInfo = [
@@ -402,6 +403,27 @@ describe("utils", () => {
 
     it("exports default external instance URL", () => {
       expect(DEFAULT_EXTERNAL_INSTANCE_URL).toContain("slac.stanford.edu");
+    });
+  });
+
+  describe("parseBackendVersion", () => {
+    it("parses valid version strings correctly", () => {
+      expect(parseBackendVersion("1.2.3")).toBe("1.2.3");
+      expect(parseBackendVersion("1.2.3a1")).toBe("1.2.3-alpha.1");
+      expect(parseBackendVersion("1.2.3rc1")).toBe("1.2.3-rc.1");
+    });
+
+    it("returns 'main' for invalid version strings", () => {
+      expect(parseBackendVersion("invalid-version")).toBe("main");
+      expect(parseBackendVersion("v1.2")).toBe("main");
+      expect(parseBackendVersion("")).toBe("main");
+      expect(parseBackendVersion("1.2.3-unknown")).toBe("main");
+      expect(parseBackendVersion("1.2.3.dev1+g6c0764173.d20251021")).toBe(
+        "main",
+      );
+      expect(parseBackendVersion("1.2.3-alpha.1")).toBe("main");
+      expect(parseBackendVersion("1.2.3a-1")).toBe("main");
+      expect(parseBackendVersion("1.2.3b1")).toBe("main");
     });
   });
 });

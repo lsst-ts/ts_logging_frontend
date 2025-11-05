@@ -401,6 +401,49 @@ const calculateSumExpTimeBetweenTwilights = (exposureFields, almanacInfo) => {
   return totalExpTime;
 };
 
+/**
+ * Function used to parse the backend version string
+ * to a git tag in order to include in the release notes link.
+ *
+ * @param {string} versionString The version string returned by the backend
+ * Example version strings and their conversions:
+ * - "1.2.3" -> "1.2.3"
+ * - "1.2.3a1" -> "1.2.3-alpha.1"
+ * - "1.2.3rc1" -> "1.2.3-rc.1"
+ * @returns The git tag corresponding to the version string
+ * or "main" if the version string is unrecognized
+ */
+function parseBackendVersion(versionString) {
+  const defaultVersion = "main";
+  const match = versionString.match(/^(\d+\.\d+\.\d+)([a-z]\d+|rc\d+)?$/);
+  if (!match) {
+    console.warn(`Unrecognized version string: ${versionString}`);
+    return defaultVersion;
+  }
+  const baseVersion = match[1];
+  const suffix = match[2];
+  if (!suffix) {
+    return `${baseVersion}`;
+  }
+  const suffixMatch = suffix.match(/^([a-z]+)(\d+)$/);
+  if (!suffixMatch) {
+    console.warn(`Invalid version suffix: ${suffix}`);
+    return defaultVersion;
+  }
+  let suffixType = "";
+  if (suffixMatch[1] !== "a" && suffixMatch[1] !== "rc") {
+    console.warn(`Unknown version suffix type: ${suffixMatch[1]}`);
+    return defaultVersion;
+  }
+  if (suffixMatch[1] == "a") {
+    suffixType = "alpha";
+  } else if (suffixMatch[1] == "rc") {
+    suffixType = "rc";
+  }
+  const suffixNumber = suffixMatch[2];
+  return `${baseVersion}-${suffixType}.${suffixNumber}`;
+}
+
 export {
   calculateEfficiency,
   calculateTimeLoss,
@@ -419,4 +462,5 @@ export {
   ISO_DATETIME_FORMAT,
   getDayobsAlmanac,
   calculateSumExpTimeBetweenTwilights,
+  parseBackendVersion,
 };
