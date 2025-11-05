@@ -44,7 +44,6 @@ import {
   almanacDayobsForPlot,
   utcDateTimeStrToTAIMillis,
   generateDayObsRange,
-  millisToHHmm,
 } from "@/utils/timeUtils";
 import { calculateChartData } from "@/utils/chartCalculations";
 import { PlotDataContext } from "@/contexts/PlotDataContext";
@@ -71,10 +70,6 @@ function Plots() {
   const [dataLogEntries, setDataLogEntries] = useState([]);
   const [availableDayObs, setAvailableDayObs] = useState([]);
   const [dataLogLoading, setDataLogLoading] = useState(true);
-
-  // Pre-computed chart data for both time and sequence modes
-  const [timeChartData, setTimeChartData] = useState(null);
-  const [sequenceChartData, setSequenceChartData] = useState(null);
 
   // Twilights, moonrise/set and brightness
   const [twilightValues, setTwilightValues] = useState([]);
@@ -230,8 +225,6 @@ function Plots() {
     setIllumValues([]);
     setMoonValues([]);
     // Chart data
-    setTimeChartData(null);
-    setSequenceChartData(null);
   }
 
   useEffect(() => {
@@ -318,187 +311,35 @@ function Plots() {
     }
   }, [moonValues, fullTimeRange]);
 
-  // Pre-compute chart data for both Time and Sequence modes once all data is available
-  useEffect(() => {
-    const [xMinMillis, xMaxMillis] = fullTimeRange;
+  // Select chart data based on current xAxisType and prepare context value
+  const plotDataContextValue = useMemo(() => {
+    const [xMinMillis, xMaxMillis] = selectedTimeRange;
     if (
       dataLogEntries.length > 0 &&
       availableDayObs.length > 0 &&
       xMinMillis != null &&
       xMaxMillis != null
     ) {
-      const chartCalculations = calculateChartData({
+      const calculatedData = calculateChartData({
         data: dataLogEntries,
         moonIntervals,
         availableDayObs,
         selectedMinMillis: xMinMillis.toMillis(),
         selectedMaxMillis: xMaxMillis.toMillis(),
+        twilightValues,
       });
 
-      setTimeChartData(chartCalculations.time);
-      setSequenceChartData(chartCalculations.sequence);
+      return xAxisType === PLOT_KEY_SEQUENCE
+        ? calculatedData.sequence
+        : calculatedData.time;
     }
-  }, [dataLogEntries, moonIntervals, availableDayObs, fullTimeRange]);
-
-  // Select chart data based on current xAxisType and prepare context value
-  const plotDataContextValue = useMemo(() => {
-    // Select the appropriate pre-computed chart data
-    const baseChartData =
-      xAxisType === PLOT_KEY_SEQUENCE ? sequenceChartData : timeChartData;
-
-    if (!baseChartData) return null;
-
-    const selectedMinMillis = selectedTimeRange[0]?.toMillis();
-    const selectedMaxMillis = selectedTimeRange[1]?.toMillis();
-
-    // Filter flat data based on selected time range
-    const filteredData = baseChartData.flatChartData.filter(
-      (entry) =>
-        entry.obs_start_dt >= selectedMinMillis &&
-        entry.obs_start_dt <= selectedMaxMillis,
-    );
-
-    // Create indexToMillis function for click-drag in sequence mode
-    const indexToMillis =
-      xAxisType === PLOT_KEY_SEQUENCE
-        ? (e) =>
-            baseChartData.flatChartData.find((d) => d.fakeX === e)
-              ?.obs_start_millis
-        : (e) => e;
-
-    // Calculate domain based on mode
-    let domain;
-    if (xAxisType === PLOT_KEY_SEQUENCE) {
-      // For sequence mode, find min/max fakeX in filtered data
-      const filteredFakeX = filteredData.map((d) => d.fakeX);
-
-      const minFakeX =
-        filteredFakeX.length > 0 ? Math.min(...filteredFakeX) : 0;
-      const maxFakeX =
-        filteredFakeX.length > 0
-          ? Math.max(...filteredFakeX)
-          : baseChartData.fakeX;
-
-      domain = [minFakeX, maxFakeX];
-    } else {
-      // For time mode, use selected time range
-      domain = [selectedMinMillis, selectedMaxMillis];
-    }
-
-    // Filter grouped chartData to only include points within the selected domain
-    const visibleChartData = baseChartData.chartData.map((dayObsGroup) =>
-      dayObsGroup.filter((point) => {
-        const xValue = point[baseChartData.chartDataKey];
-        return xValue >= domain[0] && xValue <= domain[1];
-      }),
-    );
-
-    // Filter moon intervals to only include those that overlap with visible domain
-    const visibleChartMoon = baseChartData.chartMoon.filter(
-      ({ start, end }) => {
-        // Keep interval if it overlaps with the domain at all
-        return end >= domain[0] && start <= domain[1];
-      },
-    );
-
-    // Calculate ticks and dayObsTicks based on mode
-    let ticks;
-    let tickFormatter;
-    let dayObsTicks;
-    let dayObsTickMappings;
-
-    if (xAxisType === PLOT_KEY_SEQUENCE) {
-      // SEQUENCE MODE: Calculate ticks from visible data
-      const tickMappings = new Map();
-      ticks = [];
-      dayObsTicks = [];
-      dayObsTickMappings = new Map();
-
-      visibleChartData.forEach((dayObsGroup) => {
-        if (dayObsGroup.length === 0) {
-          // Skip empty dayobs groups in visible data
-          return;
-        }
-
-        // Calculate tick spacing for this dayObs
-        const tickSpacing = Math.ceil(Math.min(dayObsGroup.length / 6, 50));
-        const dayObsStartFakeX = dayObsGroup[0].fakeX;
-        const dayObsEndFakeX = dayObsGroup[dayObsGroup.length - 1].fakeX;
-
-        // Add ticks for individual data points
-        dayObsGroup.forEach((entry, i) => {
-          if (i % tickSpacing === 0) {
-            ticks.push(entry.fakeX);
-            tickMappings.set(entry.fakeX, entry["seq num"]);
-          }
-        });
-
-        // Add dayobs tick
-        const dayObsMidFakeX = (dayObsEndFakeX + dayObsStartFakeX) / 2;
-        dayObsTicks.push(dayObsMidFakeX);
-        dayObsTickMappings.set(dayObsMidFakeX, dayObsGroup[0]["day obs"]);
-      });
-
-      tickFormatter = (tick) => tickMappings.get(tick);
-    } else {
-      // TIME MODE: Calculate dayObsTicks from visible data
-      ticks = undefined;
-      dayObsTicks = [];
-      dayObsTickMappings = new Map();
-
-      visibleChartData.forEach((dayObsGroup, dIdx) => {
-        const dayObsValue = availableDayObs[dIdx];
-        // Add tick if there's data for this dayobs
-        if (dayObsGroup.length > 0) {
-          const dayObsStart = Math.min(
-            ...dayObsGroup.map((e) => e.obs_start_millis),
-          );
-          const dayObsEnd = Math.max(
-            ...dayObsGroup.map((e) => e.obs_start_millis),
-          );
-          const dayObsMidpoint = Math.floor((dayObsStart + dayObsEnd) / 2);
-
-          dayObsTicks.push(dayObsMidpoint);
-          dayObsTickMappings.set(dayObsMidpoint, dayObsValue);
-        } else {
-          // If there's no data, then add a dayobs tick at midnight Chile time
-          const dayObsMidpoint = getDayobsStartTAI(dayObsValue).plus({
-            hours: 15,
-          });
-
-          dayObsTicks.push(dayObsMidpoint.toMillis());
-          dayObsTickMappings.set(dayObsMidpoint.toMillis(), dayObsValue);
-        }
-      });
-      dayObsTicks = dayObsTicks.filter(
-        (t) => t >= selectedMinMillis && t <= selectedMaxMillis,
-      );
-
-      tickFormatter = (tick) => millisToHHmm(tick);
-    }
-
-    return {
-      ...baseChartData,
-      domain,
-      ticks,
-      tickFormatter,
-      dayObsTicks,
-      dayObsTickMappings,
-      chartData: visibleChartData,
-      chartMoon: visibleChartMoon,
-      filteredData,
-      twilightValues,
-      selectedMinMillis,
-      selectedMaxMillis,
-      indexToMillis,
-    };
   }, [
+    dataLogEntries,
     xAxisType,
-    timeChartData,
-    sequenceChartData,
+    moonIntervals,
     selectedTimeRange,
-    twilightValues,
     availableDayObs,
+    twilightValues,
   ]);
 
   // Temporary display message for AuxTel queries

@@ -125,23 +125,23 @@ function TimeseriesPlot({
 
   // Destructure with defaults to handle null case
   const {
-    chartData = [],
+    groupedData = [],
+    flatData = [],
     chartMoon = [],
+    twilightValues = [],
     chartDayObsBreaks = [],
-    ticks = [],
-    dayObsTicks = [],
-    dayObsTickMappings = new Map(),
     noDataX = [],
     chartDayObsSpacing = 1,
     chartDataKey = "obs_start_millis",
     domain = [0, 0],
-    tickFormatter = (e) => e,
     scale = "time",
-    filteredData = [],
-    twilightValues = [],
+    ticks = [],
+    dayObsTicks = [],
+    tickFormatter = (e) => e,
+    dayObsTickFormatter = (e) => e,
+    indexToMillis = (e) => e, // Default identity function
     selectedMinMillis = 0,
     selectedMaxMillis = 0,
-    indexToMillis = (e) => e, // Default identity function
   } = plotData || {};
 
   // Click & Drag plot hooks
@@ -179,14 +179,14 @@ function TimeseriesPlot({
 
   // Register this graph with the hover store for DOM manipulation
   useEffect(() => {
-    if (filteredData) {
+    if (groupedData) {
       hoverStore.registerGraph(graphID);
     }
 
     return () => {
       hoverStore.unregisterGraph(graphID);
     };
-  }, [graphID]);
+  }, [graphID, groupedData]);
 
   if (!plotData) {
     return null;
@@ -200,7 +200,7 @@ function TimeseriesPlot({
         PLOT_COLORS.defaultColor;
 
   // Compute decimal places for y-axis ticks ================
-  const values = filteredData
+  const values = flatData
     .map((d) => d[dataKey])
     .filter((v) => typeof v === "number" && Number.isFinite(v));
   // Get min/max
@@ -346,7 +346,7 @@ function TimeseriesPlot({
           domain={domain}
           allowDuplicatedCategory={false}
           ticks={dayObsTicks}
-          tickFormatter={(e) => dayObsTickMappings.get(e)}
+          tickFormatter={dayObsTickFormatter}
           xAxisId={1}
           tickLine={false}
           axisLine={false}
@@ -457,13 +457,13 @@ function TimeseriesPlot({
           )}
         />
         {/* Data */}
-        {chartData.map((d, i) => (
+        {groupedData.map((d, i) => (
           <Line
             {...lineProps}
             key={`chart-data-${i}`}
             data={d}
-            animationBegin={(1500 * i) / chartData.length}
-            animationDuration={1500 / chartData.length}
+            animationBegin={(1500 * i) / groupedData.length}
+            animationDuration={1500 / groupedData.length}
           />
         ))}
         {/* Selection rectangle shown during active highlighting */}
