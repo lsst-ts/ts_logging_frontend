@@ -2,6 +2,57 @@ import { memo } from "react";
 
 import { BAND_COLORS } from "@/components/PLOT_DEFINITIONS";
 
+// no band
+const NoBandCircleShape = memo((props) => {
+  const {
+    cx,
+    cy,
+    fill,
+    r = 2,
+    strokeOpacity = 1,
+    fillOpacity = 1,
+    ...shapeProps
+  } = props;
+  if (typeof cx !== "number" || typeof cy !== "number") return null;
+  return (
+    <circle
+      {...shapeProps}
+      cx={cx}
+      cy={cy}
+      r={r}
+      fill={fill}
+      stroke={fill}
+      strokeOpacity={strokeOpacity}
+      fillOpacity={fillOpacity}
+    />
+  );
+});
+
+// u band
+const CircleShape = memo((props) => {
+  const {
+    cx,
+    cy,
+    fill = BAND_COLORS.u || "#4d4dff",
+    r = 2,
+    strokeOpacity = 1,
+    fillOpacity = 1,
+    ...shapeProps
+  } = props;
+  if (typeof cx !== "number" || typeof cy !== "number") return null;
+  return (
+    <circle
+      {...shapeProps}
+      cx={cx}
+      cy={cy}
+      r={r}
+      fill={fill}
+      strokeOpacity={strokeOpacity}
+      fillOpacity={fillOpacity}
+    />
+  );
+});
+
 const XShape = memo((props) => {
   const {
     cx,
@@ -205,11 +256,67 @@ const StarShape = memo((props) => {
   );
 });
 
+// Band markers for the timeseries plots
+const CustomisedDotWithShape = ({
+  cx,
+  cy,
+  band,
+  color,
+  r = 2,
+  graphID,
+  obsID,
+}) => {
+  if (cx == null || cy == null) return null;
+
+  const fill = BAND_COLORS[band] || color;
+
+  // Choose shape based on band
+  let ShapeComponent;
+  switch (band) {
+    case "u":
+      ShapeComponent = CircleShape;
+      break;
+    case "g":
+      ShapeComponent = TriangleShape;
+      break;
+    case "r":
+      ShapeComponent = FlippedTriangleShape;
+      break;
+    case "i":
+      ShapeComponent = SquareShape;
+      break;
+    case "z":
+      ShapeComponent = StarShape;
+      break;
+    case "y":
+      ShapeComponent = AsteriskShape;
+      break;
+    default:
+      ShapeComponent = NoBandCircleShape;
+  }
+
+  return (
+    <ShapeComponent
+      cx={cx}
+      cy={cy}
+      r={r}
+      fill={fill}
+      style={{ pointerEvents: "all" }}
+      data-cx={cx}
+      data-cy={cy}
+      data-graphid={graphID}
+      data-obsid={obsID}
+    />
+  );
+};
+
 export {
+  CircleShape,
   XShape,
   TriangleShape,
   FlippedTriangleShape,
   AsteriskShape,
   SquareShape,
   StarShape,
+  CustomisedDotWithShape,
 };

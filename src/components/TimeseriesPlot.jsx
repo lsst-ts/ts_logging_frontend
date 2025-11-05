@@ -18,13 +18,6 @@ import {
 import { PlotDataContext } from "@/contexts/PlotDataContext";
 import { hoverStore } from "@/stores/hoverStore";
 import {
-  TriangleShape,
-  FlippedTriangleShape,
-  SquareShape,
-  StarShape,
-  AsteriskShape,
-} from "@/components/plotDotShapes";
-import {
   DayObsBreakLine,
   NoDataReferenceArea,
   MoonReferenceArea,
@@ -32,9 +25,6 @@ import {
 import { plotTooltipFormatter } from "@/components/PlotTooltip";
 import {
   PLOT_COLOR_OPTIONS,
-  BAND_COLORS,
-  PLOT_KEY_TIME,
-  PLOT_KEY_SEQUENCE,
   PLOT_COLORS,
   PLOT_DIMENSIONS,
   PLOT_OPACITIES,
@@ -43,64 +33,7 @@ import {
 
 import { useClickDrag } from "@/hooks/useClickDrag";
 import { scaleDotRadius, calculateDecimalPlaces } from "@/utils/plotUtils";
-
-// Band markers for the timeseries plots
-const CustomisedDotWithShape = ({ cx, cy, band, r = 2, graphID, obsID }) => {
-  if (cx == null || cy == null) return null;
-
-  const fill = BAND_COLORS[band];
-
-  // Band "u" is a blue circle
-  if (band === "u") {
-    return (
-      <circle
-        cx={cx}
-        cy={cy}
-        r={r}
-        fill={fill}
-        style={{ pointerEvents: "all" }}
-        data-cx={cx}
-        data-cy={cy}
-        data-graphid={graphID}
-        data-obsid={obsID}
-      />
-    );
-  }
-
-  // Choose shape based on prop
-  let ShapeComponent;
-  switch (band) {
-    case "g":
-      ShapeComponent = TriangleShape;
-      break;
-    case "r":
-      ShapeComponent = FlippedTriangleShape;
-      break;
-    case "i":
-      ShapeComponent = SquareShape;
-      break;
-    case "z":
-      ShapeComponent = StarShape;
-      break;
-    case "y":
-      ShapeComponent = AsteriskShape;
-      break;
-  }
-
-  return (
-    <ShapeComponent
-      cx={cx}
-      cy={cy}
-      r={r}
-      fill={fill}
-      style={{ pointerEvents: "all" }}
-      data-cx={cx}
-      data-cy={cy}
-      data-graphid={graphID}
-      data-obsid={obsID}
-    />
-  );
-};
+import { createDotCallback } from "../utils/createDotCallback";
 
 function TimeseriesPlot({
   title,
@@ -220,92 +153,37 @@ function TimeseriesPlot({
     activeDot: false, // Disable default activeDot since we handle hover ourselves
     isAnimationActive: false,
     animationEasing: "linear",
+    stroke: "",
   };
 
   if (isBandPlot && bandMarker === "bandColorsIcons") {
     // Band markers (colours and icons)
-    lineProps.stroke = "";
-    lineProps.dot = ({ index, payload, cx, cy, r }) => {
-      return (
-        <CustomisedDotWithShape
-          cx={cx}
-          cy={cy}
-          r={r}
-          key={`dot-${index}`}
-          band={payload.band}
-          obsID={payload["exposure id"]}
-          graphID={graphID}
-        />
-      );
-    };
+    lineProps.dot = createDotCallback(graphID, Math.max(DOT_RADIUS, 2), {
+      band: true,
+      useShape: true,
+    });
   } else if (isBandPlot && bandMarker === "bandColor") {
     // Band markers (colours only)
-    lineProps.stroke = "";
-    lineProps.dot = ({ cx, cy, payload, index }) => {
-      if (cy == null) return null; // don't show a dot if undefined or null
-      const fill = BAND_COLORS[payload.band] || selectedColor;
-      return (
-        <circle
-          key={`dot-${index}`}
-          cx={cx}
-          cy={cy}
-          r={DOT_RADIUS}
-          fill={fill}
-          stroke={fill}
-          style={{ pointerEvents: "all" }}
-          data-cx={cx}
-          data-cy={cy}
-          data-graphid={graphID}
-          data-obsid={payload["exposure id"]}
-        />
-      );
-    };
+    lineProps.dot = createDotCallback(graphID, DOT_RADIUS, {
+      band: true,
+      useShape: false,
+      color: selectedColor,
+    });
   } else if (plotShape === "line") {
     // Lines
     lineProps.connectNulls = true;
     lineProps.isAnimationActive = true;
     lineProps.type = "linear";
     lineProps.stroke = selectedColor;
-    lineProps.dot = ({ cx, cy, index, payload }) => {
-      if (cy == null) return null;
-      // We do not display any dot, however we need to have an
-      // actual (invisble) dot there so we can correctly
-      // calculation the position of the hover indicator
-      return (
-        <circle
-          key={`dot-${index}`}
-          cx={cx}
-          cy={cy}
-          r={DOT_RADIUS}
-          fill={"rgba(0,0,0,0)"}
-          data-cx={cx}
-          data-cy={cy}
-          data-graphid={graphID}
-          data-obsid={payload["exposure id"]}
-        />
-      );
-    };
+    lineProps.dot = createDotCallback(graphID, DOT_RADIUS, {
+      // Hidden dots
+      color: "rgba(0,0,0,0)",
+    });
   } else {
     // Dots
-    lineProps.stroke = "";
-    lineProps.dot = ({ cx, cy, index, payload }) => {
-      if (cy == null) return null;
-      return (
-        <circle
-          key={`dot-${index}`}
-          cx={cx}
-          cy={cy}
-          r={DOT_RADIUS}
-          fill={selectedColor}
-          stroke={selectedColor}
-          style={{ pointerEvents: "all" }}
-          data-cx={cx}
-          data-cy={cy}
-          data-graphid={graphID}
-          data-obsid={payload["exposure id"]}
-        />
-      );
-    };
+    lineProps.dot = createDotCallback(graphID, DOT_RADIUS, {
+      color: selectedColor,
+    });
   }
   // ---------------------------------------------------------
 
