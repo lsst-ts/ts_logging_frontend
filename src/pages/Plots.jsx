@@ -23,7 +23,6 @@ import {
   PLOT_DEFINITIONS,
   BAND_COLORS,
   PLOT_KEY_TIME,
-  PLOT_KEY_SEQUENCE,
 } from "@/components/PLOT_DEFINITIONS";
 
 import {
@@ -34,7 +33,6 @@ import {
   DEFAULT_PIXEL_SCALE_MEDIAN,
   PSF_SIGMA_FACTOR,
   getDatetimeFromDayobsStr,
-  getNightSummaryLink,
   prettyTitleFromKey,
 } from "@/utils/utils";
 import {
@@ -507,44 +505,6 @@ function Plots() {
                   />
                 );
               })}
-            </>
-          )}
-        </div>
-
-        {/* Visit Maps */}
-        <div className="mt-16 mxb-8 text-white font-thin text-center">
-          <h1 className="flex flex-row gap-2 text-white text-3xl uppercase justify-center pb-4">
-            <span className="tracking-[2px] font-extralight">Visit</span>
-            <span className="font-extrabold"> Maps</span>
-          </h1>
-          {dataLogLoading || almanacLoading ? (
-            <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
-          ) : (
-            <>
-              <p>
-                For visit maps, visit the Scheduler-oriented night summaries:{" "}
-                {availableDayObs.map((dayobs, idx) => {
-                  const { url, label } = getNightSummaryLink(dayobs);
-                  return (
-                    <span key={dayobs}>
-                      <a
-                        href={url}
-                        className="underline text-blue-300 hover:text-blue-400"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {label}
-                      </a>
-                      {idx < availableDayObs.length - 1 && ", "}
-                    </span>
-                  );
-                })}
-                .
-              </p>
-              <p className="pt-2">
-                <span className="font-medium">Note: </span>If you see a 404
-                error, the summary might not have been created for that day.
-              </p>
             </>
           )}
         </div>

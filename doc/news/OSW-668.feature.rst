@@ -1,0 +1,1 @@
+Add planisphere vist map to the Visit Maps applet in Digest page.

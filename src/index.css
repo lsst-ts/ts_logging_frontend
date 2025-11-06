@@ -45,6 +45,12 @@
   --color-sidebar-ring: var(--sidebar-ring);
   --color-teal-900: #0c4a47;
   --color-sky-750: oklch(51.37% 0.124 243) /* #006DA8 */;
+  --color-band-u: #3eb7ff;
+  --color-band-g: #30c39f;
+  --color-band-r: #ff7e00;
+  --color-band-i: #2af5ff;
+  --color-band-z: #a7f9c1;
+  --color-band-y: #fdc900;
 }
 /*---break---*/
 :root {

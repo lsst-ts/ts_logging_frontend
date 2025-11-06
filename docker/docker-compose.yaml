@@ -24,11 +24,13 @@ services:
       - JIRA_API_TOKEN=${JIRA_API_TOKEN}
       - JIRA_API_HOSTNAME=${JIRA_API_HOSTNAME}
       - EXTERNAL_INSTANCE_URL=${EXTERNAL_INSTANCE_URL}
+      - RUBIN_SIM_DATA_DIR=/home/saluser/develop/rubin_sim_data # Rubin SIM data
 
     ports:
       - "8080:8080"
     volumes:
       - ${BACKEND_PATH}:/home/saluser/develop
+      - ${LOCAL_RUBIN_SIM_DATA_DIR}:/home/saluser/develop/rubin_sim_data:ro # Mount Rubin SIM data directory as read-only
 
   nginx:
     container_name: nightlydigest-nginx

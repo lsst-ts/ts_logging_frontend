@@ -4,7 +4,7 @@ import { Outlet, useRouter, useSearch } from "@tanstack/react-router";
 
 import { SidebarProvider } from "@/components/ui/sidebar.jsx";
 import { SidebarToggle } from "@/components/SidebarToggle.jsx";
-import { AppSidebar } from "@/components/app-sidebar.jsx";
+import { AppSidebar } from "@/components/AppSidebar.jsx";
 import { TELESCOPES } from "@/components/parameters";
 import { getKeyByValue } from "@/utils/utils";
 

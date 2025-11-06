@@ -345,6 +345,43 @@ const fetchBackendVersion = async (abortController) => {
   }
 };
 
+/**
+ * Fetches interactive visit maps generated from schedview for a given date range and instrument.
+ *
+ * @async
+ * @function fetchVisitMaps
+ * @param {string} start - The start date of the observation range (format: YYYY-MM-DD).
+ * @param {string} end - The end date of the observation range (format: YYYY-MM-DD).
+ * @param {string} instrument - The instrument to filter exposure entries.
+ * @param {AbortController} abortController - The AbortController used to cancel the request if needed.
+ * @returns {Promise<Object>} A promise that resolves to interactive visit map data.
+ * @throws {Error} Throws an error if the fetch fails or returns invalid data and the request was not aborted.
+ * @param {Object} options - Optional parameters.
+ * @param {boolean} options.planisphereOnly - If true, fetches only the planisphere view. Default is false.
+ * @param {boolean} options.appletMode - If true, fetches data formatted for applet mode. Default is false.
+ */
+const fetchVisitMaps = async (
+  start,
+  end,
+  instrument,
+  abortController,
+  { planisphereOnly = false, appletMode = false } = {},
+) => {
+  const url = `${backendLocation}/multi-night-visit-maps?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}&planisphereOnly=${planisphereOnly}&appletMode=${appletMode}`;
+  try {
+    const data = await fetchData(url, abortController);
+    if (!data) {
+      throw new Error("No data returned for interactive visit maps");
+    }
+    return data.interactive;
+  } catch (err) {
+    if (err.name !== "AbortError") {
+      console.error("Error fetching visit maps:", err);
+    }
+    throw err;
+  }
+};
+
 export {
   fetchExposures,
   fetchAlmanac,
@@ -356,4 +393,5 @@ export {
   fetchDataLogEntriesFromExposureLog,
   fetchContextFeed,
   fetchBackendVersion,
+  fetchVisitMaps,
 };

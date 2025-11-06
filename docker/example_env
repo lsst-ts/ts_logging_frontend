@@ -4,3 +4,4 @@ JIRA_API_TOKEN=your-jira-api-token
 JIRA_API_HOSTNAME=jira-api-host
 EXTERNAL_INSTANCE_URL=server-url
 ACCESS_TOKEN=your-server-access-token
+LOCAL_RUBIN_SIM_DATA_DIR=/path/to/sim/data
