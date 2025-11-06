@@ -14,8 +14,15 @@ import { DateTime } from "luxon";
 
 import SearchParamErrorComponent from "./components/search-param-error-component";
 import { dataLogColumns } from "@/components/DataLogColumns";
+import { getDayobsStartUTC, getDayobsEndUTC } from "./utils/timeUtils";
 
-export const GLOBAL_SEARCH_PARAMS = ["startDayobs", "endDayobs", "telescope"];
+export const GLOBAL_SEARCH_PARAMS = [
+  "startDayobs",
+  "endDayobs",
+  "telescope",
+  "startTime",
+  "endTime",
+];
 
 const rootRoute = createRootRoute({
   component: Layout,
@@ -40,25 +47,53 @@ const dayobsInt = z.coerce
   )
   .transform((val) => parseInt(val, 10));
 
+const defaultDayObs = () =>
+  DateTime.utc().minus({ days: 1 }).toFormat("yyyyMMdd");
+
 // Create plain object schema
 const baseSearchParamsSchema = z.object({
-  startDayobs: dayobsInt.default(() =>
-    DateTime.utc().minus({ days: 1 }).toFormat("yyyyMMdd"),
-  ),
-  endDayobs: dayobsInt.default(() =>
-    DateTime.utc().minus({ days: 1 }).toFormat("yyyyMMdd"),
-  ),
+  startDayobs: dayobsInt.default(defaultDayObs),
+  endDayobs: dayobsInt.default(defaultDayObs),
   telescope: z.enum(["Simonyi", "AuxTel"]).default("Simonyi"),
+  startTime: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .default(getDayobsStartUTC(defaultDayObs())),
+  endTime: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .default(getDayobsEndUTC(defaultDayObs())),
 });
 
 // Validate schema object for general use
-const searchParamsSchema = baseSearchParamsSchema.refine(
-  (obj) => obj.startDayobs <= obj.endDayobs,
-  {
+const searchParamsSchema = baseSearchParamsSchema
+  .refine((obj) => obj.startDayobs <= obj.endDayobs, {
     message: "startDayobs must be before or equal to endDayobs.",
     path: ["startDayobs"],
-  },
-);
+  })
+  .transform((search) => {
+    // Ensure that startTime <= endTime by swapping them if required
+    if (search.startTime > search.endTime) {
+      return {
+        ...search,
+        startTime: search.endTime,
+        endTime: search.startTime,
+      };
+    }
+    return search;
+  })
+  .transform((search) => {
+    // Ensure that start and end times fall within the dayobs boundaries
+    const startMillis = getDayobsStartUTC(search.startDayobs.toString());
+    const endMillis = getDayobsEndUTC(search.endDayobs.toString());
+    return {
+      ...search,
+      startTime: Math.max(search.startTime, startMillis),
+      endTime: Math.min(search.endTime, endMillis),
+    };
+  });
 
 // Convert table columns to url filter keys
 const columns = [];
