@@ -39,14 +39,13 @@ import {
 } from "@/utils/utils";
 import {
   isoToTAI,
-  getDayobsStartTAI,
-  getDayobsEndTAI,
   almanacDayobsForPlot,
   utcDateTimeStrToTAIMillis,
   generateDayObsRange,
 } from "@/utils/timeUtils";
 import { calculateChartData } from "@/utils/chartCalculations";
 import { PlotDataContext } from "@/contexts/PlotDataContext";
+import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
 
 function Plots() {
   // Routing and URL params
@@ -78,9 +77,9 @@ function Plots() {
   const [moonIntervals, setMoonIntervals] = useState([]);
   const [almanacLoading, setAlmanacLoading] = useState(true);
 
-  // Time ranges for timeline and plots
-  const [selectedTimeRange, setSelectedTimeRange] = useState([null, null]);
-  const [fullTimeRange, setFullTimeRange] = useState([null, null]);
+  // Time range state synced with URL
+  const { selectedTimeRange, setSelectedTimeRange, fullTimeRange } =
+    useTimeRangeFromURL("/plots");
 
   // Keep track of default and user-added plots
   const [visiblePlots, setVisiblePlots] = useState(
@@ -122,23 +121,9 @@ function Plots() {
     const firstObs = data.at(0)?.obs_start_dt ?? 0;
     const lastObs = data.at(-1)?.obs_start_dt ?? 0;
 
-    // Set static timeline axis to boundaries of queried dayobs
-    let fullXRange = [];
+    // Set available dayobs and selected time range based on actual data
     if (dayObsRange.length > 0) {
-      const firstDayobs = dayObsRange[0];
-      const lastDayobs = dayObsRange[dayObsRange.length - 1];
-
-      const startTimeOfFirstDayobs = getDayobsStartTAI(firstDayobs);
-      const endTimeOfLastDayobs = getDayobsEndTAI(lastDayobs);
-
-      // Add an extra minute to the end so that the final dayobs tick line shows
-      fullXRange = [
-        startTimeOfFirstDayobs,
-        endTimeOfLastDayobs.plus({ minute: 1 }),
-      ];
-
       setAvailableDayObs(dayObsRange);
-      setFullTimeRange(fullXRange);
       setSelectedTimeRange([firstObs, lastObs]);
     }
 
@@ -218,8 +203,7 @@ function Plots() {
     // ConsDB
     setDataLogEntries([]);
     setAvailableDayObs([]);
-    setFullTimeRange([null, null]);
-    setSelectedTimeRange([null, null]);
+    setSelectedTimeRange(fullTimeRange);
     // Almanac
     setTwilightValues([]);
     setIllumValues([]);
