@@ -89,7 +89,7 @@ function TimeseriesPlot({
 
   // Handle hover detection based on mouse position
   const handleChartMouseMove = (state) => {
-    // Always call the drag handler first
+    // Always call the useClickDrag handler first
     handleDragMouseMove(state);
 
     // If we're dragging, don't update hover state
@@ -110,16 +110,14 @@ function TimeseriesPlot({
     hoverStore.setHover(null);
   };
 
-  // Register this graph with the hover store for DOM manipulation
+  // Register this graph with the hover store
   useEffect(() => {
-    if (groupedData) {
-      hoverStore.registerGraph(graphID);
-    }
+    hoverStore.registerGraph(graphID);
 
     return () => {
       hoverStore.unregisterGraph(graphID);
     };
-  }, [graphID, groupedData]);
+  }, [graphID]);
 
   if (!plotData) {
     return null;
@@ -359,6 +357,7 @@ function TimeseriesPlot({
           r={PLOT_DIMENSIONS.hoveredDotRadius}
           fill={PLOT_COLORS.hoveredDotFill}
           stroke={PLOT_COLORS.hoveredDotFill}
+          // ifOverFlow is required because otherwise recharts will cull it from the DOM if it is not visible
           ifOverflow={"visible"}
           data-hover-indicator={graphID}
         />

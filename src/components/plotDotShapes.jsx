@@ -302,6 +302,7 @@ const CustomisedDotWithShape = ({
       r={r}
       fill={fill}
       style={{ pointerEvents: "all" }}
+      // Include data-* attributes to allow this dot to be looked up for hover
       data-cx={cx}
       data-cy={cy}
       data-graphid={graphID}

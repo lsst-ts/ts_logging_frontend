@@ -223,7 +223,6 @@ function Plots() {
     setTwilightValues([]);
     setIllumValues([]);
     setMoonValues([]);
-    // Chart data
   }
 
   useEffect(() => {
@@ -310,7 +309,7 @@ function Plots() {
     }
   }, [moonValues, fullTimeRange]);
 
-  // Select chart data based on current xAxisType and prepare context value
+  // Calculate shared plot context value
   const plotDataContextValue = useMemo(() => {
     const [xMinMillis, xMaxMillis] = selectedTimeRange;
     if (

@@ -17,6 +17,26 @@ class HoverStore {
     this.graphs.delete(graphID);
   }
 
+  /**
+   * Sets the currently hovered exposure ID and updates all registered graphs to display hover indicators.
+   *
+   * When an exposure is hovered, this method synchronizes hover indicators across all timeseries plots
+   * on the page. It uses direct DOM manipulation to position hover circles at the corresponding data
+   * points in each graph, providing cross-plot hover synchronization without triggering React re-renders.
+   *
+   * @param {string|null} exposureID - The exposure ID to highlight across all graphs, or null to clear
+   *                                   the hover state and hide all hover indicators.
+   *
+   * The method works by:
+   * 1. Storing the exposure ID in the store's state
+   * 2. Iterating through all registered graphs
+   * 3. For each graph, finding the data point matching this exposure ID
+   * 4. Moving the graph's hover indicator circle to match that data point's position
+   * 5. Hiding hover indicators on graphs that don't contain this exposure ID
+   *
+   * This enables synchronized hover behavior across multiple plots - when a user hovers over
+   * a data point in one plot, corresponding points in all other plots are highlighted simultaneously.
+   */
   setHover(exposureID) {
     this.hoveredExposureID = exposureID;
     this.graphs.forEach((graphID) => {
@@ -26,7 +46,6 @@ class HoverStore {
 
   updateGraph(graphID) {
     // Query for the circle element that recharts rendered for our ReferenceDot
-    // The data-hover-indicator attribute is on a parent element, so we need to find it
     const hoverCircle = document.querySelector(
       `[data-hover-indicator="${graphID}"]`,
     );
@@ -48,6 +67,7 @@ class HoverStore {
     );
 
     if (dataPoint === null) {
+      // No data point on this graph for this exposureID
       hoverCircle.style.display = "none";
       return;
     }
