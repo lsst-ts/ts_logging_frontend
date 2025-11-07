@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 
 import { toast } from "sonner";
-import { useSearch } from "@tanstack/react-router";
+import { useRouter, useSearch } from "@tanstack/react-router";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Toaster } from "@/components/ui/sonner";
@@ -46,6 +46,7 @@ import {
 import { calculateChartData } from "@/utils/chartCalculations";
 import { PlotDataContext } from "@/contexts/PlotDataContext";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
+import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
 
 function Plots() {
   // Routing and URL params
@@ -209,6 +210,34 @@ function Plots() {
     setIllumValues([]);
     setMoonValues([]);
   }
+
+  // Navigation
+  const router = useRouter();
+  const search = useSearch({ from: "/plots" });
+
+  // Context menu items
+  const contextMenuItems = [
+    {
+      label: "View Context Feed",
+      onClick: () => {
+        const location = router.buildLocation({
+          to: "/nightlydigest/context-feed",
+          search,
+        });
+        window.open(location.href, "_blank");
+      },
+    },
+    {
+      label: "View Data Log",
+      onClick: () => {
+        const location = router.buildLocation({
+          to: "/nightlydigest/data-log",
+          search,
+        });
+        window.open(location.href, "_blank");
+      },
+    },
+  ];
 
   useEffect(() => {
     if (telescope === "AuxTel") {
@@ -403,15 +432,17 @@ function Plots() {
           <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
         ) : (
           <>
-            <Timeline
-              data={dataLogEntries}
-              twilightValues={twilightValues}
-              illumValues={illumValues}
-              moonIntervals={moonIntervals}
-              fullTimeRange={fullTimeRange}
-              selectedTimeRange={selectedTimeRange}
-              setSelectedTimeRange={setSelectedTimeRange}
-            />
+            <ContextMenuWrapper menuItems={contextMenuItems}>
+              <Timeline
+                data={dataLogEntries}
+                twilightValues={twilightValues}
+                illumValues={illumValues}
+                moonIntervals={moonIntervals}
+                fullTimeRange={fullTimeRange}
+                selectedTimeRange={selectedTimeRange}
+                setSelectedTimeRange={setSelectedTimeRange}
+              />
+            </ContextMenuWrapper>
           </>
         )}
 
@@ -494,23 +525,27 @@ function Plots() {
               {visiblePlots.map((key, idx) => {
                 const def = PLOT_DEFINITIONS.find((p) => p.key === key);
                 return (
-                  <TimeseriesPlot
-                    title={def?.title || prettyTitleFromKey(key)}
-                    unit={def?.unit}
-                    dataKey={def.key}
+                  <ContextMenuWrapper
+                    menuItems={contextMenuItems}
                     key={def.key}
-                    fullTimeRange={fullTimeRange}
-                    selectedTimeRange={selectedTimeRange}
-                    setSelectedTimeRange={setSelectedTimeRange}
-                    plotShape={plotShape}
-                    plotColor={plotColor}
-                    bandMarker={bandMarker}
-                    isBandPlot={!!def?.bandMarker}
-                    showMoon={!!def?.showMoon}
-                    plotIndex={idx}
-                    nPlots={visiblePlots.length}
-                    xAxisShow={xAxisShow}
-                  />
+                  >
+                    <TimeseriesPlot
+                      title={def?.title || prettyTitleFromKey(key)}
+                      unit={def?.unit}
+                      dataKey={def.key}
+                      fullTimeRange={fullTimeRange}
+                      selectedTimeRange={selectedTimeRange}
+                      setSelectedTimeRange={setSelectedTimeRange}
+                      plotShape={plotShape}
+                      plotColor={plotColor}
+                      bandMarker={bandMarker}
+                      isBandPlot={!!def?.bandMarker}
+                      showMoon={!!def?.showMoon}
+                      plotIndex={idx}
+                      nPlots={visiblePlots.length}
+                      xAxisShow={xAxisShow}
+                    />
+                  </ContextMenuWrapper>
                 );
               })}
             </PlotDataContext.Provider>
