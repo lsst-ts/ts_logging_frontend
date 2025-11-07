@@ -55,7 +55,7 @@ const defaultDayObs = () =>
   DateTime.utc().minus({ days: 1 }).toFormat("yyyyMMdd");
 
 // Create plain object schema
-const baseSearchParamsSchema = z.object({
+export const baseSearchParamsSchema = z.object({
   startDayobs: dayobsInt.default(defaultDayObs),
   endDayobs: dayobsInt.default(defaultDayObs),
   telescope: z.enum(["Simonyi", "AuxTel"]).default("Simonyi"),
@@ -73,6 +73,19 @@ const baseSearchParamsSchema = z.object({
 
 const applyDateValidation = (schema) => {
   return schema
+    .transform((search) => {
+      // Set default startTime and endTime based on dayobs if not provided
+      // Has to be done as a transformation because it's dependant on another value
+      return {
+        ...search,
+        startTime:
+          search.startTime ??
+          getDayobsStartUTC(search.startDayobs.toString()).toMillis(),
+        endTime:
+          search.endTime ??
+          getDayobsEndUTC(search.endDayobs.toString()).toMillis(),
+      };
+    })
     .refine((obj) => obj.startDayobs <= obj.endDayobs, {
       message: "startDayobs must be before or equal to endDayobs.",
       path: ["startDayobs"],
@@ -96,26 +109,26 @@ const applyDateValidation = (schema) => {
       },
     )
     .transform((search) => {
-    // Ensure that startTime <= endTime by swapping them if required
-    if (search.startTime > search.endTime) {
+      // Ensure that startTime <= endTime by swapping them if required
+      if (search.startTime > search.endTime) {
+        return {
+          ...search,
+          startTime: search.endTime,
+          endTime: search.startTime,
+        };
+      }
+      return search;
+    })
+    .transform((search) => {
+      // Ensure that start and end times fall within the dayobs boundaries
+      const startMillis = getDayobsStartUTC(search.startDayobs.toString());
+      const endMillis = getDayobsEndUTC(search.endDayobs.toString());
       return {
         ...search,
-        startTime: search.endTime,
-        endTime: search.startTime,
+        startTime: Math.max(search.startTime, startMillis),
+        endTime: Math.min(search.endTime, endMillis),
       };
-    }
-    return search;
-  })
-  .transform((search) => {
-    // Ensure that start and end times fall within the dayobs boundaries
-    const startMillis = getDayobsStartUTC(search.startDayobs.toString());
-    const endMillis = getDayobsEndUTC(search.endDayobs.toString());
-    return {
-      ...search,
-      startTime: Math.max(search.startTime, startMillis),
-      endTime: Math.min(search.endTime, endMillis),
-    };
-  });
+    });
 };
 
 const searchParamsSchema = applyDateValidation(baseSearchParamsSchema);
@@ -132,8 +145,13 @@ const filtersShape = Object.fromEntries(
   arrayKeys.map((key) => [key, z.string().array().optional()]),
 );
 
+<<<<<<< HEAD
 // Extend search schema object for individual pages
 const dataLogSearchSchema = applyDateValidation(
+=======
+// Extend base schema object for data log page with filter fields
+export const dataLogSearchSchema = applyCommonValidations(
+>>>>>>> 50f50d8 (Add some tests for the search parameter validator)
   baseSearchParamsSchema.extend(filtersShape),
 );
 
