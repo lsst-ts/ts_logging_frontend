@@ -71,7 +71,7 @@ export function useTimeRangeFromURL(routePath) {
     ) {
       setSelectedTimeRangeInternal(newRange);
     }
-  }, [startTime, endTime, fullTimeRange]);
+  }, [startTime, endTime, fullTimeRange, selectedTimeRange]);
 
   // Wrapped setter that updates both state and URL
   const setSelectedTimeRange = (newRange) => {
