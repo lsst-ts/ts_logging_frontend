@@ -7,8 +7,9 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { useRef } from "react";
 
-import { useClickDrag } from "@/hooks/useClickDrag";
+import { useDOMClickDrag } from "@/hooks/useDOMClickDrag";
 import {
   millisToDateTime,
   millisToHHmm,
@@ -42,15 +43,17 @@ function Timeline({
   selectedTimeRange,
   setSelectedTimeRange,
 }) {
+  // Ref for chart to enable DOM manipulation
+  const chartRef = useRef(null);
+
   // Click & Drag plot hooks ================================
-  const {
-    refAreaLeft,
-    refAreaRight,
-    handleMouseDown,
-    handleMouseMove,
-    handleMouseUp,
-    handleDoubleClick,
-  } = useClickDrag(setSelectedTimeRange, fullTimeRange);
+  const { mouseDown, mouseMove, mouseUp, doubleClick } = useDOMClickDrag({
+    callback: setSelectedTimeRange,
+    resetCallback: () => setSelectedTimeRange(fullTimeRange),
+    chartRef,
+    mouseRectStyle: { fill: "pink" },
+    snappedRectStyle: { fill: "pink" },
+  });
   // --------------------------------------------------------
 
   // Convert datetime inputs to millis format for plots ====
@@ -194,6 +197,7 @@ function Timeline({
   // Timeline ===============================================
   return (
     <ResponsiveContainer
+      ref={chartRef}
       title="Time Window Selector"
       config={{}}
       width="100%"
@@ -204,10 +208,10 @@ function Timeline({
         height={PLOT_HEIGHT}
         data={data}
         margin={{ top: PLOT_LABEL_HEIGHT, right: 30, left: 30, bottom: 0 }}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onDoubleClick={handleDoubleClick}
+        onMouseDown={mouseDown}
+        onMouseMove={mouseMove}
+        onMouseUp={mouseUp}
+        onDoubleClick={doubleClick}
       >
         {/* Timeline */}
         <ReferenceLine y={0.5} stroke="white" strokeWidth={1.5} />
@@ -278,16 +282,6 @@ function Timeline({
             />
           ) : null,
         )}
-        {/* Selection Area (shaded background) shown once time window selection made */}
-        {selectedMinMillis && selectedMaxMillis ? (
-          <ReferenceArea
-            x1={selectedMinMillis}
-            x2={selectedMaxMillis}
-            stroke="none"
-            fillOpacity={0.2}
-          />
-        ) : null}
-        {/* Data Points */}
         <Line
           dataKey={() => 0.5}
           stroke="#FFFFFF"
@@ -301,16 +295,7 @@ function Timeline({
             x1={selectedMinMillis}
             x2={selectedMaxMillis}
             stroke="hotPink"
-            fillOpacity={0}
-          />
-        ) : null}
-        {/* Selection rectangle shown during active highlighting */}
-        {refAreaLeft && refAreaRight ? (
-          <ReferenceArea
-            x1={refAreaLeft}
-            x2={refAreaRight}
-            fillOpacity={0.3}
-            fill="pink"
+            fillOpacity={0.2}
           />
         ) : null}
       </LineChart>
