@@ -1,1 +1,0 @@
-Fetch backend version from the backend version endpoint.

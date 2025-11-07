@@ -33,7 +33,9 @@ export function AppSidebar({ ...props }) {
 
   const backendReleaseNotesHref =
     "https://github.com/lsst-ts/ts_logging_and_reporting" +
-    `/blob/v${backendVersion}/doc/version_history.rst`;
+    `/blob/${
+      backendVersion !== "main" ? `v${backendVersion}` : "main"
+    }/doc/version_history.rst`;
 
   return (
     <Sidebar variant="sidebar">

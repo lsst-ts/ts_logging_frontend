@@ -1,3 +1,31 @@
+v0.10.1 (2025-11-07)
+====================
+
+Bug Fixes
+---------
+
+- Add v to version number if 'main' is not defaulted. (`OSW-1393 <https://rubinobs.atlassian.net//browse/OSW-1393>`_)
+
+
+v0.10.0 (2025-11-06)
+====================
+
+New Features
+------------
+
+- Add planisphere vist map to the Visit Maps applet in Digest page. (`OSW-668 <https://rubinobs.atlassian.net//browse/OSW-668>`_)
+- Add option to plot by seq_num as well as obs_start (`OSW-971 <https://rubinobs.atlassian.net//browse/OSW-971>`_)
+- Add a new page for interactive visit maps and remove the links to night summary reports from the plots page. (`OSW-1061 <https://rubinobs.atlassian.net//browse/OSW-1061>`_)
+- Fetch backend version from the backend version endpoint. (`OSW-1279 <https://rubinobs.atlassian.net//browse/OSW-1279>`_)
+
+
+Other Changes and Additions
+---------------------------
+
+- Add plot X-axis labels (`OSW-958 <https://rubinobs.atlassian.net//browse/OSW-958>`_)
+- Update plot tooltip (`OSW-970 <https://rubinobs.atlassian.net//browse/OSW-970>`_)
+
+
 v0.9.0 (2025-10-09)
 ====================
 
