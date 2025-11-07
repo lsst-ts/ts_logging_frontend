@@ -1,4 +1,4 @@
-import { Fragment } from "react";
+import { Fragment, useRef } from "react";
 
 import {
   Line,
@@ -9,7 +9,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { useClickDrag } from "@/hooks/useClickDrag";
+import { useDOMClickDrag } from "@/hooks/useDOMClickDrag";
 import {
   millisToDateTime,
   millisToHHmm,
@@ -57,15 +57,17 @@ function ContextFeedTimeline({
   setSelectedTimeRange,
   columnFilters,
 }) {
+  // Ref for chart to enable DOM manipulation
+  const chartRef = useRef(null);
+
   // Click & Drag plot hooks ================================
-  const {
-    refAreaLeft,
-    refAreaRight,
-    handleMouseDown,
-    handleMouseMove,
-    handleMouseUp,
-    handleDoubleClick,
-  } = useClickDrag(setSelectedTimeRange, fullTimeRange);
+  const { mouseDown, mouseMove, mouseUp, doubleClick } = useDOMClickDrag({
+    callback: setSelectedTimeRange,
+    resetCallback: () => setSelectedTimeRange(fullTimeRange),
+    chartRef,
+    mouseRectStyle: { fill: "pink" },
+    snappedRectStyle: { fill: "pink" },
+  });
   // --------------------------------------------------------
 
   // Convert datetime inputs to millis format for plots ====
@@ -161,6 +163,7 @@ function ContextFeedTimeline({
   // Timeline ===============================================
   return (
     <ResponsiveContainer
+      ref={chartRef}
       title="Time Window Selector"
       width="100%"
       height={PLOT_HEIGHT}
@@ -170,10 +173,10 @@ function ContextFeedTimeline({
         height={PLOT_HEIGHT}
         data={data}
         margin={{ top: 2, right: 2, left: 2, bottom: 0 }}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onDoubleClick={handleDoubleClick}
+        onMouseDown={mouseDown}
+        onMouseMove={mouseMove}
+        onMouseUp={mouseUp}
+        onDoubleClick={doubleClick}
       >
         {/* Timeline */}
         <ReferenceLine y={0} stroke="white" strokeWidth={1.5} />
@@ -298,15 +301,6 @@ function ContextFeedTimeline({
             x2={selectedMaxMillis}
             stroke="hotPink"
             fillOpacity={0}
-          />
-        )}
-        {/* Selection rectangle shown during active highlighting */}
-        {refAreaLeft > 0 && refAreaRight > 0 && (
-          <ReferenceArea
-            x1={refAreaLeft}
-            x2={refAreaRight}
-            fillOpacity={0.3}
-            fill="pink"
           />
         )}
       </LineChart>
