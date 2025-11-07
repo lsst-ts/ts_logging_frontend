@@ -1,5 +1,6 @@
 import { DateTime } from "luxon";
 import { TAI_OFFSET_SECONDS, ISO_DATETIME_FORMAT } from "./timeUtils";
+import { GLOBAL_SEARCH_PARAMS } from "@/routes";
 
 export const DEFAULT_EXTERNAL_INSTANCE_URL =
   "https://usdf-rsp.slac.stanford.edu";
@@ -278,45 +279,30 @@ const getSiteConfig = (host) => {
 };
 
 /**
- * Builds a navigation URL, keeping only global params when leaving data-log.
+ * Build navigation target with filtered search parameters.
+ * Returns an object suitable for TanStack Router navigation with Link component.
  *
- * @param {string} itemUrl - The target navigation URL.
- * @param {string} currentPath - The current pathname from router state.
+ * @param {string} to - The destination URL path.
+ * @param {string} currentPath - The current URL path.
  * @param {object} currentSearch - The current search params object.
- * @param {string[]} allowedParams - List of global param keys to keep.
- * @returns {string} A valid URL with only global query parameters.
+ * @param {string[]} allowedParams - List of param keys to preserve (defaults to GLOBAL_SEARCH_PARAMS).
+ * @returns {Object} Object with `to` (path) and `search` (filtered params object).
  */
-const buildNavItemUrl = (
-  itemUrl,
-  currentPath,
+const buildNavigationWithSearchParams = (
+  to,
+  from,
   currentSearch,
-  allowedParams,
+  allowedParams = GLOBAL_SEARCH_PARAMS,
 ) => {
-  if (itemUrl === "#") return "#";
-
-  const isLeavingDataLog =
-    currentPath === "/nightlydigest/data-log" &&
-    itemUrl !== "/nightlydigest/data-log";
-
-  const searchParams = new URLSearchParams();
-
-  const keysToPreserve = isLeavingDataLog
-    ? allowedParams
-    : Object.keys(currentSearch);
-
-  for (const key of keysToPreserve) {
+  const search = {};
+  for (const key of allowedParams) {
     const value = currentSearch[key];
     if (value !== undefined) {
-      if (Array.isArray(value)) {
-        value.forEach((v) => searchParams.append(key, v));
-      } else {
-        searchParams.set(key, value);
-      }
+      search[key] = value;
     }
   }
 
-  const query = searchParams.toString();
-  return query ? `${itemUrl}?${query}` : itemUrl;
+  return { to, from, search };
 };
 
 /**
@@ -499,7 +485,7 @@ export {
   mergeDataLogSources,
   getRubinTVUrl,
   getSiteConfig,
-  buildNavItemUrl,
+  buildNavigationWithSearchParams,
   getNightSummaryLink,
   DEFAULT_PIXEL_SCALE_MEDIAN,
   PSF_SIGMA_FACTOR,
