@@ -1,3 +1,12 @@
+v0.10.1 (2025-11-07)
+====================
+
+Bug Fixes
+---------
+
+- Add v to version number if 'main' is not defaulted. (`OSW-1393 <https://rubinobs.atlassian.net//browse/OSW-1393>`_)
+
+
 v0.10.0 (2025-11-06)
 ====================
 

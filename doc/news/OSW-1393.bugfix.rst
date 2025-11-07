@@ -1,1 +1,0 @@
-Add v to version number if 'main' is not defaulted.
