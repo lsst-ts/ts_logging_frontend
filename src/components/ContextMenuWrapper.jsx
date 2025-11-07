@@ -26,7 +26,9 @@ import {
 export function ContextMenuWrapper({ children, menuItems }) {
   return (
     <ContextMenu>
-      <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
+      <ContextMenuTrigger asChild>
+        <div>{children}</div>
+      </ContextMenuTrigger>
       <ContextMenuContent className="w-48">
         {menuItems.map((item, index) => (
           <ContextMenuItem key={index} onClick={item.onClick}>
