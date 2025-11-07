@@ -1,4 +1,4 @@
-import { useContext, useEffect, useId } from "react";
+import { useContext, useEffect, useId, useRef } from "react";
 import {
   CartesianGrid,
   Line,
@@ -31,7 +31,7 @@ import {
   AXIS_TICK_STYLE,
 } from "@/components/PLOT_DEFINITIONS";
 
-import { useClickDrag } from "@/hooks/useClickDrag";
+import { useDOMClickDrag } from "@/hooks/useDOMClickDrag";
 import { scaleDotRadius, calculateDecimalPlaces } from "@/utils/plotUtils";
 import { createDotCallback } from "../utils/createDotCallback";
 
@@ -77,36 +77,33 @@ function TimeseriesPlot({
     selectedMaxMillis = 0,
   } = plotData || {};
 
-  // Click & Drag plot hooks
-  const {
-    refAreaLeft,
-    refAreaRight,
-    handleMouseDown,
-    handleMouseMove: handleDragMouseMove,
-    handleMouseUp,
-    handleDoubleClick,
-  } = useClickDrag(setSelectedTimeRange, fullTimeRange, indexToMillis);
+  // Ref for chart to enable DOM manipulation
+  const chartRef = useRef(null);
 
-  // Handle hover detection based on mouse position
-  const handleChartMouseMove = (state) => {
-    // Always call the useClickDrag handler first
-    handleDragMouseMove(state);
+  // Click & Drag plot hooks using DOM manipulation
+  const { mouseDown, mouseMove, mouseUp, doubleClick } = useDOMClickDrag({
+    callback: setSelectedTimeRange,
+    indexToMillis,
+    resetCallback: () => setSelectedTimeRange(fullTimeRange),
+    chartRef,
+    onMouseMove: (state, dragState) => {
+      // If we're dragging, clear hover state
+      if (dragState.isDragging) {
+        hoverStore.setHover(null);
+        return;
+      }
 
-    // If we're dragging, don't update hover state
-    if (refAreaLeft) {
-      hoverStore.setHover(null);
-      return;
-    }
+      // Update hover based on active payload
+      if (!state || !state.activePayload || state.activePayload.length === 0) {
+        hoverStore.setHover(null);
+        return;
+      }
 
-    if (!state || !state.activePayload || state.activePayload.length === 0) {
-      hoverStore.setHover(null);
-      return;
-    }
+      hoverStore.setHover(state.activePayload[0].payload["exposure id"]);
+    },
+  });
 
-    hoverStore.setHover(state.activePayload[0].payload["exposure id"]);
-  };
-
-  const handleChartMouseLeave = () => {
+  const mouseLeave = () => {
     hoverStore.setHover(null);
   };
 
@@ -188,6 +185,7 @@ function TimeseriesPlot({
   // Plot =================================================
   return (
     <ChartContainer
+      ref={chartRef}
       className="pt-8 h-57 w-full"
       title={title}
       config={{}}
@@ -197,11 +195,11 @@ function TimeseriesPlot({
       <LineChart
         width={500}
         margin={PLOT_DIMENSIONS.chartMargins}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleChartMouseMove}
-        onMouseUp={handleMouseUp}
-        onDoubleClick={handleDoubleClick}
-        onMouseLeave={handleChartMouseLeave}
+        onMouseDown={mouseDown}
+        onMouseMove={mouseMove}
+        onMouseUp={mouseUp}
+        onDoubleClick={doubleClick}
+        onMouseLeave={mouseLeave}
       >
         <CartesianGrid strokeDasharray="3 3" stroke={PLOT_COLORS.gridStroke} />
         <XAxis
@@ -342,14 +340,6 @@ function TimeseriesPlot({
             animationDuration={1500 / groupedData.length}
           />
         ))}
-        {/* Selection rectangle shown during active highlighting */}
-        {refAreaLeft && refAreaRight ? (
-          <ReferenceArea
-            x1={refAreaLeft}
-            x2={refAreaRight}
-            fillOpacity={PLOT_OPACITIES.selection}
-          />
-        ) : null}
         {/* Hover indicator - positioned via direct DOM manipulation */}
         <ReferenceDot
           x={-9999}
