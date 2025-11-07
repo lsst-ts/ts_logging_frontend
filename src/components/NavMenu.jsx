@@ -5,9 +5,8 @@ import {
   NavigationMenuItem,
   NavigationMenuLink,
 } from "@/components/ui/navigation-menu";
-import { useRouter } from "@tanstack/react-router";
-import { buildNavItemUrl } from "@/utils/utils";
-import { GLOBAL_SEARCH_PARAMS } from "@/routes";
+import { Link, useRouterState } from "@tanstack/react-router";
+import { buildNavigationWithSearchParams } from "@/utils/utils";
 
 const items = [
   { name: "digest", title: "Nightly Digest", url: "/nightlydigest/" },
@@ -26,9 +25,7 @@ const items = [
 ];
 
 export default function NavMenu() {
-  const { state } = useRouter();
-  const search = state.location.search;
-  const pathname = state.location.pathname;
+  const { pathname, search } = useRouterState({ select: (s) => s.location });
   return (
     <NavigationMenu className="flex flex-col items-start">
       <NavigationMenuList className="flex flex-col gap-2">
@@ -37,13 +34,10 @@ export default function NavMenu() {
           const itemPath = item.url.replace(/\/$/, "");
           const currentPath = pathname.replace(/\/$/, "");
           const isActive = itemPath === currentPath;
-          // If leaving the data-log, strip url of search params
-          const url = buildNavItemUrl(
-            item.url,
-            pathname,
-            search,
-            GLOBAL_SEARCH_PARAMS,
-          );
+
+          // Build navigation target with filtered search params
+          const { to, search: filteredSearch } =
+            buildNavigationWithSearchParams(item.url, pathname, search);
 
           return (
             <NavigationMenuItem key={item.name}>
@@ -53,10 +47,12 @@ export default function NavMenu() {
                 </span>
               ) : (
                 <NavigationMenuLink
-                  href={url}
+                  asChild
                   className="text-base text-white font-normal underline underline-offset-2 hover:text-teal-100 hover:tracking-widest focus:text-teal-100 focus:tracking-widest"
                 >
-                  {item.title}
+                  <Link to={to} search={filteredSearch}>
+                    {item.title}
+                  </Link>
                 </NavigationMenuLink>
               )}
             </NavigationMenuItem>
