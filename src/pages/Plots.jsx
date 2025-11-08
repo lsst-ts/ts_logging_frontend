@@ -18,7 +18,7 @@ import {
   AsteriskShape,
 } from "@/components/plotDotShapes";
 
-import Timeline from "@/components/Timeline";
+import TimelineChart from "@/components/TimelineChart";
 import TimeseriesPlot from "@/components/TimeseriesPlot";
 import {
   PLOT_DEFINITIONS,
@@ -433,11 +433,21 @@ function Plots() {
         ) : (
           <>
             <ContextMenuWrapper menuItems={contextMenuItems}>
-              <Timeline
-                data={dataLogEntries}
+              <TimelineChart
+                data={[
+                  {
+                    index: 0.5,
+                    timestamps: dataLogEntries.map((d) => d.obs_start_millis),
+                    color: "#3CAE3F",
+                    isActive: true,
+                  },
+                ]}
                 twilightValues={twilightValues}
+                showTwilight={twilightValues.length > 1}
                 illumValues={illumValues}
+                showMoonIllumination={true}
                 moonIntervals={moonIntervals}
+                showMoonArea={true}
                 fullTimeRange={fullTimeRange}
                 selectedTimeRange={selectedTimeRange}
                 setSelectedTimeRange={setSelectedTimeRange}

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
-import { useSearch } from "@tanstack/react-router";
+import { useRouter, useSearch } from "@tanstack/react-router";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -14,10 +14,11 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-import ContextFeedTimeline from "@/components/ContextFeedTimeline";
+import TimelineChart from "@/components/TimelineChart";
 import ContextFeedTable from "@/components/ContextFeedTable.jsx";
 import EditableDateTimeInput from "@/components/EditableDateTimeInput.jsx";
-import { CATEGORY_INDEX_INFO } from "@/components/context-feed-definitions.js";
+import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
+import { SAL_INDEX_INFO, CATEGORY_INDEX_INFO } from "@/components/context-feed-definitions.js";
 import DownloadIcon from "../assets/DownloadIcon.svg";
 import { fetchAlmanac, fetchContextFeed } from "@/utils/fetchUtils";
 import { isoToUTC, utcDateTimeStrToMillis } from "@/utils/timeUtils";
@@ -58,9 +59,11 @@ const filterDefaultEventsByTelescope = (telescope) => {
 
 function ContextFeed() {
   // Subscribe component to URL params
-  const { startDayobs, endDayobs, telescope } = useSearch({
+  const search = useSearch({
     from: "/context-feed",
   });
+  const { startDayobs, endDayobs, telescope } = search;
+  const router = useRouter();
 
   // Our dayobs inputs are inclusive, so we add one day to the
   // endDayobs to get the correct range for the queries
@@ -105,6 +108,29 @@ function ContextFeed() {
       ];
     });
   }, [telescope]);
+
+  const contextMenuItems = [
+    {
+      label: "View Data Log",
+      onClick: () => {
+        const location = router.buildLocation({
+          to: "/nightlydigest/data-log",
+          search,
+        });
+        window.open(location.href, "_blank");
+      },
+    },
+    {
+      label: "View Plots",
+      onClick: () => {
+        const location = router.buildLocation({
+          to: "/nightlydigest/plots",
+          search,
+        });
+        window.open(location.href, "_blank");
+      },
+    },
+  ];
 
   // Currently unchanged from Plots version.
   // If remains unchanged, move to and import from utils
@@ -349,14 +375,38 @@ function ContextFeed() {
                         );
                       })}
                   </div>
-                  <ContextFeedTimeline
-                    data={contextFeedData}
-                    twilightValues={twilightValues}
-                    fullTimeRange={fullTimeRange}
-                    selectedTimeRange={selectedTimeRange}
-                    setSelectedTimeRange={setSelectedTimeRange}
-                    columnFilters={columnFilters}
-                  />
+                  <div className="flex-1">
+                    <ContextMenuWrapper menuItems={contextMenuItems}>
+                      <TimelineChart
+                        data={Object.values(SAL_INDEX_INFO)
+                          .filter((info) => info.displayIndex != null)
+                          .map((info) => {
+                            const activeLabels =
+                              columnFilters.find((f) => f.id === "event_type")
+                                ?.value ?? [];
+                            return {
+                              index: 10 - info.displayIndex,
+                              timestamps: contextFeedData
+                                .filter(
+                                  (d) => d.displayIndex === info.displayIndex,
+                                )
+                                .map((d) => d.event_time_millis),
+                              color: info.color,
+                              isActive:
+                                activeLabels.length === 0 ||
+                                activeLabels.includes(info.label),
+                            };
+                          })}
+                        twilightValues={twilightValues}
+                        showTwilight={true}
+                        height={250}
+                        markerType="diamond"
+                        fullTimeRange={fullTimeRange}
+                        selectedTimeRange={selectedTimeRange}
+                        setSelectedTimeRange={setSelectedTimeRange}
+                      />
+                    </ContextMenuWrapper>
+                  </div>
                 </div>
               )}
             </CardContent>
