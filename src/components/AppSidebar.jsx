@@ -67,7 +67,7 @@ export function AppSidebar({ ...props }) {
         </SidebarGroup>
         <SidebarGroup className="pt-10">
           <SidebarGroupContent>
-            <NavMenu activeKey="digest" />
+            <NavMenu />
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>

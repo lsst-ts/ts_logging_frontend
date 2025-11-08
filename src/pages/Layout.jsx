@@ -40,6 +40,8 @@ export default function Layout({ children }) {
   const setDayObsRange = (start, end) => {
     setQuery("startDayobs", parseInt(start));
     setQuery("endDayobs", parseInt(end));
+    setQuery("startTime", undefined);
+    setQuery("endTime", undefined);
   };
 
   const calculateDayObsRange = (dayobs, noOfNights) => {
