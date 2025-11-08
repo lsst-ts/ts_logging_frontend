@@ -27,7 +27,7 @@ export function ContextMenuWrapper({ children, menuItems }) {
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
-        <div>{children}</div>
+        <div class="h-full">{children}</div>
       </ContextMenuTrigger>
       <ContextMenuContent className="w-48">
         {menuItems.map((item, index) => (
