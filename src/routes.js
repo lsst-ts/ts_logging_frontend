@@ -59,16 +59,8 @@ export const baseSearchParamsSchema = z.object({
   startDayobs: dayobsInt.default(defaultDayObs),
   endDayobs: dayobsInt.default(defaultDayObs),
   telescope: z.enum(["Simonyi", "AuxTel"]).default("Simonyi"),
-  startTime: z.coerce
-    .number()
-    .int()
-    .min(0)
-    .default(getDayobsStartUTC(defaultDayObs())),
-  endTime: z.coerce
-    .number()
-    .int()
-    .min(0)
-    .default(getDayobsEndUTC(defaultDayObs())),
+  startTime: z.coerce.number().int().min(0).optional(),
+  endTime: z.coerce.number().int().min(0).optional(),
 });
 
 const applyDateValidation = (schema) => {
@@ -145,13 +137,8 @@ const filtersShape = Object.fromEntries(
   arrayKeys.map((key) => [key, z.string().array().optional()]),
 );
 
-<<<<<<< HEAD
 // Extend search schema object for individual pages
 const dataLogSearchSchema = applyDateValidation(
-=======
-// Extend base schema object for data log page with filter fields
-export const dataLogSearchSchema = applyCommonValidations(
->>>>>>> 50f50d8 (Add some tests for the search parameter validator)
   baseSearchParamsSchema.extend(filtersShape),
 );
 
