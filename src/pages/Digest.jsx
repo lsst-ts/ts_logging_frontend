@@ -31,11 +31,16 @@ import { TELESCOPES } from "@/components/parameters";
 import ObservingConditionsApplet from "@/components/ObservingConditionsApplet";
 import NightSummary from "@/components/NightSummary.jsx";
 import TimeAccountingApplet from "@/components/TimeAccountingApplet";
+import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
 
 export default function Digest() {
   const { startDayobs, endDayobs, telescope } = useSearch({
     from: "__root__",
   });
+
+  // Time range state synced with URL
+  const { selectedTimeRange, setSelectedTimeRange, fullTimeRange } =
+    useTimeRangeFromURL("/");
 
   const [weatherLoss, setWeatherLoss] = useState(0.0);
   const [faultLoss, setFaultLoss] = useState(0.0);
@@ -351,6 +356,9 @@ export default function Digest() {
               exposureFields={exposureFields}
               almanacLoading={almanacLoading}
               almanacInfo={almanacInfo}
+              fullTimeRange={fullTimeRange}
+              selectedTimeRange={selectedTimeRange}
+              setSelectedTimeRange={setSelectedTimeRange}
             />
             <AppletExposures
               exposureFields={exposureFields}
