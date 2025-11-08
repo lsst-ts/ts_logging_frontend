@@ -380,6 +380,81 @@ describe("searchParamsSchema", () => {
       expect(result.startTime).toBe(1718467200000);
       expect(result.endTime).toBe(1718553600000);
     });
+
+    it("defaults startTime based on provided startDayobs when startTime is missing", () => {
+      const input = {
+        startDayobs: "20240615",
+        endDayobs: "20240616",
+        telescope: "Simonyi",
+        endTime: 1718553600000,
+      };
+      const result = searchParamsSchema.parse(input);
+
+      const expectedStartTime = getDayobsStartUTC("20240615").toMillis();
+      expect(result.startTime).toBe(expectedStartTime);
+      expect(result.endTime).toBe(1718553600000);
+    });
+
+    it("defaults endTime based on provided endDayobs when endTime is missing", () => {
+      const input = {
+        startDayobs: "20240615",
+        endDayobs: "20240616",
+        telescope: "Simonyi",
+        startTime: 1718467200000,
+      };
+      const result = searchParamsSchema.parse(input);
+
+      const expectedEndTime = getDayobsEndUTC("20240616").toMillis();
+      expect(result.startTime).toBe(1718467200000);
+      expect(result.endTime).toBe(expectedEndTime);
+    });
+
+    it("defaults both startTime and endTime based on provided dayobs values", () => {
+      const input = {
+        startDayobs: "20240615",
+        endDayobs: "20240616",
+        telescope: "Simonyi",
+      };
+      const result = searchParamsSchema.parse(input);
+
+      const expectedStartTime = getDayobsStartUTC("20240615").toMillis();
+      const expectedEndTime = getDayobsEndUTC("20240616").toMillis();
+      expect(result.startTime).toBe(expectedStartTime);
+      expect(result.endTime).toBe(expectedEndTime);
+    });
+
+    it("defaults startTime and endTime based on default dayobs when all are missing", () => {
+      const input = {
+        telescope: "Simonyi",
+      };
+      const result = searchParamsSchema.parse(input);
+
+      const yesterday = DateTime.utc().minus({ days: 1 }).toFormat("yyyyMMdd");
+      const expectedStartTime = getDayobsStartUTC(yesterday).toMillis();
+      const expectedEndTime = getDayobsEndUTC(yesterday).toMillis();
+
+      expect(result.startDayobs).toBe(parseInt(yesterday));
+      expect(result.endDayobs).toBe(parseInt(yesterday));
+      expect(result.startTime).toBe(expectedStartTime);
+      expect(result.endTime).toBe(expectedEndTime);
+    });
+
+    it("defaults times correctly when dayobs differ", () => {
+      const input = {
+        startDayobs: "20240101",
+        endDayobs: "20240105",
+        telescope: "Simonyi",
+      };
+      const result = searchParamsSchema.parse(input);
+
+      // startTime should be based on startDayobs
+      const expectedStartTime = getDayobsStartUTC("20240101").toMillis();
+      // endTime should be based on endDayobs
+      const expectedEndTime = getDayobsEndUTC("20240105").toMillis();
+
+      expect(result.startTime).toBe(expectedStartTime);
+      expect(result.endTime).toBe(expectedEndTime);
+    });
   });
 
   describe("edge cases", () => {
