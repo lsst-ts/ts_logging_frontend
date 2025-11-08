@@ -55,21 +55,25 @@ export const baseSearchParamsSchema = z.object({
   startDayobs: dayobsInt.default(defaultDayObs),
   endDayobs: dayobsInt.default(defaultDayObs),
   telescope: z.enum(["Simonyi", "AuxTel"]).default("Simonyi"),
-  startTime: z.coerce
-    .number()
-    .int()
-    .min(0)
-    .default(getDayobsStartUTC(defaultDayObs())),
-  endTime: z.coerce
-    .number()
-    .int()
-    .min(0)
-    .default(getDayobsEndUTC(defaultDayObs())),
+  startTime: z.coerce.number().int().min(0).optional(),
+  endTime: z.coerce.number().int().min(0).optional(),
 });
 
 // Apply common validations and transformations to search params schemas
 const applyCommonValidations = (schema) =>
   schema
+    .transform((search) => {
+      // Set default startTime and endTime based on dayobs if not provided
+      return {
+        ...search,
+        startTime:
+          search.startTime ??
+          getDayobsStartUTC(search.startDayobs.toString()).toMillis(),
+        endTime:
+          search.endTime ??
+          getDayobsEndUTC(search.endDayobs.toString()).toMillis(),
+      };
+    })
     .refine((obj) => obj.startDayobs <= obj.endDayobs, {
       message: "startDayobs must be before or equal to endDayobs.",
       path: ["startDayobs"],
