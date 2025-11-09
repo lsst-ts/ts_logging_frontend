@@ -11,9 +11,11 @@ import { useCallback, useRef } from "react";
  *
  * @param {Object} params - Configuration object
  * @param {Function} params.callback - Called on mouseUp with [startTime, endTime] from indexToMillis
- * @param {Function} [params.indexToMillis] - Converts activeLabel (domain value) to milliseconds. Defaults to identity function (for time series charts).
  * @param {Function} params.resetCallback - Called on doubleClick to reset selection
  * @param {React.MutableRefObject} params.chartRef - Ref to the LineChart component to find SVG container
+ * @param {[DateTime, DateTime]} [params.selectedTimeRange] - Current selected time range.
+ * @param {Function} [params.indexToMillis] - Converts activeLabel (domain value) to milliseconds. Defaults to identity function (for time series charts).
+ * @param {Function} [params.millisToIndex] - Converts milliseconds to activeLabel (domain value).
  * @param {boolean} [params.showMouseRect=true] - Whether to show the mouse tracking rectangle
  * @param {boolean} [params.showSnappedRect=true] - Whether to show the snapped selection rectangle
  * @param {Object} [params.mouseRectStyle] - Style object for mouse tracking rectangle (fill, stroke, etc.)
@@ -55,9 +57,11 @@ import { useCallback, useRef } from "react";
  */
 export function useDOMClickDrag({
   callback,
-  indexToMillis = (label) => label,
   resetCallback,
   chartRef,
+  selectedTimeRange,
+  indexToMillis = (label) => label,
+  millisToIndex = (millis) => millis,
   showMouseRect = true,
   showSnappedRect = true,
   mouseRectStyle = {},
@@ -78,6 +82,34 @@ export function useDOMClickDrag({
     startCoordinate: null, // activeCoordinate.x from initial click (for snappedRef)
     startLabel: null, // activeLabel (for callback)
   });
+
+  // Helper: Update the visual selection rectangles
+  const updateSelectionRects = useCallback(
+    (currentPixel, currentCoordinate) => {
+      const { startPixel, startCoordinate } = dragState.current;
+
+      // Update mouse tracking rect
+      if (showMouseRect && mouseRef.current && currentPixel !== undefined) {
+        const x = Math.min(startPixel, currentPixel);
+        const width = Math.abs(currentPixel - startPixel);
+        mouseRef.current.setAttribute("x", x);
+        mouseRef.current.setAttribute("width", width);
+      }
+
+      // Update snapped rect
+      if (
+        showSnappedRect &&
+        snappedRef.current &&
+        currentCoordinate !== undefined
+      ) {
+        const x = Math.min(startCoordinate, currentCoordinate);
+        const width = Math.abs(currentCoordinate - startCoordinate);
+        snappedRef.current.setAttribute("x", x);
+        snappedRef.current.setAttribute("width", width);
+      }
+    },
+    [showMouseRect, showSnappedRect],
+  );
 
   // Lazily create rect elements on first interaction
   const ensureRectsExist = useCallback(() => {
@@ -158,7 +190,7 @@ export function useDOMClickDrag({
   }, [chartRef, mouseRectStyle, snappedRectStyle]);
 
   const mouseDown = useCallback(
-    (chartState) => {
+    (chartState, event) => {
       // Ensure rects are created on first interaction
       if (!ensureRectsExist()) {
         return;
@@ -172,10 +204,53 @@ export function useDOMClickDrag({
         return;
       }
 
+      let startLabel = chartState.activeLabel;
+      let startPixel = chartState.chartX;
+      let startCoordinate = chartState.activeCoordinate.x;
+
+      // Shift-extend: extend from the farther edge of the current selection
+      if (event?.shiftKey && selectedTimeRange?.[0] && selectedTimeRange?.[1]) {
+        const clickedLabel = chartState.activeLabel;
+
+        // Convert current selection endpoints to index values
+        const selectionStartMillis = selectedTimeRange[0].toMillis();
+        const selectionEndMillis = selectedTimeRange[1].toMillis();
+        const selectionStartLabel = millisToIndex(selectionStartMillis);
+        const selectionEndLabel = millisToIndex(selectionEndMillis);
+
+        // Find which endpoint is farther from the click
+        const distToStart = Math.abs(clickedLabel - selectionStartLabel);
+        const distToEnd = Math.abs(clickedLabel - selectionEndLabel);
+
+        // Find the selection ReferenceArea path to get pixel positions
+        const selectionPath = chartRef.current?.querySelector(
+          ".selection-highlight path",
+        );
+
+        if (selectionPath) {
+          const rectX = parseFloat(selectionPath.getAttribute("x"));
+          const rectWidth = parseFloat(selectionPath.getAttribute("width"));
+
+          if (!isNaN(rectX) && !isNaN(rectWidth)) {
+            // Use the farther endpoint
+            if (distToStart > distToEnd) {
+              startLabel = selectionStartLabel;
+              startPixel = rectX; // Left edge
+              startCoordinate = rectX;
+            } else {
+              startLabel = selectionEndLabel;
+              startPixel = rectX + rectWidth; // Right edge
+              startCoordinate = rectX + rectWidth;
+            }
+          }
+        }
+        // If we can't get the pixel position, fall back to normal drag behavior
+      }
+
       dragState.current.isDragging = true;
-      dragState.current.startPixel = chartState.chartX;
-      dragState.current.startCoordinate = chartState.activeCoordinate.x;
-      dragState.current.startLabel = chartState.activeLabel;
+      dragState.current.startPixel = startPixel;
+      dragState.current.startCoordinate = startCoordinate;
+      dragState.current.startLabel = startLabel;
 
       // Make areas visible based on configuration
       if (showMouseRect && mouseRef.current) {
@@ -185,12 +260,24 @@ export function useDOMClickDrag({
         snappedRef.current.setAttribute("fill-opacity", "0.5");
       }
 
+      // Update rectangle dimensions immediately (important for shift-extend)
+      updateSelectionRects(chartState.chartX, chartState.activeCoordinate.x);
+
       // Call optional callback
       if (onMouseDownCallback) {
         onMouseDownCallback(chartState, dragState.current);
       }
     },
-    [ensureRectsExist, showMouseRect, showSnappedRect, onMouseDownCallback],
+    [
+      ensureRectsExist,
+      showMouseRect,
+      showSnappedRect,
+      onMouseDownCallback,
+      selectedTimeRange,
+      millisToIndex,
+      chartRef,
+      updateSelectionRects,
+    ],
   );
 
   const mouseMove = useCallback(
@@ -203,35 +290,15 @@ export function useDOMClickDrag({
         return;
       }
 
-      const { startPixel, startCoordinate } = dragState.current;
-
-      // Mouse area: raw pixel movement for precise tracking
-      if (showMouseRect && mouseRef.current && chartState?.chartX) {
-        const x = Math.min(startPixel, chartState.chartX);
-        const width = Math.abs(chartState.chartX - startPixel);
-        mouseRef.current.setAttribute("x", x);
-        mouseRef.current.setAttribute("width", width);
-      }
-
-      // Snapped area: uses Recharts' activeCoordinate (snaps to data points)
-      if (
-        showSnappedRect &&
-        snappedRef.current &&
-        chartState?.activeCoordinate
-      ) {
-        const currentCoordinate = chartState.activeCoordinate.x;
-        const x = Math.min(startCoordinate, currentCoordinate);
-        const width = Math.abs(currentCoordinate - startCoordinate);
-        snappedRef.current.setAttribute("x", x);
-        snappedRef.current.setAttribute("width", width);
-      }
+      // Update selection rectangles
+      updateSelectionRects(chartState?.chartX, chartState?.activeCoordinate?.x);
 
       // Call optional callback
       if (onMouseMoveCallback) {
         onMouseMoveCallback(chartState, dragState.current);
       }
     },
-    [showMouseRect, showSnappedRect, onMouseMoveCallback],
+    [onMouseMoveCallback, updateSelectionRects],
   );
 
   const mouseUp = useCallback(

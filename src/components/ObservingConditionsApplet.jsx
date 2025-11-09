@@ -285,6 +285,7 @@ function ObservingConditionsApplet({
     callback: setSelectedTimeRange,
     resetCallback: () => setSelectedTimeRange(fullTimeRange),
     chartRef,
+    selectedTimeRange,
   });
 
   const [hoveringBand, setHoveringBand] = React.useState(null); // to track the hovered band
@@ -620,6 +621,7 @@ function ObservingConditionsApplet({
                         yAxisId="left"
                         stroke="hotPink"
                         fillOpacity={0.2}
+                        className="selection-highlight"
                       />
                     ) : null}
                     /* twilight reference lines */

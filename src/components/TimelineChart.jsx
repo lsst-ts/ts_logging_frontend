@@ -66,6 +66,7 @@ function TimelineChart({
     callback: setSelectedTimeRange,
     resetCallback: () => setSelectedTimeRange(fullTimeRange),
     chartRef,
+    selectedTimeRange,
     mouseRectStyle: { fill: selectionFill },
     snappedRectStyle: { fill: selectionFill },
     onMouseDown,
@@ -370,6 +371,7 @@ function TimelineChart({
             x2={selectedMaxMillis}
             stroke="hotPink"
             fillOpacity={0.2}
+            className="selection-highlight"
           />
         ) : null}
       </LineChart>
