@@ -115,18 +115,8 @@ function Plots() {
       // Chronological order
       .sort((a, b) => a.obs_start_millis - b.obs_start_millis);
 
-    // Get all available dayobs
-    const dayObsRange = generateDayObsRange(startDayobs, endDayobs);
-
-    // Get first and last observations
-    const firstObs = data.at(0)?.obs_start_dt ?? 0;
-    const lastObs = data.at(-1)?.obs_start_dt ?? 0;
-
-    // Set available dayobs and selected time range based on actual data
-    if (dayObsRange.length > 0) {
-      setAvailableDayObs(dayObsRange);
-      setSelectedTimeRange([firstObs, lastObs]);
-    }
+    // Set available dayobs range
+    setAvailableDayObs(generateDayObsRange(startDayobs, endDayobs));
 
     // Set the data to state
     setDataLogEntries(data);
@@ -204,7 +194,6 @@ function Plots() {
     // ConsDB
     setDataLogEntries([]);
     setAvailableDayObs([]);
-    setSelectedTimeRange(fullTimeRange);
     // Almanac
     setTwilightValues([]);
     setIllumValues([]);
