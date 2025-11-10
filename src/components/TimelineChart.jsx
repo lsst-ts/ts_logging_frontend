@@ -263,22 +263,20 @@ function TimelineChart({
         ))}
 
         {/* Dayobs & Moon Illumination labels and lines */}
-        {showTwilight && twilightValues.length > 1 && (
-          <XAxis
-            xAxisId="dayobs"
-            dataKey="timestamp"
-            domain={[xMinMillis, xMaxMillis]}
-            allowDataOverflow
-            type="number"
-            scale="time"
-            ticks={hourlyTicks}
-            interval={0}
-            axisLine={false}
-            tickLine={false}
-            tick={renderDayobsTicks}
-            height={PLOT_LABEL_HEIGHT}
-          />
-        )}
+        <XAxis
+          xAxisId="dayobs"
+          dataKey="timestamp"
+          domain={[xMinMillis, xMaxMillis]}
+          allowDataOverflow
+          type="number"
+          scale="time"
+          ticks={hourlyTicks}
+          interval={0}
+          axisLine={false}
+          tickLine={false}
+          tick={renderDayobsTicks}
+          height={PLOT_LABEL_HEIGHT}
+        />
 
         {/* TAI Time Axis */}
         <XAxis
