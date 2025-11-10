@@ -23,11 +23,11 @@ import {
  *   <div>Right-click me!</div>
  * </ContextMenuWrapper>
  */
-export function ContextMenuWrapper({ children, menuItems }) {
+export function ContextMenuWrapper({ children, menuItems, ...props }) {
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
-        <div class="h-full">{children}</div>
+        <div {...props}>{children}</div>
       </ContextMenuTrigger>
       <ContextMenuContent className="w-48">
         {menuItems.map((item, index) => (
