@@ -539,6 +539,7 @@ function Plots() {
                   <ContextMenuWrapper
                     menuItems={contextMenuItems}
                     key={def.key}
+                    style={{ zIndex: visiblePlots.length - idx }}
                   >
                     <TimeseriesPlot
                       title={def?.title || prettyTitleFromKey(key)}
@@ -553,7 +554,6 @@ function Plots() {
                       isBandPlot={!!def?.bandMarker}
                       showMoon={!!def?.showMoon}
                       plotIndex={idx}
-                      nPlots={visiblePlots.length}
                       xAxisShow={xAxisShow}
                     />
                   </ContextMenuWrapper>

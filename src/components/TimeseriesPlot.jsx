@@ -47,7 +47,6 @@ function TimeseriesPlot({
   isBandPlot = false,
   showMoon = false,
   plotIndex = 0,
-  nPlots = 1,
   xAxisShow = false,
 }) {
   // Get pre-computed chart data from context
@@ -189,7 +188,6 @@ function TimeseriesPlot({
       className="pt-8 h-57 w-full"
       title={title}
       config={{}}
-      style={{ zIndex: nPlots - plotIndex }}
     >
       <h1 className="text-white text-lg font-thin text-center">{title}</h1>
       <LineChart
