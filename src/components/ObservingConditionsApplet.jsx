@@ -529,7 +529,7 @@ function ObservingConditionsApplet({
             <Skeleton className="w-full h-full min-h-[180px] bg-stone-900" />
           </div>
         ) : (
-          <ContextMenuWrapper menuItems={contextMenuItems}>
+          <ContextMenuWrapper menuItems={contextMenuItems} className="h-full">
             <div
               className="h-full overflow-visible"
               onMouseDown={(e) => {
