@@ -1,4 +1,12 @@
-import { useContext, useEffect, useId, useRef } from "react";
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   CartesianGrid,
   Line,
@@ -9,6 +17,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { RotateCcw } from "lucide-react";
 
 import {
   ChartContainer,
@@ -32,7 +41,11 @@ import {
 } from "@/components/PLOT_DEFINITIONS";
 
 import { useDOMClickDrag } from "@/hooks/useDOMClickDrag";
-import { scaleDotRadius, calculateDecimalPlaces } from "@/utils/plotUtils";
+import {
+  scaleDotRadius,
+  calculateDecimalPlaces,
+  getChartPlotBounds,
+} from "@/utils/plotUtils";
 import { createDotCallback } from "../utils/createDotCallback";
 
 function TimeseriesPlot({
@@ -55,10 +68,14 @@ function TimeseriesPlot({
   // Generate unique ID for this graph
   const graphID = useId();
 
+  // State for Y-axis zoom
+  const [yDomain, setYDomain] = useState(null);
+
   // Destructure with defaults to handle null case
   const {
     groupedData = [],
     flatData = [],
+    allData = [],
     chartMoon = [],
     twilightValues = [],
     chartDayObsBreaks = [],
@@ -76,6 +93,50 @@ function TimeseriesPlot({
     selectedMaxMillis = 0,
   } = plotData || {};
 
+  // Calculate current effective Y domain
+  const currentYDomain = useMemo(() => {
+    if (yDomain) return yDomain;
+
+    // Auto-calculate from ALL data (not just visible in current time range)
+    const values = allData
+      .map((d) => d[dataKey])
+      .filter((v) => typeof v === "number" && Number.isFinite(v));
+
+    if (values.length === 0) return [0, 1];
+
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+
+    // Add padding for better visualization
+    const range = max - min;
+    const padding = range * 0.05;
+
+    return [min - padding, max + padding];
+  }, [yDomain, allData, dataKey]);
+
+  // Function to convert pixel Y coordinate to data Y value
+  const pixelToDataY = useCallback(
+    (pixelY) => {
+      const bbox = getChartPlotBounds(chartRef.current);
+      if (!bbox) return null;
+
+      const plotTop = bbox.y;
+      const plotHeight = bbox.height;
+
+      // Convert pixel position to fraction of height
+      // Note: SVG Y increases downward, but data Y increases upward
+      const relativeY = pixelY - plotTop;
+      const fraction = 1 - relativeY / plotHeight; // Invert
+
+      // Map fraction to data range
+      const [yMin, yMax] = currentYDomain;
+      const dataY = yMin + fraction * (yMax - yMin);
+
+      return dataY;
+    },
+    [currentYDomain],
+  );
+
   // Ref for chart to enable DOM manipulation
   const chartRef = useRef(null);
 
@@ -83,8 +144,13 @@ function TimeseriesPlot({
   const { mouseDown, mouseMove, mouseUp, doubleClick } = useDOMClickDrag({
     callback: setSelectedTimeRange,
     indexToMillis,
-    resetCallback: () => setSelectedTimeRange(fullTimeRange),
+    resetCallback: () => {
+      setSelectedTimeRange(fullTimeRange);
+      setYDomain(null); // Reset Y-axis too
+    },
     chartRef,
+    selectedTimeRange: [fullTimeRange[0], fullTimeRange[1]], // For shift-extend
+    enable2DSelection: true,
     onMouseMove: (state, dragState) => {
       // If we're dragging, clear hover state
       if (dragState.isDragging) {
@@ -99,6 +165,25 @@ function TimeseriesPlot({
       }
 
       hoverStore.setHover(state.activePayload[0].payload["exposure id"]);
+    },
+    onYAxisZoom: (startYPixel, endYPixel) => {
+      const yStart = pixelToDataY(startYPixel);
+      const yEnd = pixelToDataY(endYPixel);
+
+      if (yStart !== null && yEnd !== null) {
+        const yMin = Math.min(yStart, yEnd);
+        const yMax = Math.max(yStart, yEnd);
+
+        // Add padding for better visualization
+        const range = yMax - yMin;
+        const padding = range * 0.05;
+
+        // Avoid zero-height selection
+        if (range > 0) {
+          const newDomain = [yMin - padding, yMax + padding];
+          setYDomain(newDomain);
+        }
+      }
     },
   });
 
@@ -185,11 +270,24 @@ function TimeseriesPlot({
   return (
     <ChartContainer
       ref={chartRef}
-      className="pt-8 h-57 w-full"
+      className="pt-8 h-57 w-full relative"
       title={title}
       config={{}}
     >
       <h1 className="text-white text-lg font-thin text-center">{title}</h1>
+
+      {/* Y-axis reset button */}
+      {yDomain !== null && (
+        <button
+          onClick={() => setYDomain(null)}
+          className="absolute top-2 right-2 z-10 bg-stone-700 hover:bg-stone-600 text-white p-1.5 rounded opacity-80 hover:opacity-100 transition-opacity"
+          title="Reset Y-axis zoom"
+          aria-label="Reset Y-axis zoom"
+        >
+          <RotateCcw size={16} />
+        </button>
+      )}
+
       <LineChart
         width={500}
         margin={PLOT_DIMENSIONS.chartMargins}
@@ -243,7 +341,8 @@ function TimeseriesPlot({
         <YAxis
           tick={AXIS_TICK_STYLE}
           tickFormatter={(value) => value.toFixed(decimalPlaces)}
-          domain={["auto", "auto"]}
+          domain={currentYDomain}
+          allowDataOverflow={true}
           width={PLOT_DIMENSIONS.yAxisWidth}
           label={{
             value: unit,
