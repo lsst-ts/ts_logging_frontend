@@ -1,4 +1,5 @@
 import { millisToDateTime } from "@/utils/timeUtils";
+import { getChartPlotBounds } from "@/utils/plotUtils";
 import { useCallback, useRef } from "react";
 
 /**
@@ -70,6 +71,8 @@ export function useDOMClickDrag({
   onMouseMove: onMouseMoveCallback,
   onMouseUp: onMouseUpCallback,
   onDoubleClick: onDoubleClickCallback,
+  onYAxisZoom: onYAxisZoomCallback,
+  enable2DSelection = false,
 }) {
   // Internal refs for the rect elements
   const mouseRef = useRef(null);
@@ -81,12 +84,13 @@ export function useDOMClickDrag({
     startPixel: null, // chartX from initial click (for mouseRef)
     startCoordinate: null, // activeCoordinate.x from initial click (for snappedRef)
     startLabel: null, // activeLabel (for callback)
+    startYPixel: null, // chartY from initial click (for Y-axis zoom)
   });
 
   // Helper: Update the visual selection rectangles
   const updateSelectionRects = useCallback(
-    (currentPixel, currentCoordinate) => {
-      const { startPixel, startCoordinate } = dragState.current;
+    (currentPixel, currentCoordinate, currentYPixel) => {
+      const { startPixel, startCoordinate, startYPixel } = dragState.current;
 
       // Update mouse tracking rect
       if (showMouseRect && mouseRef.current && currentPixel !== undefined) {
@@ -107,9 +111,34 @@ export function useDOMClickDrag({
         snappedRef.current.setAttribute("x", x);
         snappedRef.current.setAttribute("width", width);
       }
+
+      // Update Y coordinates only if 2D selection is enabled
+      if (enable2DSelection && currentYPixel !== undefined) {
+        const y = Math.min(startYPixel, currentYPixel);
+        const height = Math.abs(currentYPixel - startYPixel);
+        mouseRef.current.setAttribute("y", y);
+        mouseRef.current.setAttribute("height", height);
+        snappedRef.current.setAttribute("y", y);
+        snappedRef.current.setAttribute("height", height);
+      }
     },
-    [showMouseRect, showSnappedRect],
+    [showMouseRect, showSnappedRect, enable2DSelection],
   );
+
+  // Helper: Hide the visual slection rectangles
+  const hideSelectionRects = useCallback(() => {
+    // Hide areas
+    if (mouseRef.current) {
+      mouseRef.current.setAttribute("fill-opacity", "0");
+      mouseRef.current.setAttribute("width", "0");
+      mouseRef.current.setAttribute("height", "0");
+    }
+    if (snappedRef.current) {
+      snappedRef.current.setAttribute("fill-opacity", "0");
+      snappedRef.current.setAttribute("width", "0");
+      snappedRef.current.setAttribute("height", "0");
+    }
+  }, [mouseRef, snappedRef]);
 
   // Lazily create rect elements on first interaction
   const ensureRectsExist = useCallback(() => {
@@ -132,11 +161,10 @@ export function useDOMClickDrag({
     }
 
     // Find the plot area bounds from the clipPath
-    const clipPathRect = svg.querySelector("defs clipPath rect");
-    if (!clipPathRect) {
+    const bbox = getChartPlotBounds(svg);
+    if (!bbox) {
       return false;
     }
-    const bbox = clipPathRect.getBBox();
     const plotY = bbox.y;
     const plotHeight = bbox.height;
 
@@ -146,9 +174,9 @@ export function useDOMClickDrag({
       "rect",
     );
     mouseRect.setAttribute("x", "0");
-    mouseRect.setAttribute("y", plotY);
+    mouseRect.setAttribute("y", enable2DSelection ? "0" : plotY);
     mouseRect.setAttribute("width", "0");
-    mouseRect.setAttribute("height", plotHeight);
+    mouseRect.setAttribute("height", enable2DSelection ? "0" : plotHeight);
     mouseRect.setAttribute("fill", mouseRectStyle.fill || "#888");
     mouseRect.setAttribute("fill-opacity", "0");
     mouseRect.setAttribute("pointer-events", "none");
@@ -165,9 +193,9 @@ export function useDOMClickDrag({
       "rect",
     );
     snappedRect.setAttribute("x", "0");
-    snappedRect.setAttribute("y", plotY);
+    snappedRect.setAttribute("y", enable2DSelection ? "0" : plotY);
     snappedRect.setAttribute("width", "0");
-    snappedRect.setAttribute("height", plotHeight);
+    snappedRect.setAttribute("height", enable2DSelection ? "0" : plotHeight);
     snappedRect.setAttribute("fill", snappedRectStyle.fill || "#666");
     snappedRect.setAttribute("fill-opacity", "0");
     snappedRect.setAttribute("pointer-events", "none");
@@ -187,7 +215,7 @@ export function useDOMClickDrag({
     snappedRef.current = snappedRect;
 
     return true;
-  }, [chartRef, mouseRectStyle, snappedRectStyle]);
+  }, [chartRef, mouseRectStyle, snappedRectStyle, enable2DSelection]);
 
   const mouseDown = useCallback(
     (chartState, event) => {
@@ -251,6 +279,7 @@ export function useDOMClickDrag({
       dragState.current.startPixel = startPixel;
       dragState.current.startCoordinate = startCoordinate;
       dragState.current.startLabel = startLabel;
+      dragState.current.startYPixel = chartState.chartY;
 
       // Make areas visible based on configuration
       if (showMouseRect && mouseRef.current) {
@@ -261,7 +290,11 @@ export function useDOMClickDrag({
       }
 
       // Update rectangle dimensions immediately (important for shift-extend)
-      updateSelectionRects(chartState.chartX, chartState.activeCoordinate.x);
+      updateSelectionRects(
+        chartState.chartX,
+        chartState.activeCoordinate.x,
+        chartState.chartY,
+      );
 
       // Call optional callback
       if (onMouseDownCallback) {
@@ -291,7 +324,11 @@ export function useDOMClickDrag({
       }
 
       // Update selection rectangles
-      updateSelectionRects(chartState?.chartX, chartState?.activeCoordinate?.x);
+      updateSelectionRects(
+        chartState?.chartX,
+        chartState?.activeCoordinate?.x,
+        chartState?.chartY,
+      );
 
       // Call optional callback
       if (onMouseMoveCallback) {
@@ -317,15 +354,20 @@ export function useDOMClickDrag({
         callback([millisToDateTime(startTime), millisToDateTime(endTime)]);
       }
 
+      // Y-axis callback (only if 2D selection enabled)
+      if (
+        enable2DSelection &&
+        onYAxisZoomCallback &&
+        dragState.current.startYPixel &&
+        chartState?.chartY
+      ) {
+        const startY = dragState.current.startYPixel;
+        const endY = chartState.chartY;
+        onYAxisZoomCallback(startY, endY);
+      }
+
       // Hide areas
-      if (mouseRef.current) {
-        mouseRef.current.setAttribute("fill-opacity", "0");
-        mouseRef.current.setAttribute("width", "0");
-      }
-      if (snappedRef.current) {
-        snappedRef.current.setAttribute("fill-opacity", "0");
-        snappedRef.current.setAttribute("width", "0");
-      }
+      hideSelectionRects();
 
       dragState.current.isDragging = false;
 
@@ -334,7 +376,14 @@ export function useDOMClickDrag({
         onMouseUpCallback(chartState, dragState.current);
       }
     },
-    [callback, indexToMillis, onMouseUpCallback],
+    [
+      callback,
+      indexToMillis,
+      onMouseUpCallback,
+      enable2DSelection,
+      onYAxisZoomCallback,
+      hideSelectionRects,
+    ],
   );
 
   const doubleClick = useCallback(
@@ -344,15 +393,8 @@ export function useDOMClickDrag({
         resetCallback();
       }
 
-      // Ensure areas are hidden
-      if (mouseRef.current) {
-        mouseRef.current.setAttribute("fill-opacity", "0");
-        mouseRef.current.setAttribute("width", "0");
-      }
-      if (snappedRef.current) {
-        snappedRef.current.setAttribute("fill-opacity", "0");
-        snappedRef.current.setAttribute("width", "0");
-      }
+      // Ensure areas are hidden and reset
+      hideSelectionRects();
 
       dragState.current.isDragging = false;
 
@@ -361,7 +403,7 @@ export function useDOMClickDrag({
         onDoubleClickCallback(chartState, dragState.current);
       }
     },
-    [resetCallback, onDoubleClickCallback],
+    [resetCallback, onDoubleClickCallback, hideSelectionRects],
   );
 
   return {
