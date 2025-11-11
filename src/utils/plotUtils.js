@@ -3,6 +3,20 @@
  */
 
 /**
+ * Gets the plot area bounding box from a chart's SVG element
+ * @param {SVGElement} svg - The SVG element containing the chart
+ * @returns {DOMRect|null} The bounding box or null if not found
+ */
+export function getChartPlotBounds(svg) {
+  if (!svg) return null;
+
+  const clipPathRect = svg.querySelector("clipPath rect");
+  if (!clipPathRect) return null;
+
+  return clipPathRect.getBBox();
+}
+
+/**
  * Groups an array into an array of arrays based on a key property,
  * preserving insertion order using the provided Map.
  *

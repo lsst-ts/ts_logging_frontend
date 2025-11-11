@@ -319,6 +319,7 @@ export function calculateChartData({
   const timeData = {
     groupedData: transformedChartData,
     flatData,
+    allData: data,
     chartMoon: moonIntervals
       .map(([start, end]) => ({
         start,
@@ -349,6 +350,7 @@ export function calculateChartData({
   const sequenceData = {
     groupedData: transformedChartData,
     flatData,
+    allData: data,
     chartMoon: sequenceMoon.filter((m) => m.start <= fakeX && m.end >= 0),
     twilightValues: [],
     chartDayObsBreaks,

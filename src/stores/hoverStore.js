@@ -3,6 +3,8 @@
  * Bypasses React re-renders by directly manipulating SVG elements
  */
 
+import { getChartPlotBounds } from "@/utils/plotUtils";
+
 class HoverStore {
   constructor() {
     this.hoveredExposureID = null;
@@ -76,6 +78,21 @@ class HoverStore {
     if (cx == null || cy == null || isNaN(cx) || isNaN(cy)) {
       hoverCircle.style.display = "none";
       return;
+    }
+
+    // Get the plot area bounds to check if cy is visible
+    const svg = hoverCircle.closest("svg");
+    const bbox = getChartPlotBounds(svg);
+    if (bbox) {
+      const plotTop = bbox.y;
+      const plotBottom = bbox.y + bbox.height;
+      const cyValue = parseFloat(cy);
+
+      // Only show the hover circle if it's within the visible Y bounds
+      if (cyValue < plotTop || cyValue > plotBottom) {
+        hoverCircle.style.display = "none";
+        return;
+      }
     }
 
     // Update the hover circle position
