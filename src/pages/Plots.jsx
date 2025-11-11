@@ -390,8 +390,11 @@ function Plots() {
           <div className="flex flex-col max-w-xxl mt-6 border border-1 border-white rounded-md p-2 gap-2">
             <p>
               <span className="font-medium">Click & Drag</span> on the timeline
-              or on any plot to zoom in, and{" "}
-              <span className="font-medium">Double-Click</span> to zoom out.
+              or on any plot to zoom in (drag creates a selection box to zoom
+              both time and Y-axis), and{" "}
+              <span className="font-medium">Double-Click</span> to zoom out. Use
+              the reset button in the top-right corner of each plot to reset
+              only the Y-axis.
             </p>
             <p>
               Twilights are shown as blue lines, moon above the horizon is
