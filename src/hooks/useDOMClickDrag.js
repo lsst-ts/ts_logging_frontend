@@ -89,8 +89,11 @@ export function useDOMClickDrag({
 
   // Helper: Update the visual selection rectangles
   const updateSelectionRects = useCallback(
-    (currentPixel, currentCoordinate, currentYPixel) => {
+    (currentPixel, currentCoordinate, currentYPixel, shiftKeyHeld) => {
       const { startPixel, startCoordinate, startYPixel } = dragState.current;
+
+      // Determine if we should do 2D selection (enabled AND shift not held)
+      const use2DSelection = enable2DSelection && !shiftKeyHeld;
 
       // Update mouse tracking rect
       if (showMouseRect && mouseRef.current && currentPixel !== undefined) {
@@ -112,17 +115,28 @@ export function useDOMClickDrag({
         snappedRef.current.setAttribute("width", width);
       }
 
-      // Update Y coordinates only if 2D selection is enabled
-      if (enable2DSelection && currentYPixel !== undefined) {
+      // Update Y coordinates only if 2D selection is enabled AND shift is not held
+      if (use2DSelection && currentYPixel !== undefined) {
         const y = Math.min(startYPixel, currentYPixel);
         const height = Math.abs(currentYPixel - startYPixel);
         mouseRef.current.setAttribute("y", y);
         mouseRef.current.setAttribute("height", height);
         snappedRef.current.setAttribute("y", y);
         snappedRef.current.setAttribute("height", height);
+      } else {
+        const bbox = getChartPlotBounds(
+          chartRef.current?.querySelector("svg.recharts-surface") ||
+            chartRef.current?.querySelector("svg"),
+        );
+        if (bbox && mouseRef.current && snappedRef.current) {
+          mouseRef.current.setAttribute("y", bbox.y);
+          mouseRef.current.setAttribute("height", bbox.height);
+          snappedRef.current.setAttribute("y", bbox.y);
+          snappedRef.current.setAttribute("height", bbox.height);
+        }
       }
     },
-    [showMouseRect, showSnappedRect, enable2DSelection],
+    [showMouseRect, showSnappedRect, enable2DSelection, chartRef],
   );
 
   // Helper: Hide the visual slection rectangles
@@ -294,6 +308,7 @@ export function useDOMClickDrag({
         chartState.chartX,
         chartState.activeCoordinate.x,
         chartState.chartY,
+        event?.shiftKey || false,
       );
 
       // Call optional callback
@@ -314,7 +329,7 @@ export function useDOMClickDrag({
   );
 
   const mouseMove = useCallback(
-    (chartState) => {
+    (chartState, event) => {
       if (!dragState.current.isDragging) {
         // Call optional callback even when not dragging
         if (onMouseMoveCallback) {
@@ -323,11 +338,12 @@ export function useDOMClickDrag({
         return;
       }
 
-      // Update selection rectangles
+      // Update selection rectangles (check shift key dynamically)
       updateSelectionRects(
         chartState?.chartX,
         chartState?.activeCoordinate?.x,
         chartState?.chartY,
+        event?.shiftKey || false,
       );
 
       // Call optional callback
@@ -339,7 +355,7 @@ export function useDOMClickDrag({
   );
 
   const mouseUp = useCallback(
-    (chartState) => {
+    (chartState, event) => {
       if (!dragState.current.isDragging) return;
 
       const { startLabel } = dragState.current;
@@ -354,12 +370,13 @@ export function useDOMClickDrag({
         callback([millisToDateTime(startTime), millisToDateTime(endTime)]);
       }
 
-      // Y-axis callback (only if 2D selection enabled)
+      // Y-axis callback (only if 2D selection enabled AND shift not held at release)
       if (
         enable2DSelection &&
         onYAxisZoomCallback &&
         dragState.current.startYPixel &&
-        chartState?.chartY
+        chartState?.chartY &&
+        !event?.shiftKey
       ) {
         const startY = dragState.current.startYPixel;
         const endY = chartState.chartY;
