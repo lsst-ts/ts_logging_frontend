@@ -25,6 +25,7 @@ import { useCallback, useRef } from "react";
  * @param {Function} [params.onMouseMove] - Optional callback after mouseMove, receives (chartState, dragState)
  * @param {Function} [params.onMouseUp] - Optional callback after mouseUp, receives (chartState, dragState)
  * @param {Function} [params.onDoubleClick] - Optional callback after doubleClick, receives (chartState, dragState)
+ * @param {Function} [params.onMouseLeave] - Optional callback after mouseLeave, receives (dragState)
  *
  * @returns {Object} Event handlers and state: { mouseDown, mouseMove, mouseUp, doubleClick, dragState }
  *
@@ -71,6 +72,7 @@ export function useDOMClickDrag({
   onMouseMove: onMouseMoveCallback,
   onMouseUp: onMouseUpCallback,
   onDoubleClick: onDoubleClickCallback,
+  onMouseLeave: onMouseLeaveCallback,
   onYAxisZoom: onYAxisZoomCallback,
   enable2DSelection = false,
 }) {
@@ -330,6 +332,10 @@ export function useDOMClickDrag({
 
   const mouseMove = useCallback(
     (chartState, event) => {
+      // If we're outisde the chart zone, don't do anything
+      if (chartState.chartX === undefined || chartState.chartY === undefined) {
+        return;
+      }
       if (!dragState.current.isDragging) {
         // Call optional callback even when not dragging
         if (onMouseMoveCallback) {
@@ -423,11 +429,24 @@ export function useDOMClickDrag({
     [resetCallback, onDoubleClickCallback, hideSelectionRects],
   );
 
+  const mouseLeave = useCallback(() => {
+    if (onMouseLeaveCallback) {
+      onMouseLeaveCallback(dragState.current);
+    }
+    if (dragState.current.isDragging) {
+      // Hide areas
+      hideSelectionRects();
+
+      dragState.current.isDragging = false;
+    }
+  }, [onMouseLeaveCallback, hideSelectionRects]);
+
   return {
     mouseDown,
     mouseMove,
     mouseUp,
     doubleClick,
+    mouseLeave,
     dragState,
   };
 }

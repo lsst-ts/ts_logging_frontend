@@ -141,55 +141,59 @@ function TimeseriesPlot({
   const chartRef = useRef(null);
 
   // Click & Drag plot hooks using DOM manipulation
-  const { mouseDown, mouseMove, mouseUp, doubleClick } = useDOMClickDrag({
-    callback: setSelectedTimeRange,
-    indexToMillis,
-    resetCallback: () => {
-      setSelectedTimeRange(fullTimeRange);
-      setYDomain(null); // Reset Y-axis too
-    },
-    chartRef,
-    selectedTimeRange: [fullTimeRange[0], fullTimeRange[1]], // For shift-extend
-    enable2DSelection: true,
-    onMouseMove: (state, dragState) => {
-      // If we're dragging, clear hover state
-      if (dragState.isDragging) {
-        hoverStore.setHover(null);
-        return;
-      }
-
-      // Update hover based on active payload
-      if (!state || !state.activePayload || state.activePayload.length === 0) {
-        hoverStore.setHover(null);
-        return;
-      }
-
-      hoverStore.setHover(state.activePayload[0].payload["exposure id"]);
-    },
-    onYAxisZoom: (startYPixel, endYPixel) => {
-      const yStart = pixelToDataY(startYPixel);
-      const yEnd = pixelToDataY(endYPixel);
-
-      if (yStart !== null && yEnd !== null) {
-        const yMin = Math.min(yStart, yEnd);
-        const yMax = Math.max(yStart, yEnd);
-
-        // Add padding for better visualization
-        const range = yMax - yMin;
-        const padding = range * 0.05;
-
-        // Avoid zero-height selection
-        if (range > 0) {
-          const newDomain = [yMin - padding, yMax + padding];
-          setYDomain(newDomain);
+  const { mouseDown, mouseMove, mouseUp, mouseLeave, doubleClick } =
+    useDOMClickDrag({
+      callback: setSelectedTimeRange,
+      indexToMillis,
+      resetCallback: () => {
+        setSelectedTimeRange(fullTimeRange);
+        setYDomain(null); // Reset Y-axis too
+      },
+      chartRef,
+      selectedTimeRange: [fullTimeRange[0], fullTimeRange[1]], // For shift-extend
+      enable2DSelection: true,
+      onMouseMove: (state, dragState) => {
+        // If we're dragging, clear hover state
+        if (dragState.isDragging) {
+          hoverStore.setHover(null);
+          return;
         }
-      }
-    },
-  });
 
-  const mouseLeave = () => {
-    hoverStore.setHover(null);
-  };
+        // Update hover based on active payload
+        if (
+          !state ||
+          !state.activePayload ||
+          state.activePayload.length === 0
+        ) {
+          hoverStore.setHover(null);
+          return;
+        }
+
+        hoverStore.setHover(state.activePayload[0].payload["exposure id"]);
+      },
+      onYAxisZoom: (startYPixel, endYPixel) => {
+        const yStart = pixelToDataY(startYPixel);
+        const yEnd = pixelToDataY(endYPixel);
+
+        if (yStart !== null && yEnd !== null) {
+          const yMin = Math.min(yStart, yEnd);
+          const yMax = Math.max(yStart, yEnd);
+
+          // Add padding for better visualization
+          const range = yMax - yMin;
+          const padding = range * 0.05;
+
+          // Avoid zero-height selection
+          if (range > 0) {
+            const newDomain = [yMin - padding, yMax + padding];
+            setYDomain(newDomain);
+          }
+        }
+      },
+      onMouseLeave: () => {
+        hoverStore.setHover(null);
+      },
+    });
 
   // Register this graph with the hover store
   useEffect(() => {
