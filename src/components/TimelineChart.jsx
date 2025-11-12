@@ -62,18 +62,19 @@ function TimelineChart({
   const chartRef = useRef(null);
 
   // Click & Drag plot hooks
-  const { mouseDown, mouseMove, mouseUp, doubleClick } = useDOMClickDrag({
-    callback: setSelectedTimeRange,
-    resetCallback: () => setSelectedTimeRange(fullTimeRange),
-    chartRef,
-    selectedTimeRange,
-    mouseRectStyle: { fill: selectionFill },
-    snappedRectStyle: { fill: selectionFill },
-    onMouseDown,
-    onMouseMove,
-    onMouseUp,
-    onDoubleClick,
-  });
+  const { mouseDown, mouseMove, mouseUp, mouseLeave, doubleClick } =
+    useDOMClickDrag({
+      callback: setSelectedTimeRange,
+      resetCallback: () => setSelectedTimeRange(fullTimeRange),
+      chartRef,
+      selectedTimeRange,
+      mouseRectStyle: { fill: selectionFill },
+      snappedRectStyle: { fill: selectionFill },
+      onMouseDown,
+      onMouseMove,
+      onMouseUp,
+      onDoubleClick,
+    });
 
   // Convert datetime inputs to millis format for plots
   const xMinMillis = fullTimeRange[0]?.toMillis();
@@ -239,6 +240,7 @@ function TimelineChart({
         onMouseDown={mouseDown}
         onMouseMove={mouseMove}
         onMouseUp={mouseUp}
+        onMouseLeave={mouseLeave}
         onDoubleClick={doubleClick}
       >
         {/* Horizontal lines at each data series y-value */}

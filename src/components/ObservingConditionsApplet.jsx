@@ -281,12 +281,13 @@ function ObservingConditionsApplet({
   const chartRef = useRef(null);
 
   // Click & Drag plot hooks
-  const { mouseDown, mouseMove, mouseUp, doubleClick } = useDOMClickDrag({
-    callback: setSelectedTimeRange,
-    resetCallback: () => setSelectedTimeRange(fullTimeRange),
-    chartRef,
-    selectedTimeRange,
-  });
+  const { mouseDown, mouseMove, mouseUp, mouseLeave, doubleClick } =
+    useDOMClickDrag({
+      callback: setSelectedTimeRange,
+      resetCallback: () => setSelectedTimeRange(fullTimeRange),
+      chartRef,
+      selectedTimeRange,
+    });
 
   const [hoveringBand, setHoveringBand] = React.useState(null); // to track the hovered band
 
@@ -546,6 +547,7 @@ function ObservingConditionsApplet({
                     onMouseDown={mouseDown}
                     onMouseMove={mouseMove}
                     onMouseUp={mouseUp}
+                    onMouseLeave={mouseLeave}
                     onDoubleClick={doubleClick}
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke="#555" />
