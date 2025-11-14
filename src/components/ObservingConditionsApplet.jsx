@@ -21,6 +21,7 @@ import {
 import { DateTime } from "luxon";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  CircleShape,
   XShape,
   TriangleShape,
   FlippedTriangleShape,
@@ -146,7 +147,7 @@ const renderCustomLegend = (props) => (
           }
         >
           <svg width="16" height="16">
-            <circle cx="8" cy="8" r="2" fill={BAND_COLORS.u} />
+            <CircleShape cx={8} cy={8} fill={BAND_COLORS.u} r={2} />
           </svg>
           <span>u</span>
         </div>
