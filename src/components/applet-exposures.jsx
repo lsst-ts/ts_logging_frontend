@@ -57,7 +57,7 @@ function AppletExposures({
 }) {
   const [plotBy, setPlotBy] = useState(PlotByValues.NUMBER);
   const [groupBy, setGroupBy] = useState(GroupByValues.SCIENCE_PROGRAM);
-  const [sortBy, setSortBy] = useState(SortByValues.DEFAULT);
+  const [sortBy, setSortBy] = useState(SortByValues.HIGHEST_FIRST);
   const [hovered, setHovered] = useState(null);
 
   const plotByOptions = [
