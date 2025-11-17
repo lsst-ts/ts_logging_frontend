@@ -103,7 +103,6 @@ function filterDayobsGroupsByTime(
  *   - domain: X-axis range
  *   - scale: Chart scale type
  *   - ticks, dayObsTicks: Tick positions and formatters
- *   - indexToMillis: Function to convert X values to real time
  *   - Additional mode-specific properties (chartDayObsBreaks, noDataX, twilightValues, etc.)
  */
 export function calculateChartData({
@@ -343,7 +342,6 @@ export function calculateChartData({
     dayObsTicks: timeDayObsTicks,
     tickFormatter: (tick) => millisToHHmm(tick),
     dayObsTickFormatter: (tick) => timeDayObsTickMappings.get(tick),
-    indexToMillis: (e) => e,
     selectedMinMillis,
     selectedMaxMillis,
   };
@@ -365,7 +363,6 @@ export function calculateChartData({
     dayObsTicks,
     tickFormatter: (tick) => tickMappings.get(tick),
     dayObsTickFormatter: (tick) => dayObsTickMappings.get(tick),
-    indexToMillis: (e) => flatData.find((d) => d.fakeX === e)?.obs_start_millis,
     selectedMinMillis,
     selectedMaxMillis,
   };
