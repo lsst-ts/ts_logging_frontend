@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from "react";
+import React, { useMemo, useRef, useState, useCallback } from "react";
 import { useRouter, useSearch } from "@tanstack/react-router";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
@@ -33,6 +33,8 @@ import {
 import { BAND_COLORS } from "@/components/PLOT_DEFINITIONS";
 import { useDOMClickDrag } from "@/hooks/useDOMClickDrag";
 import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
+import { RotateCcw } from "lucide-react";
+import { getChartPlotBounds } from "@/utils/plotUtils";
 
 import {
   DEFAULT_PIXEL_SCALE_MEDIAN,
@@ -280,16 +282,46 @@ function ObservingConditionsApplet({
   // Ref for chart to enable DOM manipulation
   const chartRef = useRef(null);
 
+  // Y-axis zoom state (fraction-based: 0 = bottom, 1 = top of auto range)
+  const [yMinFraction, setYMinFraction] = useState(0);
+  const [yMaxFraction, setYMaxFraction] = useState(1);
+
+  // Y-axis zoom callback - converts pixel selection to fraction-based zoom
+  const onYAxisZoom = useCallback((startYPixel, endYPixel) => {
+    const bbox = getChartPlotBounds(chartRef.current);
+    if (!bbox) return;
+
+    // Convert pixels to fractions of plot height
+    // SVG Y increases downward, but fraction 0 = bottom, 1 = top
+    const startFraction = 1 - (startYPixel - bbox.y) / bbox.height;
+    const endFraction = 1 - (endYPixel - bbox.y) / bbox.height;
+
+    const minFraction = Math.min(startFraction, endFraction);
+    const maxFraction = Math.max(startFraction, endFraction);
+
+    // Avoid zero-height selection
+    if (maxFraction - minFraction > 0.01) {
+      setYMinFraction(minFraction);
+      setYMaxFraction(maxFraction);
+    }
+  }, []);
+
   // Click & Drag plot hooks
   const { mouseDown, mouseMove, mouseUp, mouseLeave, doubleClick } =
     useDOMClickDrag({
       callback: setSelectedTimeRange,
-      resetCallback: () => setSelectedTimeRange(fullTimeRange),
+      resetCallback: () => {
+        setSelectedTimeRange(fullTimeRange);
+        setYMinFraction(0);
+        setYMaxFraction(1);
+      },
       chartRef,
       selectedTimeRange,
+      enable2DSelection: true,
+      onYAxisZoom: onYAxisZoom,
     });
 
-  const [hoveringBand, setHoveringBand] = React.useState(null); // to track the hovered band
+  const [hoveringBand, setHoveringBand] = useState(null); // to track the hovered band
 
   // Convert selected time range to millis for ReferenceArea
   const selectedMinMillis = selectedTimeRange?.[0]?.toMillis();
@@ -352,6 +384,59 @@ function ObservingConditionsApplet({
     [data],
   );
 
+  // Calculate auto Y-axis domain for PSF FWHM (left axis) - rounded to nearest 0.1
+  const psfAutoYDomain = useMemo(() => {
+    const values = chartData
+      .map((d) => d.psf_median)
+      .filter((v) => typeof v === "number" && Number.isFinite(v));
+
+    if (values.length === 0) return [0, 1];
+
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const range = max - min;
+    const padding = range * 0.05; // 5% padding
+
+    // Round down to nearest 0.1 for min, round up to nearest 0.1 for max
+    const paddedMin = Math.floor((min - padding) * 10) / 10;
+    const paddedMax = Math.ceil((max + padding) * 10) / 10;
+
+    return [paddedMin, paddedMax];
+  }, [chartData]);
+
+  // Calculate auto Y-axis domain for Zero Points (right axis) - rounded to nearest 1
+  const zeroPointAutoYDomain = useMemo(() => {
+    const zeroPointVals = chartData
+      .map((d) => d.zero_point_median)
+      .filter((v) => typeof v === "number" && Number.isFinite(v));
+
+    if (zeroPointVals.length === 0) return [20, 30]; // Default range
+
+    const min = Math.min(...zeroPointVals);
+    const max = Math.max(...zeroPointVals);
+    const range = max - min;
+    const padding = range * 0.05; // 5% padding
+
+    // Round down to nearest 1 for min, round up to nearest 1 for max
+    const paddedMin = Math.floor(min - padding);
+    const paddedMax = Math.ceil(max + padding);
+
+    return [paddedMin, paddedMax];
+  }, [chartData]);
+
+  // Calculate current Y-axis domains with zoom applied (fraction-based)
+  const currentPsfYDomain = useMemo(() => {
+    const [autoMin, autoMax] = psfAutoYDomain;
+    const range = autoMax - autoMin;
+    return [autoMin + yMinFraction * range, autoMin + yMaxFraction * range];
+  }, [psfAutoYDomain, yMinFraction, yMaxFraction]);
+
+  const currentZeroPointYDomain = useMemo(() => {
+    const [autoMin, autoMax] = zeroPointAutoYDomain;
+    const range = autoMax - autoMin;
+    return [autoMin + yMinFraction * range, autoMin + yMaxFraction * range];
+  }, [zeroPointAutoYDomain, yMinFraction, yMaxFraction]);
+
   // retrieve twilight times from almanacInfo
   // and convert them to milliseconds
   const twilightValues = useMemo(
@@ -392,15 +477,6 @@ function ObservingConditionsApplet({
     }
     return { xMin: min, xMax: max, xTicks: ticks };
   }, [chartData, twilightValues]);
-
-  // Calculate min and max for y-axis (zero point median)
-  const zeroPointVals = chartData
-    .map((d) => d.zero_point_median)
-    .filter(isValidNumber);
-  // move the minimum value down by 5 for better visibility
-  const zeroPointMedianMin = zeroPointVals.length
-    ? Math.min(...zeroPointVals) - 5
-    : "auto";
 
   const chartConfig = {
     psf_median: { label: "PSF FWHM", color: "#ffffff" },
@@ -524,285 +600,305 @@ function ObservingConditionsApplet({
           </Popover>
         </div>
       </CardHeader>
-      <CardContent className="flex flex-col gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 h-[320px] font-thin">
+      <CardContent className="flex flex-col gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 h-[320px] font-thin relative">
         {exposuresLoading || almanacLoading ? (
           <div className="flex-grow">
             <Skeleton className="w-full h-full min-h-[180px] bg-stone-900" />
           </div>
         ) : (
-          <ContextMenuWrapper menuItems={contextMenuItems} className="h-full">
-            <div
-              className="h-full overflow-visible"
-              onMouseDown={(e) => {
-                if (e.detail > 1) e.preventDefault();
-              }}
-            >
-              <div className="flex-grow min-w-0 h-full select-none">
-                <ChartContainer
-                  ref={chartRef}
-                  config={chartConfig}
-                  className="w-full h-full"
-                >
-                  <ComposedChart
-                    onMouseDown={mouseDown}
-                    onMouseMove={mouseMove}
-                    onMouseUp={mouseUp}
-                    onMouseLeave={mouseLeave}
-                    onDoubleClick={doubleClick}
+          <>
+            {/* Reset zoom button - show if X or Y axis is zoomed */}
+            {(yMinFraction !== 0 ||
+              yMaxFraction !== 1 ||
+              selectedMinMillis !== fullTimeRange?.[0]?.toMillis() ||
+              selectedMaxMillis !== fullTimeRange?.[1]?.toMillis()) && (
+              <button
+                onClick={() => {
+                  setSelectedTimeRange(fullTimeRange);
+                  setYMinFraction(0);
+                  setYMaxFraction(1);
+                }}
+                className="absolute top-2 right-2 z-10 bg-stone-700 hover:bg-stone-600 text-white p-1.5 rounded opacity-80 hover:opacity-100 transition-opacity"
+                title="Reset zoom"
+                aria-label="Reset zoom"
+              >
+                <RotateCcw size={16} />
+              </button>
+            )}
+            <ContextMenuWrapper menuItems={contextMenuItems} className="h-full">
+              <div
+                className="h-full overflow-visible"
+                onMouseDown={(e) => {
+                  if (e.detail > 1) e.preventDefault();
+                }}
+              >
+                <div className="flex-grow min-w-0 h-full select-none">
+                  <ChartContainer
+                    ref={chartRef}
+                    config={chartConfig}
+                    className="w-full h-full"
                   >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#555" />
-                    /* X axis for time */
-                    <XAxis
-                      data={chartData}
-                      dataKey="obs_start_dt"
-                      type="number"
-                      domain={[xMin, xMax]}
-                      scale="time"
-                      ticks={xTicks}
-                      tickFormatter={(tick) =>
-                        DateTime.fromMillis(tick).toFormat("HH:mm")
-                      }
-                      tick={{ fill: "white" }}
-                      label={{
-                        value: "Observation Start Time (TAI)",
-                        position: "bottom",
-                        fill: "white",
-                        dy: -10,
-                      }}
-                      padding={{ left: 10, right: 10 }}
-                    />
-                    /* Y axis for PSF FWHM */
-                    <YAxis
-                      yAxisId="left"
-                      tick={{ fill: "white" }}
-                      domain={["auto", "auto"]}
-                      tickFormatter={(tick) => Number(tick).toFixed(1)}
-                      label={{
-                        value: "PSF FWHM (arcsec)",
-                        angle: -90,
-                        position: "insideLeft",
-                        fill: "white",
-                        dx: 0,
-                        dy: 40,
-                      }}
-                      width={50}
-                    />
-                    /* Y axis for Zero Point Median */
-                    <YAxis
-                      yAxisId="right"
-                      orientation="right"
-                      tick={{ fill: "white" }}
-                      domain={[zeroPointMedianMin, "auto"]}
-                      label={{
-                        value: "Zero Points (mag)",
-                        angle: 90,
-                        position: "insideRight",
-                        dx: -10,
-                        dy: 30,
-                        fill: "white",
-                      }}
-                      width={50}
-                    />
-                    /* Shutter closed areas */
-                    {gapAreas.map((gap, i) => (
-                      <ReferenceArea
-                        key={`gap-${i}`}
-                        x1={gap.start}
-                        x2={gap.end}
-                        yAxisId="left"
-                        strokeOpacity={0}
-                        fill="#147570ff"
-                        fillOpacity={0.4}
+                    <ComposedChart
+                      onMouseDown={mouseDown}
+                      onMouseMove={mouseMove}
+                      onMouseUp={mouseUp}
+                      onMouseLeave={mouseLeave}
+                      onDoubleClick={doubleClick}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#555" />
+                      /* X axis for time */
+                      <XAxis
+                        data={chartData}
+                        dataKey="obs_start_dt"
+                        type="number"
+                        domain={[selectedMinMillis, selectedMaxMillis]}
+                        allowDataOverflow={true}
+                        scale="time"
+                        ticks={xTicks}
+                        tickFormatter={(tick) =>
+                          DateTime.fromMillis(tick).toFormat("HH:mm")
+                        }
+                        tick={{ fill: "white" }}
+                        label={{
+                          value: "Observation Start Time (TAI)",
+                          position: "bottom",
+                          fill: "white",
+                          dy: -10,
+                        }}
+                        padding={{ left: 10, right: 10 }}
                       />
-                    ))}
-                    {/* Selected time range highlight */}
-                    {selectedMinMillis && selectedMaxMillis ? (
-                      <ReferenceArea
-                        x1={selectedMinMillis}
-                        x2={selectedMaxMillis}
+                      /* Y axis for PSF FWHM */
+                      <YAxis
                         yAxisId="left"
-                        stroke="hotPink"
-                        fillOpacity={0.2}
-                        className="selection-highlight"
+                        tick={{ fill: "white" }}
+                        domain={currentPsfYDomain}
+                        allowDataOverflow={true}
+                        tickFormatter={(tick) => Number(tick).toFixed(1)}
+                        label={{
+                          value: "PSF FWHM (arcsec)",
+                          angle: -90,
+                          position: "insideLeft",
+                          fill: "white",
+                          dx: 0,
+                          dy: 40,
+                        }}
+                        width={50}
                       />
-                    ) : null}
-                    /* twilight reference lines */
-                    {twilightValues.map((twi, i) =>
-                      typeof twi === "number" &&
-                      !isNaN(twi) &&
-                      xMin <= twi &&
-                      twi <= xMax ? (
-                        <ReferenceLine
-                          key={`twilight-${i}-${twi}`}
-                          x={twi}
-                          stroke="#3eb7ff"
-                          yAxisId="left"
-                          strokeDasharray="5 5"
-                        />
-                      ) : null,
-                    )}
-                    <ChartTooltip
-                      content={<CustomTooltip />}
-                      cursor={{ strokeDasharray: "3 3", stroke: "#ffffff" }}
-                      allowEscapeViewBox={{ x: true, y: true }}
-                      offset={20}
-                      wrapperStyle={{ opacity: 0.9 }}
-                    />
-                    /* line plots for zero point median filtered by band */
-                    <Line
-                      name="zero_point_median_u"
-                      yAxisId="right"
-                      type="monotone"
-                      dataKey="zero_point_median"
-                      dot={{
-                        r: 1,
-                        fill: BAND_COLORS.u,
-                        stroke: BAND_COLORS.u,
-                        strokeOpacity: uOpacity,
-                        fillOpacity: uOpacity,
-                      }}
-                      strokeOpacity={uOpacity}
-                      data={dataWithNightGaps(groupedChartData, "u")}
-                      isAnimationActive={false}
-                    />
-                    <Line
-                      name="zero_point_median_g"
-                      yAxisId="right"
-                      type="monotone"
-                      dataKey="zero_point_median"
-                      stroke={BAND_COLORS.g}
-                      strokeOpacity={gOpacity}
-                      dot={(props) => {
-                        const { key, ...rest } = props;
-                        return (
-                          <TriangleShape
-                            key={key}
-                            {...rest}
-                            fill={BAND_COLORS.g}
-                            r={2}
-                            strokeOpacity={gOpacity}
-                            fillOpacity={gOpacity}
+                      /* Y axis for Zero Point Median */
+                      <YAxis
+                        yAxisId="right"
+                        orientation="right"
+                        tick={{ fill: "white" }}
+                        domain={currentZeroPointYDomain}
+                        allowDataOverflow={true}
+                        tickFormatter={(tick) => Number(tick).toFixed(2)}
+                        label={{
+                          value: "Zero Points (mag)",
+                          angle: 90,
+                          position: "insideRight",
+                          dx: -10,
+                          dy: 30,
+                          fill: "white",
+                        }}
+                        width={50}
+                      />
+                      /* Shutter closed areas - clamp to visible range to
+                      prevent Recharts culling */
+                      {gapAreas
+                        .filter(
+                          (gap) =>
+                            gap.start < selectedMaxMillis &&
+                            gap.end > selectedMinMillis,
+                        )
+                        .map((gap, i) => (
+                          <ReferenceArea
+                            key={`gap-${i}`}
+                            x1={Math.max(gap.start, selectedMinMillis)}
+                            x2={Math.min(gap.end, selectedMaxMillis)}
+                            yAxisId="left"
+                            strokeOpacity={0}
+                            fill="#147570ff"
+                            fillOpacity={0.4}
                           />
-                        );
-                      }}
-                      data={dataWithNightGaps(groupedChartData, "g")}
-                      isAnimationActive={false}
-                    />
-                    <Line
-                      name="zero_point_median_r"
-                      yAxisId="right"
-                      type="monotone"
-                      dataKey="zero_point_median"
-                      stroke={BAND_COLORS.r}
-                      strokeOpacity={rOpacity}
-                      dot={(props) => {
-                        const { key, ...rest } = props;
-                        return (
-                          <FlippedTriangleShape
-                            key={key}
-                            {...rest}
-                            fill={BAND_COLORS.r}
-                            r={2}
-                            strokeOpacity={rOpacity}
-                            fillOpacity={rOpacity}
+                        ))}
+                      /* twilight reference lines */
+                      {twilightValues.map((twi, i) =>
+                        typeof twi === "number" &&
+                        !isNaN(twi) &&
+                        xMin <= twi &&
+                        twi <= xMax ? (
+                          <ReferenceLine
+                            key={`twilight-${i}-${twi}`}
+                            x={twi}
+                            stroke="#3eb7ff"
+                            yAxisId="left"
+                            strokeDasharray="5 5"
                           />
-                        );
-                      }}
-                      data={dataWithNightGaps(groupedChartData, "r")}
-                      isAnimationActive={false}
-                    />
-                    <Line
-                      name="zero_point_median_i"
-                      yAxisId="right"
-                      type="monotone"
-                      dataKey="zero_point_median"
-                      stroke={BAND_COLORS.i}
-                      strokeOpacity={iOpacity}
-                      dot={(props) => {
-                        const { key, ...rest } = props;
-                        return (
-                          <SquareShape
-                            key={key}
-                            {...rest}
-                            fill={BAND_COLORS.i}
-                            r={2}
-                            strokeOpacity={iOpacity}
-                            fillOpacity={iOpacity}
-                          />
-                        );
-                      }}
-                      data={dataWithNightGaps(groupedChartData, "i")}
-                      isAnimationActive={false}
-                    />
-                    <Line
-                      name="zero_point_median_z"
-                      yAxisId="right"
-                      type="monotone"
-                      dataKey="zero_point_median"
-                      stroke={BAND_COLORS.z}
-                      strokeOpacity={zOpacity}
-                      dot={(props) => {
-                        const { key, ...rest } = props;
-                        return (
-                          <StarShape
-                            key={key}
-                            {...rest}
-                            fill={BAND_COLORS.z}
-                            r={2}
-                            strokeOpacity={zOpacity}
-                            fillOpacity={zOpacity}
-                          />
-                        );
-                      }}
-                      data={dataWithNightGaps(groupedChartData, "z")}
-                      isAnimationActive={false}
-                    />
-                    <Line
-                      name="zero_point_median_y"
-                      yAxisId="right"
-                      type="monotone"
-                      dataKey="zero_point_median"
-                      stroke={BAND_COLORS.y}
-                      strokeOpacity={yOpacity}
-                      dot={(props) => {
-                        const { key, ...rest } = props;
-                        return (
-                          <AsteriskShape
-                            key={key}
-                            {...rest}
-                            fill={BAND_COLORS.y}
-                            r={2}
-                            strokeOpacity={yOpacity}
-                            fillOpacity={yOpacity}
-                          />
-                        );
-                      }}
-                      data={dataWithNightGaps(groupedChartData, "y")}
-                      isAnimationActive={false}
-                    />
-                    /* Scatter plot for PSF FWHM */
-                    <Scatter
-                      name="psf_median"
-                      dataKey="psf_median"
-                      fill="white"
-                      shape={(props) => <XShape {...props} />}
-                      yAxisId="left"
-                      data={chartData}
-                      isAnimationActive={false}
-                    />
-                    <ChartLegend
-                      layout={"vertical"}
-                      verticalAlign={"middle"}
-                      align={"right"}
-                      content={renderCustomLegend}
-                      onMouseEnter={handleMouseEnter}
-                      onMouseLeave={handleMouseLeave}
-                    />
-                  </ComposedChart>
-                </ChartContainer>
+                        ) : null,
+                      )}
+                      <ChartTooltip
+                        content={<CustomTooltip />}
+                        cursor={{ strokeDasharray: "3 3", stroke: "#ffffff" }}
+                        allowEscapeViewBox={{ x: true, y: true }}
+                        offset={20}
+                        wrapperStyle={{ opacity: 0.9 }}
+                      />
+                      /* line plots for zero point median filtered by band */
+                      <Line
+                        name="zero_point_median_u"
+                        yAxisId="right"
+                        type="monotone"
+                        dataKey="zero_point_median"
+                        dot={{
+                          r: 1,
+                          fill: BAND_COLORS.u,
+                          stroke: BAND_COLORS.u,
+                          strokeOpacity: uOpacity,
+                          fillOpacity: uOpacity,
+                        }}
+                        strokeOpacity={uOpacity}
+                        data={dataWithNightGaps(groupedChartData, "u")}
+                        isAnimationActive={false}
+                      />
+                      <Line
+                        name="zero_point_median_g"
+                        yAxisId="right"
+                        type="monotone"
+                        dataKey="zero_point_median"
+                        stroke={BAND_COLORS.g}
+                        strokeOpacity={gOpacity}
+                        dot={(props) => {
+                          const { key, ...rest } = props;
+                          return (
+                            <TriangleShape
+                              key={key}
+                              {...rest}
+                              fill={BAND_COLORS.g}
+                              r={2}
+                              strokeOpacity={gOpacity}
+                              fillOpacity={gOpacity}
+                            />
+                          );
+                        }}
+                        data={dataWithNightGaps(groupedChartData, "g")}
+                        isAnimationActive={false}
+                      />
+                      <Line
+                        name="zero_point_median_r"
+                        yAxisId="right"
+                        type="monotone"
+                        dataKey="zero_point_median"
+                        stroke={BAND_COLORS.r}
+                        strokeOpacity={rOpacity}
+                        dot={(props) => {
+                          const { key, ...rest } = props;
+                          return (
+                            <FlippedTriangleShape
+                              key={key}
+                              {...rest}
+                              fill={BAND_COLORS.r}
+                              r={2}
+                              strokeOpacity={rOpacity}
+                              fillOpacity={rOpacity}
+                            />
+                          );
+                        }}
+                        data={dataWithNightGaps(groupedChartData, "r")}
+                        isAnimationActive={false}
+                      />
+                      <Line
+                        name="zero_point_median_i"
+                        yAxisId="right"
+                        type="monotone"
+                        dataKey="zero_point_median"
+                        stroke={BAND_COLORS.i}
+                        strokeOpacity={iOpacity}
+                        dot={(props) => {
+                          const { key, ...rest } = props;
+                          return (
+                            <SquareShape
+                              key={key}
+                              {...rest}
+                              fill={BAND_COLORS.i}
+                              r={2}
+                              strokeOpacity={iOpacity}
+                              fillOpacity={iOpacity}
+                            />
+                          );
+                        }}
+                        data={dataWithNightGaps(groupedChartData, "i")}
+                        isAnimationActive={false}
+                      />
+                      <Line
+                        name="zero_point_median_z"
+                        yAxisId="right"
+                        type="monotone"
+                        dataKey="zero_point_median"
+                        stroke={BAND_COLORS.z}
+                        strokeOpacity={zOpacity}
+                        dot={(props) => {
+                          const { key, ...rest } = props;
+                          return (
+                            <StarShape
+                              key={key}
+                              {...rest}
+                              fill={BAND_COLORS.z}
+                              r={2}
+                              strokeOpacity={zOpacity}
+                              fillOpacity={zOpacity}
+                            />
+                          );
+                        }}
+                        data={dataWithNightGaps(groupedChartData, "z")}
+                        isAnimationActive={false}
+                      />
+                      <Line
+                        name="zero_point_median_y"
+                        yAxisId="right"
+                        type="monotone"
+                        dataKey="zero_point_median"
+                        stroke={BAND_COLORS.y}
+                        strokeOpacity={yOpacity}
+                        dot={(props) => {
+                          const { key, ...rest } = props;
+                          return (
+                            <AsteriskShape
+                              key={key}
+                              {...rest}
+                              fill={BAND_COLORS.y}
+                              r={2}
+                              strokeOpacity={yOpacity}
+                              fillOpacity={yOpacity}
+                            />
+                          );
+                        }}
+                        data={dataWithNightGaps(groupedChartData, "y")}
+                        isAnimationActive={false}
+                      />
+                      /* Scatter plot for PSF FWHM */
+                      <Scatter
+                        name="psf_median"
+                        dataKey="psf_median"
+                        fill="white"
+                        shape={(props) => <XShape {...props} />}
+                        yAxisId="left"
+                        data={chartData}
+                        isAnimationActive={false}
+                      />
+                      <ChartLegend
+                        layout={"vertical"}
+                        verticalAlign={"middle"}
+                        align={"right"}
+                        content={renderCustomLegend}
+                        onMouseEnter={handleMouseEnter}
+                        onMouseLeave={handleMouseLeave}
+                      />
+                    </ComposedChart>
+                  </ChartContainer>
+                </div>
               </div>
-            </div>
-          </ContextMenuWrapper>
+            </ContextMenuWrapper>
+          </>
         )}
       </CardContent>
     </Card>
