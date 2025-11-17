@@ -34,7 +34,8 @@ import { BAND_COLORS } from "@/components/PLOT_DEFINITIONS";
 import { useDOMClickDrag } from "@/hooks/useDOMClickDrag";
 import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
 import { RotateCcw } from "lucide-react";
-import { getChartPlotBounds } from "@/utils/plotUtils";
+import { calculateYZoomFractionsFromSelection } from "@/utils/plotUtils";
+import { millisToDateTime } from "@/utils/timeUtils";
 
 import {
   DEFAULT_PIXEL_SCALE_MEDIAN,
@@ -402,70 +403,58 @@ function ObservingConditionsApplet({
     return [autoMin + yMinFraction * range, autoMin + yMaxFraction * range];
   }, [zeroPointAutoYDomain, yMinFraction, yMaxFraction]);
 
-  // Function to convert pixel Y coordinate to data Y value (using PSF domain)
-  const pixelToDataY = useCallback(
-    (pixelY) => {
-      const bbox = getChartPlotBounds(chartRef.current);
-      if (!bbox) return null;
+  // Click & Drag plot hooks - callback uses fractions for both X and Y
+  const handleSelection = useCallback(
+    (start, end, event) => {
+      // X-axis: Calculate from fractions of selectedTimeRange
+      const startMillis = selectedTimeRange[0].toMillis();
+      const endMillis = selectedTimeRange[1].toMillis();
+      const range = endMillis - startMillis;
 
-      const plotTop = bbox.y;
-      const plotHeight = bbox.height;
+      const startTime = millisToDateTime(
+        Math.round(startMillis + start.fractionX * range),
+      );
+      const endTime = millisToDateTime(
+        Math.round(startMillis + end.fractionX * range),
+      );
 
-      // Convert pixel position to fraction of height
-      // SVG Y increases downward, but data Y increases upward
-      const relativeY = pixelY - plotTop;
-      const fraction = 1 - relativeY / plotHeight; // Invert
+      const minTime = startTime < endTime ? startTime : endTime;
+      const maxTime = startTime < endTime ? endTime : startTime;
+      setSelectedTimeRange([minTime, maxTime]);
 
-      // Map fraction to data range (using PSF domain as reference)
-      const [yMin, yMax] = currentPsfYDomain;
-      const dataY = yMin + fraction * (yMax - yMin);
-
-      return dataY;
-    },
-    [currentPsfYDomain],
-  );
-
-  // Y-axis zoom callback - converts pixel selection to fraction-based zoom
-  const onYAxisZoom = useCallback(
-    (startYPixel, endYPixel) => {
-      // Convert pixels to data values (accounts for current zoom)
-      const yStart = pixelToDataY(startYPixel);
-      const yEnd = pixelToDataY(endYPixel);
-
-      if (yStart !== null && yEnd !== null) {
-        const [autoMin, autoMax] = psfAutoYDomain;
-        const range = autoMax - autoMin;
-
-        const yMin = Math.min(yStart, yEnd);
-        const yMax = Math.max(yStart, yEnd);
-
-        // Convert data values to fractions of the original auto domain
-        const minFraction = (yMin - autoMin) / range;
-        const maxFraction = (yMax - autoMin) / range;
-
-        // Clamp to valid range and avoid zero-height selection
-        if (maxFraction - minFraction > 0.01) {
-          setYMinFraction(Math.max(0, minFraction));
-          setYMaxFraction(Math.min(1, maxFraction));
-        }
+      // Y-axis: Only update if shift not held
+      if (!event.shiftKey) {
+        const result = calculateYZoomFractionsFromSelection(
+          start.fractionY,
+          end.fractionY,
+          currentPsfYDomain,
+          psfAutoYDomain,
+        );
+        setYMinFraction(result.minFraction);
+        setYMaxFraction(result.maxFraction);
       }
     },
-    [pixelToDataY, psfAutoYDomain],
+    [
+      setSelectedTimeRange,
+      setYMinFraction,
+      setYMaxFraction,
+      selectedTimeRange,
+      currentPsfYDomain,
+      psfAutoYDomain,
+    ],
   );
 
-  // Click & Drag plot hooks
   const { mouseDown, mouseMove, mouseUp, mouseLeave, doubleClick } =
     useDOMClickDrag({
-      callback: setSelectedTimeRange,
+      callback: handleSelection,
       resetCallback: () => {
         setSelectedTimeRange(fullTimeRange);
         setYMinFraction(0);
         setYMaxFraction(1);
       },
       chartRef,
-      selectedTimeRange,
       enable2DSelection: true,
-      onYAxisZoom: onYAxisZoom,
+      showSnappedRect: false,
     });
 
   // retrieve twilight times from almanacInfo
@@ -696,7 +685,6 @@ function ObservingConditionsApplet({
                           fill: "white",
                           dy: -10,
                         }}
-                        padding={{ left: 10, right: 10 }}
                       />
                       /* Y axis for PSF FWHM */
                       <YAxis
