@@ -286,41 +286,6 @@ function ObservingConditionsApplet({
   const [yMinFraction, setYMinFraction] = useState(0);
   const [yMaxFraction, setYMaxFraction] = useState(1);
 
-  // Y-axis zoom callback - converts pixel selection to fraction-based zoom
-  const onYAxisZoom = useCallback((startYPixel, endYPixel) => {
-    const bbox = getChartPlotBounds(chartRef.current);
-    if (!bbox) return;
-
-    // Convert pixels to fractions of plot height
-    // SVG Y increases downward, but fraction 0 = bottom, 1 = top
-    const startFraction = 1 - (startYPixel - bbox.y) / bbox.height;
-    const endFraction = 1 - (endYPixel - bbox.y) / bbox.height;
-
-    const minFraction = Math.min(startFraction, endFraction);
-    const maxFraction = Math.max(startFraction, endFraction);
-
-    // Avoid zero-height selection
-    if (maxFraction - minFraction > 0.01) {
-      setYMinFraction(minFraction);
-      setYMaxFraction(maxFraction);
-    }
-  }, []);
-
-  // Click & Drag plot hooks
-  const { mouseDown, mouseMove, mouseUp, mouseLeave, doubleClick } =
-    useDOMClickDrag({
-      callback: setSelectedTimeRange,
-      resetCallback: () => {
-        setSelectedTimeRange(fullTimeRange);
-        setYMinFraction(0);
-        setYMaxFraction(1);
-      },
-      chartRef,
-      selectedTimeRange,
-      enable2DSelection: true,
-      onYAxisZoom: onYAxisZoom,
-    });
-
   const [hoveringBand, setHoveringBand] = useState(null); // to track the hovered band
 
   // Convert selected time range to millis for ReferenceArea
@@ -436,6 +401,72 @@ function ObservingConditionsApplet({
     const range = autoMax - autoMin;
     return [autoMin + yMinFraction * range, autoMin + yMaxFraction * range];
   }, [zeroPointAutoYDomain, yMinFraction, yMaxFraction]);
+
+  // Function to convert pixel Y coordinate to data Y value (using PSF domain)
+  const pixelToDataY = useCallback(
+    (pixelY) => {
+      const bbox = getChartPlotBounds(chartRef.current);
+      if (!bbox) return null;
+
+      const plotTop = bbox.y;
+      const plotHeight = bbox.height;
+
+      // Convert pixel position to fraction of height
+      // SVG Y increases downward, but data Y increases upward
+      const relativeY = pixelY - plotTop;
+      const fraction = 1 - relativeY / plotHeight; // Invert
+
+      // Map fraction to data range (using PSF domain as reference)
+      const [yMin, yMax] = currentPsfYDomain;
+      const dataY = yMin + fraction * (yMax - yMin);
+
+      return dataY;
+    },
+    [currentPsfYDomain],
+  );
+
+  // Y-axis zoom callback - converts pixel selection to fraction-based zoom
+  const onYAxisZoom = useCallback(
+    (startYPixel, endYPixel) => {
+      // Convert pixels to data values (accounts for current zoom)
+      const yStart = pixelToDataY(startYPixel);
+      const yEnd = pixelToDataY(endYPixel);
+
+      if (yStart !== null && yEnd !== null) {
+        const [autoMin, autoMax] = psfAutoYDomain;
+        const range = autoMax - autoMin;
+
+        const yMin = Math.min(yStart, yEnd);
+        const yMax = Math.max(yStart, yEnd);
+
+        // Convert data values to fractions of the original auto domain
+        const minFraction = (yMin - autoMin) / range;
+        const maxFraction = (yMax - autoMin) / range;
+
+        // Clamp to valid range and avoid zero-height selection
+        if (maxFraction - minFraction > 0.01) {
+          setYMinFraction(Math.max(0, minFraction));
+          setYMaxFraction(Math.min(1, maxFraction));
+        }
+      }
+    },
+    [pixelToDataY, psfAutoYDomain],
+  );
+
+  // Click & Drag plot hooks
+  const { mouseDown, mouseMove, mouseUp, mouseLeave, doubleClick } =
+    useDOMClickDrag({
+      callback: setSelectedTimeRange,
+      resetCallback: () => {
+        setSelectedTimeRange(fullTimeRange);
+        setYMinFraction(0);
+        setYMaxFraction(1);
+      },
+      chartRef,
+      selectedTimeRange,
+      enable2DSelection: true,
+      onYAxisZoom: onYAxisZoom,
+    });
 
   // retrieve twilight times from almanacInfo
   // and convert them to milliseconds
