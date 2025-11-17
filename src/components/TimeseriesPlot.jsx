@@ -68,8 +68,9 @@ function TimeseriesPlot({
   // Generate unique ID for this graph
   const graphID = useId();
 
-  // State for Y-axis zoom
-  const [yDomain, setYDomain] = useState(null);
+  // State for Y-axis zoom (fraction-based: 0 = bottom, 1 = top of auto range)
+  const [yMinFraction, setYMinFraction] = useState(0);
+  const [yMaxFraction, setYMaxFraction] = useState(1);
 
   // Destructure with defaults to handle null case
   const {
@@ -93,10 +94,8 @@ function TimeseriesPlot({
     selectedMaxMillis = 0,
   } = plotData || {};
 
-  // Calculate current effective Y domain
-  const currentYDomain = useMemo(() => {
-    if (yDomain) return yDomain;
-
+  // Calculate auto Y-axis domain from all data
+  const autoYDomain = useMemo(() => {
     // Auto-calculate from ALL data (not just visible in current time range)
     const values = allData
       .map((d) => d[dataKey])
@@ -112,7 +111,14 @@ function TimeseriesPlot({
     const padding = range * 0.05;
 
     return [min - padding, max + padding];
-  }, [yDomain, allData, dataKey]);
+  }, [allData, dataKey]);
+
+  // Calculate current Y domain with zoom applied (fraction-based)
+  const currentYDomain = useMemo(() => {
+    const [autoMin, autoMax] = autoYDomain;
+    const range = autoMax - autoMin;
+    return [autoMin + yMinFraction * range, autoMin + yMaxFraction * range];
+  }, [autoYDomain, yMinFraction, yMaxFraction]);
 
   // Function to convert pixel Y coordinate to data Y value
   const pixelToDataY = useCallback(
@@ -147,7 +153,8 @@ function TimeseriesPlot({
       indexToMillis,
       resetCallback: () => {
         setSelectedTimeRange(fullTimeRange);
-        setYDomain(null); // Reset Y-axis too
+        setYMinFraction(0);
+        setYMaxFraction(1);
       },
       chartRef,
       selectedTimeRange: [fullTimeRange[0], fullTimeRange[1]], // For shift-extend
@@ -172,21 +179,26 @@ function TimeseriesPlot({
         hoverStore.setHover(state.activePayload[0].payload["exposure id"]);
       },
       onYAxisZoom: (startYPixel, endYPixel) => {
+        // Convert pixels to data values (accounts for current zoom)
         const yStart = pixelToDataY(startYPixel);
         const yEnd = pixelToDataY(endYPixel);
 
         if (yStart !== null && yEnd !== null) {
+          const [autoMin, autoMax] = autoYDomain;
+          const range = autoMax - autoMin;
+
           const yMin = Math.min(yStart, yEnd);
           const yMax = Math.max(yStart, yEnd);
 
-          // Add padding for better visualization
-          const range = yMax - yMin;
-          const padding = range * 0.05;
+          // Convert data values to fractions of the original auto domain
+          const minFraction = (yMin - autoMin) / range;
+          const maxFraction = (yMax - autoMin) / range;
 
-          // Avoid zero-height selection
-          if (range > 0) {
-            const newDomain = [yMin - padding, yMax + padding];
-            setYDomain(newDomain);
+          console.log(maxFraction, minFraction, maxFraction - minFraction);
+          // Clamp to valid range and avoid zero-height selection
+          if (maxFraction - minFraction > 0.01) {
+            setYMinFraction(Math.max(0, minFraction));
+            setYMaxFraction(Math.min(1, maxFraction));
           }
         }
       },
@@ -281,9 +293,12 @@ function TimeseriesPlot({
       <h1 className="text-white text-lg font-thin text-center">{title}</h1>
 
       {/* Y-axis reset button */}
-      {yDomain !== null && (
+      {(yMinFraction !== 0 || yMaxFraction !== 1) && (
         <button
-          onClick={() => setYDomain(null)}
+          onClick={() => {
+            setYMinFraction(0);
+            setYMaxFraction(1);
+          }}
           className="absolute top-2 right-2 z-10 bg-stone-700 hover:bg-stone-600 text-white p-1.5 rounded opacity-80 hover:opacity-100 transition-opacity"
           title="Reset Y-axis zoom"
           aria-label="Reset Y-axis zoom"
