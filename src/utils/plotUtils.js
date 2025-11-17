@@ -65,3 +65,50 @@ export function calculateDecimalPlaces(yRange) {
   if (yRange === 0) return 0;
   return 3;
 }
+
+/**
+ * Converts Y-axis selection fractions to auto-domain fractions for zoom state.
+ * Takes fractions from a drag selection (relative to current visible Y domain)
+ * and converts them to fractions relative to the auto (full) Y domain.
+ *
+ * @param {number} startFractionY - Start fraction [0,1] of current Y domain
+ * @param {number} endFractionY - End fraction [0,1] of current Y domain
+ * @param {[number, number]} currentYDomain - Current visible Y domain [min, max]
+ * @param {[number, number]} autoYDomain - Auto (full) Y domain [min, max]
+ * @param {number} [minSelectionFraction=0.01] - Minimum selection size (1% of auto range)
+ * @returns {{minFraction: number, maxFraction: number}} Auto-domain fractions
+ */
+export function calculateYZoomFractionsFromSelection(
+  startFractionY,
+  endFractionY,
+  currentYDomain,
+  autoYDomain,
+  minSelectionFraction = 0.01,
+) {
+  // Map fractions to data Y values (using current domain)
+  const [currentMin, currentMax] = currentYDomain;
+  const currentRange = currentMax - currentMin;
+  const startY = currentMin + startFractionY * currentRange;
+  const endY = currentMin + endFractionY * currentRange;
+
+  // Map data Y values to fractions of auto domain
+  const [autoMin, autoMax] = autoYDomain;
+  const autoRange = autoMax - autoMin;
+  const yMin = Math.min(startY, endY);
+  const yMax = Math.max(startY, endY);
+  let minFraction = (yMin - autoMin) / autoRange;
+  let maxFraction = (yMax - autoMin) / autoRange;
+
+  // Ensure minimum selection size
+  if (maxFraction - minFraction < minSelectionFraction) {
+    const center = (minFraction + maxFraction) / 2;
+    minFraction = center - minSelectionFraction / 2;
+    maxFraction = center + minSelectionFraction / 2;
+  }
+
+  // Clamp to valid range [0, 1]
+  return {
+    minFraction: Math.max(0, minFraction),
+    maxFraction: Math.min(1, maxFraction),
+  };
+}

@@ -1,4 +1,3 @@
-import { millisToDateTime } from "@/utils/timeUtils";
 import { getChartPlotBounds } from "@/utils/plotUtils";
 import { useCallback, useRef } from "react";
 
@@ -11,12 +10,10 @@ import { useCallback, useRef } from "react";
  * - Snapped rect: Snaps to nearest data point using Recharts' activeCoordinate
  *
  * @param {Object} params - Configuration object
- * @param {Function} params.callback - Called on mouseUp with [startTime, endTime] from indexToMillis
+ * @param {Function} params.callback - Called on mouseUp with (start: MousePosition, end: MousePosition, event: MouseEvent)
+ *   MousePosition = { pixelX, pixelY, fractionX, fractionY, nearestPayload }
  * @param {Function} params.resetCallback - Called on doubleClick to reset selection
  * @param {React.MutableRefObject} params.chartRef - Ref to the LineChart component to find SVG container
- * @param {[DateTime, DateTime]} [params.selectedTimeRange] - Current selected time range.
- * @param {Function} [params.indexToMillis] - Converts activeLabel (domain value) to milliseconds. Defaults to identity function (for time series charts).
- * @param {Function} [params.millisToIndex] - Converts milliseconds to activeLabel (domain value).
  * @param {boolean} [params.showMouseRect=true] - Whether to show the mouse tracking rectangle
  * @param {boolean} [params.showSnappedRect=true] - Whether to show the snapped selection rectangle
  * @param {Object} [params.mouseRectStyle] - Style object for mouse tracking rectangle (fill, stroke, etc.)
@@ -26,15 +23,19 @@ import { useCallback, useRef } from "react";
  * @param {Function} [params.onMouseUp] - Optional callback after mouseUp, receives (chartState, dragState)
  * @param {Function} [params.onDoubleClick] - Optional callback after doubleClick, receives (chartState, dragState)
  * @param {Function} [params.onMouseLeave] - Optional callback after mouseLeave, receives (dragState)
+ * @param {boolean} [params.enable2DSelection=false] - Whether to enable 2D (X and Y) selection
  *
- * @returns {Object} Event handlers and state: { mouseDown, mouseMove, mouseUp, doubleClick, dragState }
+ * @returns {Object} Event handlers and state: { mouseDown, mouseMove, mouseUp, doubleClick, mouseLeave, dragState }
  *
  * @example
  * const chartRef = useRef(null);
  *
- * const { mouseDown, mouseMove, mouseUp, doubleClick, dragState } = useDOMClickDrag({
- *   callback: ([start, end]) => setSelectedTimeRange([start, end]),
- *   indexToMillis: (label) => label,
+ * const { mouseDown, mouseMove, mouseUp, doubleClick, mouseLeave, dragState } = useDOMClickDrag({
+ *   callback: (start, end, event) => {
+ *     const startTime = millisToDateTime(start.nearestPayload.timestamp);
+ *     const endTime = millisToDateTime(end.nearestPayload.timestamp);
+ *     setSelectedTimeRange([startTime, endTime]);
+ *   },
  *   resetCallback: () => resetToFullRange(),
  *   chartRef,
  *   showMouseRect: false,
@@ -52,6 +53,7 @@ import { useCallback, useRef } from "react";
  *     onMouseMove={mouseMove}
  *     onMouseUp={mouseUp}
  *     onDoubleClick={doubleClick}
+ *     onMouseLeave={mouseLeave}
  *   >
  *     ... LineChart contents
  *   </LineChart>
@@ -61,9 +63,6 @@ export function useDOMClickDrag({
   callback,
   resetCallback,
   chartRef,
-  selectedTimeRange,
-  indexToMillis = (label) => label,
-  millisToIndex = (millis) => millis,
   showMouseRect = true,
   showSnappedRect = true,
   mouseRectStyle = {},
@@ -73,7 +72,6 @@ export function useDOMClickDrag({
   onMouseUp: onMouseUpCallback,
   onDoubleClick: onDoubleClickCallback,
   onMouseLeave: onMouseLeaveCallback,
-  onYAxisZoom: onYAxisZoomCallback,
   enable2DSelection = false,
 }) {
   // Internal refs for the rect elements
@@ -85,7 +83,7 @@ export function useDOMClickDrag({
     isDragging: false,
     startPixel: null, // chartX from initial click (for mouseRef)
     startCoordinate: null, // activeCoordinate.x from initial click (for snappedRef)
-    startLabel: null, // activeLabel (for callback)
+    startPayload: null, // activePayload[0]?.payload from initial click (for callback)
     startYPixel: null, // chartY from initial click (for Y-axis zoom)
   });
 
@@ -248,24 +246,12 @@ export function useDOMClickDrag({
         return;
       }
 
-      let startLabel = chartState.activeLabel;
       let startPixel = chartState.chartX;
       let startCoordinate = chartState.activeCoordinate.x;
+      let startPayload = chartState.activePayload?.[0]?.payload || null;
 
       // Shift-extend: extend from the farther edge of the current selection
-      if (event?.shiftKey && selectedTimeRange?.[0] && selectedTimeRange?.[1]) {
-        const clickedLabel = chartState.activeLabel;
-
-        // Convert current selection endpoints to index values
-        const selectionStartMillis = selectedTimeRange[0].toMillis();
-        const selectionEndMillis = selectedTimeRange[1].toMillis();
-        const selectionStartLabel = millisToIndex(selectionStartMillis);
-        const selectionEndLabel = millisToIndex(selectionEndMillis);
-
-        // Find which endpoint is farther from the click
-        const distToStart = Math.abs(clickedLabel - selectionStartLabel);
-        const distToEnd = Math.abs(clickedLabel - selectionEndLabel);
-
+      if (event?.shiftKey) {
         // Find the selection ReferenceArea path to get pixel positions
         const selectionPath = chartRef.current?.querySelector(
           ".selection-highlight path",
@@ -276,16 +262,22 @@ export function useDOMClickDrag({
           const rectWidth = parseFloat(selectionPath.getAttribute("width"));
 
           if (!isNaN(rectX) && !isNaN(rectWidth)) {
-            // Use the farther endpoint
+            const clickedPixel = chartState.activeCoordinate.x;
+
+            // Find which endpoint is farther from the click (using pixel positions)
+            const distToStart = Math.abs(clickedPixel - rectX);
+            const distToEnd = Math.abs(clickedPixel - (rectX + rectWidth));
+
+            // Use the farther endpoint as the start point
             if (distToStart > distToEnd) {
-              startLabel = selectionStartLabel;
               startPixel = rectX; // Left edge
               startCoordinate = rectX;
             } else {
-              startLabel = selectionEndLabel;
               startPixel = rectX + rectWidth; // Right edge
               startCoordinate = rectX + rectWidth;
             }
+            // Note: startPayload remains from the current click position
+            // The callback will receive start/end in visual order (swapped in mouseUp if needed)
           }
         }
         // If we can't get the pixel position, fall back to normal drag behavior
@@ -294,7 +286,7 @@ export function useDOMClickDrag({
       dragState.current.isDragging = true;
       dragState.current.startPixel = startPixel;
       dragState.current.startCoordinate = startCoordinate;
-      dragState.current.startLabel = startLabel;
+      dragState.current.startPayload = startPayload;
       dragState.current.startYPixel = chartState.chartY;
 
       // Make areas visible based on configuration
@@ -323,8 +315,6 @@ export function useDOMClickDrag({
       showMouseRect,
       showSnappedRect,
       onMouseDownCallback,
-      selectedTimeRange,
-      millisToIndex,
       chartRef,
       updateSelectionRects,
     ],
@@ -364,29 +354,63 @@ export function useDOMClickDrag({
     (chartState, event) => {
       if (!dragState.current.isDragging) return;
 
-      const { startLabel } = dragState.current;
-      const endLabel = chartState?.activeLabel || startLabel;
+      const { startPixel, startPayload, startYPixel } = dragState.current;
 
-      // Convert snapped labels to times using provided converter
-      const startTime = indexToMillis(Math.min(startLabel, endLabel));
-      const endTime = indexToMillis(Math.max(startLabel, endLabel));
+      // Get plot bounds for fraction calculations
+      const svg =
+        chartRef.current?.querySelector("svg.recharts-surface") ||
+        chartRef.current?.querySelector("svg");
+      const bbox = getChartPlotBounds(svg);
 
-      // Only invoke callback if there's an actual selection
-      if (startTime !== endTime) {
-        callback([millisToDateTime(startTime), millisToDateTime(endTime)]);
+      if (!bbox || !chartState) {
+        dragState.current.isDragging = false;
+        hideSelectionRects();
+        return;
       }
 
-      // Y-axis callback (only if 2D selection enabled AND shift not held at release)
+      const {
+        x: plotLeft,
+        y: plotTop,
+        width: plotWidth,
+        height: plotHeight,
+      } = bbox;
+
+      // Create start MousePosition
+      // Use raw pixel positions (not snapped) for fraction calculations
+      const startFractionX = (startPixel - plotLeft) / plotWidth;
+      const startFractionY = 1 - (startYPixel - plotTop) / plotHeight;
+
+      const start = {
+        pixelX: startPixel,
+        pixelY: startYPixel,
+        fractionX: startFractionX,
+        fractionY: startFractionY,
+        nearestPayload: startPayload,
+      };
+
+      // Create end MousePosition
+      const endPixelX = chartState.chartX;
+      const endPixelY = chartState.chartY;
+      const endPayload = chartState.activePayload?.[0]?.payload || null;
+
+      // Use raw pixel positions (not snapped) for fraction calculations
+      const endFractionX = (endPixelX - plotLeft) / plotWidth;
+      const endFractionY = 1 - (endPixelY - plotTop) / plotHeight;
+
+      const end = {
+        pixelX: endPixelX,
+        pixelY: endPixelY,
+        fractionX: endFractionX,
+        fractionY: endFractionY,
+        nearestPayload: endPayload,
+      };
+
+      // Only invoke callback if there's an actual selection (not just a click)
       if (
-        enable2DSelection &&
-        onYAxisZoomCallback &&
-        dragState.current.startYPixel &&
-        chartState?.chartY &&
-        !event?.shiftKey
+        start.fractionX !== end.fractionX ||
+        start.fractionY !== end.fractionY
       ) {
-        const startY = dragState.current.startYPixel;
-        const endY = chartState.chartY;
-        onYAxisZoomCallback(startY, endY);
+        callback(start, end, event);
       }
 
       // Hide areas
@@ -399,14 +423,7 @@ export function useDOMClickDrag({
         onMouseUpCallback(chartState, dragState.current);
       }
     },
-    [
-      callback,
-      indexToMillis,
-      onMouseUpCallback,
-      enable2DSelection,
-      onYAxisZoomCallback,
-      hideSelectionRects,
-    ],
+    [callback, onMouseUpCallback, chartRef, hideSelectionRects],
   );
 
   const doubleClick = useCallback(
