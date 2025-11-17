@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useCallback, useRef } from "react";
 import {
   Line,
   LineChart,
@@ -61,15 +61,37 @@ function TimelineChart({
   // Ref for chart to enable DOM manipulation
   const chartRef = useRef(null);
 
-  // Click & Drag plot hooks
+  // Click & Drag plot hooks - callback calculates time from fractions
+  const handleSelection = useCallback(
+    (start, end) => {
+      // Calculate times from fractions of fullTimeRange
+      const startMillis = fullTimeRange[0].toMillis();
+      const endMillis = fullTimeRange[1].toMillis();
+      const range = endMillis - startMillis;
+
+      // Round to integer milliseconds
+      const startTime = millisToDateTime(
+        Math.round(startMillis + start.fractionX * range),
+      );
+      const endTime = millisToDateTime(
+        Math.round(startMillis + end.fractionX * range),
+      );
+
+      // Set time range in correct order
+      const minTime = startTime < endTime ? startTime : endTime;
+      const maxTime = startTime < endTime ? endTime : startTime;
+      setSelectedTimeRange([minTime, maxTime]);
+    },
+    [setSelectedTimeRange, fullTimeRange],
+  );
+
   const { mouseDown, mouseMove, mouseUp, mouseLeave, doubleClick } =
     useDOMClickDrag({
-      callback: setSelectedTimeRange,
+      callback: handleSelection,
       resetCallback: () => setSelectedTimeRange(fullTimeRange),
       chartRef,
-      selectedTimeRange,
       mouseRectStyle: { fill: selectionFill },
-      snappedRectStyle: { fill: selectionFill },
+      showSnappedRect: false,
       onMouseDown,
       onMouseMove,
       onMouseUp,
@@ -227,6 +249,7 @@ function TimelineChart({
       title="Time Window Selector"
       width="100%"
       height={computedHeight}
+      style={{ userSelect: "none" }}
     >
       <LineChart
         width="100%"
