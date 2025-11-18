@@ -34,7 +34,11 @@ import { BAND_COLORS } from "@/components/PLOT_DEFINITIONS";
 import { useDOMClickDrag } from "@/hooks/useDOMClickDrag";
 import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
 import { RotateCcw } from "lucide-react";
-import { calculateYZoomFractionsFromSelection } from "@/utils/plotUtils";
+import {
+  calculateYZoomFractionsFromSelection,
+  calculateYZoomOutFromSelection,
+  calculateXZoomOutFromSelection,
+} from "@/utils/plotUtils";
 import { millisToDateTime } from "@/utils/timeUtils";
 
 import {
@@ -461,32 +465,62 @@ function ObservingConditionsApplet({
   // Click & Drag plot hooks - callback uses fractions for both X and Y
   const handleSelection = useCallback(
     (start, end, event) => {
+      const isZoomOut = event?.ctrlKey || false;
+
       // X-axis: Calculate from fractions of current X domain
-      const startMillis = xDomain[0];
-      const endMillis = xDomain[1];
-      const range = endMillis - startMillis;
+      if (isZoomOut) {
+        // Zoom out: current view fits inside selection
+        const [newMin, newMax] = calculateXZoomOutFromSelection(
+          start.fractionX,
+          end.fractionX,
+          xDomain,
+          fullTimeRange,
+        );
+        setSelectedTimeRange([
+          millisToDateTime(newMin),
+          millisToDateTime(newMax),
+        ]);
+      } else {
+        // Zoom in: selection becomes new view (existing behavior)
+        const startMillis = xDomain[0];
+        const endMillis = xDomain[1];
+        const range = endMillis - startMillis;
 
-      const startTime = millisToDateTime(
-        Math.round(startMillis + start.fractionX * range),
-      );
-      const endTime = millisToDateTime(
-        Math.round(startMillis + end.fractionX * range),
-      );
+        const startTime = millisToDateTime(
+          Math.round(startMillis + start.fractionX * range),
+        );
+        const endTime = millisToDateTime(
+          Math.round(startMillis + end.fractionX * range),
+        );
 
-      const minTime = startTime < endTime ? startTime : endTime;
-      const maxTime = startTime < endTime ? endTime : startTime;
-      setSelectedTimeRange([minTime, maxTime]);
+        const minTime = startTime < endTime ? startTime : endTime;
+        const maxTime = startTime < endTime ? endTime : startTime;
+        setSelectedTimeRange([minTime, maxTime]);
+      }
 
       // Y-axis: Only update if shift not held
       if (!event.shiftKey) {
-        const result = calculateYZoomFractionsFromSelection(
-          start.fractionY,
-          end.fractionY,
-          currentPsfYDomain,
-          psfAutoYDomain,
-        );
-        setYMinFraction(result.minFraction);
-        setYMaxFraction(result.maxFraction);
+        if (isZoomOut) {
+          // Zoom out: current view fits inside selection
+          const result = calculateYZoomOutFromSelection(
+            start.fractionY,
+            end.fractionY,
+            currentPsfYDomain,
+            psfAutoYDomain,
+          );
+          setYMinFraction(result.minFraction);
+          setYMaxFraction(result.maxFraction);
+        } else {
+          // Zoom in: selection becomes new view (existing behavior)
+          const result = calculateYZoomFractionsFromSelection(
+            start.fractionY,
+            end.fractionY,
+            currentPsfYDomain,
+            psfAutoYDomain,
+          );
+          setYMinFraction(result.minFraction);
+          setYMaxFraction(result.maxFraction);
+        }
       }
     },
     [
@@ -496,6 +530,7 @@ function ObservingConditionsApplet({
       xDomain,
       currentPsfYDomain,
       psfAutoYDomain,
+      fullTimeRange,
     ],
   );
 

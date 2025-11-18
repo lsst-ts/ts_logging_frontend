@@ -112,3 +112,98 @@ export function calculateYZoomFractionsFromSelection(
     maxFraction: Math.min(1, maxFraction),
   };
 }
+
+/**
+ * Calculates zoom-out Y-axis fractions where the current view fits inside the selection.
+ * Inverts the zoom behavior - a small selection causes a large zoom out.
+ *
+ * @param {number} startFractionY - Start fraction [0,1] of current Y domain
+ * @param {number} endFractionY - End fraction [0,1] of current Y domain
+ * @param {[number, number]} currentYDomain - Current visible Y domain [min, max]
+ * @param {[number, number]} autoYDomain - Auto (full) Y domain [min, max]
+ * @returns {{minFraction: number, maxFraction: number}} Auto-domain fractions, capped at [0,1]
+ */
+export function calculateYZoomOutFromSelection(
+  startFractionY,
+  endFractionY,
+  currentYDomain,
+  autoYDomain,
+) {
+  // Map selection fractions to data Y values (using current domain)
+  const [currentMin, currentMax] = currentYDomain;
+  const currentRange = currentMax - currentMin;
+  const selectionMin =
+    currentMin + Math.min(startFractionY, endFractionY) * currentRange;
+  const selectionMax =
+    currentMin + Math.max(startFractionY, endFractionY) * currentRange;
+  const selectionRange = selectionMax - selectionMin;
+  const selectionCenter = (selectionMin + selectionMax) / 2;
+
+  // Calculate zoom-out factor: how much wider should the view be?
+  // If selection is 25% of current view, new view should be 4x wider
+  const zoomOutFactor = currentRange / selectionRange;
+  const newRange = currentRange * zoomOutFactor;
+
+  // Calculate new domain centered on selection
+  let newMin = selectionCenter - newRange / 2;
+  let newMax = selectionCenter + newRange / 2;
+
+  // Map new domain to fractions of auto domain
+  const [autoMin, autoMax] = autoYDomain;
+  const autoRange = autoMax - autoMin;
+  let minFraction = (newMin - autoMin) / autoRange;
+  let maxFraction = (newMax - autoMin) / autoRange;
+
+  // Clamp to valid range [0, 1] (don't zoom out beyond default)
+  return {
+    minFraction: Math.max(0, minFraction),
+    maxFraction: Math.min(1, maxFraction),
+  };
+}
+
+/**
+ * Calculates zoom-out X-axis (time) domain where the current view fits inside the selection.
+ * Inverts the zoom behavior - a small selection causes a large zoom out.
+ *
+ * @param {number} startFractionX - Start fraction [0,1] of current X domain
+ * @param {number} endFractionX - End fraction [0,1] of current X domain
+ * @param {[number, number]} currentDomain - Current visible domain [min, max] in milliseconds
+ * @param {[string, string]} fullTimeRange - Full time range [start, end] as DateTime strings
+ * @returns {[number, number]} New domain [min, max] in milliseconds, capped at fullTimeRange
+ */
+export function calculateXZoomOutFromSelection(
+  startFractionX,
+  endFractionX,
+  currentDomain,
+  fullTimeRange,
+) {
+  const [currentMin, currentMax] = currentDomain;
+  const currentRange = currentMax - currentMin;
+
+  // Map selection fractions to milliseconds (using current domain)
+  const selectionMin =
+    currentMin + Math.min(startFractionX, endFractionX) * currentRange;
+  const selectionMax =
+    currentMin + Math.max(startFractionX, endFractionX) * currentRange;
+  const selectionRange = selectionMax - selectionMin;
+  const selectionCenter = (selectionMin + selectionMax) / 2;
+
+  // Calculate zoom-out factor
+  const zoomOutFactor = currentRange / selectionRange;
+  const newRange = currentRange * zoomOutFactor;
+
+  // Calculate new domain centered on selection
+  let newMin = selectionCenter - newRange / 2;
+  let newMax = selectionCenter + newRange / 2;
+
+  // Convert fullTimeRange to milliseconds for clamping
+  const fullMin = new Date(fullTimeRange[0]).getTime();
+  const fullMax = new Date(fullTimeRange[1]).getTime();
+
+  // Clamp to full time range (don't zoom out beyond default)
+  newMin = Math.max(fullMin, newMin);
+  newMax = Math.min(fullMax, newMax);
+
+  // Round to integer milliseconds
+  return [Math.round(newMin), Math.round(newMax)];
+}
