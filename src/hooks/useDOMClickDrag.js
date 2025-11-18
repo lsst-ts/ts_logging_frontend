@@ -85,59 +85,86 @@ export function useDOMClickDrag({
     startCoordinate: null, // activeCoordinate.x from initial click (for snappedRef)
     startPayload: null, // activePayload[0]?.payload from initial click (for callback)
     startYPixel: null, // chartY from initial click (for Y-axis zoom)
+    currentPixel: null, // Track current mouse position
+    currentCoordinate: null, // Track current coordinate
+    currentYPixel: null, // Track current Y position
+    shiftKeyHeld: false, // Track shift key state
+    ctrlKeyHeld: false, // Track ctrl key state
   });
 
   // Helper: Update the visual selection rectangles
-  const updateSelectionRects = useCallback(
-    (currentPixel, currentCoordinate, currentYPixel, shiftKeyHeld) => {
-      const { startPixel, startCoordinate, startYPixel } = dragState.current;
+  const updateSelectionRects = useCallback(() => {
+    const {
+      startPixel,
+      startCoordinate,
+      startYPixel,
+      currentPixel,
+      currentCoordinate,
+      currentYPixel,
+      shiftKeyHeld,
+      ctrlKeyHeld,
+    } = dragState.current;
 
-      // Determine if we should do 2D selection (enabled AND shift not held)
-      const use2DSelection = enable2DSelection && !shiftKeyHeld;
+    // Determine if we should do 2D selection (enabled AND shift not held)
+    const use2DSelection = enable2DSelection && !shiftKeyHeld;
 
-      // Update mouse tracking rect
-      if (showMouseRect && mouseRef.current && currentPixel !== undefined) {
-        const x = Math.min(startPixel, currentPixel);
-        const width = Math.abs(currentPixel - startPixel);
-        mouseRef.current.setAttribute("x", x);
-        mouseRef.current.setAttribute("width", width);
-      }
-
-      // Update snapped rect
-      if (
-        showSnappedRect &&
-        snappedRef.current &&
-        currentCoordinate !== undefined
-      ) {
-        const x = Math.min(startCoordinate, currentCoordinate);
-        const width = Math.abs(currentCoordinate - startCoordinate);
-        snappedRef.current.setAttribute("x", x);
-        snappedRef.current.setAttribute("width", width);
-      }
-
-      // Update Y coordinates only if 2D selection is enabled AND shift is not held
-      if (use2DSelection && currentYPixel !== undefined) {
-        const y = Math.min(startYPixel, currentYPixel);
-        const height = Math.abs(currentYPixel - startYPixel);
-        mouseRef.current.setAttribute("y", y);
-        mouseRef.current.setAttribute("height", height);
-        snappedRef.current.setAttribute("y", y);
-        snappedRef.current.setAttribute("height", height);
+    // Update stroke-dasharray for ctrl key
+    if (showMouseRect && mouseRef.current) {
+      if (enable2DSelection && ctrlKeyHeld) {
+        mouseRef.current.setAttribute("stroke-dasharray", "5,5");
       } else {
-        const bbox = getChartPlotBounds(
-          chartRef.current?.querySelector("svg.recharts-surface") ||
-            chartRef.current?.querySelector("svg"),
-        );
-        if (bbox && mouseRef.current && snappedRef.current) {
-          mouseRef.current.setAttribute("y", bbox.y);
-          mouseRef.current.setAttribute("height", bbox.height);
-          snappedRef.current.setAttribute("y", bbox.y);
-          snappedRef.current.setAttribute("height", bbox.height);
-        }
+        mouseRef.current.removeAttribute("stroke-dasharray");
       }
-    },
-    [showMouseRect, showSnappedRect, enable2DSelection, chartRef],
-  );
+    }
+    if (showSnappedRect && snappedRef.current) {
+      if (enable2DSelection && ctrlKeyHeld) {
+        snappedRef.current.setAttribute("stroke-dasharray", "5,5");
+      } else {
+        snappedRef.current.removeAttribute("stroke-dasharray");
+      }
+    }
+
+    // Update mouse tracking rect
+    if (showMouseRect && mouseRef.current && currentPixel !== undefined) {
+      const x = Math.min(startPixel, currentPixel);
+      const width = Math.abs(currentPixel - startPixel);
+      mouseRef.current.setAttribute("x", x);
+      mouseRef.current.setAttribute("width", width);
+    }
+
+    // Update snapped rect
+    if (
+      showSnappedRect &&
+      snappedRef.current &&
+      currentCoordinate !== undefined
+    ) {
+      const x = Math.min(startCoordinate, currentCoordinate);
+      const width = Math.abs(currentCoordinate - startCoordinate);
+      snappedRef.current.setAttribute("x", x);
+      snappedRef.current.setAttribute("width", width);
+    }
+
+    // Update Y coordinates only if 2D selection is enabled AND shift is not held
+    if (use2DSelection && currentYPixel !== undefined) {
+      const y = Math.min(startYPixel, currentYPixel);
+      const height = Math.abs(currentYPixel - startYPixel);
+      mouseRef.current.setAttribute("y", y);
+      mouseRef.current.setAttribute("height", height);
+      snappedRef.current.setAttribute("y", y);
+      snappedRef.current.setAttribute("height", height);
+    } else {
+      const bbox = getChartPlotBounds(
+        chartRef.current?.querySelector("svg.recharts-surface") ||
+          chartRef.current?.querySelector("svg"),
+      );
+      if (bbox && mouseRef.current && snappedRef.current) {
+        mouseRef.current.setAttribute("y", bbox.y);
+        mouseRef.current.setAttribute("height", bbox.height);
+        snappedRef.current.setAttribute("y", bbox.y);
+        snappedRef.current.setAttribute("height", bbox.height);
+      }
+    }
+  }, [showMouseRect, showSnappedRect, enable2DSelection, chartRef]);
 
   // Helper: Hide the visual slection rectangles
   const hideSelectionRects = useCallback(() => {
@@ -152,7 +179,22 @@ export function useDOMClickDrag({
       snappedRef.current.setAttribute("width", "0");
       snappedRef.current.setAttribute("height", "0");
     }
-  }, [mouseRef, snappedRef]);
+  }, []);
+
+  // Helper: Handle keyboard events during drag
+  const handleKeyChange = useCallback(
+    (event) => {
+      if (!dragState.current.isDragging) return;
+
+      // Update key states
+      dragState.current.shiftKeyHeld = event.shiftKey;
+      dragState.current.ctrlKeyHeld = event.ctrlKey;
+
+      // Update rectangles immediately
+      updateSelectionRects();
+    },
+    [updateSelectionRects],
+  );
 
   // Lazily create rect elements on first interaction
   const ensureRectsExist = useCallback(() => {
@@ -298,34 +340,26 @@ export function useDOMClickDrag({
       dragState.current.startCoordinate = startCoordinate;
       dragState.current.startPayload = startPayload;
       dragState.current.startYPixel = chartState.chartY;
+      dragState.current.currentPixel = chartState.chartX;
+      dragState.current.currentCoordinate = chartState.activeCoordinate.x;
+      dragState.current.currentYPixel = chartState.chartY;
+      dragState.current.shiftKeyHeld = event?.shiftKey || false;
+      dragState.current.ctrlKeyHeld = event?.ctrlKey || false;
 
       // Make areas visible based on configuration
       if (showMouseRect && mouseRef.current) {
         mouseRef.current.setAttribute("fill-opacity", "0.2");
-        // Set dashed border if CTRL is held (zoom-out mode) and 2D selection is enabled
-        if (enable2DSelection && event?.ctrlKey) {
-          mouseRef.current.setAttribute("stroke-dasharray", "5,5");
-        } else {
-          mouseRef.current.removeAttribute("stroke-dasharray");
-        }
       }
       if (showSnappedRect && snappedRef.current) {
         snappedRef.current.setAttribute("fill-opacity", "0.5");
-        // Set dashed border if CTRL is held (zoom-out mode) and 2D selection is enabled
-        if (enable2DSelection && event?.ctrlKey) {
-          snappedRef.current.setAttribute("stroke-dasharray", "5,5");
-        } else {
-          snappedRef.current.removeAttribute("stroke-dasharray");
-        }
       }
 
+      // Add keyboard event listeners to track ctrl/shift during drag
+      window.addEventListener("keydown", handleKeyChange);
+      window.addEventListener("keyup", handleKeyChange);
+
       // Update rectangle dimensions immediately (important for shift-extend)
-      updateSelectionRects(
-        chartState.chartX,
-        chartState.activeCoordinate.x,
-        chartState.chartY,
-        event?.shiftKey || false,
-      );
+      updateSelectionRects();
 
       // Call optional callback
       if (onMouseDownCallback) {
@@ -340,6 +374,7 @@ export function useDOMClickDrag({
       chartRef,
       updateSelectionRects,
       enable2DSelection,
+      handleKeyChange,
     ],
   );
 
@@ -357,42 +392,22 @@ export function useDOMClickDrag({
         return;
       }
 
-      // Update stroke-dasharray based on CTRL key state (for dynamic feedback)
-      if (showMouseRect && mouseRef.current) {
-        if (enable2DSelection && event?.ctrlKey) {
-          mouseRef.current.setAttribute("stroke-dasharray", "5,5");
-        } else {
-          mouseRef.current.removeAttribute("stroke-dasharray");
-        }
-      }
-      if (showSnappedRect && snappedRef.current) {
-        if (enable2DSelection && event?.ctrlKey) {
-          snappedRef.current.setAttribute("stroke-dasharray", "5,5");
-        } else {
-          snappedRef.current.removeAttribute("stroke-dasharray");
-        }
-      }
+      // Update current position and key states in dragState
+      dragState.current.currentPixel = chartState?.chartX;
+      dragState.current.currentCoordinate = chartState?.activeCoordinate?.x;
+      dragState.current.currentYPixel = chartState?.chartY;
+      dragState.current.shiftKeyHeld = event?.shiftKey || false;
+      dragState.current.ctrlKeyHeld = event?.ctrlKey || false;
 
-      // Update selection rectangles (check shift key dynamically)
-      updateSelectionRects(
-        chartState?.chartX,
-        chartState?.activeCoordinate?.x,
-        chartState?.chartY,
-        event?.shiftKey || false,
-      );
+      // Update selection rectangles
+      updateSelectionRects();
 
       // Call optional callback
       if (onMouseMoveCallback) {
         onMouseMoveCallback(chartState, dragState.current);
       }
     },
-    [
-      onMouseMoveCallback,
-      updateSelectionRects,
-      showMouseRect,
-      showSnappedRect,
-      enable2DSelection,
-    ],
+    [onMouseMoveCallback, updateSelectionRects],
   );
 
   const mouseUp = useCallback(
@@ -463,12 +478,22 @@ export function useDOMClickDrag({
 
       dragState.current.isDragging = false;
 
+      // Remove keyboard event listeners
+      window.removeEventListener("keydown", handleKeyChange);
+      window.removeEventListener("keyup", handleKeyChange);
+
       // Call optional callback
       if (onMouseUpCallback) {
         onMouseUpCallback(chartState, dragState.current);
       }
     },
-    [callback, onMouseUpCallback, chartRef, hideSelectionRects],
+    [
+      callback,
+      onMouseUpCallback,
+      chartRef,
+      hideSelectionRects,
+      handleKeyChange,
+    ],
   );
 
   const doubleClick = useCallback(
@@ -483,12 +508,16 @@ export function useDOMClickDrag({
 
       dragState.current.isDragging = false;
 
+      // Remove keyboard event listeners (in case double-click happens during drag)
+      window.removeEventListener("keydown", handleKeyChange);
+      window.removeEventListener("keyup", handleKeyChange);
+
       // Call optional callback
       if (onDoubleClickCallback) {
         onDoubleClickCallback(chartState, dragState.current);
       }
     },
-    [resetCallback, onDoubleClickCallback, hideSelectionRects],
+    [resetCallback, onDoubleClickCallback, hideSelectionRects, handleKeyChange],
   );
 
   const mouseLeave = useCallback(() => {
@@ -500,8 +529,12 @@ export function useDOMClickDrag({
       hideSelectionRects();
 
       dragState.current.isDragging = false;
+
+      // Remove keyboard event listeners
+      window.removeEventListener("keydown", handleKeyChange);
+      window.removeEventListener("keyup", handleKeyChange);
     }
-  }, [onMouseLeaveCallback, hideSelectionRects]);
+  }, [onMouseLeaveCallback, hideSelectionRects, handleKeyChange]);
 
   return {
     mouseDown,
