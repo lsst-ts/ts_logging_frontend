@@ -193,6 +193,11 @@ export function useDOMClickDrag({
     mouseRect.setAttribute("height", enable2DSelection ? "0" : plotHeight);
     mouseRect.setAttribute("fill", mouseRectStyle.fill || "#888");
     mouseRect.setAttribute("fill-opacity", "0");
+    mouseRect.setAttribute("stroke", mouseRectStyle.stroke || "#888");
+    mouseRect.setAttribute(
+      "stroke-width",
+      mouseRectStyle["stroke-width"] || "1",
+    );
     mouseRect.setAttribute("pointer-events", "none");
     // Apply additional custom styles
     Object.entries(mouseRectStyle).forEach(([key, value]) => {
@@ -212,6 +217,11 @@ export function useDOMClickDrag({
     snappedRect.setAttribute("height", enable2DSelection ? "0" : plotHeight);
     snappedRect.setAttribute("fill", snappedRectStyle.fill || "#666");
     snappedRect.setAttribute("fill-opacity", "0");
+    snappedRect.setAttribute("stroke", snappedRectStyle.stroke || "#666");
+    snappedRect.setAttribute(
+      "stroke-width",
+      snappedRectStyle["stroke-width"] || "1",
+    );
     snappedRect.setAttribute("pointer-events", "none");
     // Apply additional custom styles
     Object.entries(snappedRectStyle).forEach(([key, value]) => {
@@ -292,9 +302,21 @@ export function useDOMClickDrag({
       // Make areas visible based on configuration
       if (showMouseRect && mouseRef.current) {
         mouseRef.current.setAttribute("fill-opacity", "0.2");
+        // Set dashed border if CTRL is held (zoom-out mode) and 2D selection is enabled
+        if (enable2DSelection && event?.ctrlKey) {
+          mouseRef.current.setAttribute("stroke-dasharray", "5,5");
+        } else {
+          mouseRef.current.removeAttribute("stroke-dasharray");
+        }
       }
       if (showSnappedRect && snappedRef.current) {
         snappedRef.current.setAttribute("fill-opacity", "0.5");
+        // Set dashed border if CTRL is held (zoom-out mode) and 2D selection is enabled
+        if (enable2DSelection && event?.ctrlKey) {
+          snappedRef.current.setAttribute("stroke-dasharray", "5,5");
+        } else {
+          snappedRef.current.removeAttribute("stroke-dasharray");
+        }
       }
 
       // Update rectangle dimensions immediately (important for shift-extend)
@@ -317,6 +339,7 @@ export function useDOMClickDrag({
       onMouseDownCallback,
       chartRef,
       updateSelectionRects,
+      enable2DSelection,
     ],
   );
 
@@ -334,6 +357,22 @@ export function useDOMClickDrag({
         return;
       }
 
+      // Update stroke-dasharray based on CTRL key state (for dynamic feedback)
+      if (showMouseRect && mouseRef.current) {
+        if (enable2DSelection && event?.ctrlKey) {
+          mouseRef.current.setAttribute("stroke-dasharray", "5,5");
+        } else {
+          mouseRef.current.removeAttribute("stroke-dasharray");
+        }
+      }
+      if (showSnappedRect && snappedRef.current) {
+        if (enable2DSelection && event?.ctrlKey) {
+          snappedRef.current.setAttribute("stroke-dasharray", "5,5");
+        } else {
+          snappedRef.current.removeAttribute("stroke-dasharray");
+        }
+      }
+
       // Update selection rectangles (check shift key dynamically)
       updateSelectionRects(
         chartState?.chartX,
@@ -347,7 +386,13 @@ export function useDOMClickDrag({
         onMouseMoveCallback(chartState, dragState.current);
       }
     },
-    [onMouseMoveCallback, updateSelectionRects],
+    [
+      onMouseMoveCallback,
+      updateSelectionRects,
+      showMouseRect,
+      showSnappedRect,
+      enable2DSelection,
+    ],
   );
 
   const mouseUp = useCallback(
