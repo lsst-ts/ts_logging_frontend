@@ -403,60 +403,6 @@ function ObservingConditionsApplet({
     return [autoMin + yMinFraction * range, autoMin + yMaxFraction * range];
   }, [zeroPointAutoYDomain, yMinFraction, yMaxFraction]);
 
-  // Click & Drag plot hooks - callback uses fractions for both X and Y
-  const handleSelection = useCallback(
-    (start, end, event) => {
-      // X-axis: Calculate from fractions of selectedTimeRange
-      const startMillis = selectedTimeRange[0].toMillis();
-      const endMillis = selectedTimeRange[1].toMillis();
-      const range = endMillis - startMillis;
-
-      const startTime = millisToDateTime(
-        Math.round(startMillis + start.fractionX * range),
-      );
-      const endTime = millisToDateTime(
-        Math.round(startMillis + end.fractionX * range),
-      );
-
-      const minTime = startTime < endTime ? startTime : endTime;
-      const maxTime = startTime < endTime ? endTime : startTime;
-      setSelectedTimeRange([minTime, maxTime]);
-
-      // Y-axis: Only update if shift not held
-      if (!event.shiftKey) {
-        const result = calculateYZoomFractionsFromSelection(
-          start.fractionY,
-          end.fractionY,
-          currentPsfYDomain,
-          psfAutoYDomain,
-        );
-        setYMinFraction(result.minFraction);
-        setYMaxFraction(result.maxFraction);
-      }
-    },
-    [
-      setSelectedTimeRange,
-      setYMinFraction,
-      setYMaxFraction,
-      selectedTimeRange,
-      currentPsfYDomain,
-      psfAutoYDomain,
-    ],
-  );
-
-  const { mouseDown, mouseMove, mouseUp, mouseLeave, doubleClick } =
-    useDOMClickDrag({
-      callback: handleSelection,
-      resetCallback: () => {
-        setSelectedTimeRange(fullTimeRange);
-        setYMinFraction(0);
-        setYMaxFraction(1);
-      },
-      chartRef,
-      enable2DSelection: true,
-      showSnappedRect: false,
-    });
-
   // retrieve twilight times from almanacInfo
   // and convert them to milliseconds
   const twilightValues = useMemo(
@@ -497,6 +443,74 @@ function ObservingConditionsApplet({
     }
     return { xMin: min, xMax: max, xTicks: ticks };
   }, [chartData, twilightValues]);
+
+  // Calculate X domain clamped to actual data range
+  const xDomain = useMemo(() => {
+    const startMillis = selectedMinMillis;
+    const endMillis = selectedMaxMillis;
+
+    // If we have valid data range, clamp to it
+    if (isValidNumber(xMin) && isValidNumber(xMax)) {
+      return [Math.max(startMillis, xMin), Math.min(endMillis, xMax)];
+    }
+
+    // Otherwise use selected range as-is
+    return [startMillis, endMillis];
+  }, [selectedMinMillis, selectedMaxMillis, xMin, xMax]);
+
+  // Click & Drag plot hooks - callback uses fractions for both X and Y
+  const handleSelection = useCallback(
+    (start, end, event) => {
+      // X-axis: Calculate from fractions of current X domain
+      const startMillis = xDomain[0];
+      const endMillis = xDomain[1];
+      const range = endMillis - startMillis;
+
+      const startTime = millisToDateTime(
+        Math.round(startMillis + start.fractionX * range),
+      );
+      const endTime = millisToDateTime(
+        Math.round(startMillis + end.fractionX * range),
+      );
+
+      const minTime = startTime < endTime ? startTime : endTime;
+      const maxTime = startTime < endTime ? endTime : startTime;
+      setSelectedTimeRange([minTime, maxTime]);
+
+      // Y-axis: Only update if shift not held
+      if (!event.shiftKey) {
+        const result = calculateYZoomFractionsFromSelection(
+          start.fractionY,
+          end.fractionY,
+          currentPsfYDomain,
+          psfAutoYDomain,
+        );
+        setYMinFraction(result.minFraction);
+        setYMaxFraction(result.maxFraction);
+      }
+    },
+    [
+      setSelectedTimeRange,
+      setYMinFraction,
+      setYMaxFraction,
+      xDomain,
+      currentPsfYDomain,
+      psfAutoYDomain,
+    ],
+  );
+
+  const { mouseDown, mouseMove, mouseUp, mouseLeave, doubleClick } =
+    useDOMClickDrag({
+      callback: handleSelection,
+      resetCallback: () => {
+        setSelectedTimeRange(fullTimeRange);
+        setYMinFraction(0);
+        setYMaxFraction(1);
+      },
+      chartRef,
+      enable2DSelection: true,
+      showSnappedRect: false,
+    });
 
   const chartConfig = {
     psf_median: { label: "PSF FWHM", color: "#ffffff" },
@@ -671,7 +685,7 @@ function ObservingConditionsApplet({
                         data={chartData}
                         dataKey="obs_start_dt"
                         type="number"
-                        domain={[selectedMinMillis, selectedMaxMillis]}
+                        domain={xDomain}
                         allowDataOverflow={true}
                         scale="time"
                         ticks={xTicks}
@@ -710,7 +724,7 @@ function ObservingConditionsApplet({
                         tick={{ fill: "white" }}
                         domain={currentZeroPointYDomain}
                         allowDataOverflow={true}
-                        tickFormatter={(tick) => Number(tick).toFixed(2)}
+                        tickFormatter={(tick) => Number(tick).toFixed(0)}
                         label={{
                           value: "Zero Points (mag)",
                           angle: 90,
@@ -726,14 +740,13 @@ function ObservingConditionsApplet({
                       {gapAreas
                         .filter(
                           (gap) =>
-                            gap.start < selectedMaxMillis &&
-                            gap.end > selectedMinMillis,
+                            gap.start < xDomain[1] && gap.end > xDomain[0],
                         )
                         .map((gap, i) => (
                           <ReferenceArea
                             key={`gap-${i}`}
-                            x1={Math.max(gap.start, selectedMinMillis)}
-                            x2={Math.min(gap.end, selectedMaxMillis)}
+                            x1={Math.max(gap.start, xDomain[0])}
+                            x2={Math.min(gap.end, xDomain[1])}
                             yAxisId="left"
                             strokeOpacity={0}
                             fill="#147570ff"
@@ -744,8 +757,8 @@ function ObservingConditionsApplet({
                       {twilightValues.map((twi, i) =>
                         typeof twi === "number" &&
                         !isNaN(twi) &&
-                        xMin <= twi &&
-                        twi <= xMax ? (
+                        xDomain[0] <= twi &&
+                        twi <= xDomain[1] ? (
                           <ReferenceLine
                             key={`twilight-${i}-${twi}`}
                             x={twi}
