@@ -96,14 +96,6 @@ function DataLog() {
         // and apply conversion to required row(s)
         const mergedData = mergeDataLogSources(dataLog, exposureLogData)
           .map((entry) => {
-            // Replace spaces with underscores
-            const normalisedEntry = Object.fromEntries(
-              Object.entries(entry).map(([key, value]) => [
-                key.replace(/ /g, "_"),
-                value,
-              ]),
-            );
-
             const psfSigma = parseFloat(entry["psf sigma median"]);
             const pixelScale = !isNaN(entry.pixel_scale_median)
               ? entry.pixel_scale_median
@@ -113,7 +105,7 @@ function DataLog() {
               : null;
 
             return {
-              ...normalisedEntry,
+              ...entry,
               psf_median,
             };
           })
