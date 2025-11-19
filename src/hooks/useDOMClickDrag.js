@@ -290,14 +290,6 @@ export function useDOMClickDrag({
         return;
       }
 
-      if (
-        !chartState?.activeLabel ||
-        !chartState?.chartX ||
-        !chartState?.activeCoordinate
-      ) {
-        return;
-      }
-
       let startPixel = chartState.chartX;
       let startCoordinate = chartState.activeCoordinate.x;
       let startPayload = chartState.activePayload?.[0]?.payload || null;
