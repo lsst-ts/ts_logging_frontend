@@ -209,6 +209,17 @@ function generateDayObsRange(start, end) {
   return dates;
 }
 
+/**
+ * Formats a dayobs string in a standard human-readable way
+ * @param {String} dayobs - Dayobs in the format "yyyyMMdd" e.g., "20251225"
+ * @returns {String} - The dayobs now in the format "2025-12-25"
+ */
+function formatDayobsStrForDisplay(dayobs) {
+  return DateTime.fromFormat(dayobs, "yyyyLLdd", { zone: "utc" }).toFormat(
+    "yyyy-LL-dd",
+  );
+}
+
 export {
   isoToTAI,
   isoToUTC,
@@ -226,4 +237,5 @@ export {
   ISO_DATETIME_FORMAT,
   TAI_OFFSET_SECONDS,
   generateDayObsRange,
+  formatDayobsStrForDisplay,
 };
