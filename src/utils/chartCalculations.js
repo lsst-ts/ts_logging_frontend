@@ -3,6 +3,8 @@ import {
   formatDayobsStrForDisplay,
   getDayobsStartTAI,
   millisToHHmm,
+  dayobsAtMidnight,
+  millisToDateTime,
 } from "@/utils/timeUtils";
 import { DateTime } from "luxon";
 /**
@@ -291,6 +293,20 @@ export function calculateChartData({
     );
   });
 
+  // If no dayobs ticks were created, add one in the middle of the domain
+  if (dayObsTicks.length === 0) {
+    const middleFakeX = fakeX / 2;
+    const fallbackDayobs = dayobsAtMidnight(
+      millisToDateTime(selectedMinMillis),
+      "yyyyLLdd",
+    );
+    dayObsTicks.push(middleFakeX);
+    dayObsTickMappings.set(
+      middleFakeX,
+      formatDayobsStrForDisplay(fallbackDayobs),
+    );
+  }
+
   // TIME MODE: Calculate dayObsTicks from visible data
   // Time ticks are calculated automatically
   let timeDayObsTicks = [];
@@ -329,6 +345,20 @@ export function calculateChartData({
     (t) => t >= selectedMinMillis && t <= selectedMaxMillis,
   );
 
+  // If no dayobs ticks remain after filtering, add one in the middle of the domain
+  if (timeDayObsTicks.length === 0) {
+    const middleMillis = (selectedMinMillis + selectedMaxMillis) / 2;
+    const fallbackDayobs = dayobsAtMidnight(
+      millisToDateTime(selectedMinMillis),
+      "yyyyLLdd",
+    );
+    timeDayObsTicks.push(middleMillis);
+    timeDayObsTickMappings.set(
+      middleMillis,
+      formatDayobsStrForDisplay(fallbackDayobs),
+    );
+  }
+
   const timeData = {
     groupedData: transformedChartData,
     flatData,
@@ -354,7 +384,7 @@ export function calculateChartData({
     ticks: undefined,
     dayObsTicks: timeDayObsTicks,
     tickFormatter: (tick) => millisToHHmm(tick),
-    dayObsTickFormatter: (tick) => timeDayObsTickMappings.get(tick),
+    dayObsTickFormatter: (tick) => timeDayObsTickMappings.get(tick) ?? "",
     selectedMinMillis,
     selectedMaxMillis,
   };
@@ -374,8 +404,8 @@ export function calculateChartData({
     scale: "auto",
     ticks,
     dayObsTicks,
-    tickFormatter: (tick) => tickMappings.get(tick),
-    dayObsTickFormatter: (tick) => dayObsTickMappings.get(tick),
+    tickFormatter: (tick) => tickMappings.get(tick) ?? "",
+    dayObsTickFormatter: (tick) => dayObsTickMappings.get(tick) ?? "",
     selectedMinMillis,
     selectedMaxMillis,
   };
