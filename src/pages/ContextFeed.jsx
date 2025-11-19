@@ -396,7 +396,6 @@ function ContextFeed() {
                         twilightValues={twilightValues}
                         showTwilight={true}
                         height={250}
-                        markerType="diamond"
                         fullTimeRange={fullTimeRange}
                         selectedTimeRange={selectedTimeRange}
                         setSelectedTimeRange={setSelectedTimeRange}
