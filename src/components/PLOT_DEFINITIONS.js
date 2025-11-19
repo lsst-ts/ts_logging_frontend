@@ -235,3 +235,8 @@ export const AXIS_TICK_STYLE = {
   fill: "white",
   style: { userSelect: "none" },
 };
+
+export const DAYOBS_AXIS_TICK_STYLE = {
+  fill: "grey",
+  style: { userSelect: "none" },
+};
