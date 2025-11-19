@@ -5,8 +5,8 @@ const TimelineMarker = ({
   cx,
   cy,
   color,
-  h,
-  w,
+  h = 16,
+  w = 1,
   type = "line",
   opacity = 1,
 }) => {
@@ -19,29 +19,14 @@ const TimelineMarker = ({
   const halfWidth = width / 2;
   const fill = color || "#3CAE3F";
 
-  if (type === "diamond") {
-    // Diamond shape (polygon)
-    const points = `
+  // Diamond shape (polygon)
+  const points = `
       ${halfWidth},0
       ${width},${halfHeight}
       ${halfWidth},${height}
       0,${halfHeight}
     `;
 
-    return (
-      <svg
-        x={cx - halfWidth}
-        y={cy - halfHeight}
-        width={width}
-        height={height}
-        style={{ opacity }}
-      >
-        <polygon points={points} fill={fill} />
-      </svg>
-    );
-  }
-
-  // Default: vertical line (rect)
   return (
     <svg
       x={cx - halfWidth}
@@ -50,7 +35,7 @@ const TimelineMarker = ({
       height={height}
       style={{ opacity }}
     >
-      <rect x={0} y={0} width={width} height={height} fill={fill} />
+      <polygon points={points} fill={fill} />
     </svg>
   );
 };

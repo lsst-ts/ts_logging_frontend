@@ -32,7 +32,6 @@ import TimelineMarker from "@/components/TimelineMarker";
  * @param {boolean} [props.showMoonIllumination=false] - Whether to show moon illumination labels
  * @param {Array<{dayobs: string, illum: string}>} [props.illumValues=[]] - Moon illumination values
  * @param {number} [props.height] - Chart height (auto-calculated if not provided)
- * @param {'line'|'diamond'} [props.markerType='line'] - Type of marker to use
  * @param {string} [props.selectionFill='pink'] - Fill color for selection rectangles
  * @param {Function} [props.onMouseDown] - Optional callback for mouseDown event
  * @param {Function} [props.onMouseMove] - Optional callback for mouseMove event
@@ -51,7 +50,6 @@ function TimelineChart({
   showMoonIllumination = false,
   illumValues = [],
   height,
-  markerType = "line",
   selectionFill = "pink",
   onMouseDown,
   onMouseMove,
@@ -110,11 +108,6 @@ function TimelineChart({
   const computedHeight = height || 110;
 
   // Marker configuration based on type
-  const markerConfig = {
-    line: { height: 20, width: 1 },
-    diamond: { height: 16, width: 1 },
-  };
-  const { height: markerHeight, width: markerWidth } = markerConfig[markerType];
 
   // Helper: Generate hourly ticks for xAxis
   const generateHourlyTicks = (startMillis, endMillis, intervalHours = 1) => {
@@ -377,9 +370,6 @@ function TimelineChart({
                 cx={props.cx}
                 cy={props.cy}
                 color={entry.color}
-                type={markerType}
-                h={markerHeight}
-                w={markerWidth}
                 opacity={entry.isActive ? 1 : 0.1}
               />
             )}
