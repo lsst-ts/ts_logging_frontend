@@ -1,6 +1,10 @@
 import { groupBy } from "@/utils/plotUtils";
-import { getDayobsStartTAI, millisToHHmm } from "@/utils/timeUtils";
-
+import {
+  formatDayobsStrForDisplay,
+  getDayobsStartTAI,
+  millisToHHmm,
+} from "@/utils/timeUtils";
+import { DateTime } from "luxon";
 /**
  * Helper function to find fakeX position for a moon event (moonUp or moonDown).
  * Finds the closest data point by timestamp and checks if the event occurs
@@ -281,7 +285,10 @@ export function calculateChartData({
     // Add dayobs tick
     const dayObsMidFakeX = (dayObsEndFakeX + dayObsStartFakeX) / 2;
     dayObsTicks.push(dayObsMidFakeX);
-    dayObsTickMappings.set(dayObsMidFakeX, dayObsValue);
+    dayObsTickMappings.set(
+      dayObsMidFakeX,
+      formatDayobsStrForDisplay(dayObsValue),
+    );
   });
 
   // TIME MODE: Calculate dayObsTicks from visible data
@@ -299,7 +306,10 @@ export function calculateChartData({
       const dayObsMidpoint = Math.floor((dayObsStart + dayObsEnd) / 2);
 
       timeDayObsTicks.push(dayObsMidpoint);
-      timeDayObsTickMappings.set(dayObsMidpoint, dayObsValue);
+      timeDayObsTickMappings.set(
+        dayObsMidpoint,
+        formatDayobsStrForDisplay(dayObsValue),
+      );
     } else {
       // If there's no data, then add a dayobs tick at midnight Chile time
       const dayObsMidpoint = getDayobsStartTAI(dayObsValue).plus({
@@ -307,7 +317,10 @@ export function calculateChartData({
       });
 
       timeDayObsTicks.push(dayObsMidpoint.toMillis());
-      timeDayObsTickMappings.set(dayObsMidpoint.toMillis(), dayObsValue);
+      timeDayObsTickMappings.set(
+        dayObsMidpoint,
+        formatDayobsStrForDisplay(dayObsValue),
+      );
     }
   });
   // Due to a quirk of recharts, we need to remove any ticks which fall
