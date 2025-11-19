@@ -38,6 +38,7 @@ import {
   PLOT_DIMENSIONS,
   PLOT_OPACITIES,
   AXIS_TICK_STYLE,
+  DAYOBS_AXIS_TICK_STYLE,
 } from "@/components/PLOT_DEFINITIONS";
 
 import { useDOMClickDrag } from "@/hooks/useDOMClickDrag";
@@ -244,13 +245,7 @@ function TimeseriesPlot({
       },
       chartRef,
       enable2DSelection: true,
-      onMouseMove: (state, dragState) => {
-        // If we're dragging, clear hover state
-        if (dragState.isDragging) {
-          hoverStore.setHover(null);
-          return;
-        }
-
+      onMouseMove: (state) => {
         // Update hover based on active payload
         if (
           !state ||
@@ -401,7 +396,7 @@ function TimeseriesPlot({
           xAxisId={1}
           tickLine={false}
           axisLine={false}
-          tick={AXIS_TICK_STYLE}
+          tick={DAYOBS_AXIS_TICK_STYLE}
           height={18}
           label={
             xAxisShow
