@@ -1,5 +1,6 @@
 import { groupBy } from "@/utils/plotUtils";
 import { getDayobsStartTAI, millisToHHmm } from "@/utils/timeUtils";
+
 /**
  * Helper function to find fakeX position for a moon event (moonUp or moonDown).
  * Finds the closest data point by timestamp and checks if the event occurs

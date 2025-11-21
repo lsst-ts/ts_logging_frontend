@@ -24,6 +24,7 @@ import {
   PLOT_DEFINITIONS,
   BAND_COLORS,
   PLOT_KEY_TIME,
+  PLOT_KEY_SEQUENCE,
 } from "@/components/PLOT_DEFINITIONS";
 
 import {
