@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 
 import { toast } from "sonner";
 import { useSearch } from "@tanstack/react-router";
@@ -10,6 +10,7 @@ import PlotVisibilityPopover from "@/components/PlotVisibilityPopover";
 import PlotFormatPopover from "@/components/PlotFormatPopover";
 import { TELESCOPES } from "@/components/parameters";
 import {
+  CircleShape,
   TriangleShape,
   FlippedTriangleShape,
   SquareShape,
@@ -23,6 +24,7 @@ import {
   PLOT_DEFINITIONS,
   BAND_COLORS,
   PLOT_KEY_TIME,
+  PLOT_KEY_SEQUENCE,
 } from "@/components/PLOT_DEFINITIONS";
 
 import {
@@ -43,6 +45,8 @@ import {
   utcDateTimeStrToTAIMillis,
   generateDayObsRange,
 } from "@/utils/timeUtils";
+import { calculateChartData } from "@/utils/chartCalculations";
+import { PlotDataContext } from "@/contexts/PlotDataContext";
 
 function Plots() {
   // Routing and URL params
@@ -306,6 +310,37 @@ function Plots() {
     }
   }, [moonValues, fullTimeRange]);
 
+  // Calculate shared plot context value
+  const plotDataContextValue = useMemo(() => {
+    const [xMinMillis, xMaxMillis] = selectedTimeRange;
+    if (
+      dataLogEntries.length > 0 &&
+      availableDayObs.length > 0 &&
+      xMinMillis != null &&
+      xMaxMillis != null
+    ) {
+      const calculatedData = calculateChartData({
+        data: dataLogEntries,
+        moonIntervals,
+        availableDayObs,
+        selectedMinMillis: xMinMillis.toMillis(),
+        selectedMaxMillis: xMaxMillis.toMillis(),
+        twilightValues,
+      });
+
+      return xAxisType === PLOT_KEY_SEQUENCE
+        ? calculatedData.sequence
+        : calculatedData.time;
+    }
+  }, [
+    dataLogEntries,
+    xAxisType,
+    moonIntervals,
+    selectedTimeRange,
+    availableDayObs,
+    twilightValues,
+  ]);
+
   // Temporary display message for AuxTel queries
   if (telescope === "AuxTel") {
     return (
@@ -324,13 +359,6 @@ function Plots() {
       </div>
     );
   }
-
-  // Filter data based on selected time range
-  const filteredData = dataLogEntries.filter(
-    (entry) =>
-      entry.obs_start_dt >= selectedTimeRange[0] &&
-      entry.obs_start_dt <= selectedTimeRange[1],
-  );
 
   return (
     <>
@@ -421,6 +449,7 @@ function Plots() {
                 <div>Bands:</div>
                 {Object.entries(BAND_COLORS).map(([band, color]) => {
                   const shapeMap = {
+                    u: CircleShape,
                     g: TriangleShape,
                     r: FlippedTriangleShape,
                     i: SquareShape,
@@ -436,7 +465,7 @@ function Plots() {
                         {bandMarker === "bandColorsIcons" && ShapeComponent ? (
                           <ShapeComponent cx={8} cy={8} fill={color} r={4} />
                         ) : (
-                          <circle cx={8} cy={8} fill={color} r={5} />
+                          <CircleShape cx={8} cy={8} fill={color} r={5} />
                         )}
                       </svg>
                       <span>{band}</span>
@@ -477,7 +506,7 @@ function Plots() {
                 ))}
             </>
           ) : (
-            <>
+            <PlotDataContext.Provider value={plotDataContextValue}>
               {visiblePlots.map((key, idx) => {
                 const def = PLOT_DEFINITIONS.find((p) => p.key === key);
                 return (
@@ -486,12 +515,6 @@ function Plots() {
                     unit={def?.unit}
                     dataKey={def.key}
                     key={def.key}
-                    data={filteredData}
-                    twilightValues={twilightValues}
-                    // Show moon rise/set only on sky-related plots
-                    {...(def?.showMoon ? { moonIntervals: moonIntervals } : {})}
-                    xAxisType={xAxisType}
-                    xAxisShow={xAxisShow}
                     fullTimeRange={fullTimeRange}
                     selectedTimeRange={selectedTimeRange}
                     setSelectedTimeRange={setSelectedTimeRange}
@@ -499,13 +522,14 @@ function Plots() {
                     plotColor={plotColor}
                     bandMarker={bandMarker}
                     isBandPlot={!!def?.bandMarker}
+                    showMoon={!!def?.showMoon}
                     plotIndex={idx}
                     nPlots={visiblePlots.length}
-                    availableDayObs={availableDayObs}
+                    xAxisShow={xAxisShow}
                   />
                 );
               })}
-            </>
+            </PlotDataContext.Provider>
           )}
         </div>
       </div>

@@ -1,4 +1,3 @@
-import { PLOT_KEY_SEQUENCE } from "@/components/PLOT_DEFINITIONS";
 import { groupBy } from "@/utils/plotUtils";
 import { getDayobsStartTAI, millisToHHmm } from "@/utils/timeUtils";
 
@@ -59,53 +58,105 @@ function findMoonEventFakeX(moonEventMillis, flatData, dayObsMetadata) {
   };
 }
 
+function filterDayobsGroupsByTime(
+  dayObsGroups,
+  selectedMinMillis,
+  selectedMaxMillis,
+) {
+  return dayObsGroups.map((dayObsGroup) => {
+    return dayObsGroup.filter(
+      (e) =>
+        e.obs_start_dt >= selectedMinMillis &&
+        e.obs_start_dt <= selectedMaxMillis,
+    );
+  });
+}
+
 /**
- * Calculate all data transformations needed for chart plotting.
- * This function transforms time-series data into sequence-indexed data with
- * properly positioned ticks, moon intervals, and day observation breaks.
+ * Transforms raw observation data into chart-ready formats for both time and sequence plotting modes.
+ *
+ * **Time Mode**: Plots observations at their actual TAI timestamps.
+ * **Sequence Mode**: Plots observations sequentially with a synthetic "fakeX" coordinate system,
+ * adding visual gaps between day-obs groups and mapping moon intervals to sequence positions.
+ *
+ * Key transformations performed:
+ * - Groups observations by day-obs and filters by time range
+ * - Assigns sequential fakeX coordinates for sequence mode
+ * - Calculates day-obs spacing based on data density
+ * - Maps moon intervals to both coordinate systems
+ * - Generates axis ticks for both modes
+ * - Identifies empty day-obs periods and boundary events
  *
  * @param {Object} params - Configuration object
- * @param {string} params.xAxisType - Current x-axis type (time or sequence)
- * @param {Array} params.data - Raw ungrouped data array
- * @param {Array<Array>} params.moonIntervals - Moon rise/set intervals [[start, end], ...]
- * @param {Array<string>} params.availableDayObs - List of available day observations
- * @param {number} params.selectedMinMillis - Minimum time in milliseconds for time mode
- * @param {number} params.selectedMaxMillis - Maximum time in milliseconds for time mode
- * @returns {Object} Transformed data for chart plotting
+ * @param {Array} params.data - Raw observation data array
+ * @param {Array<Array>} params.moonIntervals - Moon rise/set intervals [[moonUp, moonDown], ...] in milliseconds (TAI)
+ * @param {Array<string>} params.availableDayObs - Available day observations (e.g., ["20240101", "20240102"])
+ * @param {number} params.selectedMinMillis - Start of time range in milliseconds (TAI)
+ * @param {number} params.selectedMaxMillis - End of time range in milliseconds (TAI)
+ * @param {Array<number>} params.twilightValues - Twilight times in milliseconds for reference lines
+ *
+ * @returns {Object} Object with `time` and `sequence` properties, both containing:
+ *   - groupedData: Observations grouped by day-obs
+ *   - flatData: Flattened observations with fakeX added
+ *   - chartMoon: Moon intervals (real time for time mode, fakeX coordinates for sequence mode)
+ *   - chartDataKey: X-axis data key ("obs_start_millis" or "fakeX")
+ *   - domain: X-axis range
+ *   - scale: Chart scale type
+ *   - ticks, dayObsTicks: Tick positions and formatters
+ *   - indexToMillis: Function to convert X values to real time
+ *   - Additional mode-specific properties (chartDayObsBreaks, noDataX, twilightValues, etc.)
  */
 export function calculateChartData({
-  xAxisType,
   data,
   moonIntervals,
   availableDayObs,
   selectedMinMillis,
   selectedMaxMillis,
+  twilightValues,
 }) {
-  // Group data by day obs and trim empty entries
-  const chartData = groupBy(
+  // Group all data by day obs
+  const groupedData = groupBy(
     data,
     "day obs",
     new Map(availableDayObs.map((e) => [parseInt(e, 10), []])),
   );
 
-  while (chartData.length && chartData[0].length === 0) {
-    chartData.shift();
+  // grouped data, but only for the time period we care about
+  const filteredGroupedData = filterDayobsGroupsByTime(
+    groupedData,
+    selectedMinMillis,
+    selectedMaxMillis,
+  );
+
+  const filteredData = filteredGroupedData.flat();
+
+  // Remove empty dayobs groups
+  // We need to track the number shifted off the front of the array
+  // as it is used in determining dayObsTicks
+  let shiftCount = 0;
+  while (filteredGroupedData.length && filteredGroupedData[0].length === 0) {
+    filteredGroupedData.shift();
+    shiftCount += 1;
   }
-  while (chartData.length && chartData.at(-1).length === 0) {
-    chartData.pop();
+
+  while (
+    filteredGroupedData.length &&
+    filteredGroupedData.at(-1).length === 0
+  ) {
+    filteredGroupedData.pop();
   }
 
   // Calculate size of spacing between dayobs in PLOT_KEY_SEQUENCE mode
   // We use the smaller of two numbers based off the number of data points
   // or the number of dayObs, but no less than 8 (otherwise the squiggle lines overlap)
   let chartDayObsSpacing =
-    chartData.length > 1
+    filteredGroupedData.length > 1
       ? Math.ceil(
           Math.max(
             8,
             Math.min(
-              200 / chartData.length - 1,
-              (data.length * 0.2) / chartData.length,
+              200 / filteredGroupedData.length - 1,
+              (filteredData.length * 0.2) / filteredGroupedData.length,
             ),
           ),
         )
@@ -114,87 +165,21 @@ export function calculateChartData({
   // We also don't want dayObsSpacing to be an odd number
   if (chartDayObsSpacing % 2) chartDayObsSpacing++;
 
-  // If not in sequence mode, return grouped time data
-  // Some blank things are included to ensure the return type is consistent
-  if (xAxisType !== PLOT_KEY_SEQUENCE) {
-    const dayObsTicks = [];
-    const dayObsTickMappings = new Map();
-
-    // Calculate dayobs ticks for time mode
-    chartData.forEach((dayObsGroup, dIdx) => {
-      const dayObsValue = availableDayObs[dIdx];
-      // Add tick if there's data for this dayobs
-      if (dayObsGroup.length > 0) {
-        const dayObsStart = Math.min(
-          ...dayObsGroup.map((e) => e.obs_start_millis),
-        );
-        const dayObsEnd = Math.max(
-          ...dayObsGroup.map((e) => e.obs_start_millis),
-        );
-        const dayObsMidpoint = Math.floor((dayObsStart + dayObsEnd) / 2);
-
-        dayObsTicks.push(dayObsMidpoint);
-        dayObsTickMappings.set(dayObsMidpoint, dayObsValue);
-      } else {
-        // If theres no data, then add a dayobs tick at midnight Chile time
-        const dayObsMidpoint = getDayobsStartTAI(dayObsValue).plus({
-          hours: 15,
-        });
-
-        dayObsTicks.push(dayObsMidpoint);
-        dayObsTickMappings.set(dayObsMidpoint, dayObsValue);
-      }
-    });
-
-    return {
-      chartData: chartData,
-      chartMoon: moonIntervals.map(([start, end]) => ({
-        start,
-        end,
-        startIsZigzag: false,
-        endIsZigzag: false,
-      })),
-      chartDayObsBreaks: [],
-      ticks: undefined,
-      dayObsTicks,
-      dayObsTickMappings,
-      noDataX: [],
-      fakeX: 0,
-      chartDayObsSpacing,
-      chartDataKey: "obs_start_millis",
-      domain: [selectedMinMillis, selectedMaxMillis],
-      tickFormatter: (tick) => millisToHHmm(tick),
-      scale: "time",
-    };
-  }
-
   // Don't have the first point on the left Y axis
   let fakeX = 1;
   const transformedChartData = [];
   const chartDayObsBreaks = [];
-  const ticks = [];
-  const tickMappings = new Map();
-  const dayObsTicks = [];
-  const dayObsTickMappings = new Map();
   const noDataX = [];
   const dayObsMetadata = [];
 
-  chartData.forEach((dayObsGroup, dIdx) => {
+  // Transform the data to include a fakeX value and get dayobs metadata
+  filteredGroupedData.forEach((dayObsGroup) => {
     const transformedGroup = [];
-    // Calculate tick size for this dayObs
-    const tickSpacing = Math.ceil(Math.min(dayObsGroup.length / 6, 50));
     const dayObsStartFakeX = fakeX;
 
-    dayObsGroup.forEach((e, i) => {
-      // Create new object with fakeX property - NO MUTATION
+    dayObsGroup.forEach((e) => {
       const entry = { ...e, fakeX };
       transformedGroup.push(entry);
-
-      if (i % tickSpacing === 0) {
-        ticks.push(fakeX);
-        tickMappings.set(fakeX, entry["seq num"]);
-      }
-
       fakeX++;
     });
 
@@ -214,18 +199,9 @@ export function calculateChartData({
       boundaryAfter,
     });
 
-    const dayObsMidFakeX = Math.floor(
-      (dayObsEndFakeX - dayObsStartFakeX) / 2 + dayObsStartFakeX,
-    );
-
-    // Add a tick to display the dayobs on the second x axis
-    dayObsTicks.push(dayObsMidFakeX);
-    dayObsTickMappings.set(dayObsMidFakeX, availableDayObs[dIdx]);
-
     // If there is no data for the day, add a no data reference area
     if (dayObsGroup.length === 0) {
       noDataX.push(fakeX);
-      dayObsTickMappings.set(dayObsMidFakeX, "");
     }
 
     // After each dayobs group, add some spacing on the graph
@@ -233,12 +209,16 @@ export function calculateChartData({
     chartDayObsBreaks.push(fakeX - chartDayObsSpacing / 2);
   });
 
+  // ============================================================
+  // SEQUENCE MODE DATA
+  // ============================================================
+
   // We don't want a daytime-like gap in the sequence at the end
   fakeX -= chartDayObsSpacing;
 
   // Process moon intervals after all fakeX have been assigned
   const flatData = transformedChartData.flat();
-  const chartMoon = [];
+  const sequenceMoon = [];
 
   moonIntervals.forEach(([moonUp, moonDown]) => {
     // Find fakeX positions for moonUp and moonDown events
@@ -271,23 +251,125 @@ export function calculateChartData({
       flatData.filter((d) => d.fakeX >= moonObj.start && d.fakeX <= moonObj.end)
         .length
     ) {
-      chartMoon.push(moonObj);
+      sequenceMoon.push(moonObj);
     }
   });
 
-  return {
-    chartData: transformedChartData,
-    chartMoon,
+  // create ticks (first X axis) and dayObsTicks (second X axis) for sequence mode
+  const tickMappings = new Map();
+  const ticks = [];
+  const dayObsTicks = [];
+  const dayObsTickMappings = new Map();
+  transformedChartData.forEach((dayObsGroup, dIdx) => {
+    const dayObsValue = availableDayObs[dIdx + shiftCount];
+    if (dayObsGroup.length === 0) {
+      // Skip empty dayobs groups in visible data
+      return;
+    }
+
+    // Calculate tick spacing for this dayObs
+    const tickSpacing = Math.ceil(Math.min(dayObsGroup.length / 6, 50));
+    const dayObsStartFakeX = dayObsGroup[0].fakeX;
+    const dayObsEndFakeX = dayObsGroup[dayObsGroup.length - 1].fakeX;
+
+    // Add ticks for individual data points
+    for (let i = 0; i < dayObsGroup.length; i += tickSpacing) {
+      const entry = dayObsGroup[i];
+      ticks.push(entry.fakeX);
+      tickMappings.set(entry.fakeX, entry["seq num"]);
+    }
+
+    // Add dayobs tick
+    const dayObsMidFakeX = (dayObsEndFakeX + dayObsStartFakeX) / 2;
+    dayObsTicks.push(dayObsMidFakeX);
+    dayObsTickMappings.set(dayObsMidFakeX, dayObsValue);
+  });
+
+  // TIME MODE: Calculate dayObsTicks from visible data
+  // Time ticks are calculated automatically
+  let timeDayObsTicks = [];
+  const timeDayObsTickMappings = new Map();
+  filteredGroupedData.forEach((dayObsGroup, dIdx) => {
+    const dayObsValue = availableDayObs[dIdx + shiftCount];
+    if (dayObsGroup.length > 0) {
+      // Add tick if there's data for this dayobs
+      const dayObsStart = Math.min(
+        ...dayObsGroup.map((e) => e.obs_start_millis),
+      );
+      const dayObsEnd = Math.max(...dayObsGroup.map((e) => e.obs_start_millis));
+      const dayObsMidpoint = Math.floor((dayObsStart + dayObsEnd) / 2);
+
+      timeDayObsTicks.push(dayObsMidpoint);
+      timeDayObsTickMappings.set(dayObsMidpoint, dayObsValue);
+    } else {
+      // If there's no data, then add a dayobs tick at midnight Chile time
+      const dayObsMidpoint = getDayobsStartTAI(dayObsValue).plus({
+        hours: 15,
+      });
+
+      timeDayObsTicks.push(dayObsMidpoint.toMillis());
+      timeDayObsTickMappings.set(dayObsMidpoint.toMillis(), dayObsValue);
+    }
+  });
+  // Due to a quirk of recharts, we need to remove any ticks which fall
+  // outside the x axis domain
+  timeDayObsTicks = timeDayObsTicks.filter(
+    (t) => t >= selectedMinMillis && t <= selectedMaxMillis,
+  );
+
+  const timeData = {
+    groupedData: transformedChartData,
+    flatData,
+    chartMoon: moonIntervals
+      .map(([start, end]) => ({
+        start,
+        end,
+        startIsZigzag: false,
+        endIsZigzag: false,
+      }))
+      .filter(
+        (m) => m.start <= selectedMaxMillis && m.end >= selectedMinMillis,
+      ),
+    twilightValues,
+    chartDayObsBreaks: [],
+    noDataX: [],
+    fakeX: 0,
+    chartDayObsSpacing,
+    chartDataKey: "obs_start_millis",
+    domain: [selectedMinMillis, selectedMaxMillis],
+    scale: "time",
+    ticks: undefined,
+    dayObsTicks: timeDayObsTicks,
+    tickFormatter: (tick) => millisToHHmm(tick),
+    dayObsTickFormatter: (tick) => timeDayObsTickMappings.get(tick),
+    indexToMillis: (e) => e,
+    selectedMinMillis,
+    selectedMaxMillis,
+  };
+
+  const sequenceData = {
+    groupedData: transformedChartData,
+    flatData,
+    chartMoon: sequenceMoon.filter((m) => m.start <= fakeX && m.end >= 0),
+    twilightValues: [],
     chartDayObsBreaks,
-    ticks,
-    dayObsTicks,
-    dayObsTickMappings,
     noDataX,
     fakeX,
     chartDayObsSpacing,
     chartDataKey: "fakeX",
     domain: [0, fakeX],
-    tickFormatter: (e) => tickMappings.get(e),
     scale: "auto",
+    ticks,
+    dayObsTicks,
+    tickFormatter: (tick) => tickMappings.get(tick),
+    dayObsTickFormatter: (tick) => dayObsTickMappings.get(tick),
+    indexToMillis: (e) => flatData.find((d) => d.fakeX === e)?.obs_start_millis,
+    selectedMinMillis,
+    selectedMaxMillis,
+  };
+
+  return {
+    time: timeData,
+    sequence: sequenceData,
   };
 }
