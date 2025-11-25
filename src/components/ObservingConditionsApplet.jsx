@@ -462,7 +462,7 @@ function ObservingConditionsApplet({
     return [startMillis, endMillis];
   }, [selectedMinMillis, selectedMaxMillis, xMin, xMax]);
 
-  // Click & Drag plot hooks - callback uses fractions for both X and Y
+  // Click & Drag plot hooks
   const handleSelection = useCallback(
     (start, end, event) => {
       const isZoomOut = event?.ctrlKey || false;
@@ -481,7 +481,7 @@ function ObservingConditionsApplet({
           millisToDateTime(newMax),
         ]);
       } else {
-        // Zoom in: selection becomes new view (existing behavior)
+        // Zoom in: selection becomes new view
         const startMillis = xDomain[0];
         const endMillis = xDomain[1];
         const range = endMillis - startMillis;
