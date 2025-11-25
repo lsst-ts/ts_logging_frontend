@@ -1,0 +1,1 @@
+Add additional interaction and zoom options to all plots
