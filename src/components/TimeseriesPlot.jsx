@@ -45,9 +45,7 @@ import { useDOMClickDrag } from "@/hooks/useDOMClickDrag";
 import {
   scaleDotRadius,
   calculateDecimalPlaces,
-  calculateYZoomFractionsFromSelection,
-  calculateYZoomOutFromSelection,
-  calculateXZoomOutFromSelection,
+  calculateZoom,
 } from "@/utils/plotUtils";
 import { millisToDateTime } from "@/utils/timeUtils";
 import { createDotCallback } from "../utils/createDotCallback";
@@ -130,38 +128,25 @@ function TimeseriesPlot({
   const handleSelection = useCallback(
     (start, end, event) => {
       const isZoomOut = event?.ctrlKey || false;
+      const direction = isZoomOut ? "out" : "in";
 
       // X-axis: Time mode uses fractions, sequence mode uses payload
       if (chartDataKey === "obs_start_millis") {
         // Time mode: Calculate from fractions of current visible domain
-        if (isZoomOut) {
-          // Zoom out: current view fits inside selection
-          const [newMin, newMax] = calculateXZoomOutFromSelection(
-            start.fractionX,
-            end.fractionX,
-            domain,
-            fullTimeRange,
-          );
-          setSelectedTimeRange([
-            millisToDateTime(newMin),
-            millisToDateTime(newMax),
-          ]);
-        } else {
-          // Zoom in: selection becomes new view (existing behavior)
-          const [domainMin, domainMax] = domain;
-          const range = domainMax - domainMin;
-
-          const startTime = millisToDateTime(
-            Math.round(domainMin + start.fractionX * range),
-          );
-          const endTime = millisToDateTime(
-            Math.round(domainMin + end.fractionX * range),
-          );
-
-          const minTime = startTime < endTime ? startTime : endTime;
-          const maxTime = startTime < endTime ? endTime : startTime;
-          setSelectedTimeRange([minTime, maxTime]);
-        }
+        const fullTimeRangeMillis = [
+          fullTimeRange[0].toMillis(),
+          fullTimeRange[1].toMillis(),
+        ];
+        const [newMinMillis, newMaxMillis] = calculateZoom(
+          [start.fractionX, end.fractionX],
+          direction,
+          domain,
+          fullTimeRangeMillis,
+        );
+        setSelectedTimeRange([
+          millisToDateTime(Math.round(newMinMillis)),
+          millisToDateTime(Math.round(newMaxMillis)),
+        ]);
       } else {
         // Sequence mode: Extract time from payload
         if (start.nearestPayload && end.nearestPayload) {
@@ -171,23 +156,27 @@ function TimeseriesPlot({
           if (startMillis && endMillis) {
             if (isZoomOut) {
               // Zoom out: calculate using current domain
-              const [newMin, newMax] = calculateXZoomOutFromSelection(
-                start.fractionX,
-                end.fractionX,
+              const fullTimeRangeMillis = [
+                fullTimeRange[0].toMillis(),
+                fullTimeRange[1].toMillis(),
+              ];
+              const [newMin, newMax] = calculateZoom(
+                [start.fractionX, end.fractionX],
+                direction,
                 [selectedMinMillis, selectedMaxMillis],
-                fullTimeRange,
+                fullTimeRangeMillis,
               );
               setSelectedTimeRange([
-                millisToDateTime(newMin),
-                millisToDateTime(newMax),
+                millisToDateTime(Math.round(newMin)),
+                millisToDateTime(Math.round(newMax)),
               ]);
             } else {
               // Zoom in: use payload millis (existing behavior)
               const minMillis = Math.min(startMillis, endMillis);
               const maxMillis = Math.max(startMillis, endMillis);
               setSelectedTimeRange([
-                millisToDateTime(minMillis),
-                millisToDateTime(maxMillis),
+                millisToDateTime(Math.round(minMillis)),
+                millisToDateTime(Math.round(maxMillis)),
               ]);
             }
           }
@@ -196,35 +185,24 @@ function TimeseriesPlot({
 
       // Y-axis: Only update if shift not held
       if (!event.shiftKey) {
-        if (isZoomOut) {
-          // Zoom out: current view fits inside selection
-          const result = calculateYZoomOutFromSelection(
-            start.fractionY,
-            end.fractionY,
-            currentYDomain,
-            autoYDomain,
-          );
-          setYMinFraction(result.minFraction);
-          setYMaxFraction(result.maxFraction);
-        } else {
-          // Zoom in: selection becomes new view (existing behavior)
-          const result = calculateYZoomFractionsFromSelection(
-            start.fractionY,
-            end.fractionY,
-            currentYDomain,
-            autoYDomain,
-          );
-          setYMinFraction(result.minFraction);
-          setYMaxFraction(result.maxFraction);
-        }
+        // Work directly in fraction space [0, 1]
+        const [newMinFraction, newMaxFraction] = calculateZoom(
+          [start.fractionY, end.fractionY],
+          direction,
+          [yMinFraction, yMaxFraction],
+          [0, 1],
+        );
+
+        setYMinFraction(newMinFraction);
+        setYMaxFraction(newMaxFraction);
       }
     },
     [
       setSelectedTimeRange,
       setYMinFraction,
       setYMaxFraction,
-      currentYDomain,
-      autoYDomain,
+      yMinFraction,
+      yMaxFraction,
       chartDataKey,
       domain,
       fullTimeRange,
