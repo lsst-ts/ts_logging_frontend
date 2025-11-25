@@ -207,3 +207,60 @@ export function calculateXZoomOutFromSelection(
   // Round to integer milliseconds
   return [Math.round(newMin), Math.round(newMax)];
 }
+
+/**
+ * Generic zoom calculation function that handles both zoom-in and zoom-out operations.
+ *
+ * @param {[number, number]} selection - [start, end] as fractions [0,1] of the current domain
+ * @param {"in" | "out"} direction - Zoom direction: "in" to zoom into selection, "out" to zoom out from selection
+ * @param {[number, number]} currentDomain - Current visible domain [min, max]
+ * @param {[number, number]} maxDomain - Maximum domain at minimum zoom [min, max]
+ * @returns {[number, number]} New domain [min, max], clamped to maxDomain
+ */
+export function calculateZoom(selection, direction, currentDomain, maxDomain) {
+  const [startFraction, endFraction] = selection;
+  const [currentMin, currentMax] = currentDomain;
+  const [maxMin, maxMax] = maxDomain;
+
+  const currentRange = currentMax - currentMin;
+
+  if (direction === "in") {
+    // Zoom in: selection becomes the new domain
+    const selectionMin =
+      currentMin + Math.min(startFraction, endFraction) * currentRange;
+    const selectionMax =
+      currentMin + Math.max(startFraction, endFraction) * currentRange;
+
+    // Clamp to max domain bounds
+    const newMin = Math.max(maxMin, selectionMin);
+    const newMax = Math.min(maxMax, selectionMax);
+
+    return [newMin, newMax];
+  } else if (direction === "out") {
+    // Zoom out: current view fits inside the selection (inverted behavior)
+    const selectionMin =
+      currentMin + Math.min(startFraction, endFraction) * currentRange;
+    const selectionMax =
+      currentMin + Math.max(startFraction, endFraction) * currentRange;
+    const selectionRange = selectionMax - selectionMin;
+    const selectionCenter = (selectionMin + selectionMax) / 2;
+
+    // Calculate zoom-out factor: how much wider should the view be?
+    // If selection is 25% of current view, new view should be 4x wider
+    const zoomOutFactor = currentRange / selectionRange;
+    const newRange = currentRange * zoomOutFactor;
+
+    // Calculate new domain centered on selection
+    let newMin = selectionCenter - newRange / 2;
+    let newMax = selectionCenter + newRange / 2;
+
+    // Clamp to max domain bounds (don't zoom out beyond default)
+    newMin = Math.max(maxMin, newMin);
+    newMax = Math.min(maxMax, newMax);
+
+    return [newMin, newMax];
+  }
+
+  // Invalid direction, return current domain unchanged
+  return [currentMin, currentMax];
+}
