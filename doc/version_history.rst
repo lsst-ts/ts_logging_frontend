@@ -1,3 +1,18 @@
+v0.10.2-alpha.1 (2025-11-25)
+============================
+
+New Features
+------------
+
+- Add cross-chart hover highlighting (`OSW-963 <https://rubinobs.atlassian.net//browse/OSW-963>`_)
+
+
+Other Changes and Additions
+---------------------------
+
+- Update default sort for exposure breakdown to 'highest number first'. (`OSW-1014 <https://rubinobs.atlassian.net//browse/OSW-1014>`_)
+
+
 v0.10.1 (2025-11-07)
 ====================
 

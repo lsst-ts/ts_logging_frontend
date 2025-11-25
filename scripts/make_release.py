@@ -10,6 +10,7 @@ from datetime import datetime
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 VERSION_HISTORY_PATH = os.path.join(ROOT_DIR, "doc/version_history.rst")
 PACKAGE_JSON_PATH = os.path.join(ROOT_DIR, "package.json")
+PACKAGE_LOCK_PATH = os.path.join(ROOT_DIR, "package-lock.json")
 
 # Semantic Versioning regex pattern
 # Source:
@@ -39,33 +40,36 @@ def run_towncrier_build(version: str):
     subprocess.run(["git", "commit", "-m", "Update the version history."], check=True)
 
 
-def bump_package_json_metadata(version: str):
+def bump_package_json_metadata(json_file_path, version: str):
     """Update `version` and `lastUpdated` fields
-    in the package.json file.
+    in either of the package(-lock).json files.
 
     Parameters
     ----------
+    json_file_path: os.path
+        The file path of the JSON to edit.
+
     version : str
         The version string to set in package.json.
     """
 
-    # Read the package.json file and convert to dict
-    with open(PACKAGE_JSON_PATH, "r", encoding="utf-8") as f:
-        package_json = f.read()
-        package_data = json.loads(package_json)
+    # Read the json file and convert to dict
+    with open(json_file_path, "r", encoding="utf-8") as f:
+        json_file_path = f.read()
+        package_data = json.loads(json_file_path)
 
     # Update the version and lastUpdated fields
     package_data["version"] = version
     package_data["lastUpdated"] = datetime.now().strftime("%Y-%m-%d")
 
     # Write the updated dict back to package.json
-    with open(PACKAGE_JSON_PATH, "w", encoding="utf-8") as f:
+    with open(json_file_path, "w", encoding="utf-8") as f:
         json.dump(package_data, f, indent=2)
         f.write("\n")
 
     # Stage and commit the changes
-    subprocess.run(["git", "add", PACKAGE_JSON_PATH], check=True)
-    subprocess.run(["git", "commit", "-m", f"Bump package.json metadata for v{version}."], check=True)
+    subprocess.run(["git", "add", json_file_path], check=True)
+    subprocess.run(["git", "commit", "-m", f"Bump {json_file_path} metadata for v{version}."], check=True)
 
 
 def git_tag(version: str):
@@ -119,7 +123,8 @@ def main():
         raise ValueError(f"Version '{args.version}' is not in valid semantic versioning format.")
 
     run_towncrier_build(args.version)
-    bump_package_json_metadata(args.version)
+    bump_package_json_metadata(PACKAGE_JSON_PATH, args.version)
+    bump_package_json_metadata(PACKAGE_LOCK_PATH, args.version)
     git_tag(args.version)
 
 
