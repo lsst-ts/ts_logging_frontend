@@ -1,23 +1,22 @@
-// Unified marker component for timeline charts
-// Supports both vertical line and diamond shapes
+import { TIMELINE_MARKER } from "@/constants/TIMELINE_DEFINITIONS";
 
+// Unified marker component for timeline charts
 const TimelineMarker = ({
   cx,
   cy,
   color,
-  h = 16,
-  w = 1,
-  type = "line",
-  opacity = 1,
+  h = TIMELINE_MARKER.DEFAULT_HEIGHT,
+  w = TIMELINE_MARKER.DEFAULT_WIDTH,
+  opacity = TIMELINE_MARKER.DEFAULT_OPACITY,
 }) => {
   if (cx == null || cy == null) return null;
 
   // Defaults
-  const height = h || (type === "line" ? 20 : 16);
-  const width = w || 1;
+  const height = h || TIMELINE_MARKER.DEFAULT_HEIGHT;
+  const width = w || TIMELINE_MARKER.DEFAULT_WIDTH;
   const halfHeight = height / 2;
   const halfWidth = width / 2;
-  const fill = color || "#3CAE3F";
+  const fill = color || TIMELINE_MARKER.DEFAULT_COLOR;
 
   // Diamond shape (polygon)
   const points = `
