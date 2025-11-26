@@ -80,6 +80,36 @@ const fetchExposures = async (start, end, instrument, abortController) => {
 };
 
 /**
+ * Fetches expected exposure data for Simonyi for a given date range.
+ *
+ * @async
+ * @function fetchExpectedExposures
+ * @param {string} start - The start date for the observation range (format: YYYY-MM-DD).
+ * @param {string} end - The end date for the observation range (format: YYYY-MM-DD).
+ * @param {AbortController} abortController - The AbortController used to cancel the request if needed.
+ * @returns {Promise<[Object[], number]>} A promise that resolves to an array containing:
+ *   [0]: nightly_exposures (number[]) - A list of expected exposures covering each date in the range,
+ *   [1]: sum_exposures (number) - The number of expected exposures over the full range,
+ * @throws {error} Will throw an error if the fetch operation fails (for reasons other than an abort)
+ * or returns invalid data.
+ */
+const fetchExpectedExposures = async (start, end, abortController) => {
+  try {
+    const url = `${backendLocation}/expected-exposures?dayObsStart=${start}&dayObsEnd=${end}`;
+    const data = await fetchData(url, abortController);
+    return [
+      // data.nightly_exposures,
+      data.sum_exposures,
+    ];
+  } catch (err) {
+    if (err.name !== "AbortError") {
+      console.error("Error fetching expected exposures:", err);
+    }
+    throw err;
+  }
+};
+
+/**
  * Fetches night hours data from the Almanac API for a given date range.
  *
  * @async
@@ -384,6 +414,7 @@ const fetchVisitMaps = async (
 
 export {
   fetchExposures,
+  fetchExpectedExposures,
   fetchAlmanac,
   fetchNarrativeLog,
   fetchNightreport,
