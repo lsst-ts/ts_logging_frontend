@@ -10,11 +10,12 @@ import {
 } from "recharts";
 
 import { useDOMClickDrag } from "@/hooks/useDOMClickDrag";
+import { millisToDateTime, millisToHHmm } from "@/utils/timeUtils";
 import {
-  millisToDateTime,
-  millisToHHmm,
-  dayobsAtMidnight,
-} from "@/utils/timeUtils";
+  generateHourlyTicks,
+  calculateYDomain,
+  createDayobsTickRenderer,
+} from "@/utils/timelineUtils";
 import TimelineMarker from "@/components/TimelineMarker";
 import {
   TIMELINE_DIMENSIONS,
@@ -116,136 +117,28 @@ function TimelineChart({
   // Compute height if not provided
   const computedHeight = height || TIMELINE_DIMENSIONS.DEFAULT_HEIGHT;
 
-  // Marker configuration based on type
-
-  // Helper: Generate hourly ticks for xAxis
-  const generateHourlyTicks = (startMillis, endMillis, intervalHours = 1) => {
-    const ticks = [];
-    let t = millisToDateTime(startMillis).startOf("hour");
-    const endDt = millisToDateTime(endMillis).endOf("hour");
-
-    while (t <= endDt) {
-      ticks.push(t.toMillis());
-      t = t.plus({ hours: intervalHours });
-    }
-    return ticks;
-  };
+  // Generate hourly ticks for xAxis
   const hourlyTicks = generateHourlyTicks(
     xMinMillis,
     xMaxMillis,
     TIMELINE_INTERVALS.HOURLY_TICK_INTERVAL,
   );
 
-  // Helper: Render dayobs ticks (labels and lines)
-  const renderDayobsTicks = ({ x, y, payload }) => {
-    const value = payload.value;
-    const dt = millisToDateTime(value);
-
-    const hourUTC = dt.hour;
-    const isMiddayUTC = hourUTC === 12;
-    const isMidnightUTC = hourUTC === 0;
-
-    // Lines at midday dayobs borders
-    if (isMiddayUTC) {
-      return (
-        <line
-          x1={x}
-          y1={y - computedHeight + TIMELINE_DIMENSIONS.DIST_BELOW_X_AXIS}
-          x2={x}
-          y2={y + TIMELINE_DIMENSIONS.DIST_BELOW_X_AXIS}
-          stroke={TIMELINE_COLORS.DAYOBS_BORDER}
-        />
-      );
-    }
-
-    // Dayobs labels
-    if (isMidnightUTC) {
-      const dayobsLabel = dayobsAtMidnight(dt, "yyyy-LL-dd");
-
-      return (
-        <>
-          <text
-            x={x}
-            y={y + TIMELINE_DIMENSIONS.DIST_BELOW_X_AXIS}
-            fontSize={TIMELINE_DIMENSIONS.LABEL_TEXT_SIZE}
-            textAnchor="middle"
-            fill={TIMELINE_COLORS.DAYOBS_LABEL}
-            style={{ WebkitUserSelect: "none", userSelect: "none" }}
-          >
-            {dayobsLabel}
-          </text>
-        </>
-      );
-    }
-
-    // Moon illumination labels
-    if (showMoonIllumination) {
-      const dtChile = dt.setZone("America/Santiago");
-      const isMidnightChile = dtChile.hour === 0;
-
-      if (isMidnightChile) {
-        const dayobs = dayobsAtMidnight(dtChile, "yyyyLLdd");
-        const illumEntry = illumValues.find((entry) => entry.dayobs === dayobs);
-        const illumLabel = illumEntry?.illum ?? null;
-
-        return (
-          <>
-            {illumLabel && (
-              <>
-                {/* Moon symbol */}
-                <g
-                  transform={`translate(${x - TIMELINE_DIMENSIONS.X_OFFSET}, ${
-                    y -
-                    TIMELINE_DIMENSIONS.DIST_FROM_X_AXIS -
-                    TIMELINE_DIMENSIONS.MOON_RADIUS
-                  })`}
-                >
-                  <circle
-                    cx={0}
-                    cy={0}
-                    r={TIMELINE_DIMENSIONS.MOON_RADIUS}
-                    fill={TIMELINE_COLORS.MOON_SYMBOL_LIGHT}
-                  />
-                  <circle
-                    cx={TIMELINE_DIMENSIONS.MOON_RADIUS / 2}
-                    cy={-TIMELINE_DIMENSIONS.MOON_RADIUS / 2}
-                    r={TIMELINE_DIMENSIONS.MOON_RADIUS}
-                    fill={TIMELINE_COLORS.MOON_SYMBOL_DARK}
-                  />
-                </g>
-                {/* Illumination value */}
-                <text
-                  x={x + TIMELINE_DIMENSIONS.X_OFFSET}
-                  y={y - TIMELINE_DIMENSIONS.DIST_FROM_X_AXIS}
-                  fontSize={TIMELINE_TEXT_STYLES.LABEL_FONT_SIZE}
-                  fontWeight={TIMELINE_TEXT_STYLES.LABEL_FONT_WEIGHT}
-                  letterSpacing={TIMELINE_TEXT_STYLES.LABEL_LETTER_SPACING}
-                  fill={TIMELINE_COLORS.MOON_LABEL}
-                  textAnchor="left"
-                  style={{ userSelect: "none" }}
-                >
-                  {illumLabel}
-                </text>
-              </>
-            )}
-          </>
-        );
-      }
-    }
-
-    return null;
-  };
-
-  // Calculate Y domain from data indices
-  const indices = data.map((d) => d.index);
-  const minIndex = Math.min(...indices);
-  const maxIndex = Math.max(...indices);
+  // Create tick renderer for dayobs labels, borders, and moon illumination
+  const renderDayobsTicks = createDayobsTickRenderer(
+    computedHeight,
+    showMoonIllumination,
+    illumValues,
+  );
 
   // Determine if single series (for horizontal line styling)
   const isSingleSeries = data.length === 1;
 
   // For multiple series, baseline should be at the bottom
   const baselineY = isSingleSeries ? null : TIMELINE_Y_DOMAIN.MULTI_SERIES_MIN;
+
+  // Calculate Y-axis domain
+  const yDomain = calculateYDomain(data, isSingleSeries);
 
   return (
     <ResponsiveContainer
@@ -343,23 +236,7 @@ function TimelineChart({
         />
 
         {/* Y Axis */}
-        <YAxis
-          hide
-          domain={
-            isSingleSeries
-              ? [
-                  minIndex - TIMELINE_Y_DOMAIN.SINGLE_SERIES_PADDING,
-                  maxIndex + TIMELINE_Y_DOMAIN.SINGLE_SERIES_PADDING,
-                ]
-              : [
-                  TIMELINE_Y_DOMAIN.MULTI_SERIES_MIN,
-                  Math.max(
-                    maxIndex + TIMELINE_Y_DOMAIN.SINGLE_SERIES_PADDING,
-                    TIMELINE_Y_DOMAIN.MULTI_SERIES_MIN_MAX,
-                  ),
-                ]
-          }
-        />
+        <YAxis hide domain={yDomain} />
 
         {/* Moon Up Area */}
         {showMoonArea &&
