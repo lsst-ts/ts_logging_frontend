@@ -69,7 +69,8 @@ const fetchExposures = async (start, end, instrument, abortController) => {
       data.sum_exposure_time,
       data.on_sky_exposures_count,
       data.total_on_sky_exposure_time,
-      data.open_dome_hours,
+      data.open_dome_times,
+      // data.open_dome_hours,
     ];
   } catch (err) {
     if (err.name !== "AbortError") {
