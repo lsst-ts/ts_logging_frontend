@@ -1,3 +1,21 @@
+v0.11.0-alpha.1 (2025-11-26)
+============================
+
+New Features
+------------
+
+- Add cross-chart hover highlighting (`OSW-963 <https://rubinobs.atlassian.net//browse/OSW-963>`_)
+- Add additional interaction and zoom options to all plots (`OSW-1097 <https://rubinobs.atlassian.net//browse/OSW-1097>`_)
+- Display expected number of exposures for Simonyi. (`OSW-1166 <https://rubinobs.atlassian.net//browse/OSW-1166>`_)
+
+
+Other Changes and Additions
+---------------------------
+
+- Update default sort for exposure breakdown to 'highest number first'. (`OSW-1014 <https://rubinobs.atlassian.net//browse/OSW-1014>`_)
+- Make timeline component reusable (`OSW-1326 <https://rubinobs.atlassian.net//browse/OSW-1326>`_)
+
+
 v0.10.1 (2025-11-07)
 ====================
 
