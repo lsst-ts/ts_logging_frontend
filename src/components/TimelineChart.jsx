@@ -16,6 +16,15 @@ import {
   dayobsAtMidnight,
 } from "@/utils/timeUtils";
 import TimelineMarker from "@/components/TimelineMarker";
+import {
+  TIMELINE_DIMENSIONS,
+  TIMELINE_MARGINS,
+  TIMELINE_COLORS,
+  TIMELINE_TEXT_STYLES,
+  TIMELINE_OPACITY,
+  TIMELINE_INTERVALS,
+  TIMELINE_Y_DOMAIN,
+} from "@/constants/TIMELINE_DEFINITIONS";
 
 /**
  * Unified timeline chart component for displaying events over time.
@@ -105,7 +114,7 @@ function TimelineChart({
   if (!xMinMillis || !xMaxMillis) return null;
 
   // Compute height if not provided
-  const computedHeight = height || 110;
+  const computedHeight = height || TIMELINE_DIMENSIONS.DEFAULT_HEIGHT;
 
   // Marker configuration based on type
 
@@ -121,7 +130,11 @@ function TimelineChart({
     }
     return ticks;
   };
-  const hourlyTicks = generateHourlyTicks(xMinMillis, xMaxMillis, 1);
+  const hourlyTicks = generateHourlyTicks(
+    xMinMillis,
+    xMaxMillis,
+    TIMELINE_INTERVALS.HOURLY_TICK_INTERVAL,
+  );
 
   // Helper: Render dayobs ticks (labels and lines)
   const renderDayobsTicks = ({ x, y, payload }) => {
@@ -132,18 +145,15 @@ function TimelineChart({
     const isMiddayUTC = hourUTC === 12;
     const isMidnightUTC = hourUTC === 0;
 
-    const DIST_BELOW_xAXIS = 10;
-    const LABEL_TEXT_SIZE = 16;
-
     // Lines at midday dayobs borders
     if (isMiddayUTC) {
       return (
         <line
           x1={x}
-          y1={y - computedHeight + DIST_BELOW_xAXIS}
+          y1={y - computedHeight + TIMELINE_DIMENSIONS.DIST_BELOW_X_AXIS}
           x2={x}
-          y2={y + DIST_BELOW_xAXIS}
-          stroke="grey"
+          y2={y + TIMELINE_DIMENSIONS.DIST_BELOW_X_AXIS}
+          stroke={TIMELINE_COLORS.DAYOBS_BORDER}
         />
       );
     }
@@ -156,10 +166,10 @@ function TimelineChart({
         <>
           <text
             x={x}
-            y={y + DIST_BELOW_xAXIS}
-            fontSize={LABEL_TEXT_SIZE}
+            y={y + TIMELINE_DIMENSIONS.DIST_BELOW_X_AXIS}
+            fontSize={TIMELINE_DIMENSIONS.LABEL_TEXT_SIZE}
             textAnchor="middle"
-            fill="grey"
+            fill={TIMELINE_COLORS.DAYOBS_LABEL}
             style={{ WebkitUserSelect: "none", userSelect: "none" }}
           >
             {dayobsLabel}
@@ -178,36 +188,39 @@ function TimelineChart({
         const illumEntry = illumValues.find((entry) => entry.dayobs === dayobs);
         const illumLabel = illumEntry?.illum ?? null;
 
-        const DIST_FROM_xAXIS = 85;
-        const X_OFFSET = 4;
-        const MOON_RADIUS = 6;
-
         return (
           <>
             {illumLabel && (
               <>
                 {/* Moon symbol */}
                 <g
-                  transform={`translate(${x - X_OFFSET}, ${
-                    y - DIST_FROM_xAXIS - MOON_RADIUS
+                  transform={`translate(${x - TIMELINE_DIMENSIONS.X_OFFSET}, ${
+                    y -
+                    TIMELINE_DIMENSIONS.DIST_FROM_X_AXIS -
+                    TIMELINE_DIMENSIONS.MOON_RADIUS
                   })`}
                 >
-                  <circle cx={0} cy={0} r={MOON_RADIUS} fill="white" />
                   <circle
-                    cx={MOON_RADIUS / 2}
-                    cy={-MOON_RADIUS / 2}
-                    r={MOON_RADIUS}
-                    fill="#27272a"
+                    cx={0}
+                    cy={0}
+                    r={TIMELINE_DIMENSIONS.MOON_RADIUS}
+                    fill={TIMELINE_COLORS.MOON_SYMBOL_LIGHT}
+                  />
+                  <circle
+                    cx={TIMELINE_DIMENSIONS.MOON_RADIUS / 2}
+                    cy={-TIMELINE_DIMENSIONS.MOON_RADIUS / 2}
+                    r={TIMELINE_DIMENSIONS.MOON_RADIUS}
+                    fill={TIMELINE_COLORS.MOON_SYMBOL_DARK}
                   />
                 </g>
                 {/* Illumination value */}
                 <text
-                  x={x + X_OFFSET}
-                  y={y - DIST_FROM_xAXIS}
-                  fontSize={LABEL_TEXT_SIZE}
-                  fontWeight={100}
-                  letterSpacing={0.5}
-                  fill="white"
+                  x={x + TIMELINE_DIMENSIONS.X_OFFSET}
+                  y={y - TIMELINE_DIMENSIONS.DIST_FROM_X_AXIS}
+                  fontSize={TIMELINE_TEXT_STYLES.LABEL_FONT_SIZE}
+                  fontWeight={TIMELINE_TEXT_STYLES.LABEL_FONT_WEIGHT}
+                  letterSpacing={TIMELINE_TEXT_STYLES.LABEL_LETTER_SPACING}
+                  fill={TIMELINE_COLORS.MOON_LABEL}
                   textAnchor="left"
                   style={{ userSelect: "none" }}
                 >
@@ -223,8 +236,6 @@ function TimelineChart({
     return null;
   };
 
-  const PLOT_LABEL_HEIGHT = 20;
-
   // Calculate Y domain from data indices
   const indices = data.map((d) => d.index);
   const minIndex = Math.min(...indices);
@@ -234,7 +245,7 @@ function TimelineChart({
   const isSingleSeries = data.length === 1;
 
   // For multiple series, baseline should be at the bottom
-  const baselineY = isSingleSeries ? null : 0;
+  const baselineY = isSingleSeries ? null : TIMELINE_Y_DOMAIN.MULTI_SERIES_MIN;
 
   return (
     <ResponsiveContainer
@@ -248,10 +259,12 @@ function TimelineChart({
         width="100%"
         height={computedHeight}
         margin={{
-          top: showMoonIllumination ? PLOT_LABEL_HEIGHT : 0,
-          right: 30,
-          left: 30,
-          bottom: 0,
+          top: showMoonIllumination
+            ? TIMELINE_DIMENSIONS.PLOT_LABEL_HEIGHT
+            : TIMELINE_MARGINS.top,
+          right: TIMELINE_MARGINS.right,
+          left: TIMELINE_MARGINS.left,
+          bottom: TIMELINE_MARGINS.bottom,
         }}
         onMouseDown={mouseDown}
         onMouseMove={mouseMove}
@@ -264,20 +277,41 @@ function TimelineChart({
           <ReferenceLine
             key={`hline-${i}`}
             y={entry.index}
-            stroke={isSingleSeries ? "white" : "#606060"}
-            strokeWidth={isSingleSeries ? 1.5 : 1}
-            strokeOpacity={entry.isActive ? 1 : 0.1}
+            stroke={
+              isSingleSeries
+                ? TIMELINE_COLORS.SINGLE_SERIES_LINE
+                : TIMELINE_COLORS.MULTI_SERIES_LINE
+            }
+            strokeWidth={
+              isSingleSeries
+                ? TIMELINE_COLORS.SINGLE_SERIES_STROKE_WIDTH
+                : TIMELINE_COLORS.MULTI_SERIES_STROKE_WIDTH
+            }
+            strokeOpacity={
+              entry.isActive
+                ? TIMELINE_OPACITY.ACTIVE
+                : TIMELINE_OPACITY.INACTIVE
+            }
           />
         ))}
 
         {/* Additional white baseline if multiple datasets */}
         {!isSingleSeries && baselineY !== null && (
-          <ReferenceLine y={baselineY} stroke="white" strokeWidth={1.5} />
+          <ReferenceLine
+            y={baselineY}
+            stroke={TIMELINE_COLORS.SINGLE_SERIES_LINE}
+            strokeWidth={TIMELINE_COLORS.SINGLE_SERIES_STROKE_WIDTH}
+          />
         )}
 
         {/* Vertical lines on the hour */}
         {hourlyTicks.map((tick) => (
-          <ReferenceLine key={tick} x={tick} stroke="white" opacity={0.1} />
+          <ReferenceLine
+            key={tick}
+            x={tick}
+            stroke={TIMELINE_COLORS.GRID_LINE}
+            opacity={TIMELINE_COLORS.GRID_OPACITY}
+          />
         ))}
 
         {/* Dayobs & Moon Illumination labels and lines */}
@@ -293,7 +327,7 @@ function TimelineChart({
           axisLine={false}
           tickLine={false}
           tick={renderDayobsTicks}
-          height={PLOT_LABEL_HEIGHT}
+          height={TIMELINE_DIMENSIONS.PLOT_LABEL_HEIGHT}
         />
 
         {/* TAI Time Axis */}
@@ -305,7 +339,7 @@ function TimelineChart({
           scale="time"
           tick={false}
           axisLine={false}
-          fontSize="20"
+          fontSize={TIMELINE_TEXT_STYLES.AXIS_FONT_SIZE}
         />
 
         {/* Y Axis */}
@@ -313,8 +347,17 @@ function TimelineChart({
           hide
           domain={
             isSingleSeries
-              ? [minIndex - 0.5, maxIndex + 0.5]
-              : [0, Math.max(maxIndex + 0.5, 10)]
+              ? [
+                  minIndex - TIMELINE_Y_DOMAIN.SINGLE_SERIES_PADDING,
+                  maxIndex + TIMELINE_Y_DOMAIN.SINGLE_SERIES_PADDING,
+                ]
+              : [
+                  TIMELINE_Y_DOMAIN.MULTI_SERIES_MIN,
+                  Math.max(
+                    maxIndex + TIMELINE_Y_DOMAIN.SINGLE_SERIES_PADDING,
+                    TIMELINE_Y_DOMAIN.MULTI_SERIES_MIN_MAX,
+                  ),
+                ]
           }
         />
 
@@ -325,8 +368,8 @@ function TimelineChart({
               key={`moon-up-${i}`}
               x1={start}
               x2={end}
-              fillOpacity={0.2}
-              fill="#EAB308"
+              fillOpacity={TIMELINE_COLORS.MOON_AREA_OPACITY}
+              fill={TIMELINE_COLORS.MOON_AREA_FILL}
               yAxisId="0"
             />
           ))}
@@ -338,17 +381,17 @@ function TimelineChart({
               <ReferenceLine
                 key={`twilight-${i}-${twi}`}
                 x={twi}
-                stroke="#0ea5e9"
-                strokeWidth={3}
+                stroke={TIMELINE_COLORS.TWILIGHT_LINE}
+                strokeWidth={TIMELINE_COLORS.TWILIGHT_STROKE_WIDTH}
                 yAxisId="0"
                 label={{
                   value: `${millisToHHmm(twi)}`,
                   position: "bottom",
-                  fill: "white",
+                  fill: TIMELINE_COLORS.TWILIGHT_LABEL,
                   dy: 5,
-                  fontSize: 16,
-                  fontWeight: 100,
-                  letterSpacing: 0.5,
+                  fontSize: TIMELINE_TEXT_STYLES.LABEL_FONT_SIZE,
+                  fontWeight: TIMELINE_TEXT_STYLES.LABEL_FONT_WEIGHT,
+                  letterSpacing: TIMELINE_TEXT_STYLES.LABEL_LETTER_SPACING,
                   style: { userSelect: "none" },
                 }}
               />
@@ -370,7 +413,11 @@ function TimelineChart({
                 cx={props.cx}
                 cy={props.cy}
                 color={entry.color}
-                opacity={entry.isActive ? 1 : 0.1}
+                opacity={
+                  entry.isActive
+                    ? TIMELINE_OPACITY.ACTIVE
+                    : TIMELINE_OPACITY.INACTIVE
+                }
               />
             )}
             isAnimationActive={false}
@@ -382,8 +429,8 @@ function TimelineChart({
           <ReferenceArea
             x1={selectedMinMillis}
             x2={selectedMaxMillis}
-            stroke="hotPink"
-            fillOpacity={0.2}
+            stroke={TIMELINE_COLORS.SELECTION_STROKE}
+            fillOpacity={TIMELINE_COLORS.SELECTION_FILL_OPACITY}
             className="selection-highlight"
           />
         ) : null}
