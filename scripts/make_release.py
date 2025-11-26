@@ -10,6 +10,7 @@ from datetime import datetime
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 VERSION_HISTORY_PATH = os.path.join(ROOT_DIR, "doc/version_history.rst")
 PACKAGE_JSON_PATH = os.path.join(ROOT_DIR, "package.json")
+PACKAGE_LOCK_PATH = os.path.join(ROOT_DIR, "package-lock.json")
 
 # Semantic Versioning regex pattern
 # Source:
@@ -63,8 +64,11 @@ def bump_package_json_metadata(version: str):
         json.dump(package_data, f, indent=2)
         f.write("\n")
 
+    # Update package-lock.json if needed
+    subprocess.run(['npm', 'install', '--package-lock-only'])
+
     # Stage and commit the changes
-    subprocess.run(["git", "add", PACKAGE_JSON_PATH], check=True)
+    subprocess.run(["git", "add", PACKAGE_JSON_PATH, PACKAGE_LOCK_PATH], check=True)
     subprocess.run(["git", "commit", "-m", f"Bump package.json metadata for v{version}."], check=True)
 
 

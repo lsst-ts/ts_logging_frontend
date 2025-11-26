@@ -1,0 +1,1 @@
+Add updating package-lock.json to release process.
