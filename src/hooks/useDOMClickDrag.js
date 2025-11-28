@@ -86,7 +86,7 @@ export function useDOMClickDrag({
     startPayload: null, // activePayload[0]?.payload from initial click (for callback)
     startYPixel: null, // chartY from initial click (for Y-axis zoom)
     currentPixel: null, // Track current mouse position
-    currentCoordinate: null, // Track current coordinate
+    currentCoordinate: null, // Track current activeCoordinate.x
     currentYPixel: null, // Track current Y position
     shiftKeyHeld: false, // Track shift key state
     ctrlKeyHeld: false, // Track ctrl key state
@@ -145,6 +145,7 @@ export function useDOMClickDrag({
     }
 
     // Update Y coordinates only if 2D selection is enabled AND shift is not held
+    // Otherwise, update the selection to the full height of the plot
     if (use2DSelection && currentYPixel !== undefined) {
       const y = Math.min(startYPixel, currentYPixel);
       const height = Math.abs(currentYPixel - startYPixel);
@@ -208,9 +209,6 @@ export function useDOMClickDrag({
 
     // Find the SVG element in the chart
     let svg = chartRef.current.querySelector("svg.recharts-surface");
-    if (!svg) {
-      svg = chartRef.current.querySelector("svg");
-    }
 
     if (!svg) {
       return false;
@@ -272,11 +270,9 @@ export function useDOMClickDrag({
       }
     });
 
-    // Append to SVG (order matters: mouse on top of snapped)
+    // Append to SVG and store in refs
     svg.appendChild(snappedRect);
     svg.appendChild(mouseRect);
-
-    // Store in refs
     mouseRef.current = mouseRect;
     snappedRef.current = snappedRect;
 
@@ -285,6 +281,11 @@ export function useDOMClickDrag({
 
   const mouseDown = useCallback(
     (chartState, event) => {
+      // Call optional callback
+      if (onMouseDownCallback) {
+        onMouseDownCallback(chartState, dragState.current);
+      }
+
       // Only respond to left mouse button (button 0)
       if (event?.button !== 0) {
         return;
@@ -300,8 +301,10 @@ export function useDOMClickDrag({
       let startPayload = chartState.activePayload?.[0]?.payload || null;
 
       // Shift-extend: extend from the farther edge of the current selection
-      if (event?.shiftKey) {
+      // Only works for 1D selection
+      if (event?.shiftKey && !enable2DSelection) {
         // Find the selection ReferenceArea path to get pixel positions
+        // Note that this requires the chart to have a reference area with the `selection-highlight` class
         const selectionPath = chartRef.current?.querySelector(
           ".selection-highlight path",
         );
@@ -320,16 +323,15 @@ export function useDOMClickDrag({
             // Use the farther endpoint as the start point
             if (distToStart > distToEnd) {
               startPixel = rectX; // Left edge
-              startCoordinate = rectX;
             } else {
               startPixel = rectX + rectWidth; // Right edge
-              startCoordinate = rectX + rectWidth;
             }
-            // Note: startPayload remains from the current click position
-            // The callback will receive start/end in visual order (swapped in mouseUp if needed)
+            // Note: startPayload and startCoordinate are null as we don't have
+            // a way of reliably telling which payloads the startPixel corresponds to
+            startPayload = null;
+            startCoordinate = null;
           }
         }
-        // If we can't get the pixel position, fall back to normal drag behavior
       }
 
       dragState.current.isDragging = true;
@@ -345,23 +347,18 @@ export function useDOMClickDrag({
 
       // Make areas visible based on configuration
       if (showMouseRect && mouseRef.current) {
-        mouseRef.current.setAttribute("fill-opacity", "0.2");
+        mouseRef.current.setAttribute("fill-opacity", "0.4");
       }
       if (showSnappedRect && snappedRef.current) {
-        snappedRef.current.setAttribute("fill-opacity", "0.5");
+        snappedRef.current.setAttribute("fill-opacity", "0.4");
       }
 
       // Add keyboard event listeners to track ctrl/shift during drag
       window.addEventListener("keydown", handleKeyChange);
       window.addEventListener("keyup", handleKeyChange);
 
-      // Update rectangle dimensions immediately (important for shift-extend)
+      // Update rectangle dimensions immediately
       updateSelectionRects();
-
-      // Call optional callback
-      if (onMouseDownCallback) {
-        onMouseDownCallback(chartState, dragState.current);
-      }
     },
     [
       ensureRectsExist,
@@ -377,15 +374,15 @@ export function useDOMClickDrag({
 
   const mouseMove = useCallback(
     (chartState, event) => {
+      // Call optional callback even when not dragging
+      if (onMouseMoveCallback) {
+        onMouseMoveCallback(chartState, dragState.current);
+      }
       // If we're outisde the chart zone, don't do anything
       if (chartState.chartX === undefined || chartState.chartY === undefined) {
         return;
       }
       if (!dragState.current.isDragging) {
-        // Call optional callback even when not dragging
-        if (onMouseMoveCallback) {
-          onMouseMoveCallback(chartState, dragState.current);
-        }
         return;
       }
 
@@ -398,17 +395,16 @@ export function useDOMClickDrag({
 
       // Update selection rectangles
       updateSelectionRects();
-
-      // Call optional callback
-      if (onMouseMoveCallback) {
-        onMouseMoveCallback(chartState, dragState.current);
-      }
     },
     [onMouseMoveCallback, updateSelectionRects],
   );
 
   const mouseUp = useCallback(
     (chartState, event) => {
+      // Call optional callback
+      if (onMouseUpCallback) {
+        onMouseUpCallback(chartState, dragState.current);
+      }
       // Only respond to left mouse button (button 0)
       if (event?.button !== 0) {
         return;
@@ -419,16 +415,8 @@ export function useDOMClickDrag({
       const { startPixel, startPayload, startYPixel } = dragState.current;
 
       // Get plot bounds for fraction calculations
-      const svg =
-        chartRef.current?.querySelector("svg.recharts-surface") ||
-        chartRef.current?.querySelector("svg");
+      const svg = chartRef.current?.querySelector("svg.recharts-surface");
       const bbox = getChartPlotBounds(svg);
-
-      if (!bbox || !chartState) {
-        dragState.current.isDragging = false;
-        hideSelectionRects();
-        return;
-      }
 
       const {
         x: plotLeft,
@@ -438,7 +426,6 @@ export function useDOMClickDrag({
       } = bbox;
 
       // Create start MousePosition
-      // Use raw pixel positions (not snapped) for fraction calculations
       const startFractionX = (startPixel - plotLeft) / plotWidth;
       const startFractionY = 1 - (startYPixel - plotTop) / plotHeight;
 
@@ -455,7 +442,6 @@ export function useDOMClickDrag({
       const endPixelY = chartState.chartY;
       const endPayload = chartState.activePayload?.[0]?.payload || null;
 
-      // Use raw pixel positions (not snapped) for fraction calculations
       const endFractionX = (endPixelX - plotLeft) / plotWidth;
       const endFractionY = 1 - (endPixelY - plotTop) / plotHeight;
 
@@ -483,11 +469,6 @@ export function useDOMClickDrag({
       // Remove keyboard event listeners
       window.removeEventListener("keydown", handleKeyChange);
       window.removeEventListener("keyup", handleKeyChange);
-
-      // Call optional callback
-      if (onMouseUpCallback) {
-        onMouseUpCallback(chartState, dragState.current);
-      }
     },
     [
       callback,

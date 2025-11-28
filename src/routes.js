@@ -55,6 +55,7 @@ export const baseSearchParamsSchema = z.object({
   startDayobs: dayobsInt.default(defaultDayObs),
   endDayobs: dayobsInt.default(defaultDayObs),
   telescope: z.enum(["Simonyi", "AuxTel"]).default("Simonyi"),
+  // these are marked as optional because they are added automatically
   startTime: z.coerce.number().int().min(0).optional(),
   endTime: z.coerce.number().int().min(0).optional(),
 });
@@ -64,6 +65,7 @@ const applyCommonValidations = (schema) =>
   schema
     .transform((search) => {
       // Set default startTime and endTime based on dayobs if not provided
+      // Has to be done as a transformation because it's dependant on another value
       return {
         ...search,
         startTime:

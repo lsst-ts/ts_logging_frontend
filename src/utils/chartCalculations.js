@@ -101,15 +101,43 @@ function filterDayobsGroupsByTime(
  * @param {number} params.selectedMaxMillis - End of time range in milliseconds (TAI)
  * @param {Array<number>} params.twilightValues - Twilight times in milliseconds for reference lines
  *
- * @returns {Object} Object with `time` and `sequence` properties, both containing:
- *   - groupedData: Observations grouped by day-obs
- *   - flatData: Flattened observations with fakeX added
- *   - chartMoon: Moon intervals (real time for time mode, fakeX coordinates for sequence mode)
- *   - chartDataKey: X-axis data key ("obs_start_millis" or "fakeX")
- *   - domain: X-axis range
- *   - scale: Chart scale type
- *   - ticks, dayObsTicks: Tick positions and formatters
- *   - Additional mode-specific properties (chartDayObsBreaks, noDataX, twilightValues, etc.)
+ * @returns {Object} Chart data for both plotting modes
+ * @returns {Object} returns.time - Time mode chart data (plots at actual TAI timestamps)
+ * @returns {Object} returns.sequence - Sequence mode chart data (plots with synthetic fakeX coordinates)
+ *
+ * **Common properties (same in both modes):**
+ *
+ * @returns {Array<Array>} groupedData - Observations filtered to visible time range, grouped by day-obs (array of arrays), with fakeX coordinates added
+ * @returns {Array} flatData - Observations filtered to visible time range, flattened (not grouped), with fakeX coordinates added
+ * @returns {Array} allData - Original unfiltered dataset; not filtered by time range, not grouped, no fakeX added
+ * @returns {number} chartDayObsSpacing - Calculated spacing between dayobs groups based on data density
+ * @returns {Array<number>} dayObsTicks - Secondary axis tick positions for day-obs labels (values differ by mode)
+ * @returns {Function} dayObsTickFormatter - Formats day-obs tick labels (e.g., "2024-01-01")
+ * @returns {number} selectedMinMillis - Start of the selected time range filter in milliseconds (TAI)
+ * @returns {number} selectedMaxMillis - End of the selected time range filter in milliseconds (TAI)
+ *
+ * **Mode-specific properties (different values or usage between time and sequence):**
+ *
+ * @returns {string} chartDataKey - X-axis data key: "obs_start_millis" (time mode) or "fakeX" (sequence mode)
+ * @returns {Array<number>} domain - X-axis range: [selectedMinMillis, selectedMaxMillis] (time) or [0, fakeX] (sequence)
+ * @returns {string} scale - Recharts scale type: "time" (time mode) or "auto" (sequence mode)
+ * @returns {Array<number>|undefined} ticks - Primary axis tick positions: undefined/auto (time) or fakeX values (sequence)
+ * @returns {Function} tickFormatter - Formats primary axis ticks: HH:mm format (time) or seq num (sequence)
+ * @returns {Array<Object>} chartMoon - Moon rise/set intervals for reference areas: milliseconds (time) or fakeX coordinates (sequence)
+ *   @returns {number} chartMoon[].start - Moon rise position
+ *   @returns {number} chartMoon[].end - Moon set position
+ *   @returns {boolean} chartMoon[].startIsZigzag - True if moon rise at dayobs boundary (sequence only, always false in time)
+ *   @returns {boolean} chartMoon[].endIsZigzag - True if moon set at dayobs boundary (sequence only, always false in time)
+ *
+ * **Sequence mode only (empty/zero in time mode):**
+ *
+ * @returns {Array<number>} chartDayObsBreaks - fakeX positions marking dayobs boundaries for visual gaps
+ * @returns {Array<number>} noDataX - fakeX positions for empty dayobs periods to show "no data" areas
+ * @returns {number} fakeX - Maximum fakeX value defining the sequence domain extent
+ *
+ * **Time mode only (empty in sequence mode):**
+ *
+ * @returns {Array<number>} twilightValues - Twilight times in milliseconds for reference lines
  */
 export function calculateChartData({
   data,
@@ -360,9 +388,21 @@ export function calculateChartData({
   }
 
   const timeData = {
+    // Common properties
     groupedData: transformedChartData,
     flatData,
     allData: data,
+    chartDayObsSpacing,
+    dayObsTicks: timeDayObsTicks,
+    dayObsTickFormatter: (tick) => timeDayObsTickMappings.get(tick) ?? "",
+    selectedMinMillis,
+    selectedMaxMillis,
+    // Mode-specific properties
+    chartDataKey: "obs_start_millis",
+    domain: [selectedMinMillis, selectedMaxMillis],
+    scale: "time",
+    ticks: undefined,
+    tickFormatter: (tick) => millisToHHmm(tick),
     chartMoon: moonIntervals
       .map(([start, end]) => ({
         start,
@@ -373,41 +413,37 @@ export function calculateChartData({
       .filter(
         (m) => m.start <= selectedMaxMillis && m.end >= selectedMinMillis,
       ),
-    twilightValues,
+    // Sequence mode only (empty/zero in time mode)
     chartDayObsBreaks: [],
     noDataX: [],
     fakeX: 0,
-    chartDayObsSpacing,
-    chartDataKey: "obs_start_millis",
-    domain: [selectedMinMillis, selectedMaxMillis],
-    scale: "time",
-    ticks: undefined,
-    dayObsTicks: timeDayObsTicks,
-    tickFormatter: (tick) => millisToHHmm(tick),
-    dayObsTickFormatter: (tick) => timeDayObsTickMappings.get(tick) ?? "",
-    selectedMinMillis,
-    selectedMaxMillis,
+    // Time mode only
+    twilightValues,
   };
 
   const sequenceData = {
+    // Common properties
     groupedData: transformedChartData,
     flatData,
     allData: data,
-    chartMoon: sequenceMoon.filter((m) => m.start <= fakeX && m.end >= 0),
-    twilightValues: [],
-    chartDayObsBreaks,
-    noDataX,
-    fakeX,
     chartDayObsSpacing,
+    dayObsTicks,
+    dayObsTickFormatter: (tick) => dayObsTickMappings.get(tick) ?? "",
+    selectedMinMillis,
+    selectedMaxMillis,
+    // Mode-specific properties
     chartDataKey: "fakeX",
     domain: [0, fakeX],
     scale: "auto",
     ticks,
-    dayObsTicks,
     tickFormatter: (tick) => tickMappings.get(tick) ?? "",
-    dayObsTickFormatter: (tick) => dayObsTickMappings.get(tick) ?? "",
-    selectedMinMillis,
-    selectedMaxMillis,
+    chartMoon: sequenceMoon.filter((m) => m.start <= fakeX && m.end >= 0),
+    // Sequence mode only
+    chartDayObsBreaks,
+    noDataX,
+    fakeX,
+    // Time mode only (empty in sequence mode)
+    twilightValues: [],
   };
 
   return {
