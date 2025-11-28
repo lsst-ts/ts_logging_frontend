@@ -371,10 +371,8 @@ export default function Digest() {
             <TimeAccountingApplet
               exposures={exposureFields}
               loading={almanacLoading || exposuresLoading}
-              sumExpTime={sumOnSkyExpTime}
               openDomeTimes={openDomeTimes}
               almanac={almanacInfo}
-              nightHours={nightHours}
               weatherLossHours={weatherLoss}
             />
             <VisitMapApplet

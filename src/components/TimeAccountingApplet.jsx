@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/popover";
 import DownloadIcon from "../assets/DownloadIcon.svg";
 import InfoIcon from "../assets/InfoIcon.svg";
+import WarningIcon from "../assets/WarningIcon";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import { Cell, Bar, BarChart, XAxis, YAxis } from "recharts";
@@ -14,38 +15,10 @@ import { DateTime } from "luxon";
 import { almanacDayobsForPlot, TAI_OFFSET_SECONDS } from "../utils/timeUtils";
 
 /*
-open dome times array is empty until the night ends
---> in that case we use twilight times to calculate night hours
-
-for each night:
-night start = max(twilight evening, first open dome time)
-night end = min(twilight morning, last open dome time)
-night hours (observable time) = night end - night start
-dome closed hours = night hours - open dome hours
 
 open dome times are TAI
 almanac twilight times are UTC
 
-All exposure are counted in exp time and gaps
-shutter_time/exp = dark_time - exp_time
-
-valid_overhead = np.min([np.where(np.isnan(visits.slew_model.values), 0, visits.slew_model.values) + max_scatter, visits.visit_gap.values], axis=0)
-
-Questions:
-- Should we count only exposures within night start/end times? 
-see dayObs 2025-11-20, obs_start 2025-11-20T18:34:03.514000, night start 2025-11-21T00:20:51.000, gaps > night hours
-
-
-** Fault time calculation ideas**
-(End of night - start of night) - exposure time - shutter time* - overhead time** - dome closed time = “fault”
-this is probably the best way to do things, although it won’t count fault times if the dome is closed for fault (rather than weather), so how about:
-(End of night - start of night) - exposure time - shutter time* - overhead time** - min(time loss to weather, dome closed time) = “fault”
-
-This might be more accurate if the observers mark time loss to weather properly.
-*: Assuming this isn’t calculated in the overhead time
-**: Assuming overhead time is the min(measured gap time, calculated overhead)
-
-Final:
 - night start = -12 deg twilight sunset
 - night end = -12 deg twilight sunrise
 - obs start = max(night start,  first dome open) [useful for saying "get on sky faster" but not fault counting]
@@ -57,40 +30,39 @@ Final:
 - fault/idle time = night_end - night_start - sum(on_sky_visits.exp_time) - sum(on_sky_visits.valid_overhead) - min(dome_closed_within_night, fault_loss_weather)
 - valid_overhead = min(visit_gap, slew_model+2minutes)
 - Fault and closed dome times will not be calculated during the night. I'll show a warning about that above the plot
-- If the night is still ongoing, we calculate up to current time for fault calculation only if current time > night start 
-OR (ignore ongoing night accounting if more than 1 night is selected 
-    calculate gaps and overheads and skip fault calculation for ongoing night if only 1 night is selected)
-- If no exposures and dome was closed the whole night, fault calculation formula is still valid?? 
+- If the night is still ongoing, ignore ongoing night accounting if more than 1 night is selected 
+- If no exposures and dome was closed the whole night, fault calculation formula is still valid. 
   Also most night hours will be fault, closed dome time will still be 0?? see 2025-10-01
 
   TODO: UPDATE Tooltip
-  TODO: 
 */
+
+/* Helper function to determine if the night is in progress 
+param {string} dayObs - The day_obs string in 'yyyyMMdd' format.
+param {DateTime} almanacEveningUTC - The evening twilight time in UTC.
+param {DateTime} almanacMorningUTC - The morning twilight time in UTC.
+returns {boolean} - True if the night is in progress, false otherwise.
+*/
+function isNightInProgress(dayObs, almanacEveningUTC, almanacMorningUTC) {
+  const nowInUTC = DateTime.now().toUTC();
+  const currentDayObs = nowInUTC.minus({ hours: 12 }).toFormat("yyyyMMdd");
+  return (
+    dayObs === currentDayObs &&
+    nowInUTC <= almanacMorningUTC &&
+    nowInUTC >= almanacEveningUTC
+  );
+}
 
 function TimeAccountingApplet({
   exposures,
   loading,
-  sumExpTime,
   openDomeTimes,
   almanac,
-  nightHours,
   weatherLossHours,
 }) {
-  const [expPercent, nonExpPercent] = useMemo(() => {
-    if (!nightHours || nightHours === 0) {
-      return [0, 0];
-    }
-    // calculate percentage of on-sky exposure time of night hours between 12 deg twilights
-    const expPercentage = Math.round((sumExpTime / (nightHours * 3600)) * 100);
-    const nonExpPercentage = 100 - expPercentage;
-    return [expPercentage, nonExpPercentage];
-  }, [sumExpTime, nightHours]);
-
+  const isLoading = loading || !openDomeTimes || !almanac;
   const [nights, currentNight] = useMemo(() => {
     const nightTimes = {};
-
-    console.log("Open dome times:", openDomeTimes);
-    console.log("Almanac:", almanac);
 
     // Group dome sessions by day_obs
     const domeByDay = {};
@@ -105,7 +77,6 @@ function TimeAccountingApplet({
       });
     });
 
-    // TODO: calculate night in progress flag properly
     // True if current day_obs is one of the selected day_obs
     // && current time is within any of the night periods in almanac
     const nowInUTC = DateTime.now().toUTC();
@@ -128,19 +99,43 @@ function TimeAccountingApplet({
         { zone: "utc" },
       ).plus({ seconds: TAI_OFFSET_SECONDS });
 
+      const nightInProgress = isNightInProgress(
+        dayObs,
+        twilightEvening.minus({ seconds: TAI_OFFSET_SECONDS }),
+        twilightMorning.minus({ seconds: TAI_OFFSET_SECONDS }),
+      );
+
       let domeClosedHours = 0;
 
-      if (domeSessions && domeSessions.length > 0) {
+      if (!nightInProgress && domeSessions && domeSessions.length > 0) {
+        // Sort by open time
+        const sortedSessions = [...domeSessions].sort(
+          (a, b) => a.open - b.open,
+        );
         // find first dome open and last dome close for this night
-        const firstDomeOpen = DateTime.min(...domeSessions.map((s) => s.open));
-        const lastDomeClose = DateTime.max(...domeSessions.map((s) => s.close));
+        const { firstDomeOpen, lastDomeClose } = sortedSessions.reduce(
+          (acc, session) => ({
+            firstDomeOpen:
+              session.open < acc.firstDomeOpen
+                ? session.open
+                : acc.firstDomeOpen,
+            lastDomeClose:
+              session.close > acc.lastDomeClose
+                ? session.close
+                : acc.lastDomeClose,
+          }),
+          {
+            firstDomeOpen: sortedSessions[0].open,
+            lastDomeClose: sortedSessions[0].close,
+          },
+        );
 
         // calculate close dome hours within night
-        // dome_close_within_night = max(0, firstDomeOpen - twilightEvening) + max(0, twilightMorning - lastDomeClose)
-        //+ time between additional dome close/open periods [translates to how much was the dome closed when it was actually night time]
         domeClosedHours =
           Math.max(0, firstDomeOpen.diff(twilightEvening, "hours").hours) +
-          Math.max(0, twilightMorning.diff(lastDomeClose, "hours").hours);
+          (lastDomeClose > twilightEvening // to discard dome sessions that close before night start
+            ? Math.max(0, twilightMorning.diff(lastDomeClose, "hours").hours)
+            : 0);
 
         for (let i = 1; i < domeSessions.length; i++) {
           const prevClose = domeSessions[i - 1].close;
@@ -155,6 +150,7 @@ function TimeAccountingApplet({
       }
 
       nightTimes[dayObs] = {
+        hours: night.night_hours,
         twilightEveningTAI: twilightEvening,
         twilightMorningTAI: twilightMorning,
         firstDomeOpenTAI:
@@ -166,9 +162,7 @@ function TimeAccountingApplet({
             ? DateTime.max(...domeSessions.map((s) => s.close))
             : null,
         closedDomeWithinNight: domeClosedHours, // hours
-        night_in_progress:
-          dayObs === currentDayObs &&
-          nowInUTC.plus({ seconds: TAI_OFFSET_SECONDS }) < twilightMorning, //openDomeTimes && openDomeTimes.length > 0 ? false : true,
+        night_in_progress: nightInProgress,
       };
     });
 
@@ -177,7 +171,6 @@ function TimeAccountingApplet({
 
   const data = useMemo(
     () =>
-      // fallback to empty array if exposures is undefined
       (exposures ?? [])
         .map((entry) => {
           // Convert obs_start and obs_end to DateTime objects
@@ -198,16 +191,26 @@ function TimeAccountingApplet({
           return { ...entry, obs_start_dt, obs_end_dt };
         })
         // filter to only on-sky exposures within night start/end times
-        .filter(
-          (entry) =>
+        .filter((entry) => {
+          const night = nights[entry.day_obs];
+          return (
             entry.can_see_sky &&
+            night &&
             entry.obs_start_dt >= nights[entry.day_obs]?.twilightEveningTAI &&
-            entry.obs_start_dt <= nights[entry.day_obs]?.twilightMorningTAI,
-        ),
-    [exposures],
+            entry.obs_start_dt <= nights[entry.day_obs]?.twilightMorningTAI
+          );
+        }),
+    [exposures, nights],
+  );
+
+  const groupedByDayobs = useMemo(
+    () => Object.groupBy(data, (exp) => exp.day_obs),
+    [data],
   );
 
   const [
+    observableTime,
+    expTime,
     gapWithFilterChange,
     gapWithoutFilterChange,
     overheadWithFilterChange,
@@ -219,39 +222,56 @@ function TimeAccountingApplet({
     let noFilterChange = 0;
     let overheadFilterChange = 0;
     let overheadNoFilterChange = 0;
+    let expTime = 0;
+    let nightHours = 0;
+    let domeClosed = 0;
+    let faultTimeHours = 0;
 
-    for (let i = 1; i < data.length; i++) {
-      const currentExp = data[i];
-      const prevExp = data[i - 1];
+    for (const dayObs in nights) {
+      // skip ongoing night data if more than 1 night is selected
+      if (nights[dayObs].night_in_progress && almanac.length > 1) continue;
 
-      // skip gaps between different nights
-      if (currentExp.day_obs !== prevExp.day_obs) continue;
+      nightHours += nights[dayObs].hours;
+      domeClosed += nights[dayObs].closedDomeWithinNight;
 
-      if (currentExp.band === prevExp.band) {
-        noFilterChange += currentExp.visit_gap;
-        overheadNoFilterChange += currentExp.overhead;
-      } else {
-        filterChange += currentExp.visit_gap;
-        overheadFilterChange += currentExp.overhead;
+      const exps = groupedByDayobs[dayObs];
+      if (!exps || exps.length === 0) continue;
+      expTime = exps.reduce((sum, exp) => sum + exp.exp_time, expTime);
+
+      for (let i = 1; i < exps.length; i++) {
+        const currentExp = exps[i];
+        const prevExp = exps[i - 1];
+        if (currentExp.band === prevExp.band) {
+          noFilterChange += currentExp.visit_gap;
+          overheadNoFilterChange += currentExp.overhead;
+        } else {
+          filterChange += currentExp.visit_gap;
+          overheadFilterChange += currentExp.overhead;
+        }
       }
     }
-
     const filterChangeHours = filterChange / 3600;
     const noFilterChangeHours = noFilterChange / 3600;
     const overheadFilterChangeHours = overheadFilterChange / 3600;
     const overheadNoFilterChangeHours = overheadNoFilterChange / 3600;
-    const domeClosed = Object.values(nights).reduce(
-      (sum, night) => sum + (night.closedDomeWithinNight || 0),
-      0,
-    );
-    const faultTimeHours =
-      nightHours -
-      sumExpTime / 3600 -
-      overheadNoFilterChangeHours -
-      overheadNoFilterChangeHours -
-      Math.min(domeClosed, weatherLossHours || 0);
+    const expTimeHours = expTime / 3600;
+
+    // count fault time only if not ongoing night or only 1 night is selected
+    // ongoing night fault time is not calculated to avoid partial night calculations
+    const shouldCalculateFault =
+      almanac.length !== 1 || !nights[currentNight]?.night_in_progress;
+
+    if (shouldCalculateFault)
+      faultTimeHours =
+        nightHours -
+        expTimeHours -
+        overheadFilterChangeHours -
+        overheadNoFilterChangeHours -
+        Math.min(domeClosed, weatherLossHours ?? 0);
 
     return [
+      nightHours,
+      expTimeHours,
       filterChangeHours,
       noFilterChangeHours,
       overheadFilterChangeHours,
@@ -259,7 +279,17 @@ function TimeAccountingApplet({
       domeClosed,
       faultTimeHours,
     ];
-  }, [data, nights, nightHours, sumExpTime, weatherLossHours]);
+  }, [groupedByDayobs]);
+
+  const [expPercent, nonExpPercent] = useMemo(() => {
+    if (!observableTime || observableTime === 0) {
+      return [0, 0];
+    }
+    // calculate percentage of on-sky exposure time of night hours between 12 deg twilights
+    const expPercentage = Math.round((expTime / observableTime) * 100);
+    const nonExpPercentage = 100 - expPercentage;
+    return [expPercentage, nonExpPercentage];
+  }, [expTime, observableTime]);
 
   // redundant: added to stop Recharts from complaining about empty config
   const chartConfig = {
@@ -283,16 +313,16 @@ function TimeAccountingApplet({
       label: "Inter-exposure time (same filter)",
     },
     {
-      name: "Gaps (Filter)",
-      value: gapWithFilterChange,
-      color: "hsl(40, 70%, 50%)",
-      label: "Inter-exposure time (with filter change)",
-    },
-    {
       name: "Overhead",
       value: overheadWithoutFilterChange,
       color: "hsl(80, 70%, 50%)",
-      label: "Calculated overhead (readout)",
+      label: "Calculated overhead (readout, same filter)",
+    },
+    {
+      name: "Gaps (Filter)",
+      value: gapWithFilterChange,
+      color: "hsl(40, 70%, 50%)",
+      label: "Inter-exposure time (filter change)",
     },
     {
       name: "Overhead (Filter)",
@@ -344,10 +374,8 @@ function TimeAccountingApplet({
               <p>Breakdown of observable time during selected dayobs range.</p>
 
               <p>
-                <strong>Observable Time:</strong> <strong>Night end</strong>{" "}
-                (earliest of nautical twilight morning and last closed dome
-                time) -<strong>Night start</strong> (latest of nautical twilight
-                evening and first open dome time)
+                <strong>Observable Time:</strong> Time between nautical
+                twilights
               </p>
 
               <p>
@@ -394,31 +422,29 @@ function TimeAccountingApplet({
         </div>
       </CardHeader>
       <CardContent className="flex flex-col gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 h-[320px] font-thin">
-        {loading ? (
+        {isLoading ? (
           <div className="flex-grow grid grid-cols-3 w-full h-full gap-2">
             <Skeleton className="col-span-1 h-full min-h-[180px] bg-stone-900" />
             <Skeleton className="col-span-2 h-full min-h-[180px] bg-stone-900" />
           </div>
         ) : (
           <div className="h-full w-full flex-grow min-w-0 grid grid-cols-3 grid-rows-6">
-            <div className="col-span-3 flex mr-1 text-yellow-400 font-normal text-sm mb-2">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke-width="1.5"
-                stroke="currentColor"
-                className="size-5"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"
-                />
-              </svg>
+            {nights[currentNight]?.night_in_progress && (
+              <div className="col-span-3 flex mr-1 text-yellow-400 font-normal text-sm mb-2">
+                <WarningIcon />
 
-              <span>Dome info isn't available for {currentNight}</span>
-            </div>
+                {almanac.length === 1 && (
+                  <span>
+                    {" "}
+                    Fault and closed dome times skipped for ongoing night{" "}
+                    {currentNight}
+                  </span>
+                )}
+                {almanac.length > 1 && (
+                  <span> Ongoing night {currentNight} data isn't included</span>
+                )}
+              </div>
+            )}
             <div className="col-span-1 flex flex-col items-center row-span-5">
               {nonExpPercent > 0 && (
                 <div className="text-neutral-200 font-thin text-center">
