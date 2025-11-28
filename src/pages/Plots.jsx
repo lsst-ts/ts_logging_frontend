@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 
 import { toast } from "sonner";
-import { useRouter, useSearch } from "@tanstack/react-router";
+import { useSearch } from "@tanstack/react-router";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Toaster } from "@/components/ui/sonner";
@@ -201,30 +201,19 @@ function Plots() {
   }
 
   // Navigation
-  const router = useRouter();
   const search = useSearch({ from: "/plots" });
 
   // Context menu items
   const contextMenuItems = [
     {
       label: "View Context Feed",
-      onClick: () => {
-        const location = router.buildLocation({
-          to: "/nightlydigest/context-feed",
-          search,
-        });
-        window.open(location.href, "_blank");
-      },
+      to: "/nightlydigest/context-feed",
+      search,
     },
     {
       label: "View Data Log",
-      onClick: () => {
-        const location = router.buildLocation({
-          to: "/nightlydigest/data-log",
-          search,
-        });
-        window.open(location.href, "_blank");
-      },
+      to: "/nightlydigest/data-log",
+      search,
     },
   ];
 

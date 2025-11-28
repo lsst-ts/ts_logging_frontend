@@ -285,6 +285,11 @@ export function useDOMClickDrag({
 
   const mouseDown = useCallback(
     (chartState, event) => {
+      // Only respond to left mouse button (button 0)
+      if (event?.button !== 0) {
+        return;
+      }
+
       // Ensure rects are created on first interaction
       if (!ensureRectsExist()) {
         return;
@@ -404,6 +409,11 @@ export function useDOMClickDrag({
 
   const mouseUp = useCallback(
     (chartState, event) => {
+      // Only respond to left mouse button (button 0)
+      if (event?.button !== 0) {
+        return;
+      }
+
       if (!dragState.current.isDragging) return;
 
       const { startPixel, startPayload, startYPixel } = dragState.current;
