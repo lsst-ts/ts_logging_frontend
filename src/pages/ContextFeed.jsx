@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
-import { useRouter, useSearch } from "@tanstack/react-router";
+import { useSearch } from "@tanstack/react-router";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -59,7 +59,6 @@ function ContextFeed() {
     from: "/context-feed",
   });
   const { startDayobs, endDayobs, telescope } = search;
-  const router = useRouter();
 
   // Our dayobs inputs are inclusive, so we add one day to the
   // endDayobs to get the correct range for the queries
@@ -108,23 +107,13 @@ function ContextFeed() {
   const contextMenuItems = [
     {
       label: "View Data Log",
-      onClick: () => {
-        const location = router.buildLocation({
-          to: "/nightlydigest/data-log",
-          search,
-        });
-        window.open(location.href, "_blank");
-      },
+      to: "/nightlydigest/data-log",
+      search,
     },
     {
       label: "View Plots",
-      onClick: () => {
-        const location = router.buildLocation({
-          to: "/nightlydigest/plots",
-          search,
-        });
-        window.open(location.href, "_blank");
-      },
+      to: "/nightlydigest/plots",
+      search,
     },
   ];
 
