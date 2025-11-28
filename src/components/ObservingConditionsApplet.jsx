@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState, useCallback } from "react";
-import { useRouter, useSearch } from "@tanstack/react-router";
+import { useSearch } from "@tanstack/react-router";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
   Popover,
@@ -243,40 +243,24 @@ function ObservingConditionsApplet({
   setSelectedTimeRange,
 }) {
   // Router and search params for context menu navigation
-  const router = useRouter();
   const search = useSearch({ from: "/" });
 
   // Context menu items for navigation
   const contextMenuItems = [
     {
       label: "View Context Feed",
-      onClick: () => {
-        const location = router.buildLocation({
-          to: "/nightlydigest/context-feed",
-          search,
-        });
-        window.open(location.href, "_blank");
-      },
+      to: "/nightlydigest/context-feed",
+      search,
     },
     {
       label: "View Plots",
-      onClick: () => {
-        const location = router.buildLocation({
-          to: "/nightlydigest/plots",
-          search,
-        });
-        window.open(location.href, "_blank");
-      },
+      to: "/nightlydigest/plots",
+      search,
     },
     {
       label: "View Data Log",
-      onClick: () => {
-        const location = router.buildLocation({
-          to: "/nightlydigest/data-log",
-          search,
-        });
-        window.open(location.href, "_blank");
-      },
+      to: "/nightlydigest/data-log",
+      search,
     },
   ];
 
