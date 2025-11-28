@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
@@ -256,10 +256,34 @@ function ContextFeed() {
 
   // Filter data based on selected time range
   // and the event types selected by checkboxes
-  const filteredData = contextFeedData.filter(
-    (entry) =>
-      entry.event_time_dt >= selectedTimeRange[0] &&
-      entry.event_time_dt <= selectedTimeRange[1],
+  const filteredData = useMemo(
+    () =>
+      contextFeedData.filter(
+        (entry) =>
+          entry.event_time_dt >= selectedTimeRange[0] &&
+          entry.event_time_dt <= selectedTimeRange[1],
+      ),
+    [contextFeedData, selectedTimeRange],
+  );
+
+  const timelineData = useMemo(
+    () =>
+      Object.values(SAL_INDEX_INFO)
+        .filter((info) => info.displayIndex != null)
+        .map((info) => {
+          const activeLabels =
+            columnFilters.find((f) => f.id === "event_type")?.value ?? [];
+          return {
+            index: 10 - info.displayIndex,
+            timestamps: contextFeedData
+              .filter((d) => d.displayIndex === info.displayIndex)
+              .map((d) => d.event_time_millis),
+            color: info.color,
+            isActive:
+              activeLabels.length === 0 || activeLabels.includes(info.label),
+          };
+        }),
+    [contextFeedData, columnFilters],
   );
 
   return (
@@ -367,25 +391,7 @@ function ContextFeed() {
                   <div className="flex-1">
                     <ContextMenuWrapper menuItems={contextMenuItems}>
                       <TimelineChart
-                        data={Object.values(SAL_INDEX_INFO)
-                          .filter((info) => info.displayIndex != null)
-                          .map((info) => {
-                            const activeLabels =
-                              columnFilters.find((f) => f.id === "event_type")
-                                ?.value ?? [];
-                            return {
-                              index: 10 - info.displayIndex,
-                              timestamps: contextFeedData
-                                .filter(
-                                  (d) => d.displayIndex === info.displayIndex,
-                                )
-                                .map((d) => d.event_time_millis),
-                              color: info.color,
-                              isActive:
-                                activeLabels.length === 0 ||
-                                activeLabels.includes(info.label),
-                            };
-                          })}
+                        data={timelineData}
                         twilightValues={twilightValues}
                         showTwilight={true}
                         height={250}

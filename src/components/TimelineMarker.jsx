@@ -1,6 +1,6 @@
 import { TIMELINE_MARKER } from "@/constants/TIMELINE_DEFINITIONS";
 
-// Unified marker component for timeline charts
+// Marker component for timeline charts. Displays a skinny diamond by default
 const TimelineMarker = ({
   cx,
   cy,

@@ -7,10 +7,8 @@ import {
 } from "@/components/ui/context-menu";
 
 /**
- * Component that adds a right-click context menu to any element.
- *
- * Wraps children with a context menu that appears on right-click.
- * Uses shadcn's ContextMenu component for consistent styling.
+ * Component that adds a right-click context menu to any element. Less boilerplate
+ * than default shadcn ContextMenu component
  *
  * @param {React.ReactNode} children - Element to wrap with context menu
  * @param {Array<Object>} menuItems - Array of menu items with shape:
