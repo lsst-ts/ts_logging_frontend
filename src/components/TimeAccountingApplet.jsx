@@ -15,9 +15,10 @@ import { DateTime } from "luxon";
 import { almanacDayobsForPlot, TAI_OFFSET_SECONDS } from "../utils/timeUtils";
 
 /*
+Defintions and assumptions for time accounting:
 
-open dome times are TAI
-almanac twilight times are UTC
+- open dome times are TAI
+- almanac twilight times are UTC
 
 - night start = -12 deg twilight sunset
 - night end = -12 deg twilight sunrise
@@ -33,8 +34,6 @@ almanac twilight times are UTC
 - If the night is still ongoing, ignore ongoing night accounting if more than 1 night is selected 
 - If no exposures and dome was closed the whole night, fault calculation formula is still valid. 
   Also most night hours will be fault, closed dome time will still be 0?? see 2025-10-01
-
-  TODO: UPDATE Tooltip
 */
 
 /* Helper function to determine if the night is in progress 

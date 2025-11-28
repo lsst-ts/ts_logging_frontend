@@ -58,7 +58,6 @@ export default function Digest() {
   const [flagsLoading, setFlagsLoading] = useState(false);
   const [almanacInfo, setAlmanacInfo] = useState([]);
   const [openDomeTimes, setOpenDomeTimes] = useState([]);
-  // const [openDomeHours, setOpenDomeHours] = useState(0.0);
 
   const [interactiveMap, setInteractiveMap] = useState(null);
   const [visitMapLoading, setVisitMapLoading] = useState(false);
@@ -88,7 +87,6 @@ export default function Digest() {
     setReports([]);
     setOnSkyExpCount(0);
     setFlags([]);
-    // setOpenDomeHours(0.0);
 
     setVisitMapLoading(true);
     setInteractiveMap(null);
@@ -110,7 +108,6 @@ export default function Digest() {
           setSumOnSkyExpTime(totalOnSkyExpTime);
           setExposuresLoading(false);
           setOpenDomeTimes(openDomeTimes);
-          // setOpenDomeHours(openDome);
           if (exposuresNo === 0) {
             toast.warning("No exposures found for the selected date range.");
           }

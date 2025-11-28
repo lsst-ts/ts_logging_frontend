@@ -55,7 +55,7 @@ const fetchData = async (url, abortController) => {
  *   [2]: sum_exposure_time (number) - The total exposure time.
  *   [3]: on_sky_exposures_count (number) - The count of on-sky exposures.
  *   [4]: total_on_sky_exposure_time (number) - The total on-sky exposure time.
- *   [5]: open_dome_hours (number) - The total hours the dome was open.
+ *   [5]: open_dome_times (Object[]) - Array of open dome sessions.
  * @throws {error} Will throw an error if the fetch operation fails (for reasons other than an abort)
  * or returns invalid data.
  */
@@ -70,7 +70,6 @@ const fetchExposures = async (start, end, instrument, abortController) => {
       data.on_sky_exposures_count,
       data.total_on_sky_exposure_time,
       data.open_dome_times,
-      // data.open_dome_hours,
     ];
   } catch (err) {
     if (err.name !== "AbortError") {
