@@ -14,42 +14,43 @@ import { Cell, Bar, BarChart, XAxis, YAxis } from "recharts";
 import { DateTime } from "luxon";
 import { almanacDayobsForPlot, TAI_OFFSET_SECONDS } from "../utils/timeUtils";
 
-/*
-Defintions and assumptions for time accounting:
-
-- open dome times are TAI
-- almanac twilight times are UTC
-
-- night start = -12 deg twilight sunset
-- night end = -12 deg twilight sunrise
-- obs start = max(night start,  first dome open) [useful for saying "get on sky faster" but not fault counting]
-- obs end = min(night end, last dome close) [useful for saying "don't close early" but not fault counting]
-- dome close within night = max(0, first_dome_open - night_start) + max(0, night_end - last_dome_close) + time between additional dome close/open periods [translates to how much was the dome closed when it was actually night time]
-- on sky visits = visits with can_see_sky = True, that happen within obs start to obs end (or night start to night end .. if they say something can see sky when the dome is closed, we have other problems)
-  - the query for visits fetches all visits from night start  to night end regardless of can_see_sky
-  - no need to get previous night data .. but maybe extend query window back to 1 hour before sunset
-- fault/idle time = night_end - night_start - sum(on_sky_visits.exp_time) - sum(on_sky_visits.valid_overhead) - min(dome_closed_within_night, fault_loss_weather)
-- valid_overhead = min(visit_gap, slew_model+2minutes)
-- Fault and closed dome times will not be calculated during the night. I'll show a warning about that above the plot
-- If the night is still ongoing, ignore ongoing night accounting if more than 1 night is selected 
-- If no exposures and dome was closed the whole night, fault calculation formula is still valid. 
-  Also most night hours will be fault, closed dome time will still be 0?? see 2025-10-01
-*/
+/**
+ * Time accounting logic for night analysis.
+ *
+ * Full documentation:
+ *   - doc/time_accounting.rst
+ *
+ * See "Definitions and Assumptions for Time Accounting"
+ * for detailed rules used in this component.
+ */
 
 /* Helper function to determine if the night is in progress 
 param {string} dayObs - The day_obs string in 'yyyyMMdd' format.
+param {string} currentDayObs - The ongoing day_obs string in 'yyyyMMdd' format.
 param {DateTime} almanacEveningUTC - The evening twilight time in UTC.
 param {DateTime} almanacMorningUTC - The morning twilight time in UTC.
 returns {boolean} - True if the night is in progress, false otherwise.
 */
-function isNightInProgress(dayObs, almanacEveningUTC, almanacMorningUTC) {
+function isNightInProgress(
+  dayObs,
+  currentDayObs,
+  almanacEveningUTC,
+  almanacMorningUTC,
+) {
   const nowInUTC = DateTime.now().toUTC();
-  const currentDayObs = nowInUTC.minus({ hours: 12 }).toFormat("yyyyMMdd");
   return (
     dayObs === currentDayObs &&
     nowInUTC <= almanacMorningUTC &&
     nowInUTC >= almanacEveningUTC
   );
+}
+
+/* Helper function to get the current day_obs string in 'yyyyMMdd' format.
+returns {string} - The current day_obs string.
+*/
+function getCurrentDayObs() {
+  const nowInUTC = DateTime.now().toUTC();
+  return nowInUTC.minus({ hours: 12 }).toFormat("yyyyMMdd");
 }
 
 function TimeAccountingApplet({
@@ -60,7 +61,10 @@ function TimeAccountingApplet({
   weatherLossHours,
 }) {
   const isLoading = loading || !openDomeTimes || !almanac;
-  const [nights, currentNight] = useMemo(() => {
+
+  const currentNight = getCurrentDayObs();
+
+  const [nights] = useMemo(() => {
     const nightTimes = {};
 
     // Group dome sessions by day_obs
@@ -75,11 +79,6 @@ function TimeAccountingApplet({
         close: DateTime.fromISO(session.close_time, { zone: "utc" }),
       });
     });
-
-    // True if current day_obs is one of the selected day_obs
-    // && current time is within any of the night periods in almanac
-    const nowInUTC = DateTime.now().toUTC();
-    const currentDayObs = nowInUTC.minus({ hours: 12 }).toFormat("yyyyMMdd");
 
     // Process each night's almanac data
     almanac.forEach((night) => {
@@ -100,6 +99,7 @@ function TimeAccountingApplet({
 
       const nightInProgress = isNightInProgress(
         dayObs,
+        currentNight,
         twilightEvening.minus({ seconds: TAI_OFFSET_SECONDS }),
         twilightMorning.minus({ seconds: TAI_OFFSET_SECONDS }),
       );
@@ -165,8 +165,8 @@ function TimeAccountingApplet({
       };
     });
 
-    return [nightTimes, currentDayObs];
-  }, [almanac, openDomeTimes]);
+    return [nightTimes];
+  }, [almanac, openDomeTimes, currentNight]);
 
   const data = useMemo(
     () =>
