@@ -13,7 +13,17 @@ export function getChartPlotBounds(svg) {
   const clipPathRect = svg.querySelector("clipPath rect");
   if (!clipPathRect) return null;
 
-  return clipPathRect.getBBox();
+  // Firefox doesn't return the bbox correctly for svg elements which
+  // don't have a fill, so we have to extract the values directly rather
+  // than just using clipPathRect.getBBox()
+  // This works so long as recharts keeps the clipPath rect in sync
+  // with the size of the graph, which it appears to do
+  return {
+    x: clipPathRect.getAttribute("x"),
+    y: clipPathRect.getAttribute("y"),
+    width: clipPathRect.getAttribute("width"),
+    height: clipPathRect.getAttribute("height"),
+  };
 }
 
 /**
