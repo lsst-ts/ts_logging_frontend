@@ -64,7 +64,7 @@ function TimeAccountingApplet({
 
   const currentNight = getCurrentDayObs();
 
-  const [nights] = useMemo(() => {
+  const nights = useMemo(() => {
     const nightTimes = {};
 
     // Group dome sessions by day_obs
@@ -108,9 +108,10 @@ function TimeAccountingApplet({
 
       if (!nightInProgress && domeSessions && domeSessions.length > 0) {
         // Sort by open time
-        const sortedSessions = [...domeSessions].sort(
-          (a, b) => a.open - b.open,
+        const sortedSessions = domeSessions.toSorted(
+          (a, b) => a.open.toMillis() - b.open.toMillis(),
         );
+
         // find first dome open and last dome close for this night
         const { firstDomeOpen, lastDomeClose } = sortedSessions.reduce(
           (acc, session) => ({
@@ -136,9 +137,9 @@ function TimeAccountingApplet({
             ? Math.max(0, twilightMorning.diff(lastDomeClose, "hours").hours)
             : 0);
 
-        for (let i = 1; i < domeSessions.length; i++) {
-          const prevClose = domeSessions[i - 1].close;
-          const currOpen = domeSessions[i].open;
+        for (let i = 1; i < sortedSessions.length; i++) {
+          const prevClose = sortedSessions[i - 1].close;
+          const currOpen = sortedSessions[i].open;
           // only count if the close/open period is within night time
           const overlapStart = DateTime.max(prevClose, twilightEvening);
           const overlapEnd = DateTime.min(currOpen, twilightMorning);
@@ -160,12 +161,12 @@ function TimeAccountingApplet({
           domeSessions && domeSessions.length > 0
             ? DateTime.max(...domeSessions.map((s) => s.close))
             : null,
-        closedDomeWithinNight: domeClosedHours, // hours
+        closedDomeWithinNight: domeClosedHours,
         night_in_progress: nightInProgress,
       };
     });
 
-    return [nightTimes];
+    return nightTimes;
   }, [almanac, openDomeTimes, currentNight]);
 
   const data = useMemo(
@@ -175,8 +176,8 @@ function TimeAccountingApplet({
           // Convert obs_start and obs_end to DateTime objects
           const obsStart = entry["obs_start"];
           const obsEnd = entry["obs_end"];
-          let obs_start_dt = undefined;
-          let obs_end_dt = undefined;
+          let obs_start_dt;
+          let obs_end_dt;
           if (
             typeof obsStart === "string" &&
             DateTime.fromISO(obsStart).isValid
@@ -207,7 +208,7 @@ function TimeAccountingApplet({
     [data],
   );
 
-  const [
+  const {
     observableTime,
     expTime,
     gapWithFilterChange,
@@ -216,7 +217,7 @@ function TimeAccountingApplet({
     overheadWithoutFilterChange,
     domeClosedHours,
     calculatedFaultTime,
-  ] = useMemo(() => {
+  } = useMemo(() => {
     let filterChange = 0;
     let noFilterChange = 0;
     let overheadFilterChange = 0;
@@ -258,27 +259,29 @@ function TimeAccountingApplet({
     // count fault time only if not ongoing night or only 1 night is selected
     // ongoing night fault time is not calculated to avoid partial night calculations
     const shouldCalculateFault =
-      almanac.length !== 1 || !nights[currentNight]?.night_in_progress;
+      Object.keys(nights).length !== 1 ||
+      !nights[currentNight]?.night_in_progress;
 
-    if (shouldCalculateFault)
+    if (shouldCalculateFault) {
       faultTimeHours =
         nightHours -
         expTimeHours -
         overheadFilterChangeHours -
         overheadNoFilterChangeHours -
         Math.min(domeClosed, weatherLossHours ?? 0);
+    }
 
-    return [
-      nightHours,
-      expTimeHours,
-      filterChangeHours,
-      noFilterChangeHours,
-      overheadFilterChangeHours,
-      overheadNoFilterChangeHours,
-      domeClosed,
-      faultTimeHours,
-    ];
-  }, [groupedByDayobs]);
+    return {
+      observableTime: nightHours,
+      expTime: expTimeHours,
+      gapWithFilterChange: filterChangeHours,
+      gapWithoutFilterChange: noFilterChangeHours,
+      overheadWithFilterChange: overheadFilterChangeHours,
+      overheadWithoutFilterChange: overheadNoFilterChangeHours,
+      domeClosedHours: domeClosed,
+      calculatedFaultTime: faultTimeHours,
+    };
+  }, [groupedByDayobs, nights, weatherLossHours, currentNight]);
 
   const [expPercent, nonExpPercent] = useMemo(() => {
     if (!observableTime || observableTime === 0) {
