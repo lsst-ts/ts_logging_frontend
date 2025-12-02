@@ -53,6 +53,7 @@
     "@babel/preset-env": "^7.26.9",
     "@babel/preset-react": "^7.26.3",
     "@eslint/js": "^9.21.0",
+    "@playwright/test": "^1.57.0",
     "@tanstack/router-plugin": "^1.124.0",
     "@testing-library/react": "^16.3.0",
     "@types/node": "^22.14.1",
