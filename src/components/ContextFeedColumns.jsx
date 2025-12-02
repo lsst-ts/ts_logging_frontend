@@ -389,8 +389,17 @@ export const contextFeedColumns = [
       tooltip: "Timestamp at start of process.",
     },
   }),
+  columnHelper.accessor("timestampConfigureStart", {
+    header: "Configuration Start Time (UTC)",
+    cell: (info) => formatTimestamp(info.getValue()),
+    size: 220,
+    filterType: "number-range",
+    meta: {
+      tooltip: "Timestamp at start of configuration.",
+    },
+  }),
   columnHelper.accessor("timestampConfigureEnd", {
-    header: "Configure End Time (UTC)",
+    header: "Configuration End Time (UTC)",
     cell: (info) => formatTimestamp(info.getValue()),
     size: 220,
     filterType: "number-range",
