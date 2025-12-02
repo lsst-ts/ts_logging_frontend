@@ -15,7 +15,7 @@ import {
   millisToHHmm,
   dayobsAtMidnight,
 } from "@/utils/timeUtils";
-import { SAL_INDEX_INFO } from "@/components/context-feed-definitions.js";
+import { CATEGORY_INDEX_INFO } from "@/components/context-feed-definitions.js";
 
 // Small thin diamond shapes to represent events in the timeline
 const CustomisedDot = ({ cx, cy, stroke, h, w, opacity = 1 }) => {
@@ -246,7 +246,7 @@ function ContextFeedTimeline({
           />
         ) : null}
         {/* Data Points & Lines */}
-        {Object.values(SAL_INDEX_INFO)
+        {Object.values(CATEGORY_INDEX_INFO)
           .filter((info) => info.displayIndex != null) // exclude AUTOLOG
           .map((info) => {
             const { displayIndex, label, color } = info;
