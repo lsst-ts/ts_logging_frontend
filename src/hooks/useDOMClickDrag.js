@@ -189,7 +189,7 @@ export function useDOMClickDrag({
 
       // Update key states
       dragState.current.shiftKeyHeld = event.shiftKey;
-      dragState.current.ctrlKeyHeld = event.ctrlKey;
+      dragState.current.ctrlKeyHeld = event.ctrlKey || event.metaKey;
 
       // Update rectangles immediately
       updateSelectionRects();
@@ -343,7 +343,7 @@ export function useDOMClickDrag({
       dragState.current.currentCoordinate = chartState.activeCoordinate.x;
       dragState.current.currentYPixel = chartState.chartY;
       dragState.current.shiftKeyHeld = event?.shiftKey || false;
-      dragState.current.ctrlKeyHeld = event?.ctrlKey || false;
+      dragState.current.ctrlKeyHeld = event?.ctrlKey || event?.metaKey || false;
 
       // Make areas visible based on configuration
       if (showMouseRect && mouseRef.current) {
@@ -391,7 +391,7 @@ export function useDOMClickDrag({
       dragState.current.currentCoordinate = chartState?.activeCoordinate?.x;
       dragState.current.currentYPixel = chartState?.chartY;
       dragState.current.shiftKeyHeld = event?.shiftKey || false;
-      dragState.current.ctrlKeyHeld = event?.ctrlKey || false;
+      dragState.current.ctrlKeyHeld = event?.ctrlKey || event?.metaKey || false;
 
       // Update selection rectangles
       updateSelectionRects();
