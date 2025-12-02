@@ -410,12 +410,15 @@ function ObservingConditionsApplet({
 
   const { xMin, xMax, xTicks } = useMemo(() => {
     // Filter out invalid observing times
-    const xVals = chartData.map((d) => d.obs_start_dt).filter(isValidNumber);
-    // add twilight values to xVals to make sure they are included in the chart
-    const allXVals = [...xVals, ...twilightValues];
+    const xVals = chartData
+      .map((d) => d.obs_start_dt)
+      .filter(isValidNumber)
+      // add twilight values to xVals to make sure they are included in the chart
+      .concat(twilightValues)
+      .filter((d) => d > selectedMinMillis && d < selectedMaxMillis);
     // Calculate min and max for x-axis
-    const min = xVals.length ? Math.min(...allXVals) : "auto";
-    const max = xVals.length ? Math.max(...allXVals) : "auto";
+    const min = xVals.length ? Math.min(...xVals) : "auto";
+    const max = xVals.length ? Math.max(...xVals) : "auto";
 
     // Generate evenly spaced ticks between xMin and xMax
     let ticks = [];
@@ -426,20 +429,21 @@ function ObservingConditionsApplet({
       }
     }
     return { xMin: min, xMax: max, xTicks: ticks };
-  }, [chartData, twilightValues]);
+  }, [chartData, twilightValues, selectedMinMillis, selectedMaxMillis]);
 
   // Calculate X domain clamped to actual data range
   const xDomain = useMemo(() => {
-    const startMillis = selectedMinMillis;
-    const endMillis = selectedMaxMillis;
-
     // If we have valid data range, clamp to it
     if (isValidNumber(xMin) && isValidNumber(xMax)) {
-      return [Math.max(startMillis, xMin), Math.min(endMillis, xMax)];
+      const padding = (xMax - xMin) * 0.025;
+      return [
+        Math.max(selectedMinMillis, xMin - padding),
+        Math.min(selectedMaxMillis, xMax + padding),
+      ];
     }
 
     // Otherwise use selected range as-is
-    return [startMillis, endMillis];
+    return [selectedMinMillis, selectedMaxMillis];
   }, [selectedMinMillis, selectedMaxMillis, xMin, xMax]);
 
   // Click & Drag plot hooks
