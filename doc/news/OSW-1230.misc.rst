@@ -1,0 +1,1 @@
+Update fault and closed dome calculations in Time Accounting applet
