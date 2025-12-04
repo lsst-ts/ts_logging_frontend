@@ -1,3 +1,13 @@
+v0.11.0-alpha.2 (2025-12-04)
+============================
+
+Other Changes and Additions
+---------------------------
+
+- Separate overhead into non-filter-change and filter-change (`OSW-1229 <https://rubinobs.atlassian.net//browse/OSW-1229>`_)
+- Update fault and closed dome calculations in Time Accounting applet (`OSW-1230 <https://rubinobs.atlassian.net//browse/OSW-1230>`_)
+
+
 v0.11.0-alpha.1 (2025-11-26)
 ============================
 
