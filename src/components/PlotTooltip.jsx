@@ -1,4 +1,4 @@
-import { ISO_DATETIME_FORMAT } from "@/utils/timeUtils";
+import { ISO_DATETIME_FORMAT, millisToDateTime } from "@/utils/timeUtils";
 import { DateTime } from "luxon";
 
 /**
@@ -12,9 +12,10 @@ export const plotTooltipFormatter =
   (title) => (value, name, item, index, payload) => {
     const dayObs = payload["day obs"];
     const seqNum = payload["seq num"];
-    const obsStart = DateTime.fromMillis(payload["obs_start_millis"]).toFormat(
+    const obsStart = millisToDateTime(payload["obs_start_millis"]).toFormat(
       ISO_DATETIME_FORMAT,
     );
+
     const physicalFilter = payload["physical filter"];
     const scienceProgram = payload["science program"];
     const obsReason = payload["observation reason"];
