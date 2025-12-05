@@ -438,8 +438,10 @@ export function useDOMClickDrag({
       };
 
       // Create end MousePosition
-      const endPixelX = chartState.chartX;
-      const endPixelY = chartState.chartY;
+      // If mouseup occurs outside cartesian grid but inside chart bounds,
+      // chartState values will be undefined - fall back to dragState values
+      const endPixelX = chartState.chartX ?? dragState.current.currentPixel;
+      const endPixelY = chartState.chartY ?? dragState.current.currentYPixel;
       const endPayload = chartState.activePayload?.[0]?.payload || null;
 
       const endFractionX = (endPixelX - plotLeft) / plotWidth;
