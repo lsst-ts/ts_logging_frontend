@@ -35,7 +35,12 @@ import { useDOMClickDrag } from "@/hooks/useDOMClickDrag";
 import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
 import { RotateCcw } from "lucide-react";
 import { calculateZoom } from "@/utils/plotUtils";
-import { millisToDateTime, millisToHHmm } from "@/utils/timeUtils";
+import {
+  millisToDateTime,
+  millisToHHmm,
+  isoToTAI,
+  utcDateTimeStrToTAIMillis,
+} from "@/utils/timeUtils";
 
 import {
   DEFAULT_PIXEL_SCALE_MEDIAN,
@@ -306,7 +311,7 @@ function ObservingConditionsApplet({
           typeof obsStart === "string" &&
           DateTime.fromISO(obsStart).isValid
         ) {
-          obs_start_dt = DateTime.fromISO(obsStart, { zone: "UTC" }).toMillis();
+          obs_start_dt = isoToTAI(obsStart).toMillis();
         }
         // calculate psf_median from psf_sigma_median and pixel_scale_median
         const psfSigma = entry["psf_sigma_median"];
@@ -394,16 +399,8 @@ function ObservingConditionsApplet({
       // fallback to empty array if almanacInfo is undefined
       (almanacInfo ?? [])
         .map((dayobsAlm) => {
-          const eve = DateTime.fromFormat(
-            dayobsAlm.twilight_evening,
-            ISO_DATETIME_FORMAT,
-            { zone: "utc" },
-          ).toMillis();
-          const mor = DateTime.fromFormat(
-            dayobsAlm.twilight_morning,
-            ISO_DATETIME_FORMAT,
-            { zone: "utc" },
-          ).toMillis();
+          const eve = utcDateTimeStrToTAIMillis(dayobsAlm.twilight_evening);
+          const mor = utcDateTimeStrToTAIMillis(dayobsAlm.twilight_morning);
           return [eve, mor];
         })
         .flat(),
