@@ -14,8 +14,15 @@ import { DateTime } from "luxon";
 
 import SearchParamErrorComponent from "./components/search-param-error-component";
 import { dataLogColumns } from "@/components/DataLogColumns";
+import { getDayobsStartUTC, getDayobsEndUTC } from "./utils/timeUtils";
 
-export const GLOBAL_SEARCH_PARAMS = ["startDayobs", "endDayobs", "telescope"];
+export const GLOBAL_SEARCH_PARAMS = [
+  "startDayobs",
+  "endDayobs",
+  "telescope",
+  "startTime",
+  "endTime",
+];
 
 const rootRoute = createRootRoute({
   component: Layout,
@@ -40,24 +47,64 @@ const dayobsInt = z.coerce
   )
   .transform((val) => parseInt(val, 10));
 
+const defaultDayObs = () =>
+  DateTime.utc().minus({ days: 1 }).toFormat("yyyyMMdd");
+
 // Create plain object schema
-const baseSearchParamsSchema = z.object({
-  startDayobs: dayobsInt.default(() =>
-    DateTime.utc().minus({ days: 1 }).toFormat("yyyyMMdd"),
-  ),
-  endDayobs: dayobsInt.default(() =>
-    DateTime.utc().minus({ days: 1 }).toFormat("yyyyMMdd"),
-  ),
+export const baseSearchParamsSchema = z.object({
+  startDayobs: dayobsInt.default(defaultDayObs),
+  endDayobs: dayobsInt.default(defaultDayObs),
   telescope: z.enum(["Simonyi", "AuxTel"]).default("Simonyi"),
+  // these are marked as optional because they are added automatically
+  startTime: z.coerce.number().int().min(0).optional(),
+  endTime: z.coerce.number().int().min(0).optional(),
 });
 
+// Apply common validations and transformations to search params schemas
+const applyCommonValidations = (schema) =>
+  schema
+    .transform((search) => {
+      // Set default startTime and endTime based on dayobs if not provided
+      // Has to be done as a transformation because it's dependant on another value
+      return {
+        ...search,
+        startTime:
+          search.startTime ??
+          getDayobsStartUTC(search.startDayobs.toString()).toMillis(),
+        endTime:
+          search.endTime ??
+          getDayobsEndUTC(search.endDayobs.toString()).toMillis(),
+      };
+    })
+    .refine((obj) => obj.startDayobs <= obj.endDayobs, {
+      message: "startDayobs must be before or equal to endDayobs.",
+      path: ["startDayobs"],
+    })
+    .transform((search) => {
+      // Ensure that startTime <= endTime by swapping them if required
+      if (search.startTime > search.endTime) {
+        return {
+          ...search,
+          startTime: search.endTime,
+          endTime: search.startTime,
+        };
+      }
+      return search;
+    })
+    .transform((search) => {
+      // Ensure that start and end times fall within the dayobs boundaries
+      const startMillis = getDayobsStartUTC(search.startDayobs.toString());
+      const endMillis = getDayobsEndUTC(search.endDayobs.toString());
+      return {
+        ...search,
+        startTime: Math.max(search.startTime, startMillis),
+        endTime: Math.min(search.endTime, endMillis),
+      };
+    });
+
 // Validate schema object for general use
-const searchParamsSchema = baseSearchParamsSchema.refine(
-  (obj) => obj.startDayobs <= obj.endDayobs,
-  {
-    message: "startDayobs must be before or equal to endDayobs.",
-    path: ["startDayobs"],
-  },
+export const searchParamsSchema = applyCommonValidations(
+  baseSearchParamsSchema,
 );
 
 // Convert table columns to url filter keys
@@ -72,13 +119,10 @@ const filtersShape = Object.fromEntries(
   arrayKeys.map((key) => [key, z.string().array().optional()]),
 );
 
-// Extend base schema object for individual pages
-const dataLogSearchSchema = baseSearchParamsSchema
-  .extend(filtersShape)
-  .refine((obj) => obj.startDayobs <= obj.endDayobs, {
-    message: "startDayobs must be before or equal to endDayobs.",
-    path: ["startDayobs"],
-  });
+// Extend base schema object for data log page with filter fields
+export const dataLogSearchSchema = applyCommonValidations(
+  baseSearchParamsSchema.extend(filtersShape),
+);
 
 const dashboardRoute = createRoute({
   getParentRoute: () => rootRoute,

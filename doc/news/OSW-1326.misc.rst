@@ -1,0 +1,1 @@
+Make timeline component reusable
