@@ -197,6 +197,28 @@ export function useDOMClickDrag({
     [updateSelectionRects],
   );
 
+  // Helper: End the dragging operation (hide rectangles, remove listeners, reset state)
+  const endDrag = useCallback(() => {
+    // Hide the selection rectangles
+    hideSelectionRects();
+
+    // Reset all drag state properties
+    dragState.current.isDragging = false;
+    dragState.current.startPixel = null;
+    dragState.current.startCoordinate = null;
+    dragState.current.startPayload = null;
+    dragState.current.startYPixel = null;
+    dragState.current.currentPixel = null;
+    dragState.current.currentCoordinate = null;
+    dragState.current.currentYPixel = null;
+    dragState.current.shiftKeyHeld = false;
+    dragState.current.ctrlKeyHeld = false;
+
+    // Remove keyboard event listeners
+    window.removeEventListener("keydown", handleKeyChange);
+    window.removeEventListener("keyup", handleKeyChange);
+  }, [hideSelectionRects, handleKeyChange]);
+
   // Lazily create rect elements on first interaction
   const ensureRectsExist = useCallback(() => {
     if (mouseRef.current && snappedRef.current) {
@@ -463,22 +485,10 @@ export function useDOMClickDrag({
         callback(start, end, event);
       }
 
-      // Hide areas
-      hideSelectionRects();
-
-      dragState.current.isDragging = false;
-
-      // Remove keyboard event listeners
-      window.removeEventListener("keydown", handleKeyChange);
-      window.removeEventListener("keyup", handleKeyChange);
+      // End the drag operation
+      endDrag();
     },
-    [
-      callback,
-      onMouseUpCallback,
-      chartRef,
-      hideSelectionRects,
-      handleKeyChange,
-    ],
+    [callback, onMouseUpCallback, chartRef, endDrag],
   );
 
   const doubleClick = useCallback(
@@ -488,21 +498,15 @@ export function useDOMClickDrag({
         resetCallback();
       }
 
-      // Ensure areas are hidden and reset
-      hideSelectionRects();
-
-      dragState.current.isDragging = false;
-
-      // Remove keyboard event listeners (in case double-click happens during drag)
-      window.removeEventListener("keydown", handleKeyChange);
-      window.removeEventListener("keyup", handleKeyChange);
+      // End the drag operation (in case double-click happens during drag)
+      endDrag();
 
       // Call optional callback
       if (onDoubleClickCallback) {
         onDoubleClickCallback(chartState, dragState.current);
       }
     },
-    [resetCallback, onDoubleClickCallback, hideSelectionRects, handleKeyChange],
+    [resetCallback, onDoubleClickCallback, endDrag],
   );
 
   const mouseLeave = useCallback(() => {
@@ -510,16 +514,10 @@ export function useDOMClickDrag({
       onMouseLeaveCallback(dragState.current);
     }
     if (dragState.current.isDragging) {
-      // Hide areas
-      hideSelectionRects();
-
-      dragState.current.isDragging = false;
-
-      // Remove keyboard event listeners
-      window.removeEventListener("keydown", handleKeyChange);
-      window.removeEventListener("keyup", handleKeyChange);
+      // End the drag operation
+      endDrag();
     }
-  }, [onMouseLeaveCallback, hideSelectionRects, handleKeyChange]);
+  }, [onMouseLeaveCallback, endDrag]);
 
   return {
     mouseDown,
