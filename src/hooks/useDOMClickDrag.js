@@ -90,6 +90,7 @@ export function useDOMClickDrag({
     currentYPixel: null, // Track current Y position
     shiftKeyHeld: false, // Track shift key state
     ctrlKeyHeld: false, // Track ctrl key state
+    keyHandler: null, // Reference to keyboard event handler for cleanup
   });
 
   // Helper: Update the visual selection rectangles
@@ -182,21 +183,6 @@ export function useDOMClickDrag({
     }
   }, []);
 
-  // Helper: Handle keyboard events during drag
-  const handleKeyChange = useCallback(
-    (event) => {
-      if (!dragState.current.isDragging) return;
-
-      // Update key states
-      dragState.current.shiftKeyHeld = event.shiftKey;
-      dragState.current.ctrlKeyHeld = event.ctrlKey || event.metaKey;
-
-      // Update rectangles immediately
-      updateSelectionRects();
-    },
-    [updateSelectionRects],
-  );
-
   // Helper: End the dragging operation (hide rectangles, remove listeners, reset state)
   const endDrag = useCallback(() => {
     // Hide the selection rectangles
@@ -215,9 +201,33 @@ export function useDOMClickDrag({
     dragState.current.ctrlKeyHeld = false;
 
     // Remove keyboard event listeners
-    window.removeEventListener("keydown", handleKeyChange);
-    window.removeEventListener("keyup", handleKeyChange);
-  }, [hideSelectionRects, handleKeyChange]);
+    if (dragState.current.keyHandler) {
+      window.removeEventListener("keydown", dragState.current.keyHandler);
+      window.removeEventListener("keyup", dragState.current.keyHandler);
+      dragState.current.keyHandler = null;
+    }
+  }, [hideSelectionRects]);
+
+  // Helper: Handle keyboard events during drag
+  const handleKeyChange = useCallback(
+    (event) => {
+      if (!dragState.current.isDragging) return;
+
+      // Check for Escape key to cancel drag
+      if (event.key === "Escape") {
+        endDrag();
+        return;
+      }
+
+      // Update key states
+      dragState.current.shiftKeyHeld = event.shiftKey;
+      dragState.current.ctrlKeyHeld = event.ctrlKey || event.metaKey;
+
+      // Update rectangles immediately
+      updateSelectionRects();
+    },
+    [updateSelectionRects, endDrag],
+  );
 
   // Lazily create rect elements on first interaction
   const ensureRectsExist = useCallback(() => {
@@ -376,6 +386,7 @@ export function useDOMClickDrag({
       }
 
       // Add keyboard event listeners to track ctrl/shift during drag
+      dragState.current.keyHandler = handleKeyChange;
       window.addEventListener("keydown", handleKeyChange);
       window.addEventListener("keyup", handleKeyChange);
 
