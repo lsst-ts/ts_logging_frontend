@@ -214,11 +214,11 @@ export const PLOT_COLORS = {
   twilightStroke: "#0ea5e9",
   noDataFill: "#ccc",
   defaultColor: "#ffffff",
-  activeDotFill: "#ffffff",
+  hoveredDotFill: "#ffffff",
 };
 
 export const PLOT_DIMENSIONS = {
-  activeDotRadius: 4,
+  hoveredDotRadius: 5,
   yAxisWidth: 70,
   axisLabelFontSize: 16,
   axisLabelFontWeight: 100,

@@ -1,8 +1,10 @@
+import { useContext, useEffect, useId } from "react";
 import {
   CartesianGrid,
   Line,
   LineChart,
   ReferenceArea,
+  ReferenceDot,
   ReferenceLine,
   XAxis,
   YAxis,
@@ -13,13 +15,8 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import {
-  TriangleShape,
-  FlippedTriangleShape,
-  SquareShape,
-  StarShape,
-  AsteriskShape,
-} from "@/components/plotDotShapes";
+import { PlotDataContext } from "@/contexts/PlotDataContext";
+import { hoverStore } from "@/stores/hoverStore";
 import {
   DayObsBreakLine,
   NoDataReferenceArea,
@@ -28,9 +25,6 @@ import {
 import { plotTooltipFormatter } from "@/components/PlotTooltip";
 import {
   PLOT_COLOR_OPTIONS,
-  BAND_COLORS,
-  PLOT_KEY_TIME,
-  PLOT_KEY_SEQUENCE,
   PLOT_COLORS,
   PLOT_DIMENSIONS,
   PLOT_OPACITIES,
@@ -39,62 +33,95 @@ import {
 
 import { useClickDrag } from "@/hooks/useClickDrag";
 import { scaleDotRadius, calculateDecimalPlaces } from "@/utils/plotUtils";
-import { calculateChartData } from "@/utils/chartCalculations";
-
-// Band markers for the timeseries plots
-const CustomisedDotWithShape = ({ cx, cy, band, r = 2 }) => {
-  if (cx == null || cy == null) return null;
-
-  // Band "u" is a blue circle
-  if (band === "u") {
-    return <circle cx={cx} cy={cy} r={r || 2} fill={BAND_COLORS.u} />;
-  }
-
-  // Choose shape based on prop
-  let ShapeComponent;
-  switch (band) {
-    case "g":
-      ShapeComponent = TriangleShape;
-      break;
-    case "r":
-      ShapeComponent = FlippedTriangleShape;
-      break;
-    case "i":
-      ShapeComponent = SquareShape;
-      break;
-    case "z":
-      ShapeComponent = StarShape;
-      break;
-    case "y":
-      ShapeComponent = AsteriskShape;
-      break;
-  }
-
-  return <ShapeComponent cx={cx} cy={cy} r={r} />;
-};
+import { createDotCallback } from "../utils/createDotCallback";
 
 function TimeseriesPlot({
   title,
   unit = null,
   dataKey,
-  data,
-  twilightValues,
-  moonIntervals = [],
   fullTimeRange,
-  selectedTimeRange,
   setSelectedTimeRange,
   plotShape,
   plotColor,
   bandMarker,
-  availableDayObs,
   isBandPlot = false,
+  showMoon = false,
   plotIndex = 0,
   nPlots = 1,
-  xAxisType = PLOT_KEY_TIME,
   xAxisShow = false,
 }) {
-  const selectedMinMillis = selectedTimeRange[0]?.toMillis();
-  const selectedMaxMillis = selectedTimeRange[1]?.toMillis();
+  // Get pre-computed chart data from context
+  const plotData = useContext(PlotDataContext);
+
+  // Generate unique ID for this graph
+  const graphID = useId();
+
+  // Destructure with defaults to handle null case
+  const {
+    groupedData = [],
+    flatData = [],
+    chartMoon = [],
+    twilightValues = [],
+    chartDayObsBreaks = [],
+    noDataX = [],
+    chartDayObsSpacing = 1,
+    chartDataKey = "obs_start_millis",
+    domain = [0, 0],
+    scale = "time",
+    ticks = [],
+    dayObsTicks = [],
+    tickFormatter = (e) => e,
+    dayObsTickFormatter = (e) => e,
+    indexToMillis = (e) => e, // Default identity function
+    selectedMinMillis = 0,
+    selectedMaxMillis = 0,
+  } = plotData || {};
+
+  // Click & Drag plot hooks
+  const {
+    refAreaLeft,
+    refAreaRight,
+    handleMouseDown,
+    handleMouseMove: handleDragMouseMove,
+    handleMouseUp,
+    handleDoubleClick,
+  } = useClickDrag(setSelectedTimeRange, fullTimeRange, indexToMillis);
+
+  // Handle hover detection based on mouse position
+  const handleChartMouseMove = (state) => {
+    // Always call the useClickDrag handler first
+    handleDragMouseMove(state);
+
+    // If we're dragging, don't update hover state
+    if (refAreaLeft) {
+      hoverStore.setHover(null);
+      return;
+    }
+
+    if (!state || !state.activePayload || state.activePayload.length === 0) {
+      hoverStore.setHover(null);
+      return;
+    }
+
+    hoverStore.setHover(state.activePayload[0].payload["exposure id"]);
+  };
+
+  const handleChartMouseLeave = () => {
+    hoverStore.setHover(null);
+  };
+
+  // Register this graph with the hover store
+  useEffect(() => {
+    hoverStore.registerGraph(graphID);
+
+    return () => {
+      hoverStore.unregisterGraph(graphID);
+    };
+  }, [graphID]);
+
+  if (!plotData) {
+    return null;
+  }
 
   // Get color, either from options or generated based on index (for assorted colors)
   const selectedColor =
@@ -104,7 +131,7 @@ function TimeseriesPlot({
         PLOT_COLORS.defaultColor;
 
   // Compute decimal places for y-axis ticks ================
-  const values = data
+  const values = flatData
     .map((d) => d[dataKey])
     .filter((v) => typeof v === "number" && Number.isFinite(v));
   // Get min/max
@@ -121,105 +148,42 @@ function TimeseriesPlot({
 
   let lineProps = {
     dataKey,
-    activeDot: {
-      r: PLOT_DIMENSIONS.activeDotRadius,
-      fill: PLOT_COLORS.activeDotFill,
-    },
+    activeDot: false, // Disable default activeDot since we handle hover ourselves
     isAnimationActive: false,
     animationEasing: "linear",
+    stroke: "",
   };
 
   if (isBandPlot && bandMarker === "bandColorsIcons") {
     // Band markers (colours and icons)
-    lineProps.stroke = "";
-    lineProps.dot = ({ index, ...rest }) => (
-      <CustomisedDotWithShape
-        {...rest}
-        key={`dot-${index}`}
-        stroke={selectedColor}
-        band={rest.payload.band}
-        style={{ pointerEvents: "all" }}
-      />
-    );
+    lineProps.dot = createDotCallback(graphID, Math.max(DOT_RADIUS, 2), {
+      band: true,
+      useShape: true,
+    });
   } else if (isBandPlot && bandMarker === "bandColor") {
     // Band markers (colours only)
-    lineProps.stroke = "";
-    lineProps.dot = ({ cx, cy, payload, index }) => {
-      const fill = BAND_COLORS[payload.band] || selectedColor;
-      if (cy == null) return null; // don't show a dot if undefined or null
-      return (
-        <circle
-          key={`dot-${index}`}
-          cx={cx}
-          cy={cy}
-          r={DOT_RADIUS}
-          fill={fill}
-          stroke={fill}
-          style={{ pointerEvents: "all" }}
-        />
-      );
-    };
+    lineProps.dot = createDotCallback(graphID, DOT_RADIUS, {
+      band: true,
+      useShape: false,
+      color: selectedColor,
+    });
   } else if (plotShape === "line") {
     // Lines
     lineProps.connectNulls = true;
     lineProps.isAnimationActive = true;
     lineProps.type = "linear";
     lineProps.stroke = selectedColor;
-    lineProps.dot = false;
+    lineProps.dot = createDotCallback(graphID, DOT_RADIUS, {
+      // Hidden dots
+      color: "rgba(0,0,0,0)",
+    });
   } else {
     // Dots
-    lineProps.stroke = "";
-    lineProps.dot = {
-      r: DOT_RADIUS,
-      fill: selectedColor,
-      stroke: selectedColor,
-    };
+    lineProps.dot = createDotCallback(graphID, DOT_RADIUS, {
+      color: selectedColor,
+    });
   }
   // ---------------------------------------------------------
-
-  // Use calculateChartData to get all chart transformations
-  const {
-    chartData,
-    chartMoon,
-    chartDayObsBreaks,
-    ticks,
-    dayObsTicks,
-    dayObsTickMappings,
-    noDataX,
-    fakeX,
-    chartDayObsSpacing,
-    chartDataKey,
-    domain,
-    tickFormatter,
-    scale,
-  } = calculateChartData({
-    xAxisType,
-    data,
-    moonIntervals,
-    availableDayObs,
-    selectedMinMillis,
-    selectedMaxMillis,
-  });
-
-  // Click & Drag plot hooks ================================
-  // Flatten chartData for sequence mode lookup (chartData is array of arrays)
-  const flatChartData = chartData.flat();
-
-  const {
-    refAreaLeft,
-    refAreaRight,
-    handleMouseDown,
-    handleMouseMove,
-    handleMouseUp,
-    handleDoubleClick,
-  } = useClickDrag(
-    setSelectedTimeRange,
-    fullTimeRange,
-    xAxisType === PLOT_KEY_SEQUENCE
-      ? (e) => flatChartData.find((d) => d.fakeX === e)?.obs_start_millis
-      : (e) => e,
-  );
-  // --------------------------------------------------------
 
   // Plot =================================================
   return (
@@ -234,9 +198,10 @@ function TimeseriesPlot({
         width={500}
         margin={PLOT_DIMENSIONS.chartMargins}
         onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
+        onMouseMove={handleChartMouseMove}
         onMouseUp={handleMouseUp}
         onDoubleClick={handleDoubleClick}
+        onMouseLeave={handleChartMouseLeave}
       >
         <CartesianGrid strokeDasharray="3 3" stroke={PLOT_COLORS.gridStroke} />
         <XAxis
@@ -257,7 +222,7 @@ function TimeseriesPlot({
           domain={domain}
           allowDuplicatedCategory={false}
           ticks={dayObsTicks}
-          tickFormatter={(e) => dayObsTickMappings.get(e)}
+          tickFormatter={dayObsTickFormatter}
           xAxisId={1}
           tickLine={false}
           axisLine={false}
@@ -296,36 +261,30 @@ function TimeseriesPlot({
           }}
         />
         {/* Moon Up Area */}
-        {chartMoon.map(({ start, end, startIsZigzag, endIsZigzag }, i) => {
-          // If entire moon-up area is not inside selected range,
-          // clamp start/end times so moon-up area is visible.
-          const clampedStart =
-            xAxisType === PLOT_KEY_SEQUENCE
-              ? Math.max(start, 0)
-              : Math.max(start, selectedMinMillis);
-          const clampedEnd =
-            xAxisType === PLOT_KEY_SEQUENCE
-              ? Math.min(end, fakeX)
-              : Math.min(end, selectedMaxMillis);
+        {showMoon &&
+          chartMoon.map(({ start, end, startIsZigzag, endIsZigzag }, i) => {
+            // Clamp moon intervals to the visible domain
+            const clampedStart = Math.max(start, domain[0]);
+            const clampedEnd = Math.min(end, domain[1]);
 
-          return (
-            <ReferenceArea
-              key={`moon-up-${i}`}
-              x1={clampedStart}
-              x2={clampedEnd}
-              fillOpacity={PLOT_OPACITIES.overlay}
-              fill={PLOT_COLORS.moonFill}
-              yAxisId="0"
-              shape={
-                <MoonReferenceArea
-                  startIsZigzag={startIsZigzag}
-                  endIsZigzag={endIsZigzag}
-                />
-              }
-            />
-          );
-        })}
-        {xAxisType === PLOT_KEY_TIME &&
+            return (
+              <ReferenceArea
+                key={`moon-up-${i}`}
+                x1={clampedStart}
+                x2={clampedEnd}
+                fillOpacity={PLOT_OPACITIES.overlay}
+                fill={PLOT_COLORS.moonFill}
+                yAxisId="0"
+                shape={
+                  <MoonReferenceArea
+                    startIsZigzag={startIsZigzag}
+                    endIsZigzag={endIsZigzag}
+                  />
+                }
+              />
+            );
+          })}
+        {chartDataKey === "obs_start_millis" &&
           twilightValues.map((twi, i) =>
             selectedMinMillis <= twi &&
             twi <= selectedMaxMillis &&
@@ -350,7 +309,7 @@ function TimeseriesPlot({
             shape={<NoDataReferenceArea />}
           />
         ))}
-        {xAxisType === PLOT_KEY_SEQUENCE &&
+        {chartDataKey === "fakeX" &&
           chartDayObsBreaks.map((dayObsBreak, i) => (
             <ReferenceLine
               key={`day-obs-break-${i}`}
@@ -374,13 +333,13 @@ function TimeseriesPlot({
           )}
         />
         {/* Data */}
-        {chartData.map((d, i) => (
+        {groupedData.map((d, i) => (
           <Line
             {...lineProps}
             key={`chart-data-${i}`}
             data={d}
-            animationBegin={(1500 * i) / chartData.length}
-            animationDuration={1500 / chartData.length}
+            animationBegin={(1500 * i) / groupedData.length}
+            animationDuration={1500 / groupedData.length}
           />
         ))}
         {/* Selection rectangle shown during active highlighting */}
@@ -391,6 +350,17 @@ function TimeseriesPlot({
             fillOpacity={PLOT_OPACITIES.selection}
           />
         ) : null}
+        {/* Hover indicator - positioned via direct DOM manipulation */}
+        <ReferenceDot
+          x={-9999}
+          y={-9999}
+          r={PLOT_DIMENSIONS.hoveredDotRadius}
+          fill={PLOT_COLORS.hoveredDotFill}
+          stroke={PLOT_COLORS.hoveredDotFill}
+          // ifOverFlow is required because otherwise recharts will cull it from the DOM if it is not visible
+          ifOverflow={"visible"}
+          data-hover-indicator={graphID}
+        />
       </LineChart>
     </ChartContainer>
   );

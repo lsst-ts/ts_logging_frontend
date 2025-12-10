@@ -57,7 +57,7 @@ export default function Digest() {
 
   const [flagsLoading, setFlagsLoading] = useState(false);
   const [almanacInfo, setAlmanacInfo] = useState([]);
-  const [openDomeHours, setOpenDomeHours] = useState(0.0);
+  const [openDomeTimes, setOpenDomeTimes] = useState([]);
 
   const [interactiveMap, setInteractiveMap] = useState(null);
   const [visitMapLoading, setVisitMapLoading] = useState(false);
@@ -87,7 +87,6 @@ export default function Digest() {
     setReports([]);
     setOnSkyExpCount(0);
     setFlags([]);
-    setOpenDomeHours(0.0);
 
     setVisitMapLoading(true);
     setInteractiveMap(null);
@@ -100,7 +99,7 @@ export default function Digest() {
           exposureTime,
           onSkyExpNo,
           totalOnSkyExpTime,
-          openDome,
+          openDomeTimes,
         ]) => {
           setExposureFields(exposureFields);
           setExposureCount(exposuresNo);
@@ -108,7 +107,7 @@ export default function Digest() {
           setOnSkyExpCount(onSkyExpNo);
           setSumOnSkyExpTime(totalOnSkyExpTime);
           setExposuresLoading(false);
-          setOpenDomeHours(openDome);
+          setOpenDomeTimes(openDomeTimes);
           if (exposuresNo === 0) {
             toast.warning("No exposures found for the selected date range.");
           }
@@ -369,9 +368,9 @@ export default function Digest() {
             <TimeAccountingApplet
               exposures={exposureFields}
               loading={almanacLoading || exposuresLoading}
-              sumExpTime={sumOnSkyExpTime}
-              nightHours={nightHours}
-              openDomeHours={openDomeHours}
+              openDomeTimes={openDomeTimes}
+              almanac={almanacInfo}
+              weatherLossHours={weatherLoss}
             />
             <VisitMapApplet
               mapData={interactiveMap}
