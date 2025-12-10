@@ -1,1 +1,0 @@
-Add cross-chart hover highlighting
