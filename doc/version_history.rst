@@ -1,3 +1,30 @@
+v0.11.0-alpha.3 (2025-12-10)
+============================
+
+New Features
+------------
+
+- Add cross-chart hover highlighting (`OSW-963 <https://rubinobs.atlassian.net//browse/OSW-963>`_)
+- Add additional interaction and zoom options to all plots (`OSW-1097 <https://rubinobs.atlassian.net//browse/OSW-1097>`_)
+- Display expected number of exposures for Simonyi. (`OSW-1166 <https://rubinobs.atlassian.net//browse/OSW-1166>`_)
+
+
+Bug Fixes
+---------
+
+- In time accounting applet, if the the dome never opened during the night, closed dome time should equal to observable time between 12deg twilights. (`OSW-1559 <https://rubinobs.atlassian.net//browse/OSW-1559>`_)
+
+
+Other Changes and Additions
+---------------------------
+
+- Update default sort for exposure breakdown to 'highest number first'. (`OSW-1014 <https://rubinobs.atlassian.net//browse/OSW-1014>`_)
+- Separate overhead into non-filter-change and filter-change (`OSW-1229 <https://rubinobs.atlassian.net//browse/OSW-1229>`_)
+- Update fault and closed dome calculations in Time Accounting applet (`OSW-1230 <https://rubinobs.atlassian.net//browse/OSW-1230>`_)
+- Make timeline component reusable (`OSW-1326 <https://rubinobs.atlassian.net//browse/OSW-1326>`_)
+- Add updating package-lock.json to release process. (`OSW-1497 <https://rubinobs.atlassian.net//browse/OSW-1497>`_)
+
+
 v0.10.1 (2025-11-07)
 ====================
 
