@@ -26,6 +26,8 @@ Closed Dome Accounting
 
   This represents how long the dome was closed **during actual night time**.
 
+- If the dome was never opened during the night, this will equal the full night length between 12° twilights.
+
 Visit Selection
 ---------------
 

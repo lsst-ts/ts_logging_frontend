@@ -106,45 +106,50 @@ function TimeAccountingApplet({
 
       let domeClosedHours = 0;
 
-      if (!nightInProgress && domeSessions && domeSessions.length > 0) {
-        // Sort by open time
-        const sortedSessions = domeSessions.toSorted(
-          (a, b) => a.open.toMillis() - b.open.toMillis(),
-        );
+      if (!nightInProgress) {
+        if (!domeSessions || domeSessions.length === 0) {
+          // Dome was closed the entire night
+          domeClosedHours = night.night_hours;
+        } else {
+          // Sort by open time
+          const sortedSessions = domeSessions.toSorted(
+            (a, b) => a.open.toMillis() - b.open.toMillis(),
+          );
 
-        // find first dome open and last dome close for this night
-        const { firstDomeOpen, lastDomeClose } = sortedSessions.reduce(
-          (acc, session) => ({
-            firstDomeOpen:
-              session.open < acc.firstDomeOpen
-                ? session.open
-                : acc.firstDomeOpen,
-            lastDomeClose:
-              session.close > acc.lastDomeClose
-                ? session.close
-                : acc.lastDomeClose,
-          }),
-          {
-            firstDomeOpen: sortedSessions[0].open,
-            lastDomeClose: sortedSessions[0].close,
-          },
-        );
+          // find first dome open and last dome close for this night
+          const { firstDomeOpen, lastDomeClose } = sortedSessions.reduce(
+            (acc, session) => ({
+              firstDomeOpen:
+                session.open < acc.firstDomeOpen
+                  ? session.open
+                  : acc.firstDomeOpen,
+              lastDomeClose:
+                session.close > acc.lastDomeClose
+                  ? session.close
+                  : acc.lastDomeClose,
+            }),
+            {
+              firstDomeOpen: sortedSessions[0].open,
+              lastDomeClose: sortedSessions[0].close,
+            },
+          );
 
-        // calculate close dome hours within night
-        domeClosedHours =
-          Math.max(0, firstDomeOpen.diff(twilightEvening, "hours").hours) +
-          (lastDomeClose > twilightEvening // to discard dome sessions that close before night start
-            ? Math.max(0, twilightMorning.diff(lastDomeClose, "hours").hours)
-            : 0);
+          // calculate close dome hours within night
+          domeClosedHours =
+            Math.max(0, firstDomeOpen.diff(twilightEvening, "hours").hours) +
+            (lastDomeClose > twilightEvening // to discard dome sessions that close before night start
+              ? Math.max(0, twilightMorning.diff(lastDomeClose, "hours").hours)
+              : 0);
 
-        for (let i = 1; i < sortedSessions.length; i++) {
-          const prevClose = sortedSessions[i - 1].close;
-          const currOpen = sortedSessions[i].open;
-          // only count if the close/open period is within night time
-          const overlapStart = DateTime.max(prevClose, twilightEvening);
-          const overlapEnd = DateTime.min(currOpen, twilightMorning);
-          if (overlapEnd > overlapStart) {
-            domeClosedHours += overlapEnd.diff(overlapStart, "hours").hours;
+          for (let i = 1; i < sortedSessions.length; i++) {
+            const prevClose = sortedSessions[i - 1].close;
+            const currOpen = sortedSessions[i].open;
+            // only count if the close/open period is within night time
+            const overlapStart = DateTime.max(prevClose, twilightEvening);
+            const overlapEnd = DateTime.min(currOpen, twilightMorning);
+            if (overlapEnd > overlapStart) {
+              domeClosedHours += overlapEnd.diff(overlapStart, "hours").hours;
+            }
           }
         }
       }
