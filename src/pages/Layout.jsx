@@ -81,6 +81,12 @@ export default function Layout({ children }) {
         <main className="flex-1 bg-stone-800 overflow-x-hidden">
           {/* Show/Hide Sidebar toggle */}
           <SidebarToggle />
+          <div className="bg-stone-800 px-8 pt-3 text-center">
+            <div className="bg-sky-750 h-10 flex items-center justify-center px-4 rounded-sm text-white font-medium">
+              Summit data is only retained for 30 days. Currently available
+              dayobs data: 2025-10-12 to 2025-11-12.
+            </div>
+          </div>
           {children}
           {/* Main content */}
           <Outlet />
