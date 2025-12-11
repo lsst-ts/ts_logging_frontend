@@ -1,3 +1,21 @@
+v0.11.0 (2025-12-10)
+====================
+
+New Features
+------------
+
+- Add cross-chart hover highlighting (`OSW-963 <https://rubinobs.atlassian.net//browse/OSW-963>`_)
+
+
+Other Changes and Additions
+---------------------------
+
+- Update default sort for exposure breakdown to 'highest number first'. (`OSW-1014 <https://rubinobs.atlassian.net//browse/OSW-1014>`_)
+- Separate overhead into non-filter-change and filter-change (`OSW-1229 <https://rubinobs.atlassian.net//browse/OSW-1229>`_)
+- Update fault and closed dome calculations in Time Accounting applet (`OSW-1230 <https://rubinobs.atlassian.net//browse/OSW-1230>`_)
+- Add updating package-lock.json to release process. (`OSW-1497 <https://rubinobs.atlassian.net//browse/OSW-1497>`_)
+
+
 v0.10.1 (2025-11-07)
 ====================
 
