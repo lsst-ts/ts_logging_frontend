@@ -1,0 +1,1 @@
+In time accounting applet, if the the dome never opened during the night, closed dome time should equal to observable time between 12deg twilights.
