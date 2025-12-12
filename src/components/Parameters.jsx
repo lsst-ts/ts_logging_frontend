@@ -10,7 +10,11 @@ import { Label } from "@/components/ui/label";
 import { DatePicker } from "@/components/ui/datepicker.jsx";
 import { Input } from "@/components/ui/input";
 
+import { useRetentionConfig } from "@/contexts/RetentionConfigContext";
+
 import { getDisplayDateRange } from "@/utils/utils";
+
+import { DateTime } from "luxon";
 
 export const TELESCOPES = Object.freeze({
   AuxTel: "LATISS",
@@ -33,6 +37,10 @@ function Parameters({
   onInstrumentChange,
 }) {
   const displayRange = getDisplayDateRange(dayobs, noOfNights);
+  const { retentionDays } = useRetentionConfig();
+
+  const maxDayObs = DateTime.utc().minus({ hours: 12 });
+  const minDayObs = maxDayObs.minus({ days: retentionDays });
 
   return (
     <>
@@ -65,6 +73,10 @@ function Parameters({
           id="dayobs"
           selectedDate={dayobs}
           onDateChange={onDayobsChange}
+          disabled={{
+            before: minDayObs.toJSDate(),
+            after: maxDayObs.toJSDate(),
+          }}
         />
       </div>
       <div className="pt-8">

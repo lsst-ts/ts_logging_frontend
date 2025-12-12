@@ -11,9 +11,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { DateTime } from "luxon";
 
-export function DatePicker({ selectedDate, onDateChange, mode = "single" }) {
+export function DatePicker({
+  selectedDate,
+  onDateChange,
+  mode = "single",
+  ...props
+}) {
   const [date, setDate] = React.useState(selectedDate);
 
   const handleChange = (newDate) => {
@@ -65,8 +69,8 @@ export function DatePicker({ selectedDate, onDateChange, mode = "single" }) {
           selected={date}
           onSelect={handleChange}
           defaultMonth={new Date(date?.getFullYear(), date?.getMonth())}
-          disabled={{ before: DateTime.utc().minus({ days: 29 }).toJSDate() }}
           initialFocus
+          {...props}
         />
       </PopoverContent>
     </Popover>
