@@ -230,8 +230,17 @@ const getRubinTVUrl = (telescope, dayObs, seqNum) => {
     baseUrl = window.location.origin;
   }
 
+  const locationSuffixMapping = {
+    "https://usdf-rsp-dev.slac.stanford.edu": "summit-usdf",
+    "https://usdf-rsp.slac.stanford.edu": "summit-usdf",
+    "https://base-lsp.lsst.codes": "base",
+    "https://summit-lsp.lsst.codes": "summit",
+    "https://tucson-teststand.lsst.codes": "tucson",
+  };
+  const locationSuffix = locationSuffixMapping[baseUrl];
+
   const dateStr = getDatetimeFromDayobsStr(`${dayObs}`).toFormat("yyyy-MM-dd");
-  return `${baseUrl}/rubintv/summit-usdf/${instr}/event?channel_name=${channel}&date_str=${dateStr}&seq_num=${seqNum}`;
+  return `${baseUrl}/rubintv/${locationSuffix}/${instr}/event?channel_name=${channel}&date_str=${dateStr}&seq_num=${seqNum}`;
 };
 
 /**
