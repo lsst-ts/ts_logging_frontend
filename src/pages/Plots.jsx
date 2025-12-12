@@ -8,7 +8,7 @@ import { Toaster } from "@/components/ui/sonner";
 
 import PlotVisibilityPopover from "@/components/PlotVisibilityPopover";
 import PlotFormatPopover from "@/components/PlotFormatPopover";
-import { TELESCOPES } from "@/components/parameters";
+import { TELESCOPES } from "@/components/Parameters";
 import {
   CircleShape,
   TriangleShape,
