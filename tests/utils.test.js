@@ -17,6 +17,7 @@ import {
   DEFAULT_PIXEL_SCALE_MEDIAN,
   PSF_SIGMA_FACTOR,
   DEFAULT_EXTERNAL_INSTANCE_URL,
+  SITE_CONFIGURATION,
   parseBackendVersion,
 } from "@/utils/utils";
 
@@ -325,32 +326,64 @@ describe("utils", () => {
     });
 
     it("uses dev base URL on localhost", () => {
+      const dateStr =
+        getDatetimeFromDayobsStr("20240607").toFormat("yyyy-MM-dd");
+
       const urlSimonyi = getRubinTVUrl("Simonyi", "20240607", 42);
-      expect(urlSimonyi.startsWith(DEFAULT_EXTERNAL_INSTANCE_URL)).toBe(true);
-      expect(urlSimonyi).toContain("seq_num=42");
-      expect(urlSimonyi).toContain("lsstcam");
-      expect(urlSimonyi).toContain("focal_plane_mosaic");
+      const expectedUrlSimonyi =
+        DEFAULT_EXTERNAL_INSTANCE_URL +
+        "/rubintv/summit-usdf/lsstcam" +
+        "/event?channel_name=focal_plane_mosaic" +
+        `&date_str=${dateStr}` +
+        "&seq_num=42";
+      expect(urlSimonyi).toBe(expectedUrlSimonyi);
 
       const urlAuxTel = getRubinTVUrl("AuxTel", "20240607", 43);
-      expect(urlAuxTel.startsWith(DEFAULT_EXTERNAL_INSTANCE_URL)).toBe(true);
-      expect(urlAuxTel).toContain("seq_num=43");
-      expect(urlAuxTel).toContain("auxtel");
-      expect(urlAuxTel).toContain("monitor");
+      const expectedUrlAuxTel =
+        DEFAULT_EXTERNAL_INSTANCE_URL +
+        "/rubintv/summit-usdf/auxtel" +
+        "/event?channel_name=monitor" +
+        `&date_str=${dateStr}` +
+        "&seq_num=43";
+      expect(urlAuxTel).toBe(expectedUrlAuxTel);
     });
 
     it("uses production origin if not localhost", () => {
-      window.location.host = "example.com";
-      window.location.origin = "https://example.com";
+      for (const [site, config] of Object.entries(SITE_CONFIGURATION)) {
+        window.location.host = site;
+        window.location.origin = `https://${site}`;
 
-      const urlSimonyi = getRubinTVUrl("Simonyi", "20240607", 99);
-      expect(urlSimonyi.startsWith("https://example.com")).toBe(true);
-      expect(urlSimonyi).toContain("lsstcam");
-      expect(urlSimonyi).toContain("focal_plane_mosaic");
+        const dateStr =
+          getDatetimeFromDayobsStr("20240607").toFormat("yyyy-MM-dd");
 
-      const urlAuxTel = getRubinTVUrl("AuxTel", "20240607", 100);
-      expect(urlAuxTel.startsWith("https://example.com")).toBe(true);
-      expect(urlAuxTel).toContain("auxtel");
-      expect(urlAuxTel).toContain("monitor");
+        const urlSimonyi = getRubinTVUrl("Simonyi", "20240607", 99);
+        const expectedUrlSimonyi =
+          `https://${site}/rubintv/${config.rubinTVSiteSuffix}/lsstcam` +
+          "/event?channel_name=focal_plane_mosaic" +
+          `&date_str=${dateStr}` +
+          "&seq_num=99";
+        expect(urlSimonyi).toBe(expectedUrlSimonyi);
+
+        const urlAuxTel = getRubinTVUrl("AuxTel", "20240607", 100);
+        const expectedUrlAuxTel =
+          `https://${site}/rubintv/${config.rubinTVSiteSuffix}/auxtel` +
+          "/event?channel_name=monitor" +
+          `&date_str=${dateStr}` +
+          "&seq_num=100";
+        expect(urlAuxTel).toBe(expectedUrlAuxTel);
+      }
+    });
+
+    it("raises error for unknown host", () => {
+      window.location.host = "unknownhost.com";
+      window.location.origin = "https://unknownhost.com";
+
+      expect(() => getRubinTVUrl("Simonyi", "20240607", 1)).toThrowError(
+        /^Unknown host for RubinTV URL: unknownhost.com$/,
+      );
+      expect(() => getRubinTVUrl("AuxTel", "20240607", 2)).toThrowError(
+        /^Unknown host for RubinTV URL: unknownhost.com$/,
+      );
     });
   });
 

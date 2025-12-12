@@ -4,6 +4,24 @@ import { TAI_OFFSET_SECONDS, ISO_DATETIME_FORMAT } from "./timeUtils";
 export const DEFAULT_EXTERNAL_INSTANCE_URL =
   "https://usdf-rsp.slac.stanford.edu";
 
+export const SITE_CONFIGURATION = Object.freeze({
+  "usdf-rsp.slac.stanford.edu": {
+    rubinTVSiteSuffix: "summit-usdf",
+  },
+  "usdf-rsp-dev.slac.stanford.edu": {
+    rubinTVSiteSuffix: "summit-usdf",
+  },
+  "base-lsp.lsst.codes": {
+    rubinTVSiteSuffix: "base",
+  },
+  "summit-lsp.lsst.codes": {
+    rubinTVSiteSuffix: "summit",
+  },
+  "tucson-teststand.lsst.codes": {
+    rubinTVSiteSuffix: "tucson",
+  },
+});
+
 const DEFAULT_PIXEL_SCALE_MEDIAN = 0.2; // default median pixel scale in arcsec/pixel
 const PSF_SIGMA_FACTOR = 2.355; // factor for going from sigma (σ) to FWHM (2 sqrt(2 ln(2)))
 
@@ -208,7 +226,13 @@ const mergeDataLogSources = (consDbRows, exposureLogRows) => {
 };
 
 /**
- * Generates a RubinTV URL based on dayObs and seqNum values.
+ * Generates a RubinTV URL based on telescope, dayObs and seqNum values.
+ *
+ * Validates inputs and returns null if dayObs or seqNum are missing.
+ *
+ * The returned URL dependes on the site (host) the application is running in,
+ * if not localhost it uses the current origin. If the host is not defined in
+ * SITE_CONFIGURATION, an error is thrown.
  *
  * @param {string} telescope - The telescope; either "Simonyi" or "AuxTel".
  * @param {string|number} dayObs - The observation date in YYYYMMDD format.
@@ -224,14 +248,22 @@ const getRubinTVUrl = (telescope, dayObs, seqNum) => {
 
   // Local development URL
   let baseUrl = DEFAULT_EXTERNAL_INSTANCE_URL;
+  let baseHost = DEFAULT_EXTERNAL_INSTANCE_URL.replace(/^https?:\/\//, "");
 
   // Production URL
   if (window.location.host !== "localhost") {
     baseUrl = window.location.origin;
+    baseHost = window.location.host;
   }
 
+  const siteConfig = SITE_CONFIGURATION[baseHost];
+  if (!siteConfig) {
+    throw new Error(`Unknown host for RubinTV URL: ${baseHost}`);
+  }
+
+  const locationSuffix = siteConfig.rubinTVSiteSuffix;
   const dateStr = getDatetimeFromDayobsStr(`${dayObs}`).toFormat("yyyy-MM-dd");
-  return `${baseUrl}/rubintv/summit-usdf/${instr}/event?channel_name=${channel}&date_str=${dateStr}&seq_num=${seqNum}`;
+  return `${baseUrl}/rubintv/${locationSuffix}/${instr}/event?channel_name=${channel}&date_str=${dateStr}&seq_num=${seqNum}`;
 };
 
 /**
