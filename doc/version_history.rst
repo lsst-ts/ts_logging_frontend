@@ -1,3 +1,26 @@
+v0.12.0-alpha.1 (2025-12-12)
+============================
+
+New Features
+------------
+
+- Add additional interaction and zoom options to all plots (`OSW-1097 <https://rubinobs.atlassian.net//browse/OSW-1097>`_)
+- Display expected number of exposures for Simonyi. (`OSW-1166 <https://rubinobs.atlassian.net//browse/OSW-1166>`_)
+
+
+Bug Fixes
+---------
+
+- Add location mapping to arrange rubintv links in getRubinTVUrl. (`OSW-1539 <https://rubinobs.atlassian.net//browse/OSW-1539>`_)
+- In time accounting applet, if the the dome never opened during the night, closed dome time should equal to observable time between 12deg twilights. (`OSW-1559 <https://rubinobs.atlassian.net//browse/OSW-1559>`_)
+
+
+Other Changes and Additions
+---------------------------
+
+- Make timeline component reusable (`OSW-1326 <https://rubinobs.atlassian.net//browse/OSW-1326>`_)
+
+
 v0.11.0 (2025-12-10)
 ====================
 
