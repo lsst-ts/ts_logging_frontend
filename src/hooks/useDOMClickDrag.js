@@ -10,8 +10,9 @@ import { useCallback, useRef } from "react";
  * - Snapped rect: Snaps to nearest data point using Recharts' activeCoordinate
  *
  * @param {Object} params - Configuration object
- * @param {Function} params.callback - Called on mouseUp with (start: MousePosition, end: MousePosition, event: MouseEvent)
+ * @param {Function} params.callback - Called on mouseUp with (start: MousePosition, end: MousePosition, mouse: MouseState, event: MouseEvent)
  *   MousePosition = { pixelX, pixelY, fractionX, fractionY, nearestPayload }
+ *   MouseState = { ctrlKeyHeld, shiftKeyHeld }
  * @param {Function} params.resetCallback - Called on doubleClick to reset selection
  * @param {React.MutableRefObject} params.chartRef - Ref to the LineChart component to find SVG container
  * @param {boolean} [params.showMouseRect=true] - Whether to show the mouse tracking rectangle
@@ -31,7 +32,7 @@ import { useCallback, useRef } from "react";
  * const chartRef = useRef(null);
  *
  * const { mouseDown, mouseMove, mouseUp, doubleClick, mouseLeave, dragState } = useDOMClickDrag({
- *   callback: (start, end, event) => {
+ *   callback: (start, end, mouse, event) => {
  *     const startTime = millisToDateTime(start.nearestPayload.timestamp);
  *     const endTime = millisToDateTime(end.nearestPayload.timestamp);
  *     setSelectedTimeRange([startTime, endTime]);
@@ -89,7 +90,7 @@ export function useDOMClickDrag({
     currentCoordinate: null, // Track current activeCoordinate.x
     currentYPixel: null, // Track current Y position
     shiftKeyHeld: false, // Track shift key state
-    ctrlKeyHeld: false, // Track ctrl key state
+    ctrlKeyHeld: false, // Track ctrl/meta (on macs) key state
     keyHandler: null, // Reference to keyboard event handler for cleanup
   });
 
@@ -493,7 +494,12 @@ export function useDOMClickDrag({
         start.fractionX !== end.fractionX ||
         start.fractionY !== end.fractionY
       ) {
-        callback(start, end, event);
+        // Create mouse state object
+        const mouse = {
+          ctrlKeyHeld: dragState.current.ctrlKeyHeld,
+          shiftKeyHeld: dragState.current.shiftKeyHeld,
+        };
+        callback(start, end, mouse, event);
       }
 
       // End the drag operation

@@ -126,8 +126,8 @@ function TimeseriesPlot({
 
   // Click & Drag plot hooks using DOM manipulation
   const handleSelection = useCallback(
-    (start, end, event) => {
-      const isZoomOut = event?.ctrlKey || false;
+    (start, end, mouse) => {
+      const isZoomOut = mouse.ctrlKeyHeld;
       const direction = isZoomOut ? "out" : "in";
 
       // X-axis: Time mode uses fractions, sequence mode uses payload
@@ -184,7 +184,7 @@ function TimeseriesPlot({
       }
 
       // Y-axis: Only update if shift not held
-      if (!event.shiftKey) {
+      if (!mouse.shiftKeyHeld) {
         // Work directly in fraction space [0, 1]
         const [newMinFraction, newMaxFraction] = calculateZoom(
           [start.fractionY, end.fractionY],
