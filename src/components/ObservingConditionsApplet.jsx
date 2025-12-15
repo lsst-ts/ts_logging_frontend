@@ -447,8 +447,8 @@ function ObservingConditionsApplet({
 
   // Click & Drag plot hooks
   const handleSelection = useCallback(
-    (start, end, event) => {
-      const isZoomOut = event?.ctrlKey || false;
+    (start, end, mouse) => {
+      const isZoomOut = mouse.ctrlKeyHeld;
       const direction = isZoomOut ? "out" : "in";
 
       // X-axis: Calculate zoom using generic calculateZoom function
@@ -468,7 +468,7 @@ function ObservingConditionsApplet({
       ]);
 
       // Y-axis: Only update if shift not held
-      if (!event.shiftKey) {
+      if (!mouse.shiftKeyHeld) {
         // Work directly in fraction space [0, 1]
         const [newMinFraction, newMaxFraction] = calculateZoom(
           [start.fractionY, end.fractionY],
