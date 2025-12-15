@@ -228,6 +228,12 @@ describe("utils", () => {
       expect(getDayobsStr(null)).toBe("");
       expect(getDayobsStr(undefined)).toBe("");
     });
+
+    it("doesn't return current day if date time is midnight for timezones behind of UTC", () => {
+      const date = new Date("2024-06-07T00:00:00Z");
+      expect(getDayobsStr(date, "America/Santiago")).not.toBe("20240607"); // UTC-4
+      expect(getDayobsStr(date, "America/New_York")).not.toBe("20240607"); // UTC-5
+    });
   });
 
   describe("getDatetimeFromDayobsStr", () => {

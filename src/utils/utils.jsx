@@ -85,10 +85,11 @@ const calculateTimeLoss = (weatherLoss, faultLoss) => {
  * Formats a given JavaScript Date object into a string format 'yyyyLLdd' using luxon.
  *
  * @param {Date|null|undefined} date - The date to format. If null or undefined, returns an empty string.
+ * @param {string} zone - The timezone to use for formatting (default is 'UTC').
  * @returns {string} The formatted date string, or an empty string if no date is provided.
  */
-const getDayobsStr = (date) => {
-  return date ? DateTime.fromJSDate(date).toFormat("yyyyLLdd") : "";
+const getDayobsStr = (date, zone = "UTC") => {
+  return date ? DateTime.fromJSDate(date, { zone }).toFormat("yyyyLLdd") : "";
 };
 
 /**
