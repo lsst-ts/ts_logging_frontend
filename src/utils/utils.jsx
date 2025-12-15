@@ -257,14 +257,24 @@ const getRubinTVUrl = (telescope, dayObs, seqNum) => {
     baseHost = window.location.host;
   }
 
-  const siteConfig = SITE_CONFIGURATION[baseHost];
-  if (!siteConfig) {
-    throw new Error(`Unknown host for RubinTV URL: ${baseHost}`);
-  }
-
-  const locationSuffix = siteConfig.rubinTVSiteSuffix;
+  const { rubinTVSiteSuffix } = getSiteConfig(baseHost);
   const dateStr = getDatetimeFromDayobsStr(`${dayObs}`).toFormat("yyyy-MM-dd");
-  return `${baseUrl}/rubintv/${locationSuffix}/${instr}/event?channel_name=${channel}&date_str=${dateStr}&seq_num=${seqNum}`;
+  return `${baseUrl}/rubintv/${rubinTVSiteSuffix}/${instr}/event?channel_name=${channel}&date_str=${dateStr}&seq_num=${seqNum}`;
+};
+
+/**
+ * Retrieves the site configuration for a given host.
+ *
+ * @param {string} host - The hostname (without protocol) to look up.
+ * @returns {Object} The site configuration object from SITE_CONFIGURATION.
+ * @throws {Error} If the host is not found in SITE_CONFIGURATION.
+ */
+const getSiteConfig = (host) => {
+  const siteConfig = SITE_CONFIGURATION[host];
+  if (!siteConfig) {
+    throw new Error(`Unknown host for RubinTV URL: ${host}`);
+  }
+  return siteConfig;
 };
 
 /**
@@ -488,6 +498,7 @@ export {
   prettyTitleFromKey,
   mergeDataLogSources,
   getRubinTVUrl,
+  getSiteConfig,
   buildNavItemUrl,
   getNightSummaryLink,
   DEFAULT_PIXEL_SCALE_MEDIAN,

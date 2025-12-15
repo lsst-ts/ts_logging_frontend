@@ -11,6 +11,7 @@ import {
   formatCellValue,
   mergeDataLogSources,
   getRubinTVUrl,
+  getSiteConfig,
   buildNavItemUrl,
   getNightSummaryLink,
   prettyTitleFromKey,
@@ -389,6 +390,20 @@ describe("utils", () => {
       );
       expect(() => getRubinTVUrl("AuxTel", "20240607", 2)).toThrowError(
         /^Unknown host for RubinTV URL: unknownhost.com$/,
+      );
+    });
+  });
+
+  describe("getSiteConfig", () => {
+    it("returns config for valid hosts", () => {
+      for (const [site, config] of Object.entries(SITE_CONFIGURATION)) {
+        expect(getSiteConfig(site)).toEqual(config);
+      }
+    });
+
+    it("throws error for unknown host", () => {
+      expect(() => getSiteConfig("unknownhost.com")).toThrowError(
+        "Unknown host for RubinTV URL: unknownhost.com",
       );
     });
   });
