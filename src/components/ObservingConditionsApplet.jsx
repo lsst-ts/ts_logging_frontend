@@ -254,17 +254,17 @@ function ObservingConditionsApplet({
   const contextMenuItems = [
     {
       label: "View Context Feed",
-      to: "/context-feed",
+      to: "/nightlydigest/context-feed",
       search,
     },
     {
       label: "View Plots",
-      to: "/plots",
+      to: "/nightlydigest/plots",
       search,
     },
     {
       label: "View Data Log",
-      to: "/data-log",
+      to: "/nightlydigest/data-log",
       search,
     },
   ];
