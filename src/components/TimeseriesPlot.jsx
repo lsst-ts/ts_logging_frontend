@@ -473,6 +473,7 @@ function TimeseriesPlot({
           position={"topRight"}
           offset={50}
           allowEscapeViewBox={{ x: false, y: true }}
+          isAnimationActive={false}
           content={(props) => (
             <ChartTooltipContent
               {...props}
