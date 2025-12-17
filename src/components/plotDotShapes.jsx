@@ -53,6 +53,7 @@ const CircleShape = memo((props) => {
   );
 });
 
+// Seeing
 const XShape = memo((props) => {
   const {
     cx,
@@ -311,6 +312,60 @@ const CustomisedDotWithShape = ({
   );
 };
 
+// Band marker for the Observing Conditions Applet
+const ObservingConditionsAppletDot = ({
+  key,
+  cx,
+  cy,
+  band,
+  color,
+  r = 2,
+  opacity = 1,
+}) => {
+  if (cx == null || cy == null) return null;
+
+  const fill = BAND_COLORS[band] || color;
+
+  // Choose shape based on band
+  let ShapeComponent;
+  switch (band) {
+    case "u":
+      ShapeComponent = CircleShape;
+      break;
+    case "g":
+      ShapeComponent = TriangleShape;
+      break;
+    case "r":
+      ShapeComponent = FlippedTriangleShape;
+      break;
+    case "i":
+      ShapeComponent = SquareShape;
+      break;
+    case "z":
+      ShapeComponent = StarShape;
+      break;
+    case "y":
+      ShapeComponent = AsteriskShape;
+      break;
+    default:
+      // Default to the seeing dot
+      ShapeComponent = XShape;
+  }
+
+  return (
+    <ShapeComponent
+      key={key}
+      strokeOpacity={opacity}
+      fillOpacity={opacity}
+      cx={cx}
+      cy={cy}
+      r={r}
+      fill={fill}
+      style={{ pointerEvents: "all" }}
+    />
+  );
+};
+
 export {
   CircleShape,
   XShape,
@@ -320,4 +375,5 @@ export {
   SquareShape,
   StarShape,
   CustomisedDotWithShape,
+  ObservingConditionsAppletDot,
 };

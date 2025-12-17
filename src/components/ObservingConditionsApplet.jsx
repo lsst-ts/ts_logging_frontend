@@ -22,6 +22,7 @@ import {
 import { DateTime } from "luxon";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  ObservingConditionsAppletDot,
   CircleShape,
   XShape,
   TriangleShape,
@@ -773,13 +774,14 @@ function ObservingConditionsApplet({
                         yAxisId="right"
                         type="monotone"
                         dataKey="zero_point_median"
-                        dot={{
-                          r: 1,
-                          fill: BAND_COLORS.u,
-                          stroke: BAND_COLORS.u,
-                          strokeOpacity: uOpacity,
-                          fillOpacity: uOpacity,
-                        }}
+                        dot={(props) => (
+                          <ObservingConditionsAppletDot
+                            {...props}
+                            band="u"
+                            r={2}
+                            opacity={uOpacity}
+                          />
+                        )}
                         strokeOpacity={uOpacity}
                         data={dataWithNightGaps(groupedChartData, "u")}
                         isAnimationActive={false}
@@ -791,19 +793,14 @@ function ObservingConditionsApplet({
                         dataKey="zero_point_median"
                         stroke={BAND_COLORS.g}
                         strokeOpacity={gOpacity}
-                        dot={(props) => {
-                          const { key, ...rest } = props;
-                          return (
-                            <TriangleShape
-                              key={key}
-                              {...rest}
-                              fill={BAND_COLORS.g}
-                              r={2}
-                              strokeOpacity={gOpacity}
-                              fillOpacity={gOpacity}
-                            />
-                          );
-                        }}
+                        dot={(props) => (
+                          <ObservingConditionsAppletDot
+                            {...props}
+                            band="g"
+                            r={2}
+                            opacity={gOpacity}
+                          />
+                        )}
                         data={dataWithNightGaps(groupedChartData, "g")}
                         isAnimationActive={false}
                       />
@@ -814,19 +811,14 @@ function ObservingConditionsApplet({
                         dataKey="zero_point_median"
                         stroke={BAND_COLORS.r}
                         strokeOpacity={rOpacity}
-                        dot={(props) => {
-                          const { key, ...rest } = props;
-                          return (
-                            <FlippedTriangleShape
-                              key={key}
-                              {...rest}
-                              fill={BAND_COLORS.r}
-                              r={2}
-                              strokeOpacity={rOpacity}
-                              fillOpacity={rOpacity}
-                            />
-                          );
-                        }}
+                        dot={(props) => (
+                          <ObservingConditionsAppletDot
+                            {...props}
+                            band="r"
+                            r={2}
+                            opacity={rOpacity}
+                          />
+                        )}
                         data={dataWithNightGaps(groupedChartData, "r")}
                         isAnimationActive={false}
                       />
@@ -837,19 +829,14 @@ function ObservingConditionsApplet({
                         dataKey="zero_point_median"
                         stroke={BAND_COLORS.i}
                         strokeOpacity={iOpacity}
-                        dot={(props) => {
-                          const { key, ...rest } = props;
-                          return (
-                            <SquareShape
-                              key={key}
-                              {...rest}
-                              fill={BAND_COLORS.i}
-                              r={2}
-                              strokeOpacity={iOpacity}
-                              fillOpacity={iOpacity}
-                            />
-                          );
-                        }}
+                        dot={(props) => (
+                          <ObservingConditionsAppletDot
+                            {...props}
+                            band="i"
+                            r={2}
+                            opacity={iOpacity}
+                          />
+                        )}
                         data={dataWithNightGaps(groupedChartData, "i")}
                         isAnimationActive={false}
                       />
@@ -860,19 +847,14 @@ function ObservingConditionsApplet({
                         dataKey="zero_point_median"
                         stroke={BAND_COLORS.z}
                         strokeOpacity={zOpacity}
-                        dot={(props) => {
-                          const { key, ...rest } = props;
-                          return (
-                            <StarShape
-                              key={key}
-                              {...rest}
-                              fill={BAND_COLORS.z}
-                              r={2}
-                              strokeOpacity={zOpacity}
-                              fillOpacity={zOpacity}
-                            />
-                          );
-                        }}
+                        dot={(props) => (
+                          <ObservingConditionsAppletDot
+                            {...props}
+                            band="z"
+                            r={2}
+                            opacity={zOpacity}
+                          />
+                        )}
                         data={dataWithNightGaps(groupedChartData, "z")}
                         isAnimationActive={false}
                       />
@@ -883,19 +865,14 @@ function ObservingConditionsApplet({
                         dataKey="zero_point_median"
                         stroke={BAND_COLORS.y}
                         strokeOpacity={yOpacity}
-                        dot={(props) => {
-                          const { key, ...rest } = props;
-                          return (
-                            <AsteriskShape
-                              key={key}
-                              {...rest}
-                              fill={BAND_COLORS.y}
-                              r={2}
-                              strokeOpacity={yOpacity}
-                              fillOpacity={yOpacity}
-                            />
-                          );
-                        }}
+                        dot={(props) => (
+                          <ObservingConditionsAppletDot
+                            {...props}
+                            band="y"
+                            r={2}
+                            opacity={yOpacity}
+                          />
+                        )}
                         data={dataWithNightGaps(groupedChartData, "y")}
                         isAnimationActive={false}
                       />
@@ -904,7 +881,13 @@ function ObservingConditionsApplet({
                         name="psf_median"
                         dataKey="psf_median"
                         fill="white"
-                        shape={(props) => <XShape {...props} />}
+                        shape={(props) => (
+                          <ObservingConditionsAppletDot
+                            {...props}
+                            color="#fff"
+                            band="seeing"
+                          />
+                        )}
                         yAxisId="left"
                         data={chartData}
                         isAnimationActive={false}
