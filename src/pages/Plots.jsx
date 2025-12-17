@@ -498,7 +498,7 @@ function Plots() {
         )}
 
         {/* Plots */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-40">
           {dataLogLoading || almanacLoading ? (
             <>
               {/* 4 loading plot skeletons */}

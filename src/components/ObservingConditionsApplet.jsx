@@ -765,6 +765,7 @@ function ObservingConditionsApplet({
                         allowEscapeViewBox={{ x: true, y: true }}
                         offset={20}
                         wrapperStyle={{ opacity: 0.9 }}
+                        isAnimationActive={false}
                       />
                       /* line plots for zero point median filtered by band */
                       <Line
