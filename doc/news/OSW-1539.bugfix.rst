@@ -1,1 +1,0 @@
-Add location mapping to arrange rubintv links in getRubinTVUrl.

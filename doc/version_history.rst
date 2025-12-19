@@ -1,3 +1,21 @@
+v0.12.0 (2025-12-19)
+====================
+
+New Features
+------------
+
+- Display expected number of exposures for Simonyi. (`OSW-1166 <https://rubinobs.atlassian.net//browse/OSW-1166>`_)
+- Add getSiteConfig utility function. (`OSW-1539 <https://rubinobs.atlassian.net//browse/OSW-1539>`_)
+
+
+Bug Fixes
+---------
+
+- Make getDayobsStr assume date comes in UTC. (`OSW-1539 <https://rubinobs.atlassian.net//browse/OSW-1539>`_)
+- Add location mapping to arrange rubintv links in getRubinTVUrl. (`OSW-1539 <https://rubinobs.atlassian.net//browse/OSW-1539>`_)
+- In time accounting applet, if the the dome never opened during the night, closed dome time should equal to observable time between 12deg twilights. (`OSW-1559 <https://rubinobs.atlassian.net//browse/OSW-1559>`_)
+
+
 v0.11.0 (2025-12-10)
 ====================
 
