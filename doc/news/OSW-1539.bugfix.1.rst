@@ -1,0 +1,1 @@
+Make getDayobsStr assume date comes in UTC.
