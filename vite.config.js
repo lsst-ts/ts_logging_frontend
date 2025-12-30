@@ -14,6 +14,8 @@ export default defineConfig({
     globals: true,
     environment: "jsdom",
     passWithNoTests: true,
+    include: ["tests/**/*.test.js"],
+    exclude: ["tests/e2e/**"],
   },
   resolve: {
     alias: {
