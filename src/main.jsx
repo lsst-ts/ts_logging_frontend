@@ -3,12 +3,12 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import { RouterProvider } from "@tanstack/react-router";
 import router from "./routes";
-import { RetentionConfigProvider } from "./contexts/RetentionConfigContext.jsx";
+import { HostConfigProvider } from "./contexts/HostConfigContext.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <RetentionConfigProvider>
+    <HostConfigProvider>
       <RouterProvider router={router} />
-    </RetentionConfigProvider>
+    </HostConfigProvider>
   </StrictMode>,
 );
