@@ -96,28 +96,20 @@ function DataLog() {
         // and apply conversion to required row(s)
         const mergedData = mergeDataLogSources(dataLog, exposureLogData)
           .map((entry) => {
-            // Replace spaces with underscores
-            const normalisedEntry = Object.fromEntries(
-              Object.entries(entry).map(([key, value]) => [
-                key.replace(/ /g, "_"),
-                value,
-              ]),
-            );
-
-            const psfSigma = parseFloat(entry["psf sigma median"]);
-            const pixelScale = !isNaN(entry.pixel_scale_median)
+            const psfSigma = Number.parseFloat(entry.psf_sigma_median);
+            const pixelScale = Number.isFinite(entry.pixel_scale_median)
               ? entry.pixel_scale_median
               : DEFAULT_PIXEL_SCALE_MEDIAN;
-            const psf_median = !isNaN(psfSigma)
+            const psf_median = Number.isFinite(psfSigma)
               ? psfSigma * PSF_SIGMA_FACTOR * pixelScale
               : null;
 
             return {
-              ...normalisedEntry,
+              ...entry,
               psf_median,
             };
           })
-          .sort((a, b) => Number(b["exposure id"]) - Number(a["exposure id"]));
+          .sort((a, b) => Number(b["exposure_id"]) - Number(a["exposure_id"]));
 
         // Set the merged data to state
         setDataLogEntries(mergedData);
