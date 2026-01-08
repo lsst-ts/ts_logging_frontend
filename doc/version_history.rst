@@ -1,3 +1,25 @@
+v0.13.0-alpha.1 (2026-01-08)
+============================
+
+New Features
+------------
+
+- Add additional interaction and zoom options to all plots (`OSW-1097 <https://rubinobs.atlassian.net//browse/OSW-1097>`_)
+
+
+Performance Enhancement
+-----------------------
+
+- Add e2e tests using playwright. (`OSW-943 <https://rubinobs.atlassian.net//browse/OSW-943>`_)
+
+
+Other Changes and Additions
+---------------------------
+
+- Make timeline component reusable (`OSW-1326 <https://rubinobs.atlassian.net//browse/OSW-1326>`_)
+- Remove default ordering in exposure breakdown applet. (`OSW-1553 <https://rubinobs.atlassian.net//browse/OSW-1553>`_)
+
+
 v0.12.0 (2025-12-19)
 ====================
 
