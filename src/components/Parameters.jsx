@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { useHostConfig } from "@/contexts/HostConfigContext";
 
 import { getDisplayDateRange } from "@/utils/utils";
+import { DateTime } from "luxon";
 
 export const TELESCOPES = Object.freeze({
   AuxTel: "LATISS",
@@ -38,8 +39,14 @@ function Parameters({
   const { getAvailableDayObsRange } = useHostConfig();
 
   const dateRange = getAvailableDayObsRange();
-  const maxDayObs = dateRange.max?.toJSDate() || null;
-  const minDayObs = dateRange.min?.toJSDate() || null;
+  const maxDayObs =
+    dateRange.max
+      ?.setZone(DateTime.local().zoneName, { keepLocalTime: true })
+      .toJSDate() || null;
+  const minDayObs =
+    dateRange.min
+      ?.setZone(DateTime.local().zoneName, { keepLocalTime: true })
+      .toJSDate() || null;
 
   return (
     <>
