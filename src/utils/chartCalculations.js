@@ -114,10 +114,10 @@ export function calculateChartData({
   selectedMaxMillis,
   twilightValues,
 }) {
-  // Group all data by day obs
+  // Group all data by day_obs
   const groupedData = groupBy(
     data,
-    "day obs",
+    "day_obs",
     new Map(availableDayObs.map((e) => [parseInt(e, 10), []])),
   );
 
