@@ -1,10 +1,10 @@
 import { useHostConfig } from "@/contexts/HostConfigContext";
 
 export default function RetentionBanner() {
-  const { host, getFormattedRange, retentionDays, hasRetention } =
+  const { host, getFormattedDateRange, retentionDays, hasRetention } =
     useHostConfig();
   if (!hasRetention) return null;
-  const formattedRange = getFormattedRange();
+  const formattedRange = getFormattedDateRange();
 
   return (
     <div className="bg-stone-800 px-8 pt-3 text-center">

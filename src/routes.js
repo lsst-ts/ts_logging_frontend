@@ -14,7 +14,11 @@ import { DateTime } from "luxon";
 
 import SearchParamErrorComponent from "./components/search-param-error-component";
 import { dataLogColumns } from "@/components/DataLogColumns";
-import { getRetentionPolicy } from "./contexts/HostConfigContext.jsx"; // TODO: move to utils
+import {
+  getRetentionPolicy,
+  isDateInRetentionRange,
+  getFormattedDateRange,
+} from "./utils/retentionPolicyUtils";
 
 export const GLOBAL_SEARCH_PARAMS = ["startDayobs", "endDayobs", "telescope"];
 
@@ -41,20 +45,6 @@ const dayobsInt = z.coerce
   )
   .transform((val) => parseInt(val, 10));
 
-// Helper to check if date is in retention range
-// TODO: move to utils
-const isInRetentionRange = (dayobsInt) => {
-  const { retentionDays } = getRetentionPolicy();
-  if (!retentionDays) return true;
-
-  const today = DateTime.utc().minus({ hours: 12 });
-  const minDate = today.minus({ days: retentionDays });
-  const dateStr = dayobsInt.toString();
-  const date = DateTime.fromFormat(dateStr, "yyyyMMdd");
-
-  return date >= minDate && date <= today;
-};
-
 // Create plain object schema
 const baseSearchParamsSchema = z.object({
   startDayobs: dayobsInt.default(() =>
@@ -66,28 +56,30 @@ const baseSearchParamsSchema = z.object({
   telescope: z.enum(["Simonyi", "AuxTel"]).default("Simonyi"),
 });
 
-// Validate schema object for general use
-const searchParamsSchema = baseSearchParamsSchema
-  .refine((obj) => obj.startDayobs <= obj.endDayobs, {
-    message: "startDayobs must be before or equal to endDayobs.",
-    path: ["startDayobs"],
-  })
-  .refine(
-    (obj) =>
-      isInRetentionRange(obj.startDayobs) && isInRetentionRange(obj.endDayobs),
-    () => {
-      const { retentionDays } = getRetentionPolicy();
-      if (!retentionDays) return { message: "" };
-      const today = DateTime.utc().minus({ hours: 12 });
-      const minDate = today.minus({ days: retentionDays });
-      return {
-        message: `Selected dayobs range must be within the last ${retentionDays} days: ${minDate.toFormat(
-          "yyyyMMdd",
-        )} to ${today.toFormat("yyyyMMdd")}.`,
-        path: ["startDayobs"],
-      };
-    },
-  );
+const applyDateValidation = (schema) => {
+  return schema
+    .refine((obj) => obj.startDayobs <= obj.endDayobs, {
+      message: "startDayobs must be before or equal to endDayobs.",
+      path: ["startDayobs"],
+    })
+    .refine(
+      (obj) =>
+        isDateInRetentionRange(obj.startDayobs) &&
+        isDateInRetentionRange(obj.endDayobs),
+      () => {
+        const { retentionDays } = getRetentionPolicy();
+        if (!retentionDays) return { message: "" };
+
+        const range = getFormattedDateRange();
+        return {
+          message: `Date range must be within the last ${retentionDays} days (${range.startDayObs} to ${range.endDayObs}).`,
+          path: ["startDayobs"],
+        };
+      },
+    );
+};
+
+const searchParamsSchema = applyDateValidation(baseSearchParamsSchema);
 
 // Convert table columns to url filter keys
 const columns = [];
@@ -102,7 +94,9 @@ const filtersShape = Object.fromEntries(
 );
 
 // Extend search schema object for individual pages
-const dataLogSearchSchema = searchParamsSchema.extend(filtersShape);
+const dataLogSearchSchema = applyDateValidation(
+  baseSearchParamsSchema.extend(filtersShape),
+);
 
 const dashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
