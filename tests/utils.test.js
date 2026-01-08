@@ -445,7 +445,7 @@ describe("utils", () => {
 
   describe("prettyTitleFromKey", () => {
     it("capitalises each word", () => {
-      expect(prettyTitleFromKey("exposure time")).toBe("Exposure Time");
+      expect(prettyTitleFromKey("exposure_time")).toBe("Exposure Time");
     });
   });
 
