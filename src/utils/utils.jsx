@@ -174,12 +174,12 @@ const formatCellValue = (value, options = {}) => {
  *
  * Capitalises the first letter of each word, preserving spaces.
  *
- * @param {string} key - The key string to convert (e.g., "exposure time").
+ * @param {string} key - The key string to convert (e.g., "exposure_time").
  * @returns {string} The prettified title (e.g., "Exposure Time").
  */
 const prettyTitleFromKey = (key) => {
   return key
-    .split(" ")
+    .split("_")
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(" ");
 };
