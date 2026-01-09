@@ -6,7 +6,7 @@ import { useSearch } from "@tanstack/react-router";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Toaster } from "@/components/ui/sonner";
 
-import { TELESCOPES } from "@/components/parameters";
+import { TELESCOPES } from "@/components/Parameters";
 
 import BokehPlot from "@/components/BokehPlot";
 

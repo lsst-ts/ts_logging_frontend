@@ -12,7 +12,12 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-export function DatePicker({ selectedDate, onDateChange, mode = "single" }) {
+export function DatePicker({
+  selectedDate,
+  onDateChange,
+  mode = "single",
+  ...props
+}) {
   const [date, setDate] = React.useState(selectedDate);
 
   const handleChange = (newDate) => {
@@ -65,6 +70,7 @@ export function DatePicker({ selectedDate, onDateChange, mode = "single" }) {
           onSelect={handleChange}
           defaultMonth={new Date(date?.getFullYear(), date?.getMonth())}
           initialFocus
+          {...props}
         />
       </PopoverContent>
     </Popover>

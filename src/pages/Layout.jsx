@@ -5,8 +5,9 @@ import { Outlet, useRouter, useSearch } from "@tanstack/react-router";
 import { SidebarProvider } from "@/components/ui/sidebar.jsx";
 import { SidebarToggle } from "@/components/SidebarToggle.jsx";
 import { AppSidebar } from "@/components/AppSidebar.jsx";
-import { TELESCOPES } from "@/components/parameters";
+import { TELESCOPES } from "@/components/Parameters";
 import { getKeyByValue } from "@/utils/utils";
+import RetentionBanner from "@/components/RetentionBanner";
 
 export default function Layout({ children }) {
   const router = useRouter();
@@ -81,6 +82,7 @@ export default function Layout({ children }) {
         <main className="flex-1 bg-stone-800 overflow-x-hidden">
           {/* Show/Hide Sidebar toggle */}
           <SidebarToggle />
+          <RetentionBanner />
           {children}
           {/* Main content */}
           <Outlet />

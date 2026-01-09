@@ -28,7 +28,7 @@ import {
 import DialogMetricsCard from "@/components/dialog-metrics-card";
 import JiraTicketsTable from "@/components/jira-tickets-table";
 import { useSearch } from "@tanstack/react-router";
-import { TELESCOPES } from "@/components/parameters";
+import { TELESCOPES } from "@/components/Parameters";
 import ObservingConditionsApplet from "@/components/ObservingConditionsApplet";
 import NightSummary from "@/components/NightSummary.jsx";
 import TimeAccountingApplet from "@/components/TimeAccountingApplet";

@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { useSearch } from "@tanstack/react-router";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import { TELESCOPES } from "@/components/parameters";
+import { TELESCOPES } from "@/components/Parameters";
 import DataLogTable from "@/components/DataLogTable.jsx";
 import {
   fetchDataLogEntriesFromConsDB,
