@@ -378,7 +378,7 @@ function DataLogTable({ telescope, data, dataLogLoading, tableFilters }) {
                             <TableCell
                               key={cell.id}
                               style={{ width: cell.column.getSize() }}
-                              className="truncate"
+                              className="align-top whitespace-normal break-words"
                             >
                               {flexRender(
                                 cell.column.columnDef.cell,
