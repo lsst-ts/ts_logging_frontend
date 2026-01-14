@@ -51,7 +51,7 @@ function DataLogTable({ telescope, data, dataLogLoading, tableFilters }) {
   const [columnOrder, setColumnOrder] = useState(
     defaultColumnOrder[telescope] ?? [],
   );
-  const [sorting, setSorting] = useState([]);
+  const [sorting, setSorting] = useState([{ id: "exposure_id", desc: false }]);
   const [grouping, setGrouping] = useState([]);
   const [expanded, setExpanded] = useState({});
   const [columnFilters, setColumnFilters] = useState([]);
@@ -85,7 +85,7 @@ function DataLogTable({ telescope, data, dataLogLoading, tableFilters }) {
   const resetTable = () => {
     setColumnVisibility(defaultColumnVisibility[telescope] ?? {});
     setColumnOrder(defaultColumnOrder[telescope] ?? []);
-    setSorting([]);
+    setSorting([{ id: "exposure_id", desc: false }]);
     setGrouping([]);
     setColumnFilters([]);
   };
