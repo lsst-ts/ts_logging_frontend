@@ -2,7 +2,6 @@ import { createContext, useContext, useMemo } from "react";
 import {
   getRetentionPolicy,
   isDateInRetentionRange,
-  getFormattedDateRange,
   getAvailableDayObsRange,
 } from "@/utils/retentionPolicyUtils";
 
@@ -16,9 +15,7 @@ export function HostConfigProvider({ children }) {
       host,
       retentionDays,
       getAvailableDayObsRange,
-      hasRetention: retentionDays !== null,
       isDateInRetentionRange,
-      getFormattedDateRange,
     }),
     [host, retentionDays],
   );

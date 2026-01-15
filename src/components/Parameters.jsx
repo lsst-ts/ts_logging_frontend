@@ -39,14 +39,14 @@ function Parameters({
   const { getAvailableDayObsRange } = useHostConfig();
 
   const dateRange = getAvailableDayObsRange();
-  const maxDayObs =
-    dateRange.max
-      ?.setZone(DateTime.local().zoneName, { keepLocalTime: true })
-      .toJSDate() || null;
-  const minDayObs =
-    dateRange.min
-      ?.setZone(DateTime.local().zoneName, { keepLocalTime: true })
-      .toJSDate() || null;
+  const maxDayObs_dt = DateTime.fromFormat(
+    dateRange.max,
+    "yyyyLLdd",
+  ).toJSDate();
+  const minDayObs_dt =
+    dateRange.min === null
+      ? dateRange.min
+      : DateTime.fromFormat(dateRange.min, "yyyyLLdd").toJSDate();
 
   return (
     <>
@@ -80,8 +80,8 @@ function Parameters({
           selectedDate={dayobs}
           onDateChange={onDayobsChange}
           disabled={{
-            before: minDayObs,
-            after: maxDayObs,
+            before: minDayObs_dt,
+            after: maxDayObs_dt,
           }}
         />
       </div>

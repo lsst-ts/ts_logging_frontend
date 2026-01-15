@@ -15,9 +15,8 @@ import { DateTime } from "luxon";
 import SearchParamErrorComponent from "./components/search-param-error-component";
 import { dataLogColumns } from "@/components/DataLogColumns";
 import {
-  getRetentionPolicy,
   isDateInRetentionRange,
-  getFormattedDateRange,
+  getAvailableDayObsRange,
 } from "./utils/retentionPolicyUtils";
 
 export const GLOBAL_SEARCH_PARAMS = ["startDayobs", "endDayobs", "telescope"];
@@ -67,12 +66,15 @@ const applyDateValidation = (schema) => {
         isDateInRetentionRange(obj.startDayobs) &&
         isDateInRetentionRange(obj.endDayobs),
       () => {
-        const { retentionDays } = getRetentionPolicy();
-        if (!retentionDays) return { message: "" };
+        const range = getAvailableDayObsRange();
+        if (!range.retentionDays)
+          return {
+            message: `Date range must be before current dayObs ${range.max}).`,
+            path: ["startDayobs"],
+          };
 
-        const range = getFormattedDateRange();
         return {
-          message: `Date range must be within the last ${retentionDays} days (${range.startDayObs} to ${range.endDayObs}).`,
+          message: `Date range must be within the last ${range.retentionDays} days (${range.min} to ${range.max}).`,
           path: ["startDayobs"],
         };
       },

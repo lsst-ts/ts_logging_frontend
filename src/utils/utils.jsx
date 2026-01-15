@@ -7,18 +7,28 @@ export const DEFAULT_EXTERNAL_INSTANCE_URL =
 export const SITE_CONFIGURATION = Object.freeze({
   "usdf-rsp.slac.stanford.edu": {
     rubinTVSiteSuffix: "summit-usdf",
+    hostDisplayName: "USDF",
+    retentionDays: null,
   },
   "usdf-rsp-dev.slac.stanford.edu": {
     rubinTVSiteSuffix: "summit-usdf",
+    hostDisplayName: "USDF Dev",
+    retentionDays: null,
   },
   "base-lsp.lsst.codes": {
     rubinTVSiteSuffix: "base",
+    hostDisplayName: "Base",
+    retentionDays: 7,
   },
   "summit-lsp.lsst.codes": {
     rubinTVSiteSuffix: "summit",
+    hostDisplayName: "Summit",
+    retentionDays: 30,
   },
   "tucson-teststand.lsst.codes": {
     rubinTVSiteSuffix: "tucson",
+    hostDisplayName: "Tuscon",
+    retentionDays: 7,
   },
 });
 
