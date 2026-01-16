@@ -295,7 +295,7 @@ describe("utils", () => {
 
   describe("mergeDataLogSources", () => {
     it("merges matching rows", () => {
-      const consDb = [{ "exposure name": "exp1", instrument: "na" }];
+      const consDb = [{ exposure_name: "exp1", instrument: "na" }];
       const exposureLog = [
         {
           obs_id: "exp1",
@@ -312,7 +312,7 @@ describe("utils", () => {
     });
 
     it("fills defaults if no match", () => {
-      const consDb = [{ "exposure name": "exp2" }];
+      const consDb = [{ exposure_name: "exp2" }];
       const merged = mergeDataLogSources(consDb, []);
       expect(merged[0].instrument).toBe("na");
       expect(merged[0].exposure_flag).toBe("none");

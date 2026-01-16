@@ -224,7 +224,7 @@ const mergeDataLogSources = (consDbRows, exposureLogRows) => {
   });
 
   return consDbRows.map((row) => {
-    const exposureName = row["exposure name"];
+    const exposureName = row.exposure_name;
     const matchingRow = exposureLogMap.get(exposureName);
 
     return {
