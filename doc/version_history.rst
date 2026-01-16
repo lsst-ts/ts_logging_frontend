@@ -1,3 +1,18 @@
+v0.14.0-alpha.1 (2026-01-16)
+============================
+
+New Features
+------------
+
+- Add additional interaction and zoom options to all plots (`OSW-1097 <https://rubinobs.atlassian.net//browse/OSW-1097>`_)
+
+
+Other Changes and Additions
+---------------------------
+
+- Make timeline component reusable (`OSW-1326 <https://rubinobs.atlassian.net//browse/OSW-1326>`_)
+
+
 v0.13.0 (2026-01-16)
 ====================
 
