@@ -10,14 +10,14 @@ import { DateTime } from "luxon";
  */
 export const plotTooltipFormatter =
   (title) => (value, name, item, index, payload) => {
-    const dayObs = payload["day obs"];
-    const seqNum = payload["seq num"];
-    const obsStart = DateTime.fromMillis(payload["obs_start_millis"]).toFormat(
+    const dayObs = payload.day_obs;
+    const seqNum = payload.seq_num;
+    const obsStart = DateTime.fromMillis(payload.obs_start_millis).toFormat(
       ISO_DATETIME_FORMAT,
     );
-    const physicalFilter = payload["physical filter"];
-    const scienceProgram = payload["science program"];
-    const obsReason = payload["observation reason"];
+    const physicalFilter = payload.physical_filter;
+    const scienceProgram = payload.science_program;
+    const obsReason = payload.observation_reason;
 
     const formattedValue =
       typeof value === "number" && !Number.isInteger(value)

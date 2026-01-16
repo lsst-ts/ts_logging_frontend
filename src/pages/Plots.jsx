@@ -98,16 +98,16 @@ function Plots() {
     // Prepare data for plots
     const data = dataLog
       .map((entry) => {
-        const psfSigma = parseFloat(entry["psf sigma median"]);
-        const pixelScale = !isNaN(entry.pixel_scale_median)
+        const psfSigma = Number.parseFloat(entry.psf_sigma_median);
+        const pixelScale = Number.isFinite(entry.pixel_scale_median)
           ? entry.pixel_scale_median
           : DEFAULT_PIXEL_SCALE_MEDIAN;
-        const obsStartDt = isoToTAI(entry["obs start"]);
+        const obsStartDt = isoToTAI(entry.obs_start);
         return {
           ...entry,
           obs_start_dt: obsStartDt,
           obs_start_millis: obsStartDt.toMillis(),
-          "psf median": !isNaN(psfSigma)
+          psf_median: Number.isFinite(psfSigma)
             ? psfSigma * PSF_SIGMA_FACTOR * pixelScale
             : null,
         };

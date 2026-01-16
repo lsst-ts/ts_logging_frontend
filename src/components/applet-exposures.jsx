@@ -37,7 +37,6 @@ const GroupByValues = Object.freeze({
 });
 
 const SortByValues = Object.freeze({
-  DEFAULT: "Default",
   ALPHABETICAL_ASC: "Alphabetical asc.",
   ALPHABETICAL_DESC: "Alphabetical desc.",
   HIGHEST_FIRST: "Highest number first",
@@ -73,7 +72,6 @@ function AppletExposures({
   ];
 
   const sortByOptions = [
-    { value: SortByValues.DEFAULT, label: "Default" },
     { value: SortByValues.ALPHABETICAL_ASC, label: "Alphabetical asc." },
     { value: SortByValues.ALPHABETICAL_DESC, label: "Alphabetical desc." },
     { value: SortByValues.HIGHEST_FIRST, label: "Highest number first" },
@@ -180,9 +178,7 @@ function AppletExposures({
     [SortByValues.LOWEST_FIRST]: (a, b) => a.totalValue - b.totalValue,
   };
 
-  if (sortBy !== SortByValues.DEFAULT) {
-    chartData.sort(sorters[sortBy]);
-  }
+  chartData.sort(sorters[sortBy]);
 
   return (
     <Card className="border-none p-0 bg-stone-800 gap-2">

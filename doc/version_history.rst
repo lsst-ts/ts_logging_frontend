@@ -1,3 +1,39 @@
+v0.12.0 (2025-12-19)
+====================
+
+New Features
+------------
+
+- Display expected number of exposures for Simonyi. (`OSW-1166 <https://rubinobs.atlassian.net//browse/OSW-1166>`_)
+- Add getSiteConfig utility function. (`OSW-1539 <https://rubinobs.atlassian.net//browse/OSW-1539>`_)
+
+
+Bug Fixes
+---------
+
+- Make getDayobsStr assume date comes in UTC. (`OSW-1539 <https://rubinobs.atlassian.net//browse/OSW-1539>`_)
+- Add location mapping to arrange rubintv links in getRubinTVUrl. (`OSW-1539 <https://rubinobs.atlassian.net//browse/OSW-1539>`_)
+- In time accounting applet, if the the dome never opened during the night, closed dome time should equal to observable time between 12deg twilights. (`OSW-1559 <https://rubinobs.atlassian.net//browse/OSW-1559>`_)
+
+
+v0.11.0 (2025-12-10)
+====================
+
+New Features
+------------
+
+- Add cross-chart hover highlighting (`OSW-963 <https://rubinobs.atlassian.net//browse/OSW-963>`_)
+
+
+Other Changes and Additions
+---------------------------
+
+- Update default sort for exposure breakdown to 'highest number first'. (`OSW-1014 <https://rubinobs.atlassian.net//browse/OSW-1014>`_)
+- Separate overhead into non-filter-change and filter-change (`OSW-1229 <https://rubinobs.atlassian.net//browse/OSW-1229>`_)
+- Update fault and closed dome calculations in Time Accounting applet (`OSW-1230 <https://rubinobs.atlassian.net//browse/OSW-1230>`_)
+- Add updating package-lock.json to release process. (`OSW-1497 <https://rubinobs.atlassian.net//browse/OSW-1497>`_)
+
+
 v0.10.1 (2025-11-07)
 ====================
 

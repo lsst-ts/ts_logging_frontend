@@ -55,7 +55,7 @@ const fetchData = async (url, abortController) => {
  *   [2]: sum_exposure_time (number) - The total exposure time.
  *   [3]: on_sky_exposures_count (number) - The count of on-sky exposures.
  *   [4]: total_on_sky_exposure_time (number) - The total on-sky exposure time.
- *   [5]: open_dome_hours (number) - The total hours the dome was open.
+ *   [5]: open_dome_times (Object[]) - Array of open dome sessions.
  * @throws {error} Will throw an error if the fetch operation fails (for reasons other than an abort)
  * or returns invalid data.
  */
@@ -69,11 +69,36 @@ const fetchExposures = async (start, end, instrument, abortController) => {
       data.sum_exposure_time,
       data.on_sky_exposures_count,
       data.total_on_sky_exposure_time,
-      data.open_dome_hours,
+      data.open_dome_times,
     ];
   } catch (err) {
     if (err.name !== "AbortError") {
       console.error("Error fetching exposures:", err);
+    }
+    throw err;
+  }
+};
+
+/**
+ * Fetches expected exposure data for Simonyi for a given date range.
+ *
+ * @async
+ * @function fetchExpectedExposures
+ * @param {string} start - The start date for the observation range (format: YYYY-MM-DD).
+ * @param {string} end - The end date for the observation range (format: YYYY-MM-DD).
+ * @param {AbortController} abortController - The AbortController used to cancel the request if needed.
+ * @returns {Promise<number>} A promise that resolves to the number of expected exposures over the full range.
+ * @throws {error} Will throw an error if the fetch operation fails (for reasons other than an abort)
+ * or returns invalid data.
+ */
+const fetchExpectedExposures = async (start, end, abortController) => {
+  try {
+    const url = `${backendLocation}/expected-exposures?dayObsStart=${start}&dayObsEnd=${end}`;
+    const data = await fetchData(url, abortController);
+    return data.sum_exposures;
+  } catch (err) {
+    if (err.name !== "AbortError") {
+      console.error("Error fetching expected exposures:", err);
     }
     throw err;
   }
@@ -384,6 +409,7 @@ const fetchVisitMaps = async (
 
 export {
   fetchExposures,
+  fetchExpectedExposures,
   fetchAlmanac,
   fetchNarrativeLog,
   fetchNightreport,

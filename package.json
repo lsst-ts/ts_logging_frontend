@@ -1,8 +1,8 @@
 {
   "name": "nightly-digest",
   "private": true,
-  "version": "0.10.1",
-  "lastUpdated": "2025-11-07",
+  "version": "0.12.0",
+  "lastUpdated": "2025-12-19",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -53,6 +53,7 @@
     "@babel/preset-env": "^7.26.9",
     "@babel/preset-react": "^7.26.3",
     "@eslint/js": "^9.21.0",
+    "@playwright/test": "^1.57.0",
     "@tanstack/router-plugin": "^1.124.0",
     "@testing-library/react": "^16.3.0",
     "@types/node": "^22.14.1",
