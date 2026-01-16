@@ -15,7 +15,7 @@ import {
   millisToHHmm,
   dayobsAtMidnight,
 } from "@/utils/timeUtils";
-import { SAL_INDEX_INFO } from "@/components/context-feed-definitions.js";
+import { CATEGORY_INDEX_INFO } from "@/components/context-feed-definitions.js";
 
 // Small thin diamond shapes to represent events in the timeline
 const CustomisedDot = ({ cx, cy, stroke, h, w, opacity = 1 }) => {
@@ -154,7 +154,7 @@ function ContextFeedTimeline({
   const activeLabels =
     columnFilters.find((f) => f.id === "event_type")?.value ?? [];
 
-  const PLOT_HEIGHT = 250;
+  const PLOT_HEIGHT = 290;
   const PLOT_LABEL_HEIGHT = 20; // height of the xAxis label
   // --------------------------------------------------------
 
@@ -209,8 +209,8 @@ function ContextFeedTimeline({
           axisLine={false}
           fontSize="20"
         />
-        {/* Fixed domain; 9 event types plotted at integer indices */}
-        <YAxis hide domain={[0, 10]} />
+        {/* Fixed domain; 11 event types plotted at integer indices */}
+        <YAxis hide domain={[0, 12]} />
         {/* Twilight Lines and Times */}
         {twilightValues.map((twi, i) =>
           xMinMillis <= twi && twi <= xMaxMillis ? (
@@ -246,7 +246,7 @@ function ContextFeedTimeline({
           />
         ) : null}
         {/* Data Points & Lines */}
-        {Object.values(SAL_INDEX_INFO)
+        {Object.values(CATEGORY_INDEX_INFO)
           .filter((info) => info.displayIndex != null) // exclude AUTOLOG
           .map((info) => {
             const { displayIndex, label, color } = info;
@@ -258,8 +258,8 @@ function ContextFeedTimeline({
               <Fragment key={displayIndex}>
                 {/* Horizontal lines behind data points */}
                 <ReferenceLine
-                  // Take from 10 to display top to bottom
-                  y={10 - displayIndex}
+                  // Take from 12 to display top to bottom
+                  y={12 - displayIndex}
                   stroke="#606060"
                   strokeOpacity={opacity}
                   strokeWidth={1}
@@ -269,7 +269,7 @@ function ContextFeedTimeline({
                 <Line
                   data={data
                     .filter((d) => d.displayIndex === displayIndex)
-                    .map((d) => ({ ...d, y: 10 - displayIndex }))}
+                    .map((d) => ({ ...d, y: 12 - displayIndex }))}
                   dataKey="y"
                   stroke=""
                   dot={(props) => {

@@ -1,0 +1,1 @@
+Remove default ordering in exposure breakdown applet.

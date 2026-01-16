@@ -7,7 +7,7 @@ export const SQUIGGLE_STROKE_LINECAP = "round";
 export const SQUIGGLE_STROKE_LINEJOIN = "round";
 
 /**
- * Custom label component for day obs break lines in timeseries plots.
+ * Custom label component for day_obs break lines in timeseries plots.
  * Renders a vertical squiggle line to visually separate different day observations.
  */
 export function DayObsBreakLine({ viewBox }) {
@@ -40,7 +40,7 @@ export function DayObsBreakLine({ viewBox }) {
 /**
  * Custom shape component for no-data reference areas in timeseries plots.
  * Renders a filled area with squiggly left and right edges that match the
- * day obs break squiggle lines for visual consistency.
+ * day_obs break squiggle lines for visual consistency.
  */
 export function NoDataReferenceArea({
   x,

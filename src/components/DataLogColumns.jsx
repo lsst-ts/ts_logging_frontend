@@ -27,9 +27,9 @@ const commonColumns = [
     header: "RubinTV",
     cell: ({ row }) => (
       <RubinTVLink
-        dayObs={row.original["day_obs"]}
-        seqNum={row.original["seq_num"]}
-        exposureName={row.original["exposure_name"]}
+        dayObs={row.original.day_obs}
+        seqNum={row.original.seq_num}
+        exposureName={row.original.exposure_name}
       />
     ),
     size: 140,

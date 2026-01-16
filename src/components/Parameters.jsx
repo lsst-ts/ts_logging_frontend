@@ -10,7 +10,10 @@ import { Label } from "@/components/ui/label";
 import { DatePicker } from "@/components/ui/datepicker.jsx";
 import { Input } from "@/components/ui/input";
 
+import { useHostConfig } from "@/contexts/HostConfigContext";
+
 import { getDisplayDateRange } from "@/utils/utils";
+import { DateTime } from "luxon";
 
 export const TELESCOPES = Object.freeze({
   AuxTel: "LATISS",
@@ -33,6 +36,17 @@ function Parameters({
   onInstrumentChange,
 }) {
   const displayRange = getDisplayDateRange(dayobs, noOfNights);
+  const { getAvailableDayObsRange } = useHostConfig();
+
+  const dateRange = getAvailableDayObsRange();
+  const maxDayObs_dt = DateTime.fromFormat(
+    dateRange.max,
+    "yyyyLLdd",
+  ).toJSDate();
+  const minDayObs_dt =
+    dateRange.min === null
+      ? dateRange.min
+      : DateTime.fromFormat(dateRange.min, "yyyyLLdd").toJSDate();
 
   return (
     <>
@@ -65,6 +79,10 @@ function Parameters({
           id="dayobs"
           selectedDate={dayobs}
           onDateChange={onDayobsChange}
+          disabled={{
+            before: minDayObs_dt,
+            after: maxDayObs_dt,
+          }}
         />
       </div>
       <div className="pt-8">

@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { createColumnHelper } from "@tanstack/react-table";
 import { formatCellValue } from "@/utils/utils";
-import { SAL_INDEX_INFO } from "@/components/context-feed-definitions.js";
+import { CATEGORY_INDEX_INFO } from "@/components/context-feed-definitions.js";
 
 import CopyIcon from "../assets/CopyIcon.svg";
 import FullScreenIcon from "../assets/FullScreenIcon.svg";
@@ -152,8 +152,11 @@ function renderDescriptionCell(info) {
                     className="px-2 py-1 rounded-md border bg-stone-900"
                     style={{
                       borderColor:
-                        SAL_INDEX_INFO[info.row.original.salIndex]?.color,
-                      color: SAL_INDEX_INFO[info.row.original.salIndex]?.color,
+                        CATEGORY_INDEX_INFO[info.row.original.category_index]
+                          ?.color,
+                      color:
+                        CATEGORY_INDEX_INFO[info.row.original.category_index]
+                          ?.color,
                     }}
                   >
                     {info.row.original.event_type}
@@ -278,14 +281,14 @@ function renderConfigCell(info) {
 }
 
 export const contextFeedColumns = [
-  columnHelper.accessor("salIndex", {
-    header: "SAL Index",
+  columnHelper.accessor("category_index", {
+    header: "Category Index",
     cell: (info) => formatCellValue(info.getValue()),
-    size: 110,
+    size: 150,
     filterFn: matchValueOrInList,
     filterType: "string",
     meta: {
-      tooltip: "SAL Index.",
+      tooltip: "Category Index.",
       align: "right",
     },
   }),
@@ -296,7 +299,7 @@ export const contextFeedColumns = [
     filterFn: matchValueOrInList,
     filterType: "string",
     meta: {
-      tooltip: "Data type displayed in the row (derived from SAL Index).",
+      tooltip: "Data type displayed in the row (derived from Category Index).",
     },
   }),
   columnHelper.accessor("current_task", {
@@ -347,10 +350,10 @@ export const contextFeedColumns = [
     meta: {
       tooltip: "Configurations, including expandable YAML.",
       isExpandable: (row) => {
-        const { script_salIndex, salIndex, config } = row;
+        const { script_salIndex, category_index, config } = row;
         return (
           script_salIndex > 0 &&
-          [1, 2, 3].includes(salIndex) &&
+          [1, 2, 3].includes(category_index) &&
           typeof config === "string" &&
           !config.startsWith("Traceback") &&
           config.length > 0
@@ -389,10 +392,19 @@ export const contextFeedColumns = [
       tooltip: "Timestamp at start of process.",
     },
   }),
-  columnHelper.accessor("timestampConfigureEnd", {
-    header: "Configure End Time (UTC)",
+  columnHelper.accessor("timestampConfigureStart", {
+    header: "Configuration Start Time (UTC)",
     cell: (info) => formatTimestamp(info.getValue()),
-    size: 220,
+    size: 240,
+    filterType: "number-range",
+    meta: {
+      tooltip: "Timestamp at start of configuration.",
+    },
+  }),
+  columnHelper.accessor("timestampConfigureEnd", {
+    header: "Configuration End Time (UTC)",
+    cell: (info) => formatTimestamp(info.getValue()),
+    size: 240,
     filterType: "number-range",
     meta: {
       tooltip: "Timestamp at end of configuration.",
