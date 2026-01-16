@@ -1,7 +1,7 @@
 {
   "name": "nightly-digest",
   "private": true,
-  "version": "0.13.0",
+  "version": "0.14.0-alpha.1",
   "lastUpdated": "2026-01-16",
   "type": "module",
   "scripts": {
