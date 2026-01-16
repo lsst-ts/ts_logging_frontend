@@ -32,7 +32,9 @@ import { getDatetimeFromDayobsStr } from "@/utils/utils";
 // This filters out the non-selected telescope's exposures, queues and
 // narrative logs from the default display.
 const filterDefaultEventsByTelescope = (telescope) => {
-  const eventTypes = Object.values(CATEGORY_INDEX_INFO).map((info) => info.label);
+  const eventTypes = Object.values(CATEGORY_INDEX_INFO).map(
+    (info) => info.label,
+  );
 
   // Define which labels to exclude per telescope
   const exclusions = {
