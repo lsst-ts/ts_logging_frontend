@@ -44,7 +44,7 @@ function ColumnMultiSelectFilter({ column, closeDropdown }) {
       <p className="text-sm">Filter:</p>
 
       {/* Scrollable multi-select checkboxes */}
-      <div className="max-h-80 overflow-y-auto pr-6 space-y-1">
+      <div className="max-h-90 overflow-y-auto pr-6 space-y-1">
         {sortedUniqueValues.map((value) => (
           <label
             key={value}

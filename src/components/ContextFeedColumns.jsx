@@ -284,7 +284,7 @@ export const contextFeedColumns = [
   columnHelper.accessor("category_index", {
     header: "Category Index",
     cell: (info) => formatCellValue(info.getValue()),
-    size: 110,
+    size: 150,
     filterFn: matchValueOrInList,
     filterType: "string",
     meta: {
@@ -395,7 +395,7 @@ export const contextFeedColumns = [
   columnHelper.accessor("timestampConfigureStart", {
     header: "Configuration Start Time (UTC)",
     cell: (info) => formatTimestamp(info.getValue()),
-    size: 220,
+    size: 240,
     filterType: "number-range",
     meta: {
       tooltip: "Timestamp at start of configuration.",
@@ -404,7 +404,7 @@ export const contextFeedColumns = [
   columnHelper.accessor("timestampConfigureEnd", {
     header: "Configuration End Time (UTC)",
     cell: (info) => formatTimestamp(info.getValue()),
-    size: 220,
+    size: 240,
     filterType: "number-range",
     meta: {
       tooltip: "Timestamp at end of configuration.",
