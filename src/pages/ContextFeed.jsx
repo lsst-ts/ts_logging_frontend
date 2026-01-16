@@ -17,7 +17,7 @@ import {
 import ContextFeedTimeline from "@/components/ContextFeedTimeline";
 import ContextFeedTable from "@/components/ContextFeedTable.jsx";
 import EditableDateTimeInput from "@/components/EditableDateTimeInput.jsx";
-import { SAL_INDEX_INFO } from "@/components/context-feed-definitions.js";
+import { CATEGORY_INDEX_INFO } from "@/components/context-feed-definitions.js";
 import DownloadIcon from "../assets/DownloadIcon.svg";
 import { fetchAlmanac, fetchContextFeed } from "@/utils/fetchUtils";
 import {
@@ -32,7 +32,9 @@ import { getDatetimeFromDayobsStr } from "@/utils/utils";
 // This filters out the non-selected telescope's exposures, queues and
 // narrative logs from the default display.
 const filterDefaultEventsByTelescope = (telescope) => {
-  const eventTypes = Object.values(SAL_INDEX_INFO).map((info) => info.label);
+  const eventTypes = Object.values(CATEGORY_INDEX_INFO).map(
+    (info) => info.label,
+  );
 
   // Define which labels to exclude per telescope
   const exclusions = {
@@ -40,13 +42,15 @@ const filterDefaultEventsByTelescope = (telescope) => {
       "AT Queue",
       "AuxTel Exposure",
       "Narrative Log (AuxTel)",
-      "AUTOLOG - AuxTel",
+      "Error (AuxTel)",
+      "AUTOLOG (AuxTel)",
     ],
     AuxTel: [
       "MT Queue",
       "Simonyi Exposure",
       "Narrative Log (Simonyi)",
-      "AUTOLOG - Simonyi",
+      "Error (Simonyi)",
+      "AUTOLOG (Simonyi)",
     ],
   };
 
@@ -192,12 +196,12 @@ function ContextFeed() {
             .map(
               (label) =>
                 // Map label back to key
-                Object.entries(SAL_INDEX_INFO).find(
+                Object.entries(CATEGORY_INDEX_INFO).find(
                   ([, info]) => info.label === label,
                 )?.[0],
             )
             .filter(Boolean)
-        : Object.keys(SAL_INDEX_INFO);
+        : Object.keys(CATEGORY_INDEX_INFO);
 
       // Update selected keys based on the checkbox toggle
       selectedEventKeys = checked
@@ -210,8 +214,8 @@ function ContextFeed() {
           id: "event_type",
           value:
             selectedEventKeys.length > 0
-              ? selectedEventKeys.map((k) => SAL_INDEX_INFO[k].label)
-              : Object.values(SAL_INDEX_INFO).map((info) => info.label), // all==none
+              ? selectedEventKeys.map((k) => CATEGORY_INDEX_INFO[k].label)
+              : Object.values(CATEGORY_INDEX_INFO).map((info) => info.label), // all==none
         },
       ];
     });
@@ -258,15 +262,15 @@ function ContextFeed() {
               currentTask = entry.name;
             }
 
-            let salInfo = SAL_INDEX_INFO[entry.salIndex] || {};
+            let categoryInfo = CATEGORY_INDEX_INFO[entry.category_index] || {};
 
             return {
               ...entry,
               event_time_dt: isoToUTC(entry["time"]),
               event_time_millis: isoToUTC(entry["time"]).toMillis(),
-              event_type: salInfo.label,
-              event_color: salInfo.color ?? "#ffffff",
-              displayIndex: salInfo.displayIndex,
+              event_type: categoryInfo.label,
+              event_color: categoryInfo.color ?? "#ffffff",
+              displayIndex: categoryInfo.displayIndex,
               current_task: currentTask,
             };
           })
@@ -380,7 +384,7 @@ function ContextFeed() {
                 <div className="flex flex-row">
                   {/* Event Type Checkboxes */}
                   <div className="mt-2 flex flex-col gap-1 w-45">
-                    {Object.entries(SAL_INDEX_INFO)
+                    {Object.entries(CATEGORY_INDEX_INFO)
                       .filter(([, info]) => info.displayIndex != null) // exclude AUTOLOG
                       .sort(
                         // sort on displayIndex

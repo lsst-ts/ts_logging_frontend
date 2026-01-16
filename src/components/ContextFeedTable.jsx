@@ -43,7 +43,7 @@ import {
   contextFeedColumns,
   matchValueOrInList,
 } from "@/components/ContextFeedColumns";
-import { SAL_INDEX_INFO } from "@/components/context-feed-definitions.js";
+import { CATEGORY_INDEX_INFO } from "@/components/context-feed-definitions.js";
 
 // How many skeleton rows to show when loading
 const SKELETON_ROW_COUNT = 10;
@@ -57,7 +57,7 @@ const SORTING_ENUM = Object.freeze({
 });
 
 const DEFAULT_COLUMN_VISIBILITY = {
-  salIndex: false,
+  category_index: false,
   event_type: true,
   current_task: false,
   time: true,
@@ -65,15 +65,16 @@ const DEFAULT_COLUMN_VISIBILITY = {
   description: true,
   config: true,
   script_salIndex: true,
-  timestampProcessStart: true,
   finalStatus: true,
+  timestampProcessStart: true,
+  timestampConfigureStart: true,
   timestampConfigureEnd: true,
   timestampRunStart: true,
   timestampProcessEnd: true,
 };
 
 const DEFAULT_COLUMN_ORDER = [
-  "salIndex",
+  "category_index",
   "event_type",
   "current_task",
   "time",
@@ -81,8 +82,9 @@ const DEFAULT_COLUMN_ORDER = [
   "description",
   "config",
   "script_salIndex",
-  "timestampProcessStart",
   "finalStatus",
+  "timestampProcessStart",
+  "timestampConfigureStart",
   "timestampConfigureEnd",
   "timestampRunStart",
   "timestampProcessEnd",
@@ -125,7 +127,7 @@ function ContextFeedTable({
     setColumnFilters([
       {
         id: "event_type",
-        value: Object.values(SAL_INDEX_INFO).map((info) => info.label),
+        value: Object.values(CATEGORY_INDEX_INFO).map((info) => info.label),
       },
     ]);
     setCollapseTracebacks(true);
