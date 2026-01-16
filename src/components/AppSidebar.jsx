@@ -7,7 +7,7 @@ import {
   SidebarGroupContent,
   SidebarFooter,
 } from "@/components/ui/sidebar.jsx";
-import Parameters from "@/components/parameters";
+import Parameters from "@/components/Parameters";
 import { fetchBackendVersion } from "@/utils/fetchUtils";
 import { parseBackendVersion } from "@/utils/utils";
 import NavMenu from "@/components/NavMenu";
