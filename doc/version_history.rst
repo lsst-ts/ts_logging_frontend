@@ -1,3 +1,29 @@
+v0.13.0 (2026-01-16)
+====================
+
+New Features
+------------
+
+- Add handling of timestampConfigureStart to context feed columns. (`SP-2735 <https://rubinobs.atlassian.net//browse/SP-2735>`_)
+- Move from salIndex to category_index in context feed columns and handle new indexes for errors. (`SP-2735 <https://rubinobs.atlassian.net//browse/SP-2735>`_)
+
+
+Performance Enhancement
+-----------------------
+
+- Add e2e tests using playwright. (`OSW-943 <https://rubinobs.atlassian.net//browse/OSW-943>`_)
+
+
+Other Changes and Additions
+---------------------------
+
+- Remove datalog replace of underscore and space in consdb columns. (`OSW-889 <https://rubinobs.atlassian.net//browse/OSW-889>`_)
+- Make DataLogTable rows height dynamic. (`OSW-1284 <https://rubinobs.atlassian.net//browse/OSW-1284>`_)
+- Apply host retention policy by restricting dayObs selection and URL parameters to available range. (`OSW-1387 <https://rubinobs.atlassian.net//browse/OSW-1387>`_)
+- Sort Data Log by Exposure ID (`OSW-1460 <https://rubinobs.atlassian.net//browse/OSW-1460>`_)
+- Remove default ordering in exposure breakdown applet. (`OSW-1553 <https://rubinobs.atlassian.net//browse/OSW-1553>`_)
+
+
 v0.12.0 (2025-12-19)
 ====================
 

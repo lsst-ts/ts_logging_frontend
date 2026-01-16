@@ -1,1 +1,0 @@
-Move from salIndex to category_index in context feed columns and handle new indexes for errors.
