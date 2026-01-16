@@ -1,1 +1,0 @@
-Add handling of timestampConfigureStart to context feed columns.
