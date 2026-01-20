@@ -103,7 +103,7 @@ function TimeseriesPlot({
       return;
     }
 
-    hoverStore.setHover(state.activePayload[0].payload["exposure id"]);
+    hoverStore.setHover(state.activePayload[0].payload.exposure_id);
   };
 
   const handleChartMouseLeave = () => {
