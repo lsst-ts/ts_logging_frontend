@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
-import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useSearch } from "@tanstack/react-router";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -14,20 +14,16 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-import ContextFeedTimeline from "@/components/ContextFeedTimeline";
+import TimelineChart from "@/components/TimelineChart";
 import ContextFeedTable from "@/components/ContextFeedTable.jsx";
 import EditableDateTimeInput from "@/components/EditableDateTimeInput.jsx";
 import { CATEGORY_INDEX_INFO } from "@/components/context-feed-definitions.js";
+import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
 import DownloadIcon from "../assets/DownloadIcon.svg";
 import { fetchAlmanac, fetchContextFeed } from "@/utils/fetchUtils";
-import {
-  isoToUTC,
-  getDayobsStartUTC,
-  getDayobsEndUTC,
-  utcDateTimeStrToMillis,
-  getValidTimeRange,
-} from "@/utils/timeUtils";
+import { isoToUTC, utcDateTimeStrToMillis } from "@/utils/timeUtils";
 import { getDatetimeFromDayobsStr } from "@/utils/utils";
+import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
 
 // This filters out the non-selected telescope's exposures, queues and
 // narrative logs from the default display.
@@ -63,9 +59,10 @@ const filterDefaultEventsByTelescope = (telescope) => {
 
 function ContextFeed() {
   // Subscribe component to URL params
-  const { startDayobs, endDayobs, telescope, startTime, endTime } = useSearch({
+  const search = useSearch({
     from: "/context-feed",
   });
+  const { startDayobs, endDayobs, telescope } = search;
 
   // Our dayobs inputs are inclusive, so we add one day to the
   // endDayobs to get the correct range for the queries
@@ -74,25 +71,9 @@ function ContextFeed() {
     .plus({ days: 1 })
     .toFormat("yyyyMMdd");
 
-  // Time ranges for timeline
-  // fullTimeRange doesn't need to be stored in state because it
-  // isn't modified by any child components, whereas selectedTimeRange
-  // is modified by the timeline.
-  const fullTimeRange = useMemo(
-    () => [
-      getDayobsStartUTC(String(startDayobs)),
-      getDayobsEndUTC(String(endDayobs)),
-    ],
-    [startDayobs, endDayobs],
-  );
-
-  // Set selected times to match url times, if valid times provided,
-  // else fallback to full dayobs range.
-  const [selectedTimeRange, setSelectedTimeRange] = useState(() => {
-    const startMillis = Number(startTime);
-    const endMillis = Number(endTime);
-    return getValidTimeRange(startMillis, endMillis, fullTimeRange);
-  });
+  // Time range state synced with URL
+  const { selectedTimeRange, setSelectedTimeRange, fullTimeRange } =
+    useTimeRangeFromURL("/context-feed");
 
   const [contextFeedData, setContextFeedData] = useState([]);
   const [contextFeedLoading, setContextFeedLoading] = useState(true);
@@ -111,10 +92,6 @@ function ContextFeed() {
     },
   ]);
 
-  // Nav & search param hooks
-  const navigate = useNavigate({ from: "/context-feed" });
-  const searchParams = useSearch({ from: "/context-feed" });
-
   // Update the "event_type" filter whenever telescope changes
   useEffect(() => {
     setColumnFilters((prevFilters) => {
@@ -131,46 +108,18 @@ function ContextFeed() {
     });
   }, [telescope]);
 
-  // Set selectedTimeRange from url params.
-  // Must be separate from general url-filter sync to avoid infinite renders.
-  useEffect(() => {
-    const startMillis = Number(startTime);
-    const endMillis = Number(endTime);
-    const newRange = getValidTimeRange(startMillis, endMillis, fullTimeRange);
-
-    if (
-      newRange[0].toMillis() !== selectedTimeRange[0].toMillis() ||
-      newRange[1].toMillis() !== selectedTimeRange[1].toMillis()
-    ) {
-      setSelectedTimeRange(newRange);
-    }
-  }, [startTime, endTime, fullTimeRange]);
-
-  // Sync url time params with selectedTimeRange
-  useEffect(() => {
-    if (!selectedTimeRange[0] || !selectedTimeRange[1]) return;
-
-    // Compare current url params with selectedTimeRange
-    // Update url params if they differ
-    const currentStart = Number(searchParams.startTime);
-    const currentEnd = Number(searchParams.endTime);
-
-    const newStart = selectedTimeRange[0].toMillis();
-    const newEnd = selectedTimeRange[1].toMillis();
-
-    if (currentStart !== newStart || currentEnd !== newEnd) {
-      // Mutate browser history with new times
-      navigate({
-        to: "/context-feed",
-        search: {
-          ...searchParams,
-          startTime: newStart,
-          endTime: newEnd,
-        },
-        replace: true,
-      });
-    }
-  }, [selectedTimeRange]);
+  const contextMenuItems = [
+    {
+      label: "View Data Log",
+      to: "/nightlydigest/data-log",
+      search,
+    },
+    {
+      label: "View Plots",
+      to: "/nightlydigest/plots",
+      search,
+    },
+  ];
 
   // Currently unchanged from Plots version.
   // If remains unchanged, move to and import from utils
@@ -307,11 +256,33 @@ function ContextFeed() {
 
   // Filter data based on selected time range
   // and the event types selected by checkboxes
-  const filteredData = contextFeedData.filter(
-    (entry) =>
-      entry.event_time_dt >= selectedTimeRange[0] &&
-      entry.event_time_dt <= selectedTimeRange[1],
+  const filteredData = useMemo(
+    () =>
+      contextFeedData.filter(
+        (entry) =>
+          entry.event_time_dt >= selectedTimeRange[0] &&
+          entry.event_time_dt <= selectedTimeRange[1],
+      ),
+    [contextFeedData, selectedTimeRange],
   );
+
+  const timelineData = useMemo(() => {
+    const activeLabels =
+      columnFilters.find((f) => f.id === "event_type")?.value ?? [];
+    return Object.values(CATEGORY_INDEX_INFO)
+      .filter((info) => info.displayIndex != null)
+      .map((info) => {
+        return {
+          index: 10 - info.displayIndex,
+          timestamps: contextFeedData
+            .filter((d) => d.displayIndex === info.displayIndex)
+            .map((d) => d.event_time_millis),
+          color: info.color,
+          isActive:
+            activeLabels.length === 0 || activeLabels.includes(info.label),
+        };
+      });
+  }, [contextFeedData, columnFilters]);
 
   return (
     <>
@@ -415,14 +386,19 @@ function ContextFeed() {
                         );
                       })}
                   </div>
-                  <ContextFeedTimeline
-                    data={contextFeedData}
-                    twilightValues={twilightValues}
-                    fullTimeRange={fullTimeRange}
-                    selectedTimeRange={selectedTimeRange}
-                    setSelectedTimeRange={setSelectedTimeRange}
-                    columnFilters={columnFilters}
-                  />
+                  <div className="flex-1">
+                    <ContextMenuWrapper menuItems={contextMenuItems}>
+                      <TimelineChart
+                        data={timelineData}
+                        twilightValues={twilightValues}
+                        showTwilight={true}
+                        height={250}
+                        fullTimeRange={fullTimeRange}
+                        selectedTimeRange={selectedTimeRange}
+                        setSelectedTimeRange={setSelectedTimeRange}
+                      />
+                    </ContextMenuWrapper>
+                  </div>
                 </div>
               )}
             </CardContent>

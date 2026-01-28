@@ -42,7 +42,7 @@ export function createDotCallback(graphID, r, { band, color, useShape }) {
           r={r}
           key={`dot-${index}`}
           band={payload.band}
-          obsID={payload["exposure id"]}
+          obsID={payload.exposure_id}
           graphID={graphID}
         />
       );
@@ -59,7 +59,7 @@ export function createDotCallback(graphID, r, { band, color, useShape }) {
           r={r}
           key={`dot-${index}`}
           color={BAND_COLORS[payload.band] || color}
-          obsID={payload["exposure id"]}
+          obsID={payload.exposure_id}
           graphID={graphID}
         />
       );
@@ -74,7 +74,7 @@ export function createDotCallback(graphID, r, { band, color, useShape }) {
         r={r}
         key={`dot-${index}`}
         color={color}
-        obsID={payload["exposure id"]}
+        obsID={payload.exposure_id}
         graphID={graphID}
       />
     );

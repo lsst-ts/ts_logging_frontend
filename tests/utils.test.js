@@ -12,7 +12,7 @@ import {
   mergeDataLogSources,
   getRubinTVUrl,
   getSiteConfig,
-  buildNavItemUrl,
+  buildNavigationWithSearchParams,
   getNightSummaryLink,
   prettyTitleFromKey,
   DEFAULT_PIXEL_SCALE_MEDIAN,
@@ -21,6 +21,7 @@ import {
   SITE_CONFIGURATION,
   parseBackendVersion,
 } from "@/utils/utils";
+import { GLOBAL_SEARCH_PARAMS } from "@/routes";
 
 const sampleAlmanacInfo = [
   {
@@ -295,7 +296,7 @@ describe("utils", () => {
 
   describe("mergeDataLogSources", () => {
     it("merges matching rows", () => {
-      const consDb = [{ "exposure name": "exp1", instrument: "na" }];
+      const consDb = [{ exposure_name: "exp1", instrument: "na" }];
       const exposureLog = [
         {
           obs_id: "exp1",
@@ -312,7 +313,7 @@ describe("utils", () => {
     });
 
     it("fills defaults if no match", () => {
-      const consDb = [{ "exposure name": "exp2" }];
+      const consDb = [{ exposure_name: "exp2" }];
       const merged = mergeDataLogSources(consDb, []);
       expect(merged[0].instrument).toBe("na");
       expect(merged[0].exposure_flag).toBe("none");
@@ -408,29 +409,77 @@ describe("utils", () => {
     });
   });
 
-  describe("buildNavItemUrl", () => {
-    it("returns '#' for hash input", () => {
-      expect(buildNavItemUrl("#", "", {}, [])).toBe("#");
+  describe("buildNavigationWithSearchParams", () => {
+    it("returns object with empty search for hash input", () => {
+      const result = buildNavigationWithSearchParams("#", "", {}, []);
+      expect(result).toEqual({ to: "#", from: "", search: {} });
     });
 
-    it("preserves allowedParams when leaving data-log", () => {
-      const url = buildNavItemUrl(
+    it("filters search params to only allowedParams", () => {
+      const result = buildNavigationWithSearchParams(
         "/other",
-        "/nightlydigest/data-log",
+        "/nightlydigest/plots",
         { keep: "1", drop: "2" },
         ["keep"],
       );
-      expect(url).toBe("/other?keep=1");
+      expect(result).toEqual({
+        to: "/other",
+        from: "/nightlydigest/plots",
+        search: { keep: "1" },
+      });
     });
 
-    it("preserves all params otherwise", () => {
-      const url = buildNavItemUrl(
+    it("preserves all params when all are in allowedParams", () => {
+      const result = buildNavigationWithSearchParams(
         "/same",
-        "/nightlydigest/other",
+        "/nightlydigest/plots",
+        { a: "1", b: "2" },
+        ["a", "b"],
+      );
+      expect(result).toEqual({
+        to: "/same",
+        from: "/nightlydigest/plots",
+        search: { a: "1", b: "2" },
+      });
+    });
+
+    it("returns empty search when no params are in allowedParams", () => {
+      const result = buildNavigationWithSearchParams(
+        "/other",
+        "/nightlydigest/plots",
         { a: "1", b: "2" },
         [],
       );
-      expect(url).toBe("/same?a=1&b=2");
+      expect(result).toEqual({
+        to: "/other",
+        from: "/nightlydigest/plots",
+        search: {},
+      });
+    });
+
+    it("uses GLOBAL_SEARCH_PARAMS as default allowedParams", () => {
+      // Create search object with params from GLOBAL_SEARCH_PARAMS plus extras
+      const searchWithExtras = {
+        ...Object.fromEntries(
+          GLOBAL_SEARCH_PARAMS.map((key) => [key, "value"]),
+        ),
+        extraParam: "shouldBeFiltered",
+      };
+
+      const result = buildNavigationWithSearchParams(
+        "/other",
+        "/nightlydigest/plots",
+        searchWithExtras,
+        // Omit fourth parameter to test default
+      );
+
+      // Should only include GLOBAL_SEARCH_PARAMS, not extraParam
+      const expectedSearch = Object.fromEntries(
+        GLOBAL_SEARCH_PARAMS.map((key) => [key, "value"]),
+      );
+
+      expect(result.search).toEqual(expectedSearch);
+      expect(result.search.extraParam).toBeUndefined();
     });
   });
 
