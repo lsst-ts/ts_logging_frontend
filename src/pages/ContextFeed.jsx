@@ -108,6 +108,18 @@ function ContextFeed() {
     });
   }, [telescope]);
 
+  const contextMenuItems = [
+    {
+      label: "View Data Log",
+      to: "/nightlydigest/data-log",
+      search,
+    },
+    {
+      label: "View Plots",
+      to: "/nightlydigest/plots",
+      search,
+    },
+  ];
 
   // Currently unchanged from Plots version.
   // If remains unchanged, move to and import from utils
@@ -375,6 +387,7 @@ function ContextFeed() {
                       })}
                   </div>
                   <div className="flex-1">
+                    <ContextMenuWrapper menuItems={contextMenuItems}>
                       <TimelineChart
                         data={timelineData}
                         twilightValues={twilightValues}
@@ -384,6 +397,7 @@ function ContextFeed() {
                         selectedTimeRange={selectedTimeRange}
                         setSelectedTimeRange={setSelectedTimeRange}
                       />
+                    </ContextMenuWrapper>
                   </div>
                 </div>
               )}

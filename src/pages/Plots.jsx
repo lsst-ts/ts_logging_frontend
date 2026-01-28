@@ -46,6 +46,7 @@ import {
 import { calculateChartData } from "@/utils/chartCalculations";
 import { PlotDataContext } from "@/contexts/PlotDataContext";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
+import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
 
 function Plots() {
   // Routing and URL params
@@ -198,6 +199,23 @@ function Plots() {
     setIllumValues([]);
     setMoonValues([]);
   }
+
+  // Navigation
+  const search = useSearch({ from: "/plots" });
+
+  // Context menu items
+  const contextMenuItems = [
+    {
+      label: "View Context Feed",
+      to: "/nightlydigest/context-feed",
+      search,
+    },
+    {
+      label: "View Data Log",
+      to: "/nightlydigest/data-log",
+      search,
+    },
+  ];
 
   useEffect(() => {
     if (telescope === "AuxTel") {
@@ -419,6 +437,7 @@ function Plots() {
           <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
         ) : (
           <>
+            <ContextMenuWrapper menuItems={contextMenuItems}>
               <TimelineChart
                 data={[
                   {
@@ -438,6 +457,7 @@ function Plots() {
                 selectedTimeRange={selectedTimeRange}
                 setSelectedTimeRange={setSelectedTimeRange}
               />
+            </ContextMenuWrapper>
           </>
         )}
 
@@ -520,7 +540,11 @@ function Plots() {
               {visiblePlots.map((key, idx) => {
                 const def = PLOT_DEFINITIONS.find((p) => p.key === key);
                 return (
+                  <ContextMenuWrapper
+                    menuItems={contextMenuItems}
                     key={def.key}
+                    style={{ zIndex: visiblePlots.length - idx }}
+                  >
                     <TimeseriesPlot
                       title={def?.title || prettyTitleFromKey(key)}
                       unit={def?.unit}
@@ -536,6 +560,7 @@ function Plots() {
                       plotIndex={idx}
                       xAxisShow={xAxisShow}
                     />
+                  </ContextMenuWrapper>
                 );
               })}
             </PlotDataContext.Provider>

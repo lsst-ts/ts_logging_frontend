@@ -33,6 +33,7 @@ import {
 } from "./plotDotShapes";
 import { BAND_COLORS } from "@/components/PLOT_DEFINITIONS";
 import { useDOMClickDrag } from "@/hooks/useDOMClickDrag";
+import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
 import { RotateCcw } from "lucide-react";
 import { calculateZoom } from "@/utils/plotUtils";
 import {
@@ -250,6 +251,28 @@ function ObservingConditionsApplet({
   selectedTimeRange,
   setSelectedTimeRange,
 }) {
+  // Router and search params for context menu navigation
+  const search = useSearch({ from: "/" });
+
+  // Context menu items for navigation
+  const contextMenuItems = [
+    {
+      label: "View Context Feed",
+      to: "/nightlydigest/context-feed",
+      search,
+    },
+    {
+      label: "View Plots",
+      to: "/nightlydigest/plots",
+      search,
+    },
+    {
+      label: "View Data Log",
+      to: "/nightlydigest/data-log",
+      search,
+    },
+  ];
+
   // Ref for chart to enable DOM manipulation
   const chartRef = useRef(null);
 
@@ -635,6 +658,7 @@ function ObservingConditionsApplet({
                 <RotateCcw size={16} />
               </button>
             )}
+            <ContextMenuWrapper menuItems={contextMenuItems} className="h-full">
               <div
                 className="h-full overflow-visible"
                 onMouseDown={(e) => {
@@ -893,6 +917,7 @@ function ObservingConditionsApplet({
                   </ChartContainer>
                 </div>
               </div>
+            </ContextMenuWrapper>
           </>
         )}
       </CardContent>
