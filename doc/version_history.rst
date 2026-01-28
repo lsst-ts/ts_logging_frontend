@@ -1,3 +1,24 @@
+v0.14.0 (2026-01-28)
+====================
+
+New Features
+------------
+
+- Add additional interaction and zoom options to all plots (`OSW-1097 <https://rubinobs.atlassian.net//browse/OSW-1097>`_)
+
+
+Bug Fixes
+---------
+
+- Fix left out underscore when merging data log sources (`OSW-1700 <https://rubinobs.atlassian.net//browse/OSW-1700>`_)
+
+
+Other Changes and Additions
+---------------------------
+
+- Make timeline component reusable (`OSW-1326 <https://rubinobs.atlassian.net//browse/OSW-1326>`_)
+
+
 v0.13.0 (2026-01-16)
 ====================
 
