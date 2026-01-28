@@ -18,8 +18,15 @@ import {
   isDateInRetentionRange,
   getAvailableDayObsRange,
 } from "./utils/retentionPolicyUtils";
+import { getDayobsStartUTC, getDayobsEndUTC } from "./utils/timeUtils";
 
-export const GLOBAL_SEARCH_PARAMS = ["startDayobs", "endDayobs", "telescope"];
+export const GLOBAL_SEARCH_PARAMS = [
+  "startDayobs",
+  "endDayobs",
+  "telescope",
+  "startTime",
+  "endTime",
+];
 
 const rootRoute = createRootRoute({
   component: Layout,
@@ -44,44 +51,87 @@ const dayobsInt = z.coerce
   )
   .transform((val) => parseInt(val, 10));
 
+const defaultDayObs = () =>
+  DateTime.utc().minus({ days: 1 }).toFormat("yyyyMMdd");
+
 // Create plain object schema
-const baseSearchParamsSchema = z.object({
-  startDayobs: dayobsInt.default(() =>
-    DateTime.utc().minus({ days: 1 }).toFormat("yyyyMMdd"),
-  ),
-  endDayobs: dayobsInt.default(() =>
-    DateTime.utc().minus({ days: 1 }).toFormat("yyyyMMdd"),
-  ),
+export const baseSearchParamsSchema = z.object({
+  startDayobs: dayobsInt.default(defaultDayObs),
+  endDayobs: dayobsInt.default(defaultDayObs),
   telescope: z.enum(["Simonyi", "AuxTel"]).default("Simonyi"),
+  // these are marked as optional because they are added automatically
+  startTime: z.coerce.number().int().min(0).optional(),
+  endTime: z.coerce.number().int().min(0).optional(),
 });
 
 const applyDateValidation = (schema) => {
-  return schema
+  return schema.refine(
+    (obj) =>
+      isDateInRetentionRange(obj.startDayobs) &&
+      isDateInRetentionRange(obj.endDayobs),
+    () => {
+      const range = getAvailableDayObsRange();
+      if (!range.retentionDays)
+        return {
+          message: `Date range must be before current dayObs ${range.max}).`,
+          path: ["startDayobs"],
+        };
+
+      return {
+        message: `Date range must be within the last ${range.retentionDays} days (${range.min} to ${range.max}).`,
+        path: ["startDayobs"],
+      };
+    },
+  );
+};
+// Apply common validations and transformations to search params schemas
+const applyCommonValidations = (schema) =>
+  schema
     .refine((obj) => obj.startDayobs <= obj.endDayobs, {
       message: "startDayobs must be before or equal to endDayobs.",
       path: ["startDayobs"],
     })
-    .refine(
-      (obj) =>
-        isDateInRetentionRange(obj.startDayobs) &&
-        isDateInRetentionRange(obj.endDayobs),
-      () => {
-        const range = getAvailableDayObsRange();
-        if (!range.retentionDays)
-          return {
-            message: `Date range must be before current dayObs ${range.max}).`,
-            path: ["startDayobs"],
-          };
-
+    .transform((search) => {
+      // Set default startTime and endTime based on dayobs if not provided
+      // Has to be done as a transformation because it's dependant on another value
+      return {
+        ...search,
+        startTime:
+          search.startTime ??
+          getDayobsStartUTC(search.startDayobs.toString()).toMillis(),
+        endTime:
+          search.endTime ??
+          getDayobsEndUTC(search.endDayobs.toString()).toMillis(),
+      };
+    })
+    .transform((search) => {
+      // Ensure that startTime <= endTime by swapping them if required
+      if (search.startTime > search.endTime) {
         return {
-          message: `Date range must be within the last ${range.retentionDays} days (${range.min} to ${range.max}).`,
-          path: ["startDayobs"],
+          ...search,
+          startTime: search.endTime,
+          endTime: search.startTime,
         };
-      },
-    );
-};
+      }
+      return search;
+    })
+    .transform((search) => {
+      // Ensure that start and end times fall within the dayobs boundaries
+      const startMillis = getDayobsStartUTC(search.startDayobs.toString());
+      const endMillis = getDayobsEndUTC(search.endDayobs.toString());
+      return {
+        ...search,
+        startTime: Math.max(search.startTime, startMillis),
+        endTime: Math.min(search.endTime, endMillis),
+      };
+    });
 
-const searchParamsSchema = applyDateValidation(baseSearchParamsSchema);
+// Validate schema object for general use
+export const searchParamsSchema = applyCommonValidations(
+  applyDateValidation(baseSearchParamsSchema),
+);
+
+// Extend search schema object for individual pages
 
 // Convert table columns to url filter keys
 const columns = [];
@@ -95,9 +145,9 @@ const filtersShape = Object.fromEntries(
   arrayKeys.map((key) => [key, z.string().array().optional()]),
 );
 
-// Extend search schema object for individual pages
-const dataLogSearchSchema = applyDateValidation(
-  baseSearchParamsSchema.extend(filtersShape),
+// Extend base schema object for data log page with filter fields
+export const dataLogSearchSchema = applyCommonValidations(
+  applyDateValidation(baseSearchParamsSchema.extend(filtersShape)),
 );
 
 const dashboardRoute = createRoute({

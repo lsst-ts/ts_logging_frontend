@@ -39,14 +39,13 @@ import {
 } from "@/utils/utils";
 import {
   isoToTAI,
-  getDayobsStartTAI,
-  getDayobsEndTAI,
   almanacDayobsForPlot,
   utcDateTimeStrToTAIMillis,
   generateDayObsRange,
 } from "@/utils/timeUtils";
 import { calculateChartData } from "@/utils/chartCalculations";
 import { PlotDataContext } from "@/contexts/PlotDataContext";
+import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
 
 function Plots() {
   // Routing and URL params
@@ -78,9 +77,9 @@ function Plots() {
   const [moonIntervals, setMoonIntervals] = useState([]);
   const [almanacLoading, setAlmanacLoading] = useState(true);
 
-  // Time ranges for timeline and plots
-  const [selectedTimeRange, setSelectedTimeRange] = useState([null, null]);
-  const [fullTimeRange, setFullTimeRange] = useState([null, null]);
+  // Time range state synced with URL
+  const { selectedTimeRange, setSelectedTimeRange, fullTimeRange } =
+    useTimeRangeFromURL("/plots");
 
   // Keep track of default and user-added plots
   const [visiblePlots, setVisiblePlots] = useState(
@@ -115,32 +114,8 @@ function Plots() {
       // Chronological order
       .sort((a, b) => a.obs_start_millis - b.obs_start_millis);
 
-    // Get all available dayobs
-    const dayObsRange = generateDayObsRange(startDayobs, endDayobs);
-
-    // Get first and last observations
-    const firstObs = data.at(0)?.obs_start_dt ?? 0;
-    const lastObs = data.at(-1)?.obs_start_dt ?? 0;
-
-    // Set static timeline axis to boundaries of queried dayobs
-    let fullXRange = [];
-    if (dayObsRange.length > 0) {
-      const firstDayobs = dayObsRange[0];
-      const lastDayobs = dayObsRange[dayObsRange.length - 1];
-
-      const startTimeOfFirstDayobs = getDayobsStartTAI(firstDayobs);
-      const endTimeOfLastDayobs = getDayobsEndTAI(lastDayobs);
-
-      // Add an extra minute to the end so that the final dayobs tick line shows
-      fullXRange = [
-        startTimeOfFirstDayobs,
-        endTimeOfLastDayobs.plus({ minute: 1 }),
-      ];
-
-      setAvailableDayObs(dayObsRange);
-      setFullTimeRange(fullXRange);
-      setSelectedTimeRange([firstObs, lastObs]);
-    }
+    // Set available dayobs range
+    setAvailableDayObs(generateDayObsRange(startDayobs, endDayobs));
 
     // Set the data to state
     setDataLogEntries(data);
@@ -218,8 +193,6 @@ function Plots() {
     // ConsDB
     setDataLogEntries([]);
     setAvailableDayObs([]);
-    setFullTimeRange([null, null]);
-    setSelectedTimeRange([null, null]);
     // Almanac
     setTwilightValues([]);
     setIllumValues([]);

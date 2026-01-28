@@ -16,6 +16,7 @@ export default defineConfig({
     passWithNoTests: true,
     include: ["tests/**/*.test.js"],
     exclude: ["tests/e2e/**"],
+    setupFiles: "./vitest.setup.js",
   },
   resolve: {
     alias: {
