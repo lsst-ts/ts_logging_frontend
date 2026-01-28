@@ -14,7 +14,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-import ContextFeedTimeline from "@/components/ContextFeedTimeline";
+import TimelineChart from "@/components/TimelineChart";
 import ContextFeedTable from "@/components/ContextFeedTable.jsx";
 import EditableDateTimeInput from "@/components/EditableDateTimeInput.jsx";
 import { CATEGORY_INDEX_INFO } from "@/components/context-feed-definitions.js";
@@ -90,7 +90,6 @@ function ContextFeed() {
       value: filterDefaultEventsByTelescope(telescope),
     },
   ]);
-
 
   // Update the "event_type" filter whenever telescope changes
   useEffect(() => {
@@ -254,6 +253,24 @@ function ContextFeed() {
     [contextFeedData, selectedTimeRange],
   );
 
+  const timelineData = useMemo(() => {
+    const activeLabels =
+      columnFilters.find((f) => f.id === "event_type")?.value ?? [];
+    return Object.values(SAL_INDEX_INFO)
+      .filter((info) => info.displayIndex != null)
+      .map((info) => {
+        return {
+          index: 10 - info.displayIndex,
+          timestamps: contextFeedData
+            .filter((d) => d.displayIndex === info.displayIndex)
+            .map((d) => d.event_time_millis),
+          color: info.color,
+          isActive:
+            activeLabels.length === 0 || activeLabels.includes(info.label),
+        };
+      });
+  }, [contextFeedData, columnFilters]);
+
   return (
     <>
       <div className="flex flex-col w-full h-screen p-8 gap-4">
@@ -356,14 +373,17 @@ function ContextFeed() {
                         );
                       })}
                   </div>
-                  <ContextFeedTimeline
-                    data={contextFeedData}
-                    twilightValues={twilightValues}
-                    fullTimeRange={fullTimeRange}
-                    selectedTimeRange={selectedTimeRange}
-                    setSelectedTimeRange={setSelectedTimeRange}
-                    columnFilters={columnFilters}
-                  />
+                  <div className="flex-1">
+                      <TimelineChart
+                        data={timelineData}
+                        twilightValues={twilightValues}
+                        showTwilight={true}
+                        height={250}
+                        fullTimeRange={fullTimeRange}
+                        selectedTimeRange={selectedTimeRange}
+                        setSelectedTimeRange={setSelectedTimeRange}
+                      />
+                  </div>
                 </div>
               )}
             </CardContent>

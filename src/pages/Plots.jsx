@@ -18,7 +18,7 @@ import {
   AsteriskShape,
 } from "@/components/plotDotShapes";
 
-import Timeline from "@/components/Timeline";
+import TimelineChart from "@/components/TimelineChart";
 import TimeseriesPlot from "@/components/TimeseriesPlot";
 import {
   PLOT_DEFINITIONS,
@@ -392,15 +392,25 @@ function Plots() {
           <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
         ) : (
           <>
-            <Timeline
-              data={dataLogEntries}
-              twilightValues={twilightValues}
-              illumValues={illumValues}
-              moonIntervals={moonIntervals}
-              fullTimeRange={fullTimeRange}
-              selectedTimeRange={selectedTimeRange}
-              setSelectedTimeRange={setSelectedTimeRange}
-            />
+              <TimelineChart
+                data={[
+                  {
+                    index: 0.5,
+                    timestamps: dataLogEntries.map((d) => d.obs_start_millis),
+                    color: "#3CAE3F",
+                    isActive: true,
+                  },
+                ]}
+                twilightValues={twilightValues}
+                showTwilight={twilightValues.length > 1}
+                illumValues={illumValues}
+                showMoonIllumination={true}
+                moonIntervals={moonIntervals}
+                showMoonArea={true}
+                fullTimeRange={fullTimeRange}
+                selectedTimeRange={selectedTimeRange}
+                setSelectedTimeRange={setSelectedTimeRange}
+              />
           </>
         )}
 
