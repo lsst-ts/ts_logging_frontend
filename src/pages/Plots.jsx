@@ -359,11 +359,38 @@ function Plots() {
             </>
           )}
           <div className="flex flex-col max-w-xxl mt-6 border border-1 border-white rounded-md p-2 gap-2">
-            <p>
-              <span className="font-medium">Click & Drag</span> on the timeline
-              or on any plot to zoom in, and{" "}
-              <span className="font-medium">Double-Click</span> to zoom out.
-            </p>
+            <ul className="list-disc list-inside">
+              <li>
+                <span className="font-medium">Click & Drag</span> on the
+                timeline or any plot to zoom in. Hold{" "}
+                <span className="font-medium">Shift</span> to only zoom the time
+                axis
+              </li>
+              <li>
+                Hold <span className="font-medium">Ctrl/⌘</span> and drag on any
+                plot to zoom out. Hold{" "}
+                <span className="font-medium">Shift + Ctrl/⌘</span> to only zoom
+                the time axis
+              </li>
+              <li>
+                <span className="font-medium">Double-Click</span> on the
+                timeline or any plot to zoom to the entire X axis
+              </li>
+              <li>
+                Click the <span className="font-medium">Reset</span> button on
+                the top right of each plot to reset the Y axis zoom on that plot
+              </li>
+              <li>
+                Hold <span className="font-medium">Shift</span> before starting
+                a new selection in the timeline to extend the current selection
+                instead of starting a new selection.
+              </li>
+              <li>
+                <span className="font-medium">Right-Click</span> on the timeline
+                or any plot to see options, including jumping to other pages.
+                These jumps will keep your current time selection
+              </li>
+            </ul>
             <p>
               Twilights are shown as blue lines, moon above the horizon is
               highlighted in yellow, and moon illumination (%) is displayed
@@ -475,7 +502,7 @@ function Plots() {
         )}
 
         {/* Plots */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-40">
           {dataLogLoading || almanacLoading ? (
             <>
               {/* 4 loading plot skeletons */}
@@ -493,23 +520,22 @@ function Plots() {
               {visiblePlots.map((key, idx) => {
                 const def = PLOT_DEFINITIONS.find((p) => p.key === key);
                 return (
-                  <TimeseriesPlot
-                    title={def?.title || prettyTitleFromKey(key)}
-                    unit={def?.unit}
-                    dataKey={def.key}
                     key={def.key}
-                    fullTimeRange={fullTimeRange}
-                    selectedTimeRange={selectedTimeRange}
-                    setSelectedTimeRange={setSelectedTimeRange}
-                    plotShape={plotShape}
-                    plotColor={plotColor}
-                    bandMarker={bandMarker}
-                    isBandPlot={!!def?.bandMarker}
-                    showMoon={!!def?.showMoon}
-                    plotIndex={idx}
-                    nPlots={visiblePlots.length}
-                    xAxisShow={xAxisShow}
-                  />
+                    <TimeseriesPlot
+                      title={def?.title || prettyTitleFromKey(key)}
+                      unit={def?.unit}
+                      dataKey={def.key}
+                      fullTimeRange={fullTimeRange}
+                      selectedTimeRange={selectedTimeRange}
+                      setSelectedTimeRange={setSelectedTimeRange}
+                      plotShape={plotShape}
+                      plotColor={plotColor}
+                      bandMarker={bandMarker}
+                      isBandPlot={!!def?.bandMarker}
+                      showMoon={!!def?.showMoon}
+                      plotIndex={idx}
+                      xAxisShow={xAxisShow}
+                    />
                 );
               })}
             </PlotDataContext.Provider>

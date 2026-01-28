@@ -18,6 +18,7 @@ import TimelineChart from "@/components/TimelineChart";
 import ContextFeedTable from "@/components/ContextFeedTable.jsx";
 import EditableDateTimeInput from "@/components/EditableDateTimeInput.jsx";
 import { CATEGORY_INDEX_INFO } from "@/components/context-feed-definitions.js";
+import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
 import DownloadIcon from "../assets/DownloadIcon.svg";
 import { fetchAlmanac, fetchContextFeed } from "@/utils/fetchUtils";
 import { isoToUTC, utcDateTimeStrToMillis } from "@/utils/timeUtils";
@@ -256,7 +257,7 @@ function ContextFeed() {
   const timelineData = useMemo(() => {
     const activeLabels =
       columnFilters.find((f) => f.id === "event_type")?.value ?? [];
-    return Object.values(SAL_INDEX_INFO)
+    return Object.values(CATEGORY_INDEX_INFO)
       .filter((info) => info.displayIndex != null)
       .map((info) => {
         return {
