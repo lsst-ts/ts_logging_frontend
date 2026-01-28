@@ -18,7 +18,7 @@ import {
   AsteriskShape,
 } from "@/components/plotDotShapes";
 
-import Timeline from "@/components/Timeline";
+import TimelineChart from "@/components/TimelineChart";
 import TimeseriesPlot from "@/components/TimeseriesPlot";
 import {
   PLOT_DEFINITIONS,
@@ -39,14 +39,14 @@ import {
 } from "@/utils/utils";
 import {
   isoToTAI,
-  getDayobsStartTAI,
-  getDayobsEndTAI,
   almanacDayobsForPlot,
   utcDateTimeStrToTAIMillis,
   generateDayObsRange,
 } from "@/utils/timeUtils";
 import { calculateChartData } from "@/utils/chartCalculations";
 import { PlotDataContext } from "@/contexts/PlotDataContext";
+import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
+import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
 
 function Plots() {
   // Routing and URL params
@@ -78,9 +78,9 @@ function Plots() {
   const [moonIntervals, setMoonIntervals] = useState([]);
   const [almanacLoading, setAlmanacLoading] = useState(true);
 
-  // Time ranges for timeline and plots
-  const [selectedTimeRange, setSelectedTimeRange] = useState([null, null]);
-  const [fullTimeRange, setFullTimeRange] = useState([null, null]);
+  // Time range state synced with URL
+  const { selectedTimeRange, setSelectedTimeRange, fullTimeRange } =
+    useTimeRangeFromURL("/plots");
 
   // Keep track of default and user-added plots
   const [visiblePlots, setVisiblePlots] = useState(
@@ -115,32 +115,8 @@ function Plots() {
       // Chronological order
       .sort((a, b) => a.obs_start_millis - b.obs_start_millis);
 
-    // Get all available dayobs
-    const dayObsRange = generateDayObsRange(startDayobs, endDayobs);
-
-    // Get first and last observations
-    const firstObs = data.at(0)?.obs_start_dt ?? 0;
-    const lastObs = data.at(-1)?.obs_start_dt ?? 0;
-
-    // Set static timeline axis to boundaries of queried dayobs
-    let fullXRange = [];
-    if (dayObsRange.length > 0) {
-      const firstDayobs = dayObsRange[0];
-      const lastDayobs = dayObsRange[dayObsRange.length - 1];
-
-      const startTimeOfFirstDayobs = getDayobsStartTAI(firstDayobs);
-      const endTimeOfLastDayobs = getDayobsEndTAI(lastDayobs);
-
-      // Add an extra minute to the end so that the final dayobs tick line shows
-      fullXRange = [
-        startTimeOfFirstDayobs,
-        endTimeOfLastDayobs.plus({ minute: 1 }),
-      ];
-
-      setAvailableDayObs(dayObsRange);
-      setFullTimeRange(fullXRange);
-      setSelectedTimeRange([firstObs, lastObs]);
-    }
+    // Set available dayobs range
+    setAvailableDayObs(generateDayObsRange(startDayobs, endDayobs));
 
     // Set the data to state
     setDataLogEntries(data);
@@ -218,13 +194,28 @@ function Plots() {
     // ConsDB
     setDataLogEntries([]);
     setAvailableDayObs([]);
-    setFullTimeRange([null, null]);
-    setSelectedTimeRange([null, null]);
     // Almanac
     setTwilightValues([]);
     setIllumValues([]);
     setMoonValues([]);
   }
+
+  // Navigation
+  const search = useSearch({ from: "/plots" });
+
+  // Context menu items
+  const contextMenuItems = [
+    {
+      label: "View Context Feed",
+      to: "/nightlydigest/context-feed",
+      search,
+    },
+    {
+      label: "View Data Log",
+      to: "/nightlydigest/data-log",
+      search,
+    },
+  ];
 
   useEffect(() => {
     if (telescope === "AuxTel") {
@@ -386,11 +377,38 @@ function Plots() {
             </>
           )}
           <div className="flex flex-col max-w-xxl mt-6 border border-1 border-white rounded-md p-2 gap-2">
-            <p>
-              <span className="font-medium">Click & Drag</span> on the timeline
-              or on any plot to zoom in, and{" "}
-              <span className="font-medium">Double-Click</span> to zoom out.
-            </p>
+            <ul className="list-disc list-inside">
+              <li>
+                <span className="font-medium">Click & Drag</span> on the
+                timeline or any plot to zoom in. Hold{" "}
+                <span className="font-medium">Shift</span> to only zoom the time
+                axis
+              </li>
+              <li>
+                Hold <span className="font-medium">Ctrl/⌘</span> and drag on any
+                plot to zoom out. Hold{" "}
+                <span className="font-medium">Shift + Ctrl/⌘</span> to only zoom
+                the time axis
+              </li>
+              <li>
+                <span className="font-medium">Double-Click</span> on the
+                timeline or any plot to zoom to the entire X axis
+              </li>
+              <li>
+                Click the <span className="font-medium">Reset</span> button on
+                the top right of each plot to reset the Y axis zoom on that plot
+              </li>
+              <li>
+                Hold <span className="font-medium">Shift</span> before starting
+                a new selection in the timeline to extend the current selection
+                instead of starting a new selection.
+              </li>
+              <li>
+                <span className="font-medium">Right-Click</span> on the timeline
+                or any plot to see options, including jumping to other pages.
+                These jumps will keep your current time selection
+              </li>
+            </ul>
             <p>
               Twilights are shown as blue lines, moon above the horizon is
               highlighted in yellow, and moon illumination (%) is displayed
@@ -419,15 +437,27 @@ function Plots() {
           <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
         ) : (
           <>
-            <Timeline
-              data={dataLogEntries}
-              twilightValues={twilightValues}
-              illumValues={illumValues}
-              moonIntervals={moonIntervals}
-              fullTimeRange={fullTimeRange}
-              selectedTimeRange={selectedTimeRange}
-              setSelectedTimeRange={setSelectedTimeRange}
-            />
+            <ContextMenuWrapper menuItems={contextMenuItems}>
+              <TimelineChart
+                data={[
+                  {
+                    index: 0.5,
+                    timestamps: dataLogEntries.map((d) => d.obs_start_millis),
+                    color: "#3CAE3F",
+                    isActive: true,
+                  },
+                ]}
+                twilightValues={twilightValues}
+                showTwilight={twilightValues.length > 1}
+                illumValues={illumValues}
+                showMoonIllumination={true}
+                moonIntervals={moonIntervals}
+                showMoonArea={true}
+                fullTimeRange={fullTimeRange}
+                selectedTimeRange={selectedTimeRange}
+                setSelectedTimeRange={setSelectedTimeRange}
+              />
+            </ContextMenuWrapper>
           </>
         )}
 
@@ -492,7 +522,7 @@ function Plots() {
         )}
 
         {/* Plots */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-40">
           {dataLogLoading || almanacLoading ? (
             <>
               {/* 4 loading plot skeletons */}
@@ -510,23 +540,27 @@ function Plots() {
               {visiblePlots.map((key, idx) => {
                 const def = PLOT_DEFINITIONS.find((p) => p.key === key);
                 return (
-                  <TimeseriesPlot
-                    title={def?.title || prettyTitleFromKey(key)}
-                    unit={def?.unit}
-                    dataKey={def.key}
+                  <ContextMenuWrapper
+                    menuItems={contextMenuItems}
                     key={def.key}
-                    fullTimeRange={fullTimeRange}
-                    selectedTimeRange={selectedTimeRange}
-                    setSelectedTimeRange={setSelectedTimeRange}
-                    plotShape={plotShape}
-                    plotColor={plotColor}
-                    bandMarker={bandMarker}
-                    isBandPlot={!!def?.bandMarker}
-                    showMoon={!!def?.showMoon}
-                    plotIndex={idx}
-                    nPlots={visiblePlots.length}
-                    xAxisShow={xAxisShow}
-                  />
+                    style={{ zIndex: visiblePlots.length - idx }}
+                  >
+                    <TimeseriesPlot
+                      title={def?.title || prettyTitleFromKey(key)}
+                      unit={def?.unit}
+                      dataKey={def.key}
+                      fullTimeRange={fullTimeRange}
+                      selectedTimeRange={selectedTimeRange}
+                      setSelectedTimeRange={setSelectedTimeRange}
+                      plotShape={plotShape}
+                      plotColor={plotColor}
+                      bandMarker={bandMarker}
+                      isBandPlot={!!def?.bandMarker}
+                      showMoon={!!def?.showMoon}
+                      plotIndex={idx}
+                      xAxisShow={xAxisShow}
+                    />
+                  </ContextMenuWrapper>
                 );
               })}
             </PlotDataContext.Provider>

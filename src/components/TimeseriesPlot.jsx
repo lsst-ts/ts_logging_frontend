@@ -1,4 +1,12 @@
-import { useContext, useEffect, useId } from "react";
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   CartesianGrid,
   Line,
@@ -9,6 +17,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { RotateCcw } from "lucide-react";
 
 import {
   ChartContainer,
@@ -29,10 +38,16 @@ import {
   PLOT_DIMENSIONS,
   PLOT_OPACITIES,
   AXIS_TICK_STYLE,
+  DAYOBS_AXIS_TICK_STYLE,
 } from "@/components/PLOT_DEFINITIONS";
 
-import { useClickDrag } from "@/hooks/useClickDrag";
-import { scaleDotRadius, calculateDecimalPlaces } from "@/utils/plotUtils";
+import { useDOMClickDrag } from "@/hooks/useDOMClickDrag";
+import {
+  scaleDotRadius,
+  calculateDecimalPlaces,
+  calculateZoom,
+} from "@/utils/plotUtils";
+import { millisToDateTime } from "@/utils/timeUtils";
 import { createDotCallback } from "../utils/createDotCallback";
 
 function TimeseriesPlot({
@@ -47,7 +62,6 @@ function TimeseriesPlot({
   isBandPlot = false,
   showMoon = false,
   plotIndex = 0,
-  nPlots = 1,
   xAxisShow = false,
 }) {
   // Get pre-computed chart data from context
@@ -56,10 +70,15 @@ function TimeseriesPlot({
   // Generate unique ID for this graph
   const graphID = useId();
 
+  // State for Y-axis zoom (fraction-based: 0 = bottom, 1 = top of auto range)
+  const [yMinFraction, setYMinFraction] = useState(0);
+  const [yMaxFraction, setYMaxFraction] = useState(1);
+
   // Destructure with defaults to handle null case
   const {
     groupedData = [],
     flatData = [],
+    allData = [],
     chartMoon = [],
     twilightValues = [],
     chartDayObsBreaks = [],
@@ -72,43 +91,153 @@ function TimeseriesPlot({
     dayObsTicks = [],
     tickFormatter = (e) => e,
     dayObsTickFormatter = (e) => e,
-    indexToMillis = (e) => e, // Default identity function
     selectedMinMillis = 0,
     selectedMaxMillis = 0,
   } = plotData || {};
 
-  // Click & Drag plot hooks
-  const {
-    refAreaLeft,
-    refAreaRight,
-    handleMouseDown,
-    handleMouseMove: handleDragMouseMove,
-    handleMouseUp,
-    handleDoubleClick,
-  } = useClickDrag(setSelectedTimeRange, fullTimeRange, indexToMillis);
+  // Calculate auto Y-axis domain from all data
+  const autoYDomain = useMemo(() => {
+    // Auto-calculate from ALL data (not just visible in current time range)
+    const values = allData
+      .map((d) => d[dataKey])
+      .filter((v) => typeof v === "number" && Number.isFinite(v));
 
-  // Handle hover detection based on mouse position
-  const handleChartMouseMove = (state) => {
-    // Always call the useClickDrag handler first
-    handleDragMouseMove(state);
+    if (values.length === 0) return [0, 1];
 
-    // If we're dragging, don't update hover state
-    if (refAreaLeft) {
-      hoverStore.setHover(null);
-      return;
-    }
+    const min = Math.min(...values);
+    const max = Math.max(...values);
 
-    if (!state || !state.activePayload || state.activePayload.length === 0) {
-      hoverStore.setHover(null);
-      return;
-    }
+    // Add padding for better visualization
+    const range = max - min;
+    const padding = range * 0.05;
 
-    hoverStore.setHover(state.activePayload[0].payload.exposure_id);
-  };
+    return [min - padding, max + padding];
+  }, [allData, dataKey]);
 
-  const handleChartMouseLeave = () => {
-    hoverStore.setHover(null);
-  };
+  // Calculate current Y domain with zoom applied (fraction-based)
+  const currentYDomain = useMemo(() => {
+    const [autoMin, autoMax] = autoYDomain;
+    const range = autoMax - autoMin;
+    return [autoMin + yMinFraction * range, autoMin + yMaxFraction * range];
+  }, [autoYDomain, yMinFraction, yMaxFraction]);
+
+  // Ref for chart to enable DOM manipulation
+  const chartRef = useRef(null);
+
+  // Click & Drag plot hooks using DOM manipulation
+  const handleSelection = useCallback(
+    (start, end, mouse) => {
+      const zoomDirection = mouse.ctrlKeyHeld ? "out" : "in";
+      // X-axis: Time mode uses fractions, sequence mode uses payload
+      if (chartDataKey === "obs_start_millis") {
+        // Time mode: Calculate from fractions of current visible domain
+        const fullTimeRangeMillis = [
+          fullTimeRange[0].toMillis(),
+          fullTimeRange[1].toMillis(),
+        ];
+        const [newMinMillis, newMaxMillis] = calculateZoom(
+          [start.fractionX, end.fractionX],
+          zoomDirection,
+          domain,
+          fullTimeRangeMillis,
+        );
+        setSelectedTimeRange([
+          millisToDateTime(Math.round(newMinMillis)),
+          millisToDateTime(Math.round(newMaxMillis)),
+        ]);
+      } else {
+        // Sequence mode: Extract time from payload
+        if (start.nearestPayload && end.nearestPayload) {
+          const startMillis = start.nearestPayload["obs_start_millis"];
+          const endMillis = end.nearestPayload["obs_start_millis"];
+
+          if (startMillis && endMillis) {
+            if (zoomDirection === "out") {
+              // Zoom out: calculate using current domain
+              const fullTimeRangeMillis = [
+                fullTimeRange[0].toMillis(),
+                fullTimeRange[1].toMillis(),
+              ];
+              const [newMin, newMax] = calculateZoom(
+                [start.fractionX, end.fractionX],
+                zoomDirection,
+                [selectedMinMillis, selectedMaxMillis],
+                fullTimeRangeMillis,
+              );
+              setSelectedTimeRange([
+                millisToDateTime(Math.round(newMin)),
+                millisToDateTime(Math.round(newMax)),
+              ]);
+            } else {
+              // Zoom in: use payload millis (existing behavior)
+              const minMillis = Math.min(startMillis, endMillis);
+              const maxMillis = Math.max(startMillis, endMillis);
+              setSelectedTimeRange([
+                millisToDateTime(Math.round(minMillis)),
+                millisToDateTime(Math.round(maxMillis)),
+              ]);
+            }
+          }
+        }
+      }
+
+      // Y-axis: Only update if shift not held
+      if (!mouse.shiftKeyHeld) {
+        // Work directly in fraction space [0, 1]
+        const [newMinFraction, newMaxFraction] = calculateZoom(
+          [start.fractionY, end.fractionY],
+          zoomDirection,
+          [yMinFraction, yMaxFraction],
+          [0, 1],
+        );
+
+        setYMinFraction(newMinFraction);
+        setYMaxFraction(newMaxFraction);
+      }
+    },
+    [
+      setSelectedTimeRange,
+      setYMinFraction,
+      setYMaxFraction,
+      yMinFraction,
+      yMaxFraction,
+      chartDataKey,
+      domain,
+      fullTimeRange,
+      selectedMinMillis,
+      selectedMaxMillis,
+    ],
+  );
+
+  const { mouseDown, mouseMove, mouseUp, mouseLeave, doubleClick } =
+    useDOMClickDrag({
+      callback: handleSelection,
+      showMouseRect: chartDataKey === "obs_start_millis",
+      showSnappedRect: chartDataKey === "fakeX",
+      resetCallback: () => {
+        setSelectedTimeRange(fullTimeRange);
+        setYMinFraction(0);
+        setYMaxFraction(1);
+      },
+      chartRef,
+      enable2DSelection: true,
+      onMouseMove: (state) => {
+        // Update hover based on active payload
+        if (
+          !state ||
+          !state.activePayload ||
+          state.activePayload.length === 0
+        ) {
+          hoverStore.setHover(null);
+          return;
+        }
+
+        hoverStore.setHover(state.activePayload[0].payload.exposure_id);
+      },
+      onMouseLeave: () => {
+        hoverStore.setHover(null);
+      },
+    });
 
   // Register this graph with the hover store
   useEffect(() => {
@@ -188,20 +317,37 @@ function TimeseriesPlot({
   // Plot =================================================
   return (
     <ChartContainer
-      className="pt-8 h-57 w-full"
+      ref={chartRef}
+      className="pt-8 h-57 w-full relative"
       title={title}
       config={{}}
-      style={{ zIndex: nPlots - plotIndex }}
+      style={{ userSelect: "none" }}
     >
       <h1 className="text-white text-lg font-thin text-center">{title}</h1>
+
+      {/* Y-axis reset button */}
+      {(yMinFraction !== 0 || yMaxFraction !== 1) && (
+        <button
+          onClick={() => {
+            setYMinFraction(0);
+            setYMaxFraction(1);
+          }}
+          className="inline absolute top-2 right-2 z-10 bg-stone-700 hover:bg-stone-600 text-white p-1.5 rounded opacity-80 hover:opacity-100 transition-opacity"
+          title="Reset Y-axis zoom"
+          aria-label="Reset Y-axis zoom"
+        >
+          Reset <RotateCcw className="inline" size={16} />
+        </button>
+      )}
+
       <LineChart
         width={500}
         margin={PLOT_DIMENSIONS.chartMargins}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleChartMouseMove}
-        onMouseUp={handleMouseUp}
-        onDoubleClick={handleDoubleClick}
-        onMouseLeave={handleChartMouseLeave}
+        onMouseDown={mouseDown}
+        onMouseMove={mouseMove}
+        onMouseUp={mouseUp}
+        onDoubleClick={doubleClick}
+        onMouseLeave={mouseLeave}
       >
         <CartesianGrid strokeDasharray="3 3" stroke={PLOT_COLORS.gridStroke} />
         <XAxis
@@ -226,7 +372,7 @@ function TimeseriesPlot({
           xAxisId={1}
           tickLine={false}
           axisLine={false}
-          tick={AXIS_TICK_STYLE}
+          tick={DAYOBS_AXIS_TICK_STYLE}
           height={18}
           label={
             xAxisShow
@@ -247,7 +393,8 @@ function TimeseriesPlot({
         <YAxis
           tick={AXIS_TICK_STYLE}
           tickFormatter={(value) => value.toFixed(decimalPlaces)}
-          domain={["auto", "auto"]}
+          domain={currentYDomain}
+          allowDataOverflow={true}
           width={PLOT_DIMENSIONS.yAxisWidth}
           label={{
             value: unit,
@@ -324,6 +471,7 @@ function TimeseriesPlot({
           position={"topRight"}
           offset={50}
           allowEscapeViewBox={{ x: false, y: true }}
+          isAnimationActive={false}
           content={(props) => (
             <ChartTooltipContent
               {...props}
@@ -342,14 +490,6 @@ function TimeseriesPlot({
             animationDuration={1500 / groupedData.length}
           />
         ))}
-        {/* Selection rectangle shown during active highlighting */}
-        {refAreaLeft && refAreaRight ? (
-          <ReferenceArea
-            x1={refAreaLeft}
-            x2={refAreaRight}
-            fillOpacity={PLOT_OPACITIES.selection}
-          />
-        ) : null}
         {/* Hover indicator - positioned via direct DOM manipulation */}
         <ReferenceDot
           x={-9999}
