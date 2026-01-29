@@ -21,9 +21,10 @@ import { CATEGORY_INDEX_INFO } from "@/components/context-feed-definitions.js";
 import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
 import DownloadIcon from "../assets/DownloadIcon.svg";
 import { fetchAlmanac, fetchContextFeed } from "@/utils/fetchUtils";
-import { isoToUTC, utcDateTimeStrToMillis } from "@/utils/timeUtils";
+import { isoToUTC } from "@/utils/timeUtils";
 import { getDatetimeFromDayobsStr } from "@/utils/utils";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
+import { prepareAlmanacData } from "@/utils/timelineUtils";
 
 // This filters out the non-selected telescope's exposures, queues and
 // narrative logs from the default display.
@@ -121,20 +122,6 @@ function ContextFeed() {
     },
   ];
 
-  // Currently unchanged from Plots version.
-  // If remains unchanged, move to and import from utils
-  function prepareAlmanacData(almanac) {
-    // Set values for twilight lines
-    const twilightValues = almanac
-      .map((dayobsAlm) => [
-        utcDateTimeStrToMillis(dayobsAlm.twilight_evening),
-        utcDateTimeStrToMillis(dayobsAlm.twilight_morning),
-      ])
-      .flat();
-
-    setTwilightValues(twilightValues);
-  }
-
   // Handler for timeline checkboxes (eventType filters)
   const toggleEvents = (key, checked) => {
     setColumnFilters((prev) => {
@@ -181,10 +168,11 @@ function ContextFeed() {
       .then((almanac) => {
         if (almanac === null) {
           toast.warning(
-            "No almanac data available. Plots will be displayed without accompanying almanac information.",
+            "No almanac data available. Context Feed will be displayed without accompanying almanac information.",
           );
         } else {
-          prepareAlmanacData(almanac);
+          const { twilightValues } = prepareAlmanacData(almanac);
+          setTwilightValues(twilightValues);
         }
       })
       .catch((err) => {
