@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { useSearch } from "@tanstack/react-router";
@@ -6,9 +6,11 @@ import { useSearch } from "@tanstack/react-router";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TELESCOPES } from "@/components/Parameters";
 import DataLogTable from "@/components/DataLogTable.jsx";
+import TimelineChart from "@/components/TimelineChart";
 import {
   fetchDataLogEntriesFromConsDB,
   fetchDataLogEntriesFromExposureLog,
+  fetchAlmanac,
 } from "@/utils/fetchUtils";
 import {
   getDatetimeFromDayobsStr,
@@ -16,6 +18,14 @@ import {
   DEFAULT_PIXEL_SCALE_MEDIAN,
   PSF_SIGMA_FACTOR,
 } from "@/utils/utils";
+import { isoToTAI } from "@/utils/timeUtils";
+import {
+  prepareAlmanacData,
+  prepareMoonIntervals,
+} from "@/utils/timelineUtils";
+import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
+import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
+import EditableDateTimeInput from "@/components/EditableDateTimeInput.jsx";
 
 function DataLog() {
   // Routing and URL params
@@ -57,9 +67,65 @@ function DataLog() {
     tableFilters.push({ id: "target_name", value: target_name });
   }
 
+  // For context menu navigation
+  const search = useSearch({ from: "/data-log" });
+
+  // Context menu items
+  const contextMenuItems = [
+    {
+      label: "View Context Feed",
+      to: "/nightlydigest/context-feed",
+      search,
+    },
+    {
+      label: "View Plots",
+      to: "/nightlydigest/plots",
+      search,
+    },
+  ];
+
   // Data
   const [dataLogEntries, setDataLogEntries] = useState([]);
   const [dataLogLoading, setDataLogLoading] = useState(true);
+
+  // Almanac data for timeline
+  const [twilightValues, setTwilightValues] = useState([]);
+  const [illumValues, setIllumValues] = useState([]);
+  const [moonValues, setMoonValues] = useState([]);
+  const [moonIntervals, setMoonIntervals] = useState([]);
+  const [almanacLoading, setAlmanacLoading] = useState(true);
+
+  // Time range state synced with URL
+  const { selectedTimeRange, setSelectedTimeRange, fullTimeRange } =
+    useTimeRangeFromURL("/data-log");
+
+  // Calculate moon intervals when moon values or full time range changes
+  useEffect(() => {
+    const [xMinMillis, xMaxMillis] = fullTimeRange;
+    if (moonValues?.length && xMinMillis != null && xMaxMillis != null) {
+      const intervals = prepareMoonIntervals(
+        moonValues,
+        xMinMillis.toMillis(),
+        xMaxMillis.toMillis(),
+      );
+      setMoonIntervals(intervals);
+    }
+  }, [moonValues, fullTimeRange]);
+
+  // Filter data based on selected time range for the table
+  const filteredDataLogEntries = useMemo(() => {
+    if (!selectedTimeRange[0] || !selectedTimeRange[1]) {
+      return dataLogEntries;
+    }
+    const [startMillis, endMillis] = [
+      selectedTimeRange[0].toMillis(),
+      selectedTimeRange[1].toMillis(),
+    ];
+    return dataLogEntries.filter((entry) => {
+      const obsStartMillis = entry.obs_start_millis;
+      return obsStartMillis >= startMillis && obsStartMillis <= endMillis;
+    });
+  }, [dataLogEntries, selectedTimeRange]);
 
   useEffect(() => {
     // To cancel previous fetch if still in progress
@@ -67,6 +133,12 @@ function DataLog() {
 
     // Trigger loading skeletons
     setDataLogLoading(true);
+    setAlmanacLoading(true);
+
+    // Reset almanac state
+    setTwilightValues([]);
+    setIllumValues([]);
+    setMoonValues([]);
 
     // Fetch data from both sources
     Promise.all([
@@ -104,9 +176,13 @@ function DataLog() {
               ? psfSigma * PSF_SIGMA_FACTOR * pixelScale
               : null;
 
+            // Add obs_start_millis for timeline
+            const obsStartDt = isoToTAI(entry.obs_start);
+
             return {
               ...entry,
               psf_median,
+              obs_start_millis: obsStartDt.toMillis(),
             };
           })
           .sort((a, b) => Number(b["exposure_id"]) - Number(a["exposure_id"]));
@@ -131,6 +207,35 @@ function DataLog() {
         }
       });
 
+    // Fetch almanac data for timeline
+    fetchAlmanac(startDayobs, queryEndDayobs, abortController)
+      .then((almanac) => {
+        if (almanac === null) {
+          toast.warning(
+            "No almanac data available. Timeline will be displayed without accompanying almanac information.",
+          );
+        } else {
+          const { twilightValues, illumValues, moonValues } =
+            prepareAlmanacData(almanac);
+          setTwilightValues(twilightValues);
+          setIllumValues(illumValues);
+          setMoonValues(moonValues);
+        }
+      })
+      .catch((err) => {
+        if (!abortController.signal.aborted) {
+          toast.error("Error fetching almanac!", {
+            description: err?.message,
+            duration: Infinity,
+          });
+        }
+      })
+      .finally(() => {
+        if (!abortController.signal.aborted) {
+          setAlmanacLoading(false);
+        }
+      });
+
     // Cleanup function
     return () => {
       abortController.abort();
@@ -148,7 +253,7 @@ function DataLog() {
 
         {/* Info section */}
         <div className="min-h-[4.5rem] text-white font-thin text-center pb-4 flex flex-col items-center justify-center gap-2">
-          {dataLogLoading ? (
+          {dataLogLoading || almanacLoading ? (
             <>
               <Skeleton className="h-5 w-3/4 max-w-xl bg-stone-700" />
               <Skeleton className="h-5 w-[90%] max-w-2xl bg-stone-700" />
@@ -156,24 +261,107 @@ function DataLog() {
           ) : (
             <>
               <p>
-                {dataLogEntries.length} exposures returned for {telescope}{" "}
-                {dateRangeString}.
+                {filteredDataLogEntries.length} of {dataLogEntries.length}{" "}
+                exposures shown for {telescope} {dateRangeString}.
               </p>
-              <p className="max-w-2xl">
-                <span className="font-bold">Note:</span> Table customisations
-                (such as filtering, sorting, column hiding, and grouping) do not
-                persist across page navigations. However, they will persist
-                while querying different dates or date ranges on this page. If
-                data doesn't appear as expected, try resetting the table.
-              </p>
+              <div className="flex flex-col max-w-xxl mt-6 border border-1 border-white rounded-md p-2 gap-2">
+                <ul className="list-disc list-inside">
+                  <li>
+                    <span className="font-medium">Click & Drag</span> on the
+                    timeline to select a time range. The table will filter to
+                    show only exposures within the selected range
+                  </li>
+                  <li>
+                    <span className="font-medium">Double-Click</span> on the
+                    timeline to reset the selection to the full time range
+                  </li>
+                  <li>
+                    Hold <span className="font-medium">Shift</span> before
+                    starting a new selection to extend the current selection
+                    instead of starting a new one
+                  </li>
+                  <li>
+                    <span className="font-medium">Right-Click</span> on the
+                    timeline to see options, including jumping to other pages.
+                    These jumps will keep your current time selection
+                  </li>
+                </ul>
+                <p>
+                  Twilights are shown as blue lines, moon above the horizon is
+                  highlighted in yellow, and moon illumination (%) is displayed
+                  above the timeline at local Chilean midnight. All times
+                  displayed are <span className="font-light">obs start</span>{" "}
+                  times in TAI (UTC+37s).
+                </p>
+                <p>
+                  <span className="font-bold">Note:</span> Table customisations
+                  (such as filtering, sorting, column hiding, and grouping) do
+                  not persist across page navigations. However, they will
+                  persist while querying different dates or date ranges on this
+                  page. If data doesn't appear as expected, try resetting the
+                  table.
+                </p>
+              </div>
             </>
           )}
         </div>
 
+        {/* Timeline */}
+        {dataLogLoading || almanacLoading ? (
+          <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
+        ) : (
+          <>
+            <ContextMenuWrapper menuItems={contextMenuItems}>
+              <TimelineChart
+                data={[
+                  {
+                    index: 0.5,
+                    timestamps: dataLogEntries.map((d) => d.obs_start_millis),
+                    color: "#3CAE3F",
+                    isActive: true,
+                  },
+                ]}
+                twilightValues={twilightValues}
+                showTwilight={twilightValues.length > 1}
+                illumValues={illumValues}
+                showMoonIllumination={true}
+                moonIntervals={moonIntervals}
+                showMoonArea={true}
+                fullTimeRange={fullTimeRange}
+                selectedTimeRange={selectedTimeRange}
+                setSelectedTimeRange={setSelectedTimeRange}
+              />
+            </ContextMenuWrapper>
+
+            {/* Selected Time Range Inputs */}
+            <div className="flex flex-row justify-center items-center gap-2 text-white font-thin">
+              <EditableDateTimeInput
+                value={selectedTimeRange[0]}
+                onValidChange={(dt) =>
+                  setSelectedTimeRange([dt, selectedTimeRange[1]])
+                }
+                fullTimeRange={fullTimeRange}
+                otherBound={selectedTimeRange[1]}
+                isStart={true}
+              />
+              <span>-</span>
+              <EditableDateTimeInput
+                value={selectedTimeRange[1]}
+                onValidChange={(dt) =>
+                  setSelectedTimeRange([selectedTimeRange[0], dt])
+                }
+                fullTimeRange={fullTimeRange}
+                otherBound={selectedTimeRange[0]}
+                isStart={false}
+              />
+            </div>
+          </>
+        )}
+
         {/* Table */}
         <DataLogTable
           telescope={telescope}
-          data={dataLogEntries}
+          data={filteredDataLogEntries}
           dataLogLoading={dataLogLoading}
           tableFilters={tableFilters}
         />
