@@ -37,12 +37,11 @@ import {
   getDatetimeFromDayobsStr,
   prettyTitleFromKey,
 } from "@/utils/utils";
+import { isoToTAI, generateDayObsRange } from "@/utils/timeUtils";
 import {
-  isoToTAI,
-  almanacDayobsForPlot,
-  utcDateTimeStrToTAIMillis,
-  generateDayObsRange,
-} from "@/utils/timeUtils";
+  prepareAlmanacData,
+  prepareMoonIntervals,
+} from "@/utils/timelineUtils";
 import { calculateChartData } from "@/utils/chartCalculations";
 import { PlotDataContext } from "@/contexts/PlotDataContext";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
@@ -122,74 +121,6 @@ function Plots() {
     setDataLogEntries(data);
   }
 
-  function prepareAlmanacData(almanac) {
-    // Set values for twilight lines
-    const twilightValues = almanac
-      .map((dayobsAlm) => [
-        utcDateTimeStrToTAIMillis(dayobsAlm.twilight_evening),
-        utcDateTimeStrToTAIMillis(dayobsAlm.twilight_morning),
-      ])
-      .flat();
-
-    // Set values for moon illumination at dayobs midnights
-    const illumValues = almanac.flatMap((dayobsAlm) => [
-      {
-        dayobs: almanacDayobsForPlot(dayobsAlm.dayobs),
-        illum: dayobsAlm.moon_illumination,
-      },
-    ]);
-
-    // Set values for moon rise/set times
-    const moonValues = almanac.flatMap((dayobsAlm) => [
-      {
-        time: utcDateTimeStrToTAIMillis(dayobsAlm.moon_rise_time),
-        type: "rise",
-      },
-      {
-        time: utcDateTimeStrToTAIMillis(dayobsAlm.moon_set_time),
-        type: "set",
-      },
-    ]);
-
-    setTwilightValues(twilightValues);
-    setIllumValues(illumValues);
-    setMoonValues(moonValues);
-  }
-
-  // Pair up moon rise/set times for display
-  function prepareMoonIntervals(events, xMinMillis, xMaxMillis) {
-    if (!events?.length) return [];
-
-    const sorted = [...events].sort((a, b) => a.time - b.time);
-    const intervals = [];
-    let currentStart = null;
-    for (let i = 0; i < sorted.length; i++) {
-      const { time, type } = sorted[i];
-
-      if (type === "rise") {
-        // If this rise is before timeline, clamp it
-        currentStart = Math.max(time, xMinMillis);
-      } else if (type === "set" && currentStart != null) {
-        // Clamp end time to max
-        intervals.push([currentStart, Math.min(time, xMaxMillis)]);
-        currentStart = null;
-      }
-    }
-
-    // Handle moon already up at start
-    if (sorted[0].type === "set") {
-      intervals.unshift([xMinMillis, Math.min(sorted[0].time, xMaxMillis)]);
-    }
-
-    // Handle moon still up at end
-    const last = sorted.at(-1);
-    if (last.type === "rise" && last.time < xMaxMillis) {
-      intervals.push([last.time, xMaxMillis]);
-    }
-
-    return intervals;
-  }
-
   function resetState() {
     // ConsDB
     setDataLogEntries([]);
@@ -266,7 +197,11 @@ function Plots() {
             "No almanac data available. Plots will be displayed without accompanying almanac information.",
           );
         } else {
-          prepareAlmanacData(almanac);
+          const { twilightValues, illumValues, moonValues } =
+            prepareAlmanacData(almanac);
+          setTwilightValues(twilightValues);
+          setIllumValues(illumValues);
+          setMoonValues(moonValues);
         }
       })
       .catch((err) => {
