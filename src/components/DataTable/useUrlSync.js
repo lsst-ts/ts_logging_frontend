@@ -8,9 +8,10 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
  * @param {Object} options - Configuration options
  * @param {string} options.routePath - TanStack Router route path (e.g., "/data-log")
  * @param {Array} options.columns - Column definitions (to find urlParam metadata)
- * @returns {Object} { columnFilters, setColumnFilters }
+ * @param {Array} options.defaultFilters - Default filters used by resetFilters()
+ * @returns {Object} { columnFilters, setColumnFilters, resetFilters }
  */
-export function useUrlSync({ routePath, columns = [] }) {
+export function useUrlSync({ routePath, columns = [], defaultFilters = [] }) {
   const navigate = useNavigate({ from: routePath });
   const searchParams = useSearch({ from: routePath });
 
@@ -66,7 +67,7 @@ export function useUrlSync({ routePath, columns = [] }) {
     return [value];
   };
 
-  // Build filters from URL params
+  // Build filters from URL params (falls back to defaultFilters if no URL params)
   const buildFiltersFromUrl = useCallback(() => {
     const filters = [];
     for (const [urlParam, columnId] of Object.entries(urlParamToColumnId)) {
@@ -78,8 +79,9 @@ export function useUrlSync({ routePath, columns = [] }) {
         });
       }
     }
-    return filters;
-  }, [searchParams, urlParamToColumnId]);
+    // If no filters in URL, use defaults
+    return filters.length > 0 ? filters : defaultFilters;
+  }, [searchParams, urlParamToColumnId, defaultFilters]);
 
   // Initialize state from URL (only on first render)
   const [columnFilters, setColumnFiltersState] = useState(buildFiltersFromUrl);
@@ -151,8 +153,29 @@ export function useUrlSync({ routePath, columns = [] }) {
     [searchParams, navigate, routePath, columnIdToUrlParam, urlParamKeys],
   );
 
+  // Reset filters: clears filter params from URL and sets state to defaultFilters
+  const resetFilters = useCallback(() => {
+    // Build new URL params without any filter params
+    const newParams = { ...searchParams };
+    for (const urlParam of urlParamKeys) {
+      if (Object.hasOwn(newParams, urlParam)) {
+        delete newParams[urlParam];
+      }
+    }
+
+    // Update ref so the effect doesn't re-process
+    lastProcessedParams.current = JSON.stringify({});
+
+    // Clear filter params from URL
+    navigate({ to: routePath, search: newParams, replace: true });
+
+    // Set state to defaults (not written to URL)
+    setColumnFiltersState(defaultFilters);
+  }, [searchParams, navigate, routePath, urlParamKeys, defaultFilters]);
+
   return {
     columnFilters,
     setColumnFilters,
+    resetFilters,
   };
 }

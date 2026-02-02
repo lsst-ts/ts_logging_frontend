@@ -7,11 +7,15 @@ import {
 
 function DataLogTable({ telescope, data, dataLogLoading }) {
   // Get column filters synced with URL
-  const { columnFilters, setColumnFilters } = useUrlSync({
+  const { columnFilters, setColumnFilters, resetFilters } = useUrlSync({
     routePath: "/data-log",
     columns: dataLogColumns[telescope] ?? [],
-    defaultFilters: [],
   });
+
+  // Reset handler - clears all filters
+  const handleReset = () => {
+    resetFilters();
+  };
 
   return (
     <DataTable
@@ -28,6 +32,7 @@ function DataLogTable({ telescope, data, dataLogLoading }) {
         showExpandCollapseGroups: true,
         showReset: true,
       }}
+      onReset={handleReset}
     />
   );
 }
