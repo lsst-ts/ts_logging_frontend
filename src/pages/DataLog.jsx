@@ -29,15 +29,9 @@ import EditableDateTimeInput from "@/components/EditableDateTimeInput.jsx";
 
 function DataLog() {
   // Routing and URL params
-  const {
-    startDayobs,
-    endDayobs,
-    telescope,
-    science_program,
-    img_type,
-    observation_reason,
-    target_name,
-  } = useSearch({ from: "/data-log" });
+  const { startDayobs, endDayobs, telescope } = useSearch({
+    from: "/data-log",
+  });
 
   // The end dayobs is inclusive, so we add one day to the
   // endDayobs to get the correct range for the queries
@@ -51,21 +45,6 @@ function DataLog() {
     startDayobs === endDayobs
       ? `on dayobs ${startDayobs}`
       : `in dayobs range ${startDayobs}–${endDayobs}`;
-
-  // To pass url filter params to table
-  const tableFilters = [];
-  if (science_program?.length) {
-    tableFilters.push({ id: "science_program", value: science_program });
-  }
-  if (img_type?.length) {
-    tableFilters.push({ id: "img_type", value: img_type });
-  }
-  if (observation_reason?.length) {
-    tableFilters.push({ id: "observation_reason", value: observation_reason });
-  }
-  if (target_name?.length) {
-    tableFilters.push({ id: "target_name", value: target_name });
-  }
 
   // For context menu navigation
   const search = useSearch({ from: "/data-log" });
@@ -363,7 +342,6 @@ function DataLog() {
           telescope={telescope}
           data={filteredDataLogEntries}
           dataLogLoading={dataLogLoading}
-          tableFilters={tableFilters}
         />
       </div>
       <Toaster expand={true} richColors closeButton />
