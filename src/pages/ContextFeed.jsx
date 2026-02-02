@@ -271,9 +271,9 @@ function ContextFeed() {
       columnFilters.find((f) => f.id === "event_type")?.value ?? [];
     return Object.values(CATEGORY_INDEX_INFO)
       .filter((info) => info.displayIndex != null)
-      .map((info) => {
+      .map((info, _idx, arr) => {
         return {
-          index: 10 - info.displayIndex,
+          index: arr.length - info.displayIndex + 1,
           timestamps: contextFeedData
             .filter((d) => d.displayIndex === info.displayIndex)
             .map((d) => d.event_time_millis),
@@ -392,7 +392,7 @@ function ContextFeed() {
                         data={timelineData}
                         twilightValues={twilightValues}
                         showTwilight={true}
-                        height={250}
+                        height={timelineData.length * 20 + 70}
                         fullTimeRange={fullTimeRange}
                         selectedTimeRange={selectedTimeRange}
                         setSelectedTimeRange={setSelectedTimeRange}
