@@ -12,24 +12,13 @@ import {
 } from "@/components/ui/dialog";
 import { createColumnHelper } from "@tanstack/react-table";
 import { formatCellValue } from "@/utils/utils";
+import { matchValueOrInList, matchRequiredSelection } from "@/utils/tableUtils";
 import { CATEGORY_INDEX_INFO } from "@/components/context-feed-definitions.js";
 
 import CopyIcon from "../assets/CopyIcon.svg";
 import FullScreenIcon from "../assets/FullScreenIcon.svg";
 
 const columnHelper = createColumnHelper();
-
-// TODO: Move to utils and import to here and dataLogColumns (OSW-1118)
-// Exact (multiple) match(es) filter function
-export const matchValueOrInList = (row, columnId, filterValue) => {
-  const rowValue = row.getValue(columnId);
-
-  if (Array.isArray(filterValue)) {
-    return filterValue.includes(rowValue);
-  }
-
-  return rowValue === filterValue;
-};
 
 // Helper function to make time columns more readable
 // Luxon only natively supports millisecond precision, not microseconds.
@@ -294,12 +283,23 @@ export const contextFeedColumns = [
   }),
   columnHelper.accessor("event_type", {
     header: "Event Type",
-    cell: (info) => formatCellValue(info.getValue()),
+    cell: (info) => {
+      const color = info.row.original.event_color || "#ffffff";
+      return (
+        <span
+          className="px-2 py-1 rounded-md border bg-stone-900 text-xs"
+          style={{ borderColor: color, color: color }}
+        >
+          {formatCellValue(info.getValue())}
+        </span>
+      );
+    },
     size: 200,
-    filterFn: matchValueOrInList,
+    filterFn: matchRequiredSelection,
     filterType: "string",
     meta: {
       tooltip: "Data type displayed in the row (derived from Category Index).",
+      urlParam: "event_type",
     },
   }),
   columnHelper.accessor("current_task", {

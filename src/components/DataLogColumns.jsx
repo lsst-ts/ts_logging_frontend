@@ -5,19 +5,9 @@ import {
   DEFAULT_PIXEL_SCALE_MEDIAN,
   PSF_SIGMA_FACTOR,
 } from "@/utils/utils";
+import { matchValueOrInList } from "@/utils/tableUtils";
 
 const columnHelper = createColumnHelper();
-
-// Exact (multiple) match(es) filter function
-const matchValueOrInList = (row, columnId, filterValue) => {
-  const rowValue = row.getValue(columnId);
-
-  if (Array.isArray(filterValue)) {
-    return filterValue.includes(rowValue);
-  }
-
-  return rowValue === filterValue;
-};
 
 // Columns common to both telescopes
 const commonColumns = [
@@ -459,9 +449,4 @@ const defaultColumnOrder = {
   ],
 };
 
-export {
-  matchValueOrInList,
-  dataLogColumns,
-  defaultColumnVisibility,
-  defaultColumnOrder,
-};
+export { dataLogColumns, defaultColumnVisibility, defaultColumnOrder };

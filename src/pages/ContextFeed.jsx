@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
@@ -18,6 +18,7 @@ import TimelineChart from "@/components/TimelineChart";
 import ContextFeedTable from "@/components/ContextFeedTable.jsx";
 import EditableDateTimeInput from "@/components/EditableDateTimeInput.jsx";
 import { CATEGORY_INDEX_INFO } from "@/components/context-feed-definitions.js";
+import { contextFeedColumns } from "@/components/ContextFeedColumns";
 import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
 import DownloadIcon from "../assets/DownloadIcon.svg";
 import { fetchAlmanac, fetchContextFeed } from "@/utils/fetchUtils";
@@ -25,6 +26,7 @@ import { isoToUTC } from "@/utils/timeUtils";
 import { getDatetimeFromDayobsStr } from "@/utils/utils";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
 import { prepareAlmanacData } from "@/utils/timelineUtils";
+import { useUrlSync } from "@/components/DataTable";
 
 // This filters out the non-selected telescope's exposures, queues and
 // narrative logs from the default display.
@@ -86,28 +88,44 @@ function ContextFeed() {
   // Timeline checkbox state is stored in the Table's columnFilters state.
   // While all other table state is kept inside ContextFeedTable.jsx,
   // This state is kept here so that the timeline checkboxes can update it.
-  const [columnFilters, setColumnFilters] = useState([
-    {
-      id: "event_type",
-      value: filterDefaultEventsByTelescope(telescope),
-    },
-  ]);
+  // Synced with URL via useUrlSync.
+  const { columnFilters, setColumnFilters } = useUrlSync({
+    routePath: "/context-feed",
+    columns: contextFeedColumns,
+  });
 
-  // Update the "event_type" filter whenever telescope changes
+  // Apply telescope-specific default filters:
+  // - On initial mount: only if no event_type filter in URL (don't write to URL)
+  // - On telescope change: always (previous telescope's filters may not apply)
+  const prevTelescopeRef = useRef(telescope);
+  const hasInitializedRef = useRef(false);
   useEffect(() => {
-    setColumnFilters((prevFilters) => {
-      // Keep other filters
-      const otherFilters = prevFilters.filter((f) => f.id !== "event_type");
+    const hasEventTypeInUrl = search.event_type !== undefined;
+    const isTelescopeChange = prevTelescopeRef.current !== telescope;
+    prevTelescopeRef.current = telescope;
 
-      return [
-        ...otherFilters,
-        {
-          id: "event_type",
-          value: filterDefaultEventsByTelescope(telescope),
-        },
-      ];
-    });
-  }, [telescope]);
+    // On initial mount with URL filters, do nothing
+    if (!hasInitializedRef.current && hasEventTypeInUrl) {
+      hasInitializedRef.current = true;
+      return;
+    }
+
+    const isInitialLoad = !hasInitializedRef.current;
+    hasInitializedRef.current = true;
+
+    // Only apply filters on initial load (no URL filters) or telescope change
+    if (isInitialLoad || isTelescopeChange) {
+      setColumnFilters(
+        [
+          {
+            id: "event_type",
+            value: filterDefaultEventsByTelescope(telescope),
+          },
+        ],
+        { skipUrlUpdate: isInitialLoad },
+      );
+    }
+  }, [telescope, search.event_type]);
 
   const contextMenuItems = [
     {
@@ -148,10 +166,7 @@ function ContextFeed() {
       return [
         {
           id: "event_type",
-          value:
-            selectedEventKeys.length > 0
-              ? selectedEventKeys.map((k) => CATEGORY_INDEX_INFO[k].label)
-              : Object.values(CATEGORY_INDEX_INFO).map((info) => info.label), // all==none
+          value: selectedEventKeys.map((k) => CATEGORY_INDEX_INFO[k].label),
         },
       ];
     });
@@ -266,8 +281,7 @@ function ContextFeed() {
             .filter((d) => d.displayIndex === info.displayIndex)
             .map((d) => d.event_time_millis),
           color: info.color,
-          isActive:
-            activeLabels.length === 0 || activeLabels.includes(info.label),
+          isActive: activeLabels.includes(info.label),
         };
       });
   }, [contextFeedData, columnFilters]);
