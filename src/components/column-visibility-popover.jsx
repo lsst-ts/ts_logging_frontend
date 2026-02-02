@@ -5,7 +5,7 @@ import {
 } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 
-function ColumnVisibilityPopover({ table, variant }) {
+function ColumnVisibilityPopover({ table }) {
   const allColumns = table.getAllLeafColumns(); // Only leaf columns, no groups
 
   const handleSelectAll = () => {
@@ -24,11 +24,12 @@ function ColumnVisibilityPopover({ table, variant }) {
     <Popover>
       <PopoverTrigger asChild>
         <button
-          className={
-            variant === "teal"
-              ? "btn cursor-pointer h-10 md:w-[150px] bg-teal-800 justify-between self-end font-normal text-[12px] text-white border-2 border-white rounded-md shadow-[4px_4px_4px_0px_#3CAE3F] focus-visible:ring-4 focus-visible:ring-green-500/50 hover:shadow-[6px_6px_8px_0px_#3CAE3F] hover:scale-[1.02] hover:bg-teal-700 transition-all duration-200"
-              : "btn cursor-pointer h-10 bg-white text-black mt-4 font-light rounded-md shadow-[4px_4px_4px_0px_#3CAE3F] flex justify-center items-center py-2 px-4 hover:shadow-[6px_6px_8px_0px_#3CAE3F] hover:scale-[1.02] hover:bg-white transition-all duration-200"
-          }
+          className="btn cursor-pointer h-10 md:w-[150px] bg-teal-800 justify-between self-end
+            font-normal text-[12px] text-white border-2 border-white rounded-md
+            shadow-[4px_4px_4px_0px_#3CAE3F]
+            hover:shadow-[6px_6px_8px_0px_#3CAE3F] hover:scale-[1.02] hover:bg-teal-700
+            transition-all duration-200
+            focus-visible:ring-4 focus-visible:ring-green-500/50"
         >
           Show / Hide Columns
         </button>
