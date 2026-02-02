@@ -268,8 +268,13 @@ const router = createRouter({
 
     for (const [key, value] of Object.entries(searchObj)) {
       if (Array.isArray(value)) {
-        for (const val of value) {
-          searchParams.append(key, val);
+        if (value.length === 0) {
+          // Preserve empty arrays as empty param (e.g., &event_type=)
+          searchParams.set(key, "");
+        } else {
+          for (const val of value) {
+            searchParams.append(key, val);
+          }
         }
       } else if (value != null && value !== "") {
         searchParams.set(key, value);
@@ -288,8 +293,9 @@ const router = createRouter({
 
     // Keys to be parsed as arrays
     for (const key of arrayKeys) {
-      const values = raw.getAll(key);
-      if (values.length > 0) {
+      if (raw.has(key)) {
+        // Filter out empty strings (from empty array serialization)
+        const values = raw.getAll(key).filter((v) => v !== "");
         parsed[key] = values;
       }
     }

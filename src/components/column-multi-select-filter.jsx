@@ -23,14 +23,23 @@ function ColumnMultiSelectFilter({ column, closeDropdown }) {
   };
 
   // Buttons
+  // Some columns (e.g., event_type) require explicit selection - clearing
+  // should set an empty array to hide all rows. Others should remove the
+  // filter entirely so all rows are shown.
+  const emptyValue = column.columnDef.meta?.preserveEmptyFilter
+    ? []
+    : undefined;
+
   const apply = () => {
-    column.setFilterValue(selected.size > 0 ? Array.from(selected) : undefined);
+    column.setFilterValue(
+      selected.size > 0 ? Array.from(selected) : emptyValue,
+    );
     closeDropdown();
   };
 
   const clear = () => {
     setSelected(new Set());
-    column.setFilterValue(undefined);
+    column.setFilterValue(emptyValue);
     closeDropdown();
   };
 
