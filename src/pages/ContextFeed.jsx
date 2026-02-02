@@ -85,47 +85,28 @@ function ContextFeed() {
   const [timelineVisible, setTimelineVisible] = useState(true);
   const [tipsVisible, setTipsVisible] = useState(true);
 
+  // Default event type filters based on telescope
+  const defaultEventTypes = filterDefaultEventsByTelescope(telescope);
+
   // Timeline checkbox state is stored in the Table's columnFilters state.
   // While all other table state is kept inside ContextFeedTable.jsx,
   // This state is kept here so that the timeline checkboxes can update it.
   // Synced with URL via useUrlSync.
-  const { columnFilters, setColumnFilters } = useUrlSync({
+  const { columnFilters, setColumnFilters, resetFilters } = useUrlSync({
     routePath: "/context-feed",
     columns: contextFeedColumns,
+    defaultFilters: [{ id: "event_type", value: defaultEventTypes }],
   });
 
-  // Apply telescope-specific default filters:
-  // - On initial mount: only if no event_type filter in URL (don't write to URL)
-  // - On telescope change: always (previous telescope's filters may not apply)
+  // Apply telescope-specific default filters when telescope changes
   const prevTelescopeRef = useRef(telescope);
-  const hasInitializedRef = useRef(false);
   useEffect(() => {
-    const hasEventTypeInUrl = search.event_type !== undefined;
-    const isTelescopeChange = prevTelescopeRef.current !== telescope;
-    prevTelescopeRef.current = telescope;
-
-    // On initial mount with URL filters, do nothing
-    if (!hasInitializedRef.current && hasEventTypeInUrl) {
-      hasInitializedRef.current = true;
-      return;
+    if (prevTelescopeRef.current !== telescope) {
+      prevTelescopeRef.current = telescope;
+      // Reset to new telescope's defaults
+      resetFilters();
     }
-
-    const isInitialLoad = !hasInitializedRef.current;
-    hasInitializedRef.current = true;
-
-    // Only apply filters on initial load (no URL filters) or telescope change
-    if (isInitialLoad || isTelescopeChange) {
-      setColumnFilters(
-        [
-          {
-            id: "event_type",
-            value: filterDefaultEventsByTelescope(telescope),
-          },
-        ],
-        { skipUrlUpdate: isInitialLoad },
-      );
-    }
-  }, [telescope, search.event_type]);
+  }, [telescope, resetFilters]);
 
   const contextMenuItems = [
     {
@@ -472,6 +453,7 @@ function ContextFeed() {
           dataLoading={contextFeedLoading}
           columnFilters={columnFilters}
           setColumnFilters={setColumnFilters}
+          resetFilters={resetFilters}
         />
       </div>
       {/* Error / warning / info message pop-ups */}

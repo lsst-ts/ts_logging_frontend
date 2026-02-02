@@ -5,7 +5,6 @@ import { Separator } from "@/components/ui/separator";
 
 import { DataTable } from "@/components/DataTable";
 import { contextFeedColumns } from "@/components/ContextFeedColumns";
-import { CATEGORY_INDEX_INFO } from "@/components/context-feed-definitions.js";
 
 const DEFAULT_COLUMN_VISIBILITY = {
   category_index: false,
@@ -46,6 +45,7 @@ function ContextFeedTable({
   dataLoading,
   columnFilters,
   setColumnFilters,
+  resetFilters,
 }) {
   const tableRef = useRef();
 
@@ -78,12 +78,7 @@ function ContextFeedTable({
     setCollapseTracebacks(true);
     setCollapseYaml(true);
     setGroupByTask(false);
-    setColumnFilters([
-      {
-        id: "event_type",
-        value: Object.values(CATEGORY_INDEX_INFO).map((info) => info.label),
-      },
-    ]);
+    resetFilters();
   };
 
   // Custom center content for toolbar
