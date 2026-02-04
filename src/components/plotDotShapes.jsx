@@ -75,6 +75,8 @@ const XShape = memo((props) => {
         y2={cy + size}
         stroke={color}
         strokeWidth={1}
+        strokeOpacity={strokeOpacity}
+        fillOpacity={fillOpacity}
       />
       <line
         x1={cx - size}
