@@ -101,19 +101,13 @@ export function useUrlSync({ routePath, columns = [], defaultFilters = [] }) {
   }, [filterParamsJson, buildFiltersFromUrl]);
 
   // Custom setter that updates both state and URL
-  // Options:
-  //   - skipUrlUpdate: if true, only update state without modifying URL
   const setColumnFilters = useCallback(
-    (filtersOrUpdater, { skipUrlUpdate = false } = {}) => {
+    (filtersOrUpdater) => {
       setColumnFiltersState((prevFilters) => {
         const newFilters =
           typeof filtersOrUpdater === "function"
             ? filtersOrUpdater(prevFilters)
             : filtersOrUpdater;
-
-        if (skipUrlUpdate) {
-          return newFilters;
-        }
 
         // Build new URL params (preserve non-filter params)
         const newParams = { ...searchParams };

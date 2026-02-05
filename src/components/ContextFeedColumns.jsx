@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { createColumnHelper } from "@tanstack/react-table";
 import { formatCellValue } from "@/utils/utils";
-import { matchValueOrInList, matchRequiredSelection } from "@/utils/tableUtils";
+import { matchValueOrInList } from "@/utils/tableUtils";
 import { CATEGORY_INDEX_INFO } from "@/components/context-feed-definitions.js";
 
 import CopyIcon from "../assets/CopyIcon.svg";
@@ -295,11 +295,12 @@ export const contextFeedColumns = [
       );
     },
     size: 200,
-    filterFn: matchRequiredSelection,
+    filterFn: matchValueOrInList,
     filterType: "string",
     meta: {
       tooltip: "Data type displayed in the row (derived from Category Index).",
       urlParam: "event_type",
+      preserveEmptyFilter: true,
     },
   }),
   columnHelper.accessor("current_task", {
