@@ -266,17 +266,16 @@ function ObservingConditionsApplet({
   // if hoveredBand is set, the opacity for that band is 1, otherwise it
   // is set to 0 to hide the line
 
-  const { uOpacity, rOpacity, yOpacity, iOpacity, zOpacity, gOpacity } =
-    useMemo(() => {
-      return {
-        uOpacity: hoveredBand && hoveredBand !== "u" ? 0 : 1,
-        rOpacity: hoveredBand && hoveredBand !== "r" ? 0 : 1,
-        yOpacity: hoveredBand && hoveredBand !== "y" ? 0 : 1,
-        iOpacity: hoveredBand && hoveredBand !== "i" ? 0 : 1,
-        zOpacity: hoveredBand && hoveredBand !== "z" ? 0 : 1,
-        gOpacity: hoveredBand && hoveredBand !== "g" ? 0 : 1,
-      };
-    }, [hoveredBand]);
+  const opacity = useMemo(() => {
+    return {
+      u: hoveredBand && hoveredBand !== "u" ? 0 : 1,
+      r: hoveredBand && hoveredBand !== "r" ? 0 : 1,
+      y: hoveredBand && hoveredBand !== "y" ? 0 : 1,
+      i: hoveredBand && hoveredBand !== "i" ? 0 : 1,
+      z: hoveredBand && hoveredBand !== "z" ? 0 : 1,
+      g: hoveredBand && hoveredBand !== "g" ? 0 : 1,
+    };
+  }, [hoveredBand]);
 
   const handleMouseEnter = (payload) => {
     setHoveredBand(payload.dataKey);
@@ -768,11 +767,10 @@ function ObservingConditionsApplet({
                             {...restProps}
                             band="u"
                             r={2}
-                            activeBand={hoveredBand}
-                            opacity={uOpacity}
+                            opacity={opacity.u}
                           />
                         )}
-                        strokeOpacity={uOpacity}
+                        strokeOpacity={opacity.u}
                         data={dataWithNightGaps(groupedChartData, "u")}
                         isAnimationActive={false}
                       />
@@ -782,14 +780,14 @@ function ObservingConditionsApplet({
                         type="monotone"
                         dataKey="zero_point_median"
                         stroke={BAND_COLORS.g}
-                        strokeOpacity={gOpacity}
+                        strokeOpacity={opacity.g}
                         dot={({ key, ...restProps }) => (
                           <ObservingConditionsAppletDot
                             key={key}
                             {...restProps}
                             band="g"
                             r={2}
-                            opacity={gOpacity}
+                            opacity={opacity.g}
                           />
                         )}
                         data={dataWithNightGaps(groupedChartData, "g")}
@@ -801,14 +799,14 @@ function ObservingConditionsApplet({
                         type="monotone"
                         dataKey="zero_point_median"
                         stroke={BAND_COLORS.r}
-                        strokeOpacity={rOpacity}
+                        strokeOpacity={opacity.r}
                         dot={({ key, ...restProps }) => (
                           <ObservingConditionsAppletDot
                             key={key}
                             {...restProps}
                             band="r"
                             r={2}
-                            opacity={rOpacity}
+                            opacity={opacity.r}
                           />
                         )}
                         data={dataWithNightGaps(groupedChartData, "r")}
@@ -820,14 +818,14 @@ function ObservingConditionsApplet({
                         type="monotone"
                         dataKey="zero_point_median"
                         stroke={BAND_COLORS.i}
-                        strokeOpacity={iOpacity}
+                        strokeOpacity={opacity.i}
                         dot={({ key, ...restProps }) => (
                           <ObservingConditionsAppletDot
                             key={key}
                             {...restProps}
                             band="i"
                             r={2}
-                            opacity={iOpacity}
+                            opacity={opacity.i}
                           />
                         )}
                         data={dataWithNightGaps(groupedChartData, "i")}
@@ -839,14 +837,14 @@ function ObservingConditionsApplet({
                         type="monotone"
                         dataKey="zero_point_median"
                         stroke={BAND_COLORS.z}
-                        strokeOpacity={zOpacity}
+                        strokeOpacity={opacity.z}
                         dot={({ key, ...restProps }) => (
                           <ObservingConditionsAppletDot
                             key={key}
                             {...restProps}
                             band="z"
                             r={2}
-                            opacity={zOpacity}
+                            opacity={opacity.z}
                           />
                         )}
                         data={dataWithNightGaps(groupedChartData, "z")}
@@ -858,14 +856,14 @@ function ObservingConditionsApplet({
                         type="monotone"
                         dataKey="zero_point_median"
                         stroke={BAND_COLORS.y}
-                        strokeOpacity={yOpacity}
+                        strokeOpacity={opacity.y}
                         dot={({ key, ...restProps }) => (
                           <ObservingConditionsAppletDot
                             key={key}
                             {...restProps}
                             band="y"
                             r={2}
-                            opacity={yOpacity}
+                            opacity={opacity.y}
                           />
                         )}
                         data={dataWithNightGaps(groupedChartData, "y")}
@@ -882,12 +880,7 @@ function ObservingConditionsApplet({
                             {...restProps}
                             color="#fff"
                             band="seeing"
-                            opacity={
-                              hoveredBand === null ||
-                              payload.band === hoveredBand
-                                ? 1
-                                : 0
-                            }
+                            opacity={opacity[payload.band] ?? 1}
                           />
                         )}
                         yAxisId="left"
