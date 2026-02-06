@@ -9,6 +9,16 @@ import {
 } from "@/components/ui/table";
 import LinkIcon from "../assets/LinkIcon.svg";
 
+function parseTimeLostField(timeLost) {
+  if (typeof timeLost === "number") {
+    if (timeLost == 1) {
+      return `${timeLost} h`;
+    }
+    return `${timeLost} hrs`;
+  }
+  return "N/A";
+}
+
 function JiraTicketsTable({ tickets, loading = false }) {
   return (
     <div className="w-full">
@@ -75,7 +85,7 @@ function JiraTicketsTable({ tickets, loading = false }) {
                   <TableCell className="!text-wrap">{ticket.created}</TableCell>
                   <TableCell className="!text-wrap">{ticket.updated}</TableCell>
                   <TableCell className="text-right">
-                    {ticket.time_lost ?? "N/A"}
+                    {parseTimeLostField(ticket.time_lost)}
                   </TableCell>
                   <TableCell className="text-right">
                     <a
