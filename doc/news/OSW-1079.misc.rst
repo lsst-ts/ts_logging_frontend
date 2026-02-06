@@ -1,0 +1,1 @@
+Toggle seeing points along with corresponding zero points on legend hover in Observing Conditions applet.
