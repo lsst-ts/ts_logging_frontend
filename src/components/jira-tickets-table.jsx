@@ -9,7 +9,11 @@ import {
 } from "@/components/ui/table";
 import LinkIcon from "../assets/LinkIcon.svg";
 
-function JiraTicketsTable({ tickets, loading = false }) {
+function JiraTicketsTable({
+  tickets,
+  loading = false,
+  strikethroughStatuses = ["Done"],
+}) {
   return (
     <div className="w-full">
       <Table className="w-full table-fixed">
@@ -56,7 +60,14 @@ function JiraTicketsTable({ tickets, loading = false }) {
               </TableRow>
             ) : (
               tickets.map((ticket) => (
-                <TableRow key={ticket.key}>
+                <TableRow
+                  key={ticket.key}
+                  className={
+                    strikethroughStatuses.includes(ticket.status)
+                      ? "line-through opacity-60"
+                      : ""
+                  }
+                >
                   <TableCell className="font-medium">
                     <span>{ticket.key}</span>
                     {ticket.isNew && (
