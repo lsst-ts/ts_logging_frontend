@@ -9,6 +9,16 @@ import {
 } from "@/components/ui/table";
 import LinkIcon from "../assets/LinkIcon.svg";
 
+function parseTimeLostField(timeLost) {
+  if (typeof timeLost === "number") {
+    if (timeLost == 1) {
+      return `${timeLost} h`;
+    }
+    return `${timeLost} hrs`;
+  }
+  return "N/A";
+}
+
 function JiraTicketsTable({ tickets, loading = false }) {
   return (
     <div className="w-full">
@@ -33,6 +43,9 @@ function JiraTicketsTable({ tickets, loading = false }) {
             <TableHead className="sticky top-0 z-10 !text-white text-lg">
               Last Updated
             </TableHead>
+            <TableHead className="sticky top-0 z-10 !text-white text-lg">
+              Time Lost
+            </TableHead>
             <TableHead className="sticky top-0 z-10 !text-white text-lg text-right">
               Link
             </TableHead>
@@ -44,13 +57,13 @@ function JiraTicketsTable({ tickets, loading = false }) {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center">
+                <TableCell colSpan={8} className="text-center">
                   Loading tickets...
                 </TableCell>
               </TableRow>
             ) : tickets.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center">
+                <TableCell colSpan={8} className="text-center">
                   No tickets found.
                 </TableCell>
               </TableRow>
@@ -71,6 +84,9 @@ function JiraTicketsTable({ tickets, loading = false }) {
                   <TableCell>{ticket.status}</TableCell>
                   <TableCell className="!text-wrap">{ticket.created}</TableCell>
                   <TableCell className="!text-wrap">{ticket.updated}</TableCell>
+                  <TableCell className="text-right">
+                    {parseTimeLostField(ticket.time_lost)}
+                  </TableCell>
                   <TableCell className="text-right">
                     <a
                       href={ticket.url}

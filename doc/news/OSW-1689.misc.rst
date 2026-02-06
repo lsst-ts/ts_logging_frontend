@@ -1,0 +1,1 @@
+Add time lost field to JiraTicketsTable component.
