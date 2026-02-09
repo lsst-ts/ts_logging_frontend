@@ -88,10 +88,10 @@ function ContextFeed() {
   // Default event type filters based on telescope
   const defaultEventTypes = filterDefaultEventsByTelescope(telescope);
 
-  // Timeline checkbox state is stored in the Table's columnFilters state.
-  // While all other table state is kept inside ContextFeedTable.jsx,
-  // This state is kept here so that the timeline checkboxes can update it.
-  // Synced with URL via useUrlSync.
+  // The table filter state is hoisted up here in order to allow
+  // the timeline checkboxes to interact with it
+  // It is also synced with the page URL
+
   const { columnFilters, setColumnFilters, resetFilters } = useUrlSync({
     routePath: "/context-feed",
     columns: contextFeedColumns,

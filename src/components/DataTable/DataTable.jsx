@@ -12,7 +12,7 @@ import {
 } from "@tanstack/react-table";
 
 import { Table } from "@/components/ui/table";
-import { matchValueOrInList } from "@/utils/tableUtils";
+import { matchValueOrInList } from "./tableUtils";
 
 import { useDataTableState } from "./useDataTableState";
 import DataTableHeader from "./DataTableHeader";

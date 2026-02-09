@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { createColumnHelper } from "@tanstack/react-table";
 import { formatCellValue } from "@/utils/utils";
-import { matchValueOrInList } from "@/utils/tableUtils";
+import { matchValueOrInList } from "@/components/DataTable/tableUtils";
 import { CATEGORY_INDEX_INFO } from "@/components/context-feed-definitions.js";
 
 import CopyIcon from "../assets/CopyIcon.svg";
@@ -269,11 +269,46 @@ function renderConfigCell(info) {
   );
 }
 
+export const defaultColumnVisibility = {
+  category_index: false,
+  event_type: true,
+  current_task: false,
+  time: true,
+  name: true,
+  description: true,
+  config: true,
+  script_salIndex: true,
+  finalStatus: true,
+  timestampProcessStart: true,
+  timestampConfigureStart: true,
+  timestampConfigureEnd: true,
+  timestampRunStart: true,
+  timestampProcessEnd: true,
+};
+
+export const defaultColumnOrder = [
+  "category_index",
+  "event_type",
+  "current_task",
+  "time",
+  "name",
+  "description",
+  "config",
+  "script_salIndex",
+  "finalStatus",
+  "timestampProcessStart",
+  "timestampConfigureStart",
+  "timestampConfigureEnd",
+  "timestampRunStart",
+  "timestampProcessEnd",
+];
+
 export const contextFeedColumns = [
   columnHelper.accessor("category_index", {
     header: "Category Index",
     cell: (info) => formatCellValue(info.getValue()),
     size: 150,
+    minSize: 150,
     filterFn: matchValueOrInList,
     filterType: "string",
     meta: {
@@ -295,6 +330,7 @@ export const contextFeedColumns = [
       );
     },
     size: 200,
+    minSize: 200,
     filterFn: matchValueOrInList,
     filterType: "string",
     meta: {
@@ -307,6 +343,7 @@ export const contextFeedColumns = [
     header: "Current Task",
     cell: (info) => formatCellValue(info.getValue()),
     size: 200,
+    minSize: 200,
     filterFn: matchValueOrInList,
     filterType: "string",
     meta: {
@@ -317,6 +354,7 @@ export const contextFeedColumns = [
     header: "Time (UTC)",
     cell: (info) => formatTimestamp(info.getValue()),
     size: 220,
+    minSize: 220,
     filterType: "number-range",
     meta: {
       tooltip: "Time associated with event.",
@@ -326,6 +364,7 @@ export const contextFeedColumns = [
     header: "Name",
     cell: (info) => formatCellValue(info.getValue()),
     size: 300,
+    // minSize: 300,
     filterFn: matchValueOrInList,
     filterType: "string",
     meta: {
@@ -335,6 +374,7 @@ export const contextFeedColumns = [
   columnHelper.accessor("description", {
     header: "Description",
     size: 400,
+    minSize: 400,
     filterFn: matchValueOrInList,
     filterType: "string",
     meta: {
@@ -346,6 +386,7 @@ export const contextFeedColumns = [
   columnHelper.accessor("config", {
     header: "Config",
     size: 350,
+    minSize: 350,
     filterFn: matchValueOrInList,
     filterType: "string",
     meta: {
@@ -367,6 +408,7 @@ export const contextFeedColumns = [
     header: "Script SAL Index",
     cell: (info) => formatCellValue(info.getValue()),
     size: 150,
+    minSize: 150,
     filterFn: matchValueOrInList,
     filterType: "string",
     meta: {
@@ -378,6 +420,7 @@ export const contextFeedColumns = [
     header: "Final Status",
     cell: (info) => formatCellValue(info.getValue()),
     size: 150,
+    minSize: 150,
     filterFn: matchValueOrInList,
     filterType: "string",
     meta: {
@@ -388,6 +431,7 @@ export const contextFeedColumns = [
     header: "Process Start Time (UTC)",
     cell: (info) => formatTimestamp(info.getValue()),
     size: 220,
+    minSize: 220,
     filterType: "number-range",
     meta: {
       tooltip: "Timestamp at start of process.",
@@ -397,6 +441,7 @@ export const contextFeedColumns = [
     header: "Configuration Start Time (UTC)",
     cell: (info) => formatTimestamp(info.getValue()),
     size: 240,
+    minSize: 240,
     filterType: "number-range",
     meta: {
       tooltip: "Timestamp at start of configuration.",
@@ -406,6 +451,7 @@ export const contextFeedColumns = [
     header: "Configuration End Time (UTC)",
     cell: (info) => formatTimestamp(info.getValue()),
     size: 240,
+    minSize: 240,
     filterType: "number-range",
     meta: {
       tooltip: "Timestamp at end of configuration.",
@@ -415,6 +461,7 @@ export const contextFeedColumns = [
     header: "Run Start Time (UTC)",
     cell: (info) => formatTimestamp(info.getValue()),
     size: 220,
+    minSize: 220,
     filterType: "number-range",
     meta: {
       tooltip: "Timestamp at start of run.",
@@ -424,6 +471,7 @@ export const contextFeedColumns = [
     header: "Process End Time (UTC)",
     cell: (info) => formatTimestamp(info.getValue()),
     size: 220,
+    minSize: 220,
     filterType: "number-range",
     meta: {
       tooltip: "Timestamp at end of process.",
