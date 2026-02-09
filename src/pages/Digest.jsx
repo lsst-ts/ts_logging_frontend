@@ -8,7 +8,8 @@ import VisitMapApplet from "@/components/VisitMapApplet";
 import { EfficiencyChart } from "@/components/ui/RadialChart.jsx";
 import ShutterIcon from "../assets/ShutterIcon.svg";
 import TimeLossIcon from "../assets/TimeLossIcon.svg";
-import JiraIcon from "../assets/JiraIcon.svg";
+import JiraIconWhite from "../assets/JiraIconWhite.svg";
+import JiraIconBlue from "../assets/JiraIconBlue.svg";
 import {
   fetchExposures,
   fetchExpectedExposures,
@@ -374,7 +375,7 @@ export default function Digest() {
             loading={narrativeLoading}
           />
           <DialogMetricsCard
-            icon={JiraIcon}
+            icons={[JiraIconWhite, JiraIconBlue]}
             data={newTicketsCount}
             label="Jira tickets created"
             metadata={`(${jiraTickets.length - newTicketsCount} updated)`}
