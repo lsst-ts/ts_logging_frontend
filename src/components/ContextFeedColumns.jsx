@@ -269,6 +269,40 @@ function renderConfigCell(info) {
   );
 }
 
+export const defaultColumnVisibility = {
+  category_index: false,
+  event_type: true,
+  current_task: false,
+  time: true,
+  name: true,
+  description: true,
+  config: true,
+  script_salIndex: true,
+  finalStatus: true,
+  timestampProcessStart: true,
+  timestampConfigureStart: true,
+  timestampConfigureEnd: true,
+  timestampRunStart: true,
+  timestampProcessEnd: true,
+};
+
+export const defaultColumnOrder = [
+  "category_index",
+  "event_type",
+  "current_task",
+  "time",
+  "name",
+  "description",
+  "config",
+  "script_salIndex",
+  "finalStatus",
+  "timestampProcessStart",
+  "timestampConfigureStart",
+  "timestampConfigureEnd",
+  "timestampRunStart",
+  "timestampProcessEnd",
+];
+
 export const contextFeedColumns = [
   columnHelper.accessor("category_index", {
     header: "Category Index",

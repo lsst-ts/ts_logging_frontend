@@ -16,6 +16,7 @@ import { DateTime } from "luxon";
 import SearchParamErrorComponent from "./components/search-param-error-component";
 import { dataLogColumns } from "@/components/DataLogColumns";
 import { contextFeedColumns } from "@/components/ContextFeedColumns";
+import { getColumnUrlMappings } from "@/utils/tableUtils";
 import {
   isDateInRetentionRange,
   getAvailableDayObsRange,
@@ -135,29 +136,6 @@ export const searchParamsSchema = applyCommonValidations(
 
 // Extend search schema object for individual pages
 
-// Helper to extract urlParam keys from column definitions
-function getUrlParamKeys(columns) {
-  const keys = [];
-  const flatten = (cols) => {
-    for (const col of cols) {
-      if (col.columns) {
-        flatten(col.columns);
-      } else if (col.meta?.urlParam) {
-        keys.push(col.meta.urlParam);
-      }
-    }
-  };
-  if (Array.isArray(columns)) {
-    flatten(columns);
-  } else {
-    // Handle object of column arrays (like dataLogColumns keyed by telescope)
-    for (const cols of Object.values(columns)) {
-      if (Array.isArray(cols)) flatten(cols);
-    }
-  }
-  return keys;
-}
-
 // Helper to create a schema extension with array filter fields
 function createFilterSchema(urlParamKeys) {
   const filtersShape = Object.fromEntries(
@@ -167,8 +145,9 @@ function createFilterSchema(urlParamKeys) {
 }
 
 // Extract URL param keys for each page
-const dataLogUrlParams = getUrlParamKeys(dataLogColumns);
-const contextFeedUrlParams = getUrlParamKeys(contextFeedColumns);
+const dataLogUrlParams = getColumnUrlMappings(dataLogColumns).urlParamKeys;
+const contextFeedUrlParams =
+  getColumnUrlMappings(contextFeedColumns).urlParamKeys;
 
 // All array keys (for router parseSearch)
 const arrayKeys = [...new Set([...dataLogUrlParams, ...contextFeedUrlParams])];

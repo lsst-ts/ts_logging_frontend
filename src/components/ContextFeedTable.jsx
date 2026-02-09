@@ -4,42 +4,24 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 
 import { DataTable } from "@/components/DataTable";
-import { contextFeedColumns } from "@/components/ContextFeedColumns";
+import {
+  contextFeedColumns,
+  defaultColumnVisibility,
+  defaultColumnOrder,
+} from "@/components/ContextFeedColumns";
 
-const DEFAULT_COLUMN_VISIBILITY = {
-  category_index: false,
-  event_type: true,
-  current_task: false,
-  time: true,
-  name: true,
-  description: true,
-  config: true,
-  script_salIndex: true,
-  finalStatus: true,
-  timestampProcessStart: true,
-  timestampConfigureStart: true,
-  timestampConfigureEnd: true,
-  timestampRunStart: true,
-  timestampProcessEnd: true,
-};
-
-const DEFAULT_COLUMN_ORDER = [
-  "category_index",
-  "event_type",
-  "current_task",
-  "time",
-  "name",
-  "description",
-  "config",
-  "script_salIndex",
-  "finalStatus",
-  "timestampProcessStart",
-  "timestampConfigureStart",
-  "timestampConfigureEnd",
-  "timestampRunStart",
-  "timestampProcessEnd",
-];
-
+/**
+ * Table component for displaying Context Feed data.
+ * Wraps DataTable with Context Feed-specific configuration including
+ * collapsible tracebacks/YAML and group-by-task functionality.
+ *
+ * @param {Object} props
+ * @param {Array} props.data - Context Feed row data
+ * @param {boolean} props.dataLoading - Whether data is loading
+ * @param {Array} props.columnFilters - Current column filter state
+ * @param {Function} props.setColumnFilters - Column filter setter
+ * @param {Function} props.resetFilters - Reset filters to defaults
+ */
 function ContextFeedTable({
   data,
   dataLoading,
@@ -53,7 +35,7 @@ function ContextFeedTable({
   const [collapseTracebacks, setCollapseTracebacks] = useState(true);
   const [collapseYaml, setCollapseYaml] = useState(true);
 
-  // State for group by task checkbox (managed here to sync with checkbox)
+  // State for group by task checkbox
   const [groupByTask, setGroupByTask] = useState(false);
 
   // Handlers for collapse all checkboxes
@@ -132,8 +114,8 @@ function ContextFeedTable({
       data={data}
       columns={contextFeedColumns}
       isLoading={dataLoading}
-      defaultColumnVisibility={DEFAULT_COLUMN_VISIBILITY}
-      defaultColumnOrder={DEFAULT_COLUMN_ORDER}
+      defaultColumnVisibility={defaultColumnVisibility}
+      defaultColumnOrder={defaultColumnOrder}
       defaultSorting={[{ id: "time", desc: false }]}
       columnFilters={columnFilters}
       setColumnFilters={setColumnFilters}

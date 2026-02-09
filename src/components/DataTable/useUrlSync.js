@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
+import { getColumnUrlMappings } from "@/utils/tableUtils";
 
 /**
  * Hook for syncing column filters with URL parameters.
@@ -16,33 +17,10 @@ export function useUrlSync({ routePath, columns = [], defaultFilters = [] }) {
   const searchParams = useSearch({ from: routePath });
 
   // Memoize the column mappings so they don't change on every render
-  const { urlParamToColumnId, columnIdToUrlParam, urlParamKeys } =
-    useMemo(() => {
-      const urlToCol = {};
-      const colToUrl = {};
-
-      const flattenColumns = (cols) => {
-        for (const col of cols) {
-          if (col.columns) {
-            flattenColumns(col.columns);
-          } else {
-            const urlParam = col.meta?.urlParam;
-            const columnId = col.accessorKey || col.id;
-            if (urlParam && columnId) {
-              urlToCol[urlParam] = columnId;
-              colToUrl[columnId] = urlParam;
-            }
-          }
-        }
-      };
-      flattenColumns(columns);
-
-      return {
-        urlParamToColumnId: urlToCol,
-        columnIdToUrlParam: colToUrl,
-        urlParamKeys: Object.keys(urlToCol),
-      };
-    }, [columns]);
+  const { urlParamToColumnId, columnIdToUrlParam, urlParamKeys } = useMemo(
+    () => getColumnUrlMappings(columns),
+    [columns],
+  );
 
   // Extract only the filter-related params from searchParams as a stable string
   const filterParamsJson = useMemo(() => {
@@ -123,7 +101,6 @@ export function useUrlSync({ routePath, columns = [], defaultFilters = [] }) {
         for (const filter of newFilters) {
           const urlParam = columnIdToUrlParam[filter.id];
           if (urlParam && filter.value) {
-            // Store arrays as arrays (TanStack Router should handle serialization)
             newParams[urlParam] = Array.isArray(filter.value)
               ? filter.value
               : [filter.value];
