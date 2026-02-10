@@ -4,9 +4,21 @@ import { toast } from "sonner";
 import { useSearch } from "@tanstack/react-router";
 
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { TELESCOPES } from "@/components/Parameters";
 import DataLogTable from "@/components/DataLogTable.jsx";
 import TimelineChart from "@/components/TimelineChart";
+import PageHeader from "@/components/PageHeader";
+import TipsCard from "@/components/TipsCard";
+import SelectedTimeRangeBar from "@/components/SelectedTimeRangeBar";
+import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
+import DownloadIcon from "../assets/DownloadIcon.svg";
 import {
   fetchDataLogEntriesFromConsDB,
   fetchDataLogEntriesFromExposureLog,
@@ -24,8 +36,6 @@ import {
   prepareMoonIntervals,
 } from "@/utils/timelineUtils";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
-import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
-import EditableDateTimeInput from "@/components/EditableDateTimeInput.jsx";
 
 function DataLog() {
   // Routing and URL params
@@ -94,6 +104,10 @@ function DataLog() {
   const [moonValues, setMoonValues] = useState([]);
   const [moonIntervals, setMoonIntervals] = useState([]);
   const [almanacLoading, setAlmanacLoading] = useState(true);
+
+  // Visibility toggles
+  const [timelineVisible, setTimelineVisible] = useState(true);
+  const [tipsVisible, setTipsVisible] = useState(true);
 
   // Time range state synced with URL
   const { selectedTimeRange, setSelectedTimeRange, fullTimeRange } =
@@ -245,118 +259,147 @@ function DataLog() {
   return (
     <>
       <div className="flex flex-col w-full p-8 gap-4">
-        {/* Page title */}
-        <h1 className="flex flex-row gap-3 text-white text-5xl uppercase justify-center">
-          <span className="tracking-[2px] font-extralight">Data</span>
-          <span className="font-extrabold">Log</span>
-        </h1>
+        {/* Page Header, Timeline & Tips Banners */}
+        <div className="flex flex-col gap-2">
+          {/* Page title + buttons */}
+          <PageHeader
+            title="Data Log"
+            description={
+              dataLogLoading || almanacLoading ? (
+                <Skeleton className="h-5 w-64 bg-stone-700 inline-block" />
+              ) : (
+                `${filteredDataLogEntries.length} of ${dataLogEntries.length} exposures shown for ${telescope} ${dateRangeString}.`
+              )
+            }
+            actions={
+              <>
+                <Popover>
+                  <PopoverTrigger className="min-w-4 cursor-pointer">
+                    <img src={DownloadIcon} />
+                  </PopoverTrigger>
+                  <PopoverContent className="bg-black text-white text-sm border-yellow-700">
+                    This is a placeholder for the download/export button. Once
+                    implemented, clicking here will download the data shown in
+                    the table to a .csv file.
+                  </PopoverContent>
+                </Popover>
+                {/* Button to toggle timeline visibility */}
+                <Button
+                  onClick={() => setTimelineVisible((prev) => !prev)}
+                  className="bg-stone-300 text-teal-900 font-sm h-6 rounded-md px-2 shadow-[3px_3px_3px_0px_#0d9488] cursor-pointer hover:bg-stone-200 hover:shadow-[4px_4px_8px_0px_#0d9488] transition-all duration-200"
+                >
+                  {timelineVisible ? "Hide Timeline" : "Show Timeline"}
+                </Button>
+                {/* Button to toggle tips visibility */}
+                <Button
+                  onClick={() => setTipsVisible((prev) => !prev)}
+                  className="bg-amber-400 text-teal-900 font-sm h-6 rounded-md px-2 shadow-[3px_3px_3px_0px_#0d9488] cursor-pointer hover:bg-amber-300 hover:shadow-[4px_4px_8px_0px_#0d9488] transition-all duration-200"
+                >
+                  {tipsVisible ? "Hide Tips" : "Show Tips"}
+                </Button>
+              </>
+            }
+          />
 
-        {/* Info section */}
-        <div className="min-h-[4.5rem] text-white font-thin text-center pb-4 flex flex-col items-center justify-center gap-2">
-          {dataLogLoading || almanacLoading ? (
-            <>
-              <Skeleton className="h-5 w-3/4 max-w-xl bg-stone-700" />
-              <Skeleton className="h-5 w-[90%] max-w-2xl bg-stone-700" />
-            </>
-          ) : (
-            <>
-              <p>
-                {filteredDataLogEntries.length} of {dataLogEntries.length}{" "}
-                exposures shown for {telescope} {dateRangeString}.
+          {/* Timeline Tips */}
+          {tipsVisible && (
+            <TipsCard title="Timeline Tips">
+              <ul className="list-disc list-outside ml-5 space-y-1">
+                <li>
+                  <span className="font-medium">Click & Drag</span> on the
+                  timeline to select a time range. The table will filter to show
+                  only exposures within the selected range.
+                </li>
+                <li>
+                  <span className="font-medium">Double-Click</span> on the
+                  timeline to reset the selection to the full time range.
+                </li>
+                <li>
+                  Hold <span className="font-medium">Shift</span> before
+                  starting a new selection to extend the current selection
+                  instead of starting a new one.
+                </li>
+                <li>
+                  <span className="font-medium">Right-Click</span> on the
+                  timeline to see options, including jumping to other pages.
+                  These jumps will keep your current time selection.
+                </li>
+              </ul>
+              <p className="ml-5 mt-2">
+                Twilights are shown as blue lines, moon above the horizon is
+                highlighted in yellow, and moon illumination (%) is displayed
+                above the timeline at local Chilean midnight. All times
+                displayed are <span className="font-light">obs start</span>{" "}
+                times in TAI (UTC+37s).
               </p>
-              <div className="flex flex-col max-w-xxl mt-6 border border-1 border-white rounded-md p-2 gap-2">
-                <ul className="list-disc list-inside">
-                  <li>
-                    <span className="font-medium">Click & Drag</span> on the
-                    timeline to select a time range. The table will filter to
-                    show only exposures within the selected range
-                  </li>
-                  <li>
-                    <span className="font-medium">Double-Click</span> on the
-                    timeline to reset the selection to the full time range
-                  </li>
-                  <li>
-                    Hold <span className="font-medium">Shift</span> before
-                    starting a new selection to extend the current selection
-                    instead of starting a new one
-                  </li>
-                  <li>
-                    <span className="font-medium">Right-Click</span> on the
-                    timeline to see options, including jumping to other pages.
-                    These jumps will keep your current time selection
-                  </li>
-                </ul>
-                <p>
-                  Twilights are shown as blue lines, moon above the horizon is
-                  highlighted in yellow, and moon illumination (%) is displayed
-                  above the timeline at local Chilean midnight. All times
-                  displayed are <span className="font-light">obs start</span>{" "}
-                  times in TAI (UTC+37s).
-                </p>
-                <p>
-                  <span className="font-bold">Note:</span> Table customisations
-                  (such as filtering, sorting, column hiding, and grouping) do
-                  not persist across page navigations. However, they will
-                  persist while querying different dates or date ranges on this
-                  page. If data doesn't appear as expected, try resetting the
-                  table.
-                </p>
-              </div>
-            </>
+            </TipsCard>
+          )}
+
+          {/* Timeline */}
+          {timelineVisible && (
+            <Card className="grid gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 font-thin shadow-stone-900 shadow-md">
+              {dataLogLoading || almanacLoading ? (
+                <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
+              ) : (
+                <ContextMenuWrapper menuItems={contextMenuItems}>
+                  <TimelineChart
+                    data={[
+                      {
+                        index: 0.5,
+                        timestamps: dataLogEntries.map(
+                          (d) => d.obs_start_millis,
+                        ),
+                        color: "#3CAE3F",
+                        isActive: true,
+                      },
+                    ]}
+                    twilightValues={twilightValues}
+                    showTwilight={twilightValues.length > 1}
+                    illumValues={illumValues}
+                    showMoonIllumination={true}
+                    moonIntervals={moonIntervals}
+                    showMoonArea={true}
+                    fullTimeRange={fullTimeRange}
+                    selectedTimeRange={selectedTimeRange}
+                    setSelectedTimeRange={setSelectedTimeRange}
+                  />
+                </ContextMenuWrapper>
+              )}
+            </Card>
+          )}
+
+          {/* Editable Time Range */}
+          <SelectedTimeRangeBar
+            selectedTimeRange={selectedTimeRange}
+            setSelectedTimeRange={setSelectedTimeRange}
+            fullTimeRange={fullTimeRange}
+          />
+
+          {/* Table Tips */}
+          {tipsVisible && (
+            <TipsCard title="Table Tips">
+              <ul className="list-disc list-outside ml-5 space-y-1">
+                <li>
+                  Use the
+                  <span className="font-bold text-lg text-teal-300">
+                    {" ⋮ "}
+                  </span>
+                  menu in column headers to filter, sort, group, or hide
+                  columns.
+                </li>
+                <li>
+                  Table customisations (such as filtering, sorting, grouping,
+                  and hiding columns) do not persist across page navigations.
+                  However, they will persist while querying different dates or
+                  date ranges on this page.
+                </li>
+                <li>
+                  If data doesn't appear as expected, try resetting the table.
+                </li>
+              </ul>
+            </TipsCard>
           )}
         </div>
-
-        {/* Timeline */}
-        {dataLogLoading || almanacLoading ? (
-          <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
-        ) : (
-          <>
-            <ContextMenuWrapper menuItems={contextMenuItems}>
-              <TimelineChart
-                data={[
-                  {
-                    index: 0.5,
-                    timestamps: dataLogEntries.map((d) => d.obs_start_millis),
-                    color: "#3CAE3F",
-                    isActive: true,
-                  },
-                ]}
-                twilightValues={twilightValues}
-                showTwilight={twilightValues.length > 1}
-                illumValues={illumValues}
-                showMoonIllumination={true}
-                moonIntervals={moonIntervals}
-                showMoonArea={true}
-                fullTimeRange={fullTimeRange}
-                selectedTimeRange={selectedTimeRange}
-                setSelectedTimeRange={setSelectedTimeRange}
-              />
-            </ContextMenuWrapper>
-
-            {/* Selected Time Range Inputs */}
-            <div className="flex flex-row justify-center items-center gap-2 text-white font-thin">
-              <EditableDateTimeInput
-                value={selectedTimeRange[0]}
-                onValidChange={(dt) =>
-                  setSelectedTimeRange([dt, selectedTimeRange[1]])
-                }
-                fullTimeRange={fullTimeRange}
-                otherBound={selectedTimeRange[1]}
-                isStart={true}
-              />
-              <span>-</span>
-              <EditableDateTimeInput
-                value={selectedTimeRange[1]}
-                onValidChange={(dt) =>
-                  setSelectedTimeRange([selectedTimeRange[0], dt])
-                }
-                fullTimeRange={fullTimeRange}
-                otherBound={selectedTimeRange[0]}
-                isStart={false}
-              />
-            </div>
-          </>
-        )}
 
         {/* Table */}
         <DataLogTable
