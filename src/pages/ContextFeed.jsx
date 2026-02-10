@@ -311,31 +311,33 @@ function ContextFeed() {
           {/* Timeline Tips */}
           {tipsVisible && (
             <TipsCard title="Timeline Tips">
-              <ul className="list-disc list-outside ml-5 space-y-1">
-                <li>
-                  <span className="font-medium">Click & Drag</span> on the
-                  timeline to select a time range. The table will filter to show
-                  only exposures within the selected range.
-                </li>
-                <li>
-                  <span className="font-medium">Double-Click</span> on the
-                  timeline to reset the selection to the full time range.
-                </li>
-                <li>
-                  Hold <span className="font-medium">Shift</span> before
-                  starting a new selection to extend the current selection
-                  instead of starting a new one.
-                </li>
-                <li>
-                  <span className="font-medium">Right-Click</span> on the
-                  timeline to see options, including jumping to other pages.
-                  These jumps will keep your current time selection.
-                </li>
-              </ul>
-              <p className="ml-5 mt-2">
-                Twilights are shown as blue lines. All times displayed are{" "}
-                <span className="font-light">event</span> times in UTC.
-              </p>
+              <div>
+                <ul className="list-disc list-outside ml-5 space-y-1">
+                  <li>
+                    <span className="font-medium">Click & Drag</span> on the
+                    timeline to select a time range. The table will filter to
+                    show only exposures within the selected range.
+                  </li>
+                  <li>
+                    <span className="font-medium">Double-Click</span> on the
+                    timeline to reset the selection to the full time range.
+                  </li>
+                  <li>
+                    Hold <span className="font-medium">Shift</span> before
+                    starting a new selection to extend the current selection
+                    instead of starting a new one.
+                  </li>
+                  <li>
+                    <span className="font-medium">Right-Click</span> on the
+                    timeline to see options, including jumping to other pages.
+                    These jumps will keep your current time selection.
+                  </li>
+                </ul>
+                <p className="ml-5 mt-2">
+                  Twilights are shown as blue lines. All times displayed are{" "}
+                  <span className="font-light">event</span> times in UTC.
+                </p>
+              </div>
             </TipsCard>
           )}
 
