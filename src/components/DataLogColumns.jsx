@@ -255,6 +255,16 @@ const commonColumns = [
       tooltip: "Outside air temperature in degC.",
     },
   }),
+  columnHelper.accessor("can_see_sky", {
+    header: "Can See Sky",
+    cell: (info) => formatCellValue(info.getValue()),
+    size: 90,
+    filterType: "string",
+    filterFn: matchValueOrInList,
+    meta: {
+      tooltip: "Whether the observation can see sky or not.",
+    },
+  }),
 ];
 
 // Telescope-specific columns
@@ -340,6 +350,7 @@ const defaultColumnVisibility = {
     science_program: true,
     observation_reason: true,
     img_type: true,
+    can_see_sky: true,
     target_name: true,
     obs_start: true,
     obs_end: false,
@@ -370,6 +381,7 @@ const defaultColumnVisibility = {
     science_program: true,
     observation_reason: true,
     img_type: true,
+    can_see_sky: true,
     target_name: true,
     obs_start: true,
     obs_end: false,
@@ -398,6 +410,7 @@ const defaultColumnOrder = {
     "science_program",
     "observation_reason",
     "img_type",
+    "can_see_sky",
     "target_name",
     "obs_start",
     "obs_end",
@@ -428,6 +441,7 @@ const defaultColumnOrder = {
     "science_program",
     "observation_reason",
     "img_type",
+    "can_see_sky",
     "target_name",
     "obs_start",
     "obs_end",
