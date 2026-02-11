@@ -24,6 +24,9 @@ function JiraTicketsTable({ tickets, loading = false }) {
     <Table className="table-auto md:table-fixed w-auto">
       <TableHeader>
         <TableRow>
+          <TableHead className="sticky top-0 z-10 !text-black text-lg text-right">
+            Link
+          </TableHead>
           <TableHead className="sticky top-0 z-10 !text-black text-lg">
             Number
           </TableHead>
@@ -45,9 +48,6 @@ function JiraTicketsTable({ tickets, loading = false }) {
           <TableHead className="sticky top-0 z-10 !text-black text-lg text-right">
             Time Lost
           </TableHead>
-          <TableHead className="sticky top-0 z-10 !text-black text-lg text-right">
-            Link
-          </TableHead>
         </TableRow>
       </TableHeader>
 
@@ -67,6 +67,20 @@ function JiraTicketsTable({ tickets, loading = false }) {
         ) : (
           tickets.map((ticket) => (
             <TableRow key={ticket.key}>
+              <TableCell className="text-right">
+                <a
+                  href={ticket.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline"
+                >
+                  <img
+                    src={LinkIcon}
+                    alt="View Ticket"
+                    className="inline-block w-6 h-6"
+                  />
+                </a>
+              </TableCell>
               <TableCell className="font-medium">
                 <span>{ticket.key}</span>
                 {ticket.isNew && (
@@ -83,20 +97,6 @@ function JiraTicketsTable({ tickets, loading = false }) {
               <TableCell className="!text-wrap">{ticket.updated}</TableCell>
               <TableCell className="text-right">
                 {parseTimeLostField(ticket.time_lost)}
-              </TableCell>
-              <TableCell className="text-right">
-                <a
-                  href={ticket.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline"
-                >
-                  <img
-                    src={LinkIcon}
-                    alt="View Ticket"
-                    className="inline-block w-6 h-6"
-                  />
-                </a>
               </TableCell>
             </TableRow>
           ))
