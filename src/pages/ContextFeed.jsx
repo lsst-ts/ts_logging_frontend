@@ -241,7 +241,6 @@ function ContextFeed() {
   }, [startDayobs, endDayobs, telescope]);
 
   // Filter data based on selected time range
-  // and the event types selected by checkboxes
   const filteredData = useMemo(
     () =>
       contextFeedData.filter(
@@ -314,29 +313,23 @@ function ContextFeed() {
               <div>
                 <ul className="list-disc list-outside ml-5 space-y-1">
                   <li>
-                    <span className="font-medium">Click & Drag</span> on the
-                    timeline to select a time range. The table will filter to
-                    show only exposures within the selected range.
+                    <span className="font-bold">Drag</span> to select a time
+                    range (table updates automatically).
                   </li>
                   <li>
-                    <span className="font-medium">Double-Click</span> on the
-                    timeline to reset the selection to the full time range.
+                    <span className="font-bold">Shift + Drag</span> to extend
+                    selection.
+                  </li>
+
+                  <li>
+                    <span className="font-bold">Double-Click</span> to reset.
                   </li>
                   <li>
-                    Hold <span className="font-medium">Shift</span> before
-                    starting a new selection to extend the current selection
-                    instead of starting a new one.
+                    <span className="font-bold">Right-Click</span> for more
+                    options (keeps selection).
                   </li>
-                  <li>
-                    <span className="font-medium">Right-Click</span> on the
-                    timeline to see options, including jumping to other pages.
-                    These jumps will keep your current time selection.
-                  </li>
+                  <li>Blue lines are twilights. All event times are UTC.</li>
                 </ul>
-                <p className="ml-5 mt-2">
-                  Twilights are shown as blue lines. All times displayed are{" "}
-                  <span className="font-light">event</span> times in UTC.
-                </p>
               </div>
             </TipsCard>
           )}
@@ -404,6 +397,13 @@ function ContextFeed() {
             selectedTimeRange={selectedTimeRange}
             setSelectedTimeRange={setSelectedTimeRange}
             fullTimeRange={fullTimeRange}
+            rightContent={
+              contextFeedLoading || almanacLoading ? (
+                <Skeleton className="h-5 w-64 bg-teal-700 inline-block" />
+              ) : (
+                `${filteredData.length} of ${contextFeedData.length} events selected`
+              )
+            }
           />
 
           {/* Table Tips */}
@@ -419,17 +419,12 @@ function ContextFeed() {
                   columns.
                 </li>
                 <li>
-                  Table customisations (such as filtering, sorting, grouping,
-                  and hiding columns) do not persist across page navigations.
-                  However, they will persist while querying different dates or
-                  date ranges on this page.
-                </li>
-                <li>
-                  If data doesn't appear as expected, try resetting the table.
-                </li>
-                <li>
                   Collapse/expand tracebacks & YAMLs by clicking cells or using
                   checkboxes.
+                </li>
+                <li>
+                  Filters remain active when changing dates or times. No
+                  results? Clear filters or reset the table..
                 </li>
               </ul>
             </TipsCard>

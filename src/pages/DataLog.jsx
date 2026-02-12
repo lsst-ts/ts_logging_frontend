@@ -50,12 +50,6 @@ function DataLog() {
     .toFormat("yyyyMMdd");
   const instrument = TELESCOPES[telescope];
 
-  // For display on page
-  const dateRangeString =
-    startDayobs === endDayobs
-      ? `on dayobs ${startDayobs}`
-      : `in dayobs range ${startDayobs}–${endDayobs}`;
-
   // For context menu navigation
   const search = useSearch({ from: "/data-log" });
 
@@ -237,19 +231,13 @@ function DataLog() {
 
   return (
     <>
-      <div className="flex flex-col w-full p-8 gap-4">
+      <div className="flex flex-col h-screen w-full p-8 gap-4">
         {/* Page Header, Timeline & Tips Banners */}
         <div className="flex flex-col gap-2">
           {/* Page title + buttons */}
           <PageHeader
             title="Data Log"
-            description={
-              dataLogLoading || almanacLoading ? (
-                <Skeleton className="h-5 w-64 bg-stone-700 inline-block" />
-              ) : (
-                `${filteredDataLogEntries.length} of ${dataLogEntries.length} exposures shown for ${telescope} ${dateRangeString}.`
-              )
-            }
+            description="Exposure metadata and related fields from the ConsDB, Exposure Log and Transformed EFD"
             actions={
               <>
                 <Popover>
@@ -286,32 +274,28 @@ function DataLog() {
               <div>
                 <ul className="list-disc list-outside ml-5 space-y-1">
                   <li>
-                    <span className="font-medium">Click & Drag</span> on the
-                    timeline to select a time range. The table will filter to
-                    show only exposures within the selected range.
+                    <span className="font-bold">Drag</span> to select a time
+                    range (table updates automatically).
                   </li>
                   <li>
-                    <span className="font-medium">Double-Click</span> on the
-                    timeline to reset the selection to the full time range.
+                    <span className="font-bold">Shift + Drag</span> to extend
+                    selection.
+                  </li>
+
+                  <li>
+                    <span className="font-bold">Double-Click</span> to reset.
                   </li>
                   <li>
-                    Hold <span className="font-medium">Shift</span> before
-                    starting a new selection to extend the current selection
-                    instead of starting a new one.
+                    <span className="font-bold">Right-Click</span> for more
+                    options (keeps selection).
                   </li>
                   <li>
-                    <span className="font-medium">Right-Click</span> on the
-                    timeline to see options, including jumping to other pages.
-                    These jumps will keep your current time selection.
+                    Blue lines are twilights and yellow shading is moon above
+                    horizon.
                   </li>
+                  <li>Moon illumination (%) is shown at Chilean midnight.</li>
+                  <li>Exposures are shown at observation start times (TAI).</li>
                 </ul>
-                <p className="ml-5 mt-2">
-                  Twilights are shown as blue lines, moon above the horizon is
-                  highlighted in yellow, and moon illumination (%) is displayed
-                  above the timeline at local Chilean midnight. All times
-                  displayed are <span className="font-light">obs start</span>{" "}
-                  times in TAI (UTC+37s).
-                </p>
               </div>
             </TipsCard>
           )}
@@ -354,6 +338,14 @@ function DataLog() {
             selectedTimeRange={selectedTimeRange}
             setSelectedTimeRange={setSelectedTimeRange}
             fullTimeRange={fullTimeRange}
+            timezone="TAI"
+            rightContent={
+              dataLogLoading || almanacLoading ? (
+                <Skeleton className="h-5 w-64 bg-teal-700 inline-block" />
+              ) : (
+                `${filteredDataLogEntries.length} of ${dataLogEntries.length} exposures selected`
+              )
+            }
           />
 
           {/* Table Tips */}
@@ -369,13 +361,8 @@ function DataLog() {
                   columns.
                 </li>
                 <li>
-                  Table customisations (such as filtering, sorting, grouping,
-                  and hiding columns) do not persist across page navigations.
-                  However, they will persist while querying different dates or
-                  date ranges on this page.
-                </li>
-                <li>
-                  If data doesn't appear as expected, try resetting the table.
+                  Filters remain active when changing dates or times. No
+                  results? Clear filters or reset the table..
                 </li>
               </ul>
             </TipsCard>

@@ -270,8 +270,8 @@ const commonColumns = [
   columnHelper.accessor("can_see_sky", {
     header: "Can See Sky",
     cell: (info) => formatCellValue(info.getValue()),
-    size: 90,
-    minSize: 90,
+    size: 110,
+    minSize: 110,
     filterType: "string",
     filterFn: matchValueOrInList,
     meta: {
