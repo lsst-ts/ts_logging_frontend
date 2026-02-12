@@ -245,7 +245,6 @@ function ContextFeed() {
   }, [startDayobs, endDayobs, telescope]);
 
   // Filter data based on selected time range
-  // and the event types selected by checkboxes
   const filteredData = useMemo(
     () =>
       contextFeedData.filter(
@@ -409,6 +408,13 @@ function ContextFeed() {
             selectedTimeRange={selectedTimeRange}
             setSelectedTimeRange={setSelectedTimeRange}
             fullTimeRange={fullTimeRange}
+            rightContent={
+              contextFeedLoading || almanacLoading ? (
+                <Skeleton className="h-5 w-64 bg-stone-700 inline-block" />
+              ) : (
+                `${filteredData.length} of ${contextFeedData.length} events selected`
+              )
+            }
           />
 
           {/* Table Tips */}

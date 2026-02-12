@@ -56,12 +56,6 @@ function DataLog() {
     .toFormat("yyyyMMdd");
   const instrument = TELESCOPES[telescope];
 
-  // For display on page
-  const dateRangeString =
-    startDayobs === endDayobs
-      ? `on dayobs ${startDayobs}`
-      : `in dayobs range ${startDayobs}–${endDayobs}`;
-
   // To pass url filter params to table
   const tableFilters = [];
   if (science_program?.length) {
@@ -264,13 +258,7 @@ function DataLog() {
           {/* Page title + buttons */}
           <PageHeader
             title="Data Log"
-            description={
-              dataLogLoading || almanacLoading ? (
-                <Skeleton className="h-5 w-64 bg-stone-700 inline-block" />
-              ) : (
-                `${filteredDataLogEntries.length} of ${dataLogEntries.length} exposures shown for ${telescope} ${dateRangeString}.`
-              )
-            }
+            description="Exposure metadata and related fields from the ConsDB, Exposure Log and Transformed EFD"
             actions={
               <>
                 <Popover>
@@ -375,6 +363,13 @@ function DataLog() {
             selectedTimeRange={selectedTimeRange}
             setSelectedTimeRange={setSelectedTimeRange}
             fullTimeRange={fullTimeRange}
+            rightContent={
+              dataLogLoading || almanacLoading ? (
+                <Skeleton className="h-5 w-64 bg-stone-700 inline-block" />
+              ) : (
+                `${filteredDataLogEntries.length} of ${dataLogEntries.length} exposures selected`
+              )
+            }
           />
 
           {/* Table Tips */}
