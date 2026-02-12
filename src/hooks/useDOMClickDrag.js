@@ -491,8 +491,12 @@ export function useDOMClickDrag({
 
       // Only invoke callback if there's an actual selection (not just a click)
       if (
-        start.fractionX !== end.fractionX ||
-        start.fractionY !== end.fractionY
+        start.fractionX !== end.fractionX &&
+        start.fractionY !== end.fractionY &&
+        !isNaN(start.fractionX) &&
+        !isNaN(start.fractionY) &&
+        !isNaN(end.fractionX) &&
+        !isNaN(end.fractionY)
       ) {
         // Create mouse state object
         const mouse = {
