@@ -5,6 +5,7 @@ function SelectedTimeRangeBar({
   selectedTimeRange,
   setSelectedTimeRange,
   fullTimeRange,
+  rightContent,
 }) {
   if (!selectedTimeRange[0] || !selectedTimeRange[1]) return null;
 
@@ -35,6 +36,11 @@ function SelectedTimeRangeBar({
             isStart={false}
           />
         </span>
+        {rightContent && (
+          <span className="font-thin text-sm select-none @[700px]:col-start-1 @[700px]:row-start-1 @[700px]:self-center @[700px]:justify-self-end">
+            {rightContent}
+          </span>
+        )}
       </Card>
     </div>
   );
