@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
@@ -18,6 +18,7 @@ import TimelineChart from "@/components/TimelineChart";
 import ContextFeedTable from "@/components/ContextFeedTable.jsx";
 import EditableDateTimeInput from "@/components/EditableDateTimeInput.jsx";
 import { CATEGORY_INDEX_INFO } from "@/components/context-feed-definitions.js";
+import { contextFeedColumns } from "@/components/ContextFeedColumns";
 import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
 import DownloadIcon from "../assets/DownloadIcon.svg";
 import { fetchAlmanac, fetchContextFeed } from "@/utils/fetchUtils";
@@ -25,6 +26,7 @@ import { isoToUTC } from "@/utils/timeUtils";
 import { getDatetimeFromDayobsStr } from "@/utils/utils";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
 import { prepareAlmanacData } from "@/utils/timelineUtils";
+import { useUrlSync } from "@/components/DataTable";
 
 // This filters out the non-selected telescope's exposures, queues and
 // narrative logs from the default display.
@@ -83,31 +85,28 @@ function ContextFeed() {
   const [timelineVisible, setTimelineVisible] = useState(true);
   const [tipsVisible, setTipsVisible] = useState(true);
 
-  // Timeline checkbox state is stored in the Table's columnFilters state.
-  // While all other table state is kept inside ContextFeedTable.jsx,
-  // This state is kept here so that the timeline checkboxes can update it.
-  const [columnFilters, setColumnFilters] = useState([
-    {
-      id: "event_type",
-      value: filterDefaultEventsByTelescope(telescope),
-    },
-  ]);
+  // Default event type filters based on telescope
+  const defaultEventTypes = filterDefaultEventsByTelescope(telescope);
 
-  // Update the "event_type" filter whenever telescope changes
+  // The table filter state is hoisted up here in order to allow
+  // the timeline checkboxes to interact with it
+  // It is also synced with the page URL
+
+  const { columnFilters, setColumnFilters, resetFilters } = useUrlSync({
+    routePath: "/context-feed",
+    columns: contextFeedColumns,
+    defaultFilters: [{ id: "event_type", value: defaultEventTypes }],
+  });
+
+  // Apply telescope-specific default filters when telescope changes
+  const prevTelescopeRef = useRef(telescope);
   useEffect(() => {
-    setColumnFilters((prevFilters) => {
-      // Keep other filters
-      const otherFilters = prevFilters.filter((f) => f.id !== "event_type");
-
-      return [
-        ...otherFilters,
-        {
-          id: "event_type",
-          value: filterDefaultEventsByTelescope(telescope),
-        },
-      ];
-    });
-  }, [telescope]);
+    if (prevTelescopeRef.current !== telescope) {
+      prevTelescopeRef.current = telescope;
+      // Reset to new telescope's defaults
+      resetFilters();
+    }
+  }, [telescope, resetFilters]);
 
   const contextMenuItems = [
     {
@@ -148,10 +147,7 @@ function ContextFeed() {
       return [
         {
           id: "event_type",
-          value:
-            selectedEventKeys.length > 0
-              ? selectedEventKeys.map((k) => CATEGORY_INDEX_INFO[k].label)
-              : Object.values(CATEGORY_INDEX_INFO).map((info) => info.label), // all==none
+          value: selectedEventKeys.map((k) => CATEGORY_INDEX_INFO[k].label),
         },
       ];
     });
@@ -266,8 +262,7 @@ function ContextFeed() {
             .filter((d) => d.displayIndex === info.displayIndex)
             .map((d) => d.event_time_millis),
           color: info.color,
-          isActive:
-            activeLabels.length === 0 || activeLabels.includes(info.label),
+          isActive: activeLabels.includes(info.label),
         };
       });
   }, [contextFeedData, columnFilters]);
@@ -458,6 +453,7 @@ function ContextFeed() {
           dataLoading={contextFeedLoading}
           columnFilters={columnFilters}
           setColumnFilters={setColumnFilters}
+          resetFilters={resetFilters}
         />
       </div>
       {/* Error / warning / info message pop-ups */}

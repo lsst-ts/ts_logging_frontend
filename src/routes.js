@@ -2,6 +2,7 @@ import {
   createRootRoute,
   createRouter,
   createRoute,
+  redirect,
 } from "@tanstack/react-router";
 import Layout from "./pages/Layout";
 import DataLog from "./pages/DataLog";
@@ -14,6 +15,8 @@ import { DateTime } from "luxon";
 
 import SearchParamErrorComponent from "./components/search-param-error-component";
 import { dataLogColumns } from "@/components/DataLogColumns";
+import { contextFeedColumns } from "@/components/ContextFeedColumns";
+import { getColumnUrlMappings } from "@/utils/tableUtils";
 import {
   isDateInRetentionRange,
   getAvailableDayObsRange,
@@ -133,28 +136,56 @@ export const searchParamsSchema = applyCommonValidations(
 
 // Extend search schema object for individual pages
 
-// Convert table columns to url filter keys
-const columns = [];
-for (const cols of Object.values(dataLogColumns)) {
-  if (Array.isArray(cols)) columns.push(...cols);
+// Helper to create a schema extension with array filter fields
+function createFilterSchema(urlParamKeys) {
+  const filtersShape = Object.fromEntries(
+    urlParamKeys.map((key) => [key, z.string().array().optional()]),
+  );
+  return filtersShape;
 }
-const arrayKeys = columns.map((col) => col.meta?.urlParam).filter(Boolean);
 
-// Get schema for multi-valued search fields
-const filtersShape = Object.fromEntries(
-  arrayKeys.map((key) => [key, z.string().array().optional()]),
-);
+// Extract URL param keys for each page
+const dataLogUrlParams = getColumnUrlMappings(dataLogColumns).urlParamKeys;
+const contextFeedUrlParams =
+  getColumnUrlMappings(contextFeedColumns).urlParamKeys;
 
-// Extend base schema object for data log page with filter fields
+// All array keys (for router parseSearch)
+const arrayKeys = [...new Set([...dataLogUrlParams, ...contextFeedUrlParams])];
+
+// Create page-specific schemas with their filter fields
 export const dataLogSearchSchema = applyCommonValidations(
-  applyDateValidation(baseSearchParamsSchema.extend(filtersShape)),
+  applyDateValidation(
+    baseSearchParamsSchema.extend(createFilterSchema(dataLogUrlParams)),
+  ),
 );
+
+export const contextFeedSearchSchema = applyCommonValidations(
+  applyDateValidation(
+    baseSearchParamsSchema.extend(createFilterSchema(contextFeedUrlParams)),
+  ),
+);
+
+// Helper to create a beforeLoad that strips unknown search params
+// Redirects with only the allowed params if extra keys are present
+function stripUnknownParams(allowedKeys) {
+  return ({ search }) => {
+    const currentKeys = Object.keys(search);
+    const hasExtraKeys = currentKeys.some((k) => !allowedKeys.includes(k));
+    if (hasExtraKeys) {
+      const filteredSearch = Object.fromEntries(
+        Object.entries(search).filter(([k]) => allowedKeys.includes(k)),
+      );
+      throw redirect({ search: filteredSearch, replace: true });
+    }
+  };
+}
 
 const dashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
   component: Digest,
   validateSearch: searchParamsSchema,
+  beforeLoad: stripUnknownParams(GLOBAL_SEARCH_PARAMS),
   errorComponent: SearchParamErrorComponent,
 });
 
@@ -163,6 +194,10 @@ const dataLogRoute = createRoute({
   path: "/data-log",
   component: DataLog,
   validateSearch: dataLogSearchSchema,
+  beforeLoad: stripUnknownParams([
+    ...GLOBAL_SEARCH_PARAMS,
+    ...dataLogUrlParams,
+  ]),
   errorComponent: SearchParamErrorComponent,
 });
 
@@ -170,7 +205,11 @@ const contextFeedRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/context-feed",
   component: ContextFeed,
-  validateSearch: searchParamsSchema,
+  validateSearch: contextFeedSearchSchema,
+  beforeLoad: stripUnknownParams([
+    ...GLOBAL_SEARCH_PARAMS,
+    ...contextFeedUrlParams,
+  ]),
   errorComponent: SearchParamErrorComponent,
 });
 
@@ -179,6 +218,7 @@ const plotsRoute = createRoute({
   path: "/plots",
   component: Plots,
   validateSearch: searchParamsSchema,
+  beforeLoad: stripUnknownParams(GLOBAL_SEARCH_PARAMS),
   errorComponent: SearchParamErrorComponent,
 });
 
@@ -187,6 +227,7 @@ const visitmapsRoute = createRoute({
   path: "/visit-maps",
   component: VisitMaps,
   validateSearch: searchParamsSchema,
+  beforeLoad: stripUnknownParams(GLOBAL_SEARCH_PARAMS),
   errorComponent: SearchParamErrorComponent,
 });
 
@@ -206,8 +247,13 @@ const router = createRouter({
 
     for (const [key, value] of Object.entries(searchObj)) {
       if (Array.isArray(value)) {
-        for (const val of value) {
-          searchParams.append(key, val);
+        if (value.length === 0) {
+          // Preserve empty arrays as empty param (e.g., &event_type=)
+          searchParams.set(key, "");
+        } else {
+          for (const val of value) {
+            searchParams.append(key, val);
+          }
         }
       } else if (value != null && value !== "") {
         searchParams.set(key, value);
@@ -226,8 +272,9 @@ const router = createRouter({
 
     // Keys to be parsed as arrays
     for (const key of arrayKeys) {
-      const values = raw.getAll(key);
-      if (values.length > 0) {
+      if (raw.has(key)) {
+        // Filter out empty strings (from empty array serialization)
+        const values = raw.getAll(key).filter((v) => v !== "");
         parsed[key] = values;
       }
     }
