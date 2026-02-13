@@ -6,7 +6,7 @@ import { useSearch } from "@tanstack/react-router";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -16,9 +16,11 @@ import {
 
 import TimelineChart from "@/components/TimelineChart";
 import ContextFeedTable from "@/components/ContextFeedTable.jsx";
-import EditableDateTimeInput from "@/components/EditableDateTimeInput.jsx";
 import { CATEGORY_INDEX_INFO } from "@/components/context-feed-definitions.js";
 import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
+import PageHeader from "@/components/PageHeader";
+import TipsCard from "@/components/TipsCard";
+import SelectedTimeRangeBar from "@/components/SelectedTimeRangeBar";
 import DownloadIcon from "../assets/DownloadIcon.svg";
 import { fetchAlmanac, fetchContextFeed } from "@/utils/fetchUtils";
 import { isoToUTC } from "@/utils/timeUtils";
@@ -243,7 +245,6 @@ function ContextFeed() {
   }, [startDayobs, endDayobs, telescope]);
 
   // Filter data based on selected time range
-  // and the event types selected by checkboxes
   const filteredData = useMemo(
     () =>
       contextFeedData.filter(
@@ -276,19 +277,13 @@ function ContextFeed() {
     <>
       <div className="flex flex-col w-full h-screen p-8 gap-4">
         {/* Page Header, Timeline & Tips Banners */}
-        <Card className="flex-none border-none p-0 bg-stone-800 gap-2">
+        <div className="flex flex-col gap-2">
           {/* Page title + buttons */}
-          <CardHeader className="flex flex-row gap-4 bg-teal-900 p-3 rounded-sm align-center items-center shadow-stone-900 shadow-md">
-            <CardTitle className="flex flex-row gap-2 text-white font-thin">
-              <span className="font-normal">Context Feed: </span>
-              <span>
-                Chronologically ordered log of exposures, scripts, errors and
-                narrations.
-              </span>
-            </CardTitle>
-            {/* Buttons - Download, Show/Hide Timeline, Show/Hide Tips */}
-            <div className="justify-end ml-auto">
-              <div className="flex flex-row gap-2 justify-end">
+          <PageHeader
+            title="Context Feed"
+            description="Chronologically ordered log of exposures, scripts, errors and narrations."
+            actions={
+              <>
                 <Popover>
                   <PopoverTrigger className="min-w-4 cursor-pointer">
                     <img src={DownloadIcon} />
@@ -313,30 +308,46 @@ function ContextFeed() {
                 >
                   {tipsVisible ? "Hide Tips" : "Show Tips"}
                 </Button>
-              </div>
-            </div>
-          </CardHeader>
+              </>
+            }
+          />
 
           {/* Timeline Tips */}
           {tipsVisible && (
-            <CardContent className="bg-stone-800 text-stone-100 rounded-sm border-2 border-amber-400 p-6 shadow-stone-900 shadow-md">
-              <div className="flex flex-row items-center lg:px-2 gap-6 text-sm leading-relaxed">
-                <span className="text-amber-400 text-2xl">💡</span>
-                <h2 className="text-lg font-bold text-amber-400">
-                  Timeline Tips
-                </h2>
+            <TipsCard title="Timeline Tips">
+              <div>
                 <ul className="list-disc list-outside ml-5 space-y-1">
-                  <li>Click + drag to select a time range.</li>
-                  <li>Double-click to reset to the selected dayobs range.</li>
-                  <li>The table updates automatically to match.</li>
+                  <li>
+                    <span className="font-medium">Click & Drag</span> on the
+                    timeline to select a time range. The table will filter to
+                    show only exposures within the selected range.
+                  </li>
+                  <li>
+                    <span className="font-medium">Double-Click</span> on the
+                    timeline to reset the selection to the full time range.
+                  </li>
+                  <li>
+                    Hold <span className="font-medium">Shift</span> before
+                    starting a new selection to extend the current selection
+                    instead of starting a new one.
+                  </li>
+                  <li>
+                    <span className="font-medium">Right-Click</span> on the
+                    timeline to see options, including jumping to other pages.
+                    These jumps will keep your current time selection.
+                  </li>
                 </ul>
+                <p className="ml-5 mt-2">
+                  Twilights are shown as blue lines. All times displayed are{" "}
+                  <span className="font-light">event</span> times in UTC.
+                </p>
               </div>
-            </CardContent>
+            </TipsCard>
           )}
 
           {/* Timeline */}
           {timelineVisible && (
-            <CardContent className="grid gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 font-thin shadow-stone-900 shadow-md">
+            <Card className="grid gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 font-thin shadow-stone-900 shadow-md">
               {contextFeedLoading || almanacLoading ? (
                 <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
               ) : (
@@ -389,68 +400,52 @@ function ContextFeed() {
                   </div>
                 </div>
               )}
-            </CardContent>
+            </Card>
           )}
 
           {/* Editable Time Range */}
-          {selectedTimeRange[0] && selectedTimeRange[1] && (
-            <CardContent className="relative flex flex-row items-center justify-left bg-teal-900 text-stone-100 h-12 rounded-sm shadow-stone-900 shadow-md">
-              {/* Left label */}
-              <span className="font-thin text-sm mr-4 lg:absolute lg:left-3 lg:top-1/2 lg:-translate-y-1/2 select-none">
-                Selected Time Range (UTC):
-              </span>
-
-              {/* Centered inputs */}
-              <span className="text-white font-thin flex flex-row items-start lg:absolute lg:left-1/2 lg:top-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2 lg:flex-row lg:items-center">
-                {/* Start DateTime */}
-                <EditableDateTimeInput
-                  value={selectedTimeRange[0]}
-                  onValidChange={(dt) =>
-                    setSelectedTimeRange([dt, selectedTimeRange[1]])
-                  }
-                  fullTimeRange={fullTimeRange}
-                  otherBound={selectedTimeRange[1]}
-                  isStart={true}
-                />
-                <span className="mx-4">-</span>
-                {/* End DateTime */}
-                <EditableDateTimeInput
-                  value={selectedTimeRange[1]}
-                  onValidChange={(dt) =>
-                    setSelectedTimeRange([selectedTimeRange[0], dt])
-                  }
-                  fullTimeRange={fullTimeRange}
-                  otherBound={selectedTimeRange[0]}
-                  isStart={false}
-                />
-              </span>
-            </CardContent>
-          )}
+          <SelectedTimeRangeBar
+            selectedTimeRange={selectedTimeRange}
+            setSelectedTimeRange={setSelectedTimeRange}
+            fullTimeRange={fullTimeRange}
+            rightContent={
+              contextFeedLoading || almanacLoading ? (
+                <Skeleton className="h-5 w-64 bg-stone-700 inline-block" />
+              ) : (
+                `${filteredData.length} of ${contextFeedData.length} events selected`
+              )
+            }
+          />
 
           {/* Table Tips */}
           {tipsVisible && (
-            <CardContent className="bg-stone-800 text-stone-100 rounded-sm border-2 border-amber-400 p-6 shadow-stone-900 shadow-md">
-              <div className="flex flex-row items-center lg:px-2 gap-6 text-sm leading-relaxed">
-                <span className="text-amber-400 text-2xl">💡</span>
-                <h2 className="text-lg font-bold text-amber-400">Table Tips</h2>
-                <ul className="list-disc list-outside ml-5 space-y-1">
-                  <li>
-                    Collapse/expand tracebacks & YAMLs by clicking cells or
-                    using checkboxes.
-                  </li>
-                  <li>
-                    Use the
-                    <span className="font-bold text-lg text-teal-300">
-                      {" ⋮ "}
-                    </span>
-                    menu in column headers for sorting, grouping, filtering, or
-                    hiding.
-                  </li>
-                </ul>
-              </div>
-            </CardContent>
+            <TipsCard title="Table Tips">
+              <ul className="list-disc list-outside ml-5 space-y-1">
+                <li>
+                  Use the
+                  <span className="font-bold text-lg text-teal-300">
+                    {" ⋮ "}
+                  </span>
+                  menu in column headers to filter, sort, group, or hide
+                  columns.
+                </li>
+                <li>
+                  Table customisations (such as filtering, sorting, grouping,
+                  and hiding columns) do not persist across page navigations.
+                  However, they will persist while querying different dates or
+                  date ranges on this page.
+                </li>
+                <li>
+                  If data doesn't appear as expected, try resetting the table.
+                </li>
+                <li>
+                  Collapse/expand tracebacks & YAMLs by clicking cells or using
+                  checkboxes.
+                </li>
+              </ul>
+            </TipsCard>
           )}
-        </Card>
+        </div>
 
         {/* Table */}
         <ContextFeedTable
