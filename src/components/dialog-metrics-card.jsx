@@ -11,7 +11,7 @@ import {
 import { XIcon } from "lucide-react";
 
 function DialogMetricsCard({
-  icon,
+  icons,
   data,
   label,
   metadata,
@@ -26,7 +26,7 @@ function DialogMetricsCard({
   return (
     <>
       <MetricsCard
-        icon={icon}
+        icon={icons[0]}
         data={data}
         label={label}
         metadata={metadata}
@@ -37,17 +37,21 @@ function DialogMetricsCard({
       />
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent
+          onOpenAutoFocus={(event) => {
+            event.preventDefault();
+            event.currentTarget.focus();
+          }}
           showCloseButton={false}
-          className="bg-sky-750 text-white font-light p-4 rounded-lg
+          className="bg-white text-black font-light p-4 rounded-lg
                shadow-[0px_4px_4px_0px_#00000040,4px_4px_16px_4px_#006DA8B2]
                border-4 border-[#0C4A47] p-8
-               !w-[95vw] !max-w-7xl "
+               !w-[95vw] !max-w-7xl max-h-screen overflow-y-auto"
         >
           <DialogHeader>
             <DialogTitle className="flex flex-row text-2xl justify-between">
               <div className="uppercase">{dialogTitle}</div>
               <div>
-                <img src={icon} alt={dialogTitle} />
+                <img src={icons[1] ?? icons[0]} alt={dialogTitle} />
               </div>
             </DialogTitle>
             <DialogDescription className="sr-only">
@@ -62,7 +66,7 @@ function DialogMetricsCard({
               <p className="text-sm">More information goes here.</p>
             </div>
           )}
-          <DialogClose className="ml-auto items-center mt-4 mr-4 w-[150px] h-10 justify-between font-normal rounded-xs border border-1 shadow-[4px_4px_4px_0px_#FF7E00] flex p-2 hover:shadow-[6px_6px_8px_0px_#FF7E00] hover:scale-102 transition-all duration-200">
+          <DialogClose className="ml-auto items-center mt-4 mr-4 w-[150px] h-10 justify-between font-normal rounded-xs border border-1 shadow-[4px_4px_4px_0px_#FF7E00] flex p-2 hover:shadow-[6px_6px_8px_0px_#FF7E00] hover:scale-102 focus-visible:shadow-[6px_6px_8px_0px_#FF7E00] focus-visible:scale-102 focus-visible:outline-none transition-all duration-200">
             <span className="text-xl">Close</span>
             <span className="w-5 h-5">
               <XIcon />
