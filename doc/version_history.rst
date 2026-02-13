@@ -1,3 +1,36 @@
+v0.15.0-alpha.1 (2026-02-13)
+============================
+
+New Features
+------------
+
+- Add can_see_sky to Data Log (`OSW-1050 <https://rubinobs.atlassian.net//browse/OSW-1050>`_)
+- Refactor repeated table code and implement URL based filtering (`OSW-1325 <https://rubinobs.atlassian.net//browse/OSW-1325>`_)
+- Update data log UI based off context feed (`OSW-1334 <https://rubinobs.atlassian.net//browse/OSW-1334>`_)
+- Add timeline to data log page (`OSW-1336 <https://rubinobs.atlassian.net//browse/OSW-1336>`_)
+
+
+Bug Fixes
+---------
+
+- Fix incorrect context feed timeline display (`OSW-1766 <https://rubinobs.atlassian.net//browse/OSW-1766>`_)
+- Fixed incorrect zooming in Observing Conditions Applet (`OSW-1820 <https://rubinobs.atlassian.net//browse/OSW-1820>`_)
+
+
+Performance Enhancement
+-----------------------
+
+- Refactor the JiraTicketsTable component design. (`OSW-1344 <https://rubinobs.atlassian.net//browse/OSW-1344>`_)
+
+
+Other Changes and Additions
+---------------------------
+
+- Toggle seeing points along with corresponding zero points on legend hover in Observing Conditions applet. (`OSW-1079 <https://rubinobs.atlassian.net//browse/OSW-1079>`_)
+- Remove duplicated table functionality (`OSW-1118 <https://rubinobs.atlassian.net//browse/OSW-1118>`_)
+- Add time lost field to JiraTicketsTable component. (`OSW-1689 <https://rubinobs.atlassian.net//browse/OSW-1689>`_)
+
+
 v0.14.0 (2026-01-28)
 ====================
 
