@@ -490,9 +490,14 @@ export function useDOMClickDrag({
       };
 
       // Only invoke callback if there's an actual selection (not just a click)
+      // For 1D selection, only check X-axis. For 2D, check both.
+      const xChanged = start.fractionX !== end.fractionX;
+      const yChanged = start.fractionY !== end.fractionY;
+
+      const hasSelection = enable2DSelection ? xChanged && yChanged : xChanged;
+
       if (
-        start.fractionX !== end.fractionX &&
-        start.fractionY !== end.fractionY &&
+        hasSelection &&
         !isNaN(start.fractionX) &&
         !isNaN(start.fractionY) &&
         !isNaN(end.fractionX) &&
