@@ -21,7 +21,7 @@ function parseTimeLostField(timeLost) {
 
 function JiraTicketsTable({ tickets, loading = false }) {
   return (
-    <Table className="table-auto md:table-fixed w-auto">
+    <Table className="table-auto w-full">
       <TableHeader>
         <TableRow>
           <TableHead className="sticky top-0 z-10 !text-black text-lg text-right">
