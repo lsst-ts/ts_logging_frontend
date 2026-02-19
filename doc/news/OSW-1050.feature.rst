@@ -1,1 +1,0 @@
-Add can_see_sky to Data Log
