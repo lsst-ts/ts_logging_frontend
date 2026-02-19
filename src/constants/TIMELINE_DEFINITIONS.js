@@ -62,7 +62,7 @@ export const TIMELINE_COLORS = {
   MOON_AREA_FILL: "#EAB308",
   MOON_AREA_OPACITY: 0.2,
   MOON_SYMBOL_LIGHT: "white",
-  MOON_SYMBOL_DARK: "#27272a",
+  MOON_SYMBOL_DARK: "black",
   MOON_LABEL: "white",
 
   // Selection
