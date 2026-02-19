@@ -5,6 +5,8 @@ import { useSearch } from "@tanstack/react-router";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Toaster } from "@/components/ui/sonner";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 import PlotVisibilityPopover from "@/components/PlotVisibilityPopover";
 import PlotFormatPopover from "@/components/PlotFormatPopover";
@@ -26,6 +28,10 @@ import {
   PLOT_KEY_TIME,
   PLOT_KEY_SEQUENCE,
 } from "@/components/PLOT_DEFINITIONS";
+
+import PageHeader from "@/components/PageHeader";
+import TipsCard from "@/components/TipsCard";
+import SelectedTimeRangeBar from "@/components/SelectedTimeRangeBar";
 
 import {
   fetchAlmanac,
@@ -61,13 +67,6 @@ function Plots() {
     .toFormat("yyyyMMdd");
   const instrument = TELESCOPES[telescope];
 
-  // For display on page
-  const instrumentName = telescope;
-  const dateRangeString =
-    startDayobs === endDayobs
-      ? `on dayobs ${startDayobs}`
-      : `in dayobs range ${startDayobs}–${endDayobs}`;
-
   // Data
   const [dataLogEntries, setDataLogEntries] = useState([]);
   const [availableDayObs, setAvailableDayObs] = useState([]);
@@ -84,6 +83,10 @@ function Plots() {
   const { selectedTimeRange, setSelectedTimeRange, fullTimeRange } =
     useTimeRangeFromURL("/plots");
 
+  // Visibility toggles
+  const [timelineVisible, setTimelineVisible] = useState(true);
+  const [tipsVisible, setTipsVisible] = useState(true);
+
   // Keep track of default and user-added plots
   const [visiblePlots, setVisiblePlots] = useState(
     PLOT_DEFINITIONS.filter((p) => p.default).map((p) => p.key),
@@ -95,6 +98,19 @@ function Plots() {
   const [plotShape, setPlotShape] = useState("dots");
   const [plotColor, setPlotColor] = useState("assorted");
   const [bandMarker, setBandMarker] = useState("bandColorsIcons");
+
+  // Filtered exposure count for SelectedTimeRangeBar
+  const filteredCount = useMemo(() => {
+    if (!selectedTimeRange[0] || !selectedTimeRange[1])
+      return dataLogEntries.length;
+    const [s, e] = [
+      selectedTimeRange[0].toMillis(),
+      selectedTimeRange[1].toMillis(),
+    ];
+    return dataLogEntries.filter(
+      (entry) => entry.obs_start_millis >= s && entry.obs_start_millis <= e,
+    ).length;
+  }, [dataLogEntries, selectedTimeRange]);
 
   function prepareExposureData(dataLog) {
     // Prepare data for plots
@@ -270,17 +286,17 @@ function Plots() {
     twilightValues,
   ]);
 
+  const loading = dataLogLoading || almanacLoading;
+
   // Temporary display message for AuxTel queries
   if (telescope === "AuxTel") {
     return (
       <div className="flex flex-col w-full p-8 gap-4">
-        <h1 className="flex flex-row gap-3 text-white text-5xl uppercase justify-center">
-          <span className="tracking-[2px] font-extralight">
-            {instrumentName}
-          </span>
-          <span className="font-extrabold">Plots</span>
-        </h1>
-        <p className="min-h-[4.5rem] text-white font-thin text-center pb-4 flex flex-col items-center justify-center gap-2">
+        <PageHeader
+          title="Plots"
+          description="An interactive visual overview of exposure metadata from the ConsDB and related sources."
+        />
+        <p className="text-white font-thin text-center">
           AuxTel is currently not supported in this page. Contact the Logging
           team if this is a priority for you.
         </p>
@@ -291,116 +307,153 @@ function Plots() {
 
   return (
     <>
-      <div className="flex flex-col w-full p-8 gap-4">
-        {/* Page title */}
-        <h1 className="flex flex-row gap-3 text-white text-5xl uppercase justify-center">
-          <span className="tracking-[2px] font-extralight">
-            {instrumentName}
-          </span>
-          <span className="font-extrabold">Plots</span>
-        </h1>
+      <div className="flex flex-col h-screen w-full p-8 gap-4">
+        {/* Page Header, Timeline & Tips Banners */}
+        <div className="flex flex-col gap-2">
+          {/* Page title + buttons */}
+          <PageHeader
+            title="Plots"
+            description="An interactive visual overview of exposure metadata from the ConsDB and related sources."
+            actions={
+              <>
+                {/* Button to toggle timeline visibility */}
+                <Button
+                  onClick={() => setTimelineVisible((prev) => !prev)}
+                  className="bg-stone-300 text-teal-900 font-sm h-6 rounded-md px-2 shadow-[3px_3px_3px_0px_#0d9488] cursor-pointer hover:bg-stone-200 hover:shadow-[4px_4px_8px_0px_#0d9488] transition-all duration-200"
+                >
+                  {timelineVisible ? "Hide Timeline" : "Show Timeline"}
+                </Button>
+                {/* Button to toggle tips visibility */}
+                <Button
+                  onClick={() => setTipsVisible((prev) => !prev)}
+                  className="bg-amber-400 text-teal-900 font-sm h-6 rounded-md px-2 shadow-[3px_3px_3px_0px_#0d9488] cursor-pointer hover:bg-amber-300 hover:shadow-[4px_4px_8px_0px_#0d9488] transition-all duration-200"
+                >
+                  {tipsVisible ? "Hide Tips" : "Show Tips"}
+                </Button>
+              </>
+            }
+          />
 
-        {/* Info section */}
-        <div className="min-h-[4.5rem] text-white font-thin text-center pb-4 flex flex-col items-center justify-center gap-2">
-          {dataLogLoading || almanacLoading ? (
-            <>
-              <Skeleton className="h-5 w-3/4 max-w-xl bg-stone-700" />
-            </>
-          ) : (
-            <>
-              <p>
-                {dataLogEntries.length} exposures found for {instrumentName}{" "}
-                {dateRangeString}.
-              </p>
-            </>
+          {/* Timeline Tips */}
+          {tipsVisible && (
+            <TipsCard title="Timeline Tips">
+              <ul className="list-disc list-outside ml-5 space-y-1">
+                <li>
+                  <span className="font-bold">Drag</span> to select a time range
+                  (plots update automatically).
+                </li>
+                <li>
+                  <span className="font-bold">Shift + Drag</span> to extend
+                  selection.
+                </li>
+                <li>
+                  <span className="font-bold">Double-Click</span> to reset.
+                </li>
+                <li>
+                  <span className="font-bold">Right-Click</span> for more
+                  options (keeps selection).
+                </li>
+                <li>
+                  Blue lines are twilights and yellow shading is moon above
+                  horizon.
+                </li>
+                <li>Moon illumination (%) is shown at Chilean midnight.</li>
+                <li>Exposures are shown at observation start times (TAI).</li>
+              </ul>
+            </TipsCard>
           )}
-          <div className="flex flex-col max-w-xxl mt-6 border border-1 border-white rounded-md p-2 gap-2">
-            <ul className="list-disc list-inside">
-              <li>
-                <span className="font-medium">Click & Drag</span> on the
-                timeline or any plot to zoom in. Hold{" "}
-                <span className="font-medium">Shift</span> to only zoom the time
-                axis
-              </li>
-              <li>
-                Hold <span className="font-medium">Ctrl/⌘</span> and drag on any
-                plot to zoom out. Hold{" "}
-                <span className="font-medium">Shift + Ctrl/⌘</span> to only zoom
-                the time axis
-              </li>
-              <li>
-                <span className="font-medium">Double-Click</span> on the
-                timeline or any plot to zoom to the entire X axis
-              </li>
-              <li>
-                Click the <span className="font-medium">Reset</span> button on
-                the top right of each plot to reset the Y axis zoom on that plot
-              </li>
-              <li>
-                Hold <span className="font-medium">Shift</span> before starting
-                a new selection in the timeline to extend the current selection
-                instead of starting a new selection.
-              </li>
-              <li>
-                <span className="font-medium">Right-Click</span> on the timeline
-                or any plot to see options, including jumping to other pages.
-                These jumps will keep your current time selection
-              </li>
-            </ul>
-            <p>
-              Twilights are shown as blue lines, moon above the horizon is
-              highlighted in yellow, and moon illumination (%) is displayed
-              above the timeline at local Chilean midnight. All times displayed
-              are <span className="font-light">obs start</span> times in TAI
-              (UTC+37s).
-            </p>
-            <p>
-              Change which plots are shown by clicking the{" "}
-              <span className="font-medium">Show/Hide Plots</span> button.
-              Formatting options are found by clicking the{" "}
-              <span className="font-medium">Plot Format</span> button. Future
-              features include remembering your plot preferences.
-            </p>
-            <p>
-              When plotting multiple nights by{" "}
-              <span className="font-medium">Sequence Number</span>, nights are
-              separated by single zig-zag lines; double zig-zags represent
-              nights with no data taken.
-            </p>
-          </div>
+
+          {/* Timeline */}
+          {timelineVisible && (
+            <Card className="grid gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 font-thin shadow-stone-900 shadow-md">
+              {loading ? (
+                <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
+              ) : (
+                <ContextMenuWrapper menuItems={contextMenuItems}>
+                  <TimelineChart
+                    data={[
+                      {
+                        index: 0.5,
+                        timestamps: dataLogEntries.map(
+                          (d) => d.obs_start_millis,
+                        ),
+                        color: "#3CAE3F",
+                        isActive: true,
+                      },
+                    ]}
+                    twilightValues={twilightValues}
+                    showTwilight={twilightValues.length > 1}
+                    illumValues={illumValues}
+                    showMoonIllumination={true}
+                    moonIntervals={moonIntervals}
+                    showMoonArea={true}
+                    fullTimeRange={fullTimeRange}
+                    selectedTimeRange={selectedTimeRange}
+                    setSelectedTimeRange={setSelectedTimeRange}
+                  />
+                </ContextMenuWrapper>
+              )}
+            </Card>
+          )}
+
+          {/* Editable Time Range */}
+          <SelectedTimeRangeBar
+            selectedTimeRange={selectedTimeRange}
+            setSelectedTimeRange={setSelectedTimeRange}
+            fullTimeRange={fullTimeRange}
+            timezone="TAI"
+            rightContent={
+              loading ? (
+                <Skeleton className="h-5 w-64 bg-teal-700 inline-block" />
+              ) : (
+                `${filteredCount} of ${dataLogEntries.length} exposures selected`
+              )
+            }
+          />
+
+          {/* Plots Tips */}
+          {tipsVisible && (
+            <TipsCard title="Plots Tips">
+              <ul className="list-disc list-outside ml-5 space-y-1">
+                <li>
+                  <span className="font-bold">Click & Drag</span> on the
+                  timeline or any plot to zoom in. Hold{" "}
+                  <span className="font-bold">Shift</span> to only zoom the time
+                  axis.
+                </li>
+                <li>
+                  Hold <span className="font-bold">Ctrl/⌘</span> and drag to
+                  zoom out. Hold{" "}
+                  <span className="font-bold">Shift + Ctrl/⌘</span> to only zoom
+                  the time axis.
+                </li>
+                <li>
+                  <span className="font-bold">Double-Click</span> on the
+                  timeline or any plot to reset the X axis.
+                </li>
+                <li>
+                  Click <span className="font-bold">Reset</span> on the top
+                  right of a plot to reset its Y axis.
+                </li>
+                <li>
+                  Use <span className="font-bold">Show/Hide Plots</span> to
+                  toggle plots and{" "}
+                  <span className="font-bold">Plot Format</span> for formatting
+                  options.
+                </li>
+                <li>
+                  When plotting multiple nights by{" "}
+                  <span className="font-bold">Sequence Number</span>, single
+                  zig-zags separate nights; double zig-zags indicate nights with
+                  no data.
+                </li>
+              </ul>
+            </TipsCard>
+          )}
         </div>
 
-        {/* Timeline */}
-        {dataLogLoading || almanacLoading ? (
-          <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
-        ) : (
-          <>
-            <ContextMenuWrapper menuItems={contextMenuItems}>
-              <TimelineChart
-                data={[
-                  {
-                    index: 0.5,
-                    timestamps: dataLogEntries.map((d) => d.obs_start_millis),
-                    color: "#3CAE3F",
-                    isActive: true,
-                  },
-                ]}
-                twilightValues={twilightValues}
-                showTwilight={twilightValues.length > 1}
-                illumValues={illumValues}
-                showMoonIllumination={true}
-                moonIntervals={moonIntervals}
-                showMoonArea={true}
-                fullTimeRange={fullTimeRange}
-                selectedTimeRange={selectedTimeRange}
-                setSelectedTimeRange={setSelectedTimeRange}
-              />
-            </ContextMenuWrapper>
-          </>
-        )}
-
         {/* Time Window Inputs & Controls */}
-        {dataLogLoading || almanacLoading ? (
+        {loading ? (
           <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
         ) : (
           <div className="flex flex-row w-full justify-between items-center gap-8 mt-4">
@@ -461,7 +514,7 @@ function Plots() {
 
         {/* Plots */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-40">
-          {dataLogLoading || almanacLoading ? (
+          {loading ? (
             <>
               {/* 4 loading plot skeletons */}
               {Array(4)
