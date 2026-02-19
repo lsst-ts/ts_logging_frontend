@@ -5,19 +5,9 @@ import {
   DEFAULT_PIXEL_SCALE_MEDIAN,
   PSF_SIGMA_FACTOR,
 } from "@/utils/utils";
+import { matchValueOrInList } from "@/components/DataTable/tableUtils";
 
 const columnHelper = createColumnHelper();
-
-// Exact (multiple) match(es) filter function
-const matchValueOrInList = (row, columnId, filterValue) => {
-  const rowValue = row.getValue(columnId);
-
-  if (Array.isArray(filterValue)) {
-    return filterValue.includes(rowValue);
-  }
-
-  return rowValue === filterValue;
-};
 
 // Columns common to both telescopes
 const commonColumns = [
@@ -33,6 +23,7 @@ const commonColumns = [
       />
     ),
     size: 140,
+    minSize: 140,
     filterType: null,
     meta: {
       tooltip: "Link to RubinTV. Opens in a new tab.",
@@ -44,6 +35,7 @@ const commonColumns = [
     header: "Exposure Name",
     cell: (info) => formatCellValue(info.getValue()),
     size: 200,
+    minSize: 200,
     filterType: null,
     meta: {
       tooltip: "Official name of the exposure.",
@@ -53,6 +45,7 @@ const commonColumns = [
     header: "Exposure Id",
     cell: (info) => formatCellValue(info.getValue()),
     size: 140,
+    minSize: 140,
     filterType: null,
     meta: {
       tooltip: "Unique identifier for the exposure.",
@@ -62,6 +55,7 @@ const commonColumns = [
     header: "Seq Num",
     cell: (info) => formatCellValue(info.getValue()),
     size: 100,
+    minSize: 100,
     filterType: "number-range",
     meta: {
       tooltip: "Sequence number of the exposure.",
@@ -71,6 +65,7 @@ const commonColumns = [
     header: "Day Obs",
     cell: (info) => formatCellValue(info.getValue()),
     size: 100,
+    minSize: 100,
     filterFn: matchValueOrInList,
     filterType: "string",
     meta: {
@@ -83,6 +78,7 @@ const commonColumns = [
     header: "Obs Start (TAI)",
     cell: (info) => formatCellValue(info.getValue()),
     size: 240,
+    minSize: 240,
     filterType: "number-range",
     meta: {
       tooltip:
@@ -93,6 +89,7 @@ const commonColumns = [
     header: "Obs End (TAI)",
     cell: (info) => formatCellValue(info.getValue()),
     size: 240,
+    minSize: 240,
     filterType: "number-range",
     meta: {
       tooltip:
@@ -103,6 +100,7 @@ const commonColumns = [
     header: "Exposure Time (s)",
     cell: (info) => formatCellValue(info.getValue(), { decimals: 2 }),
     size: 160,
+    minSize: 160,
     filterType: "number-range",
     meta: {
       tooltip: "Spatially-averaged duration of exposure, accurate to 10ms.",
@@ -114,6 +112,7 @@ const commonColumns = [
     header: "Science Program",
     cell: (info) => formatCellValue(info.getValue()),
     size: 150,
+    minSize: 150,
     filterFn: matchValueOrInList,
     filterType: "string",
     meta: {
@@ -125,6 +124,7 @@ const commonColumns = [
     header: "Obs Type",
     cell: (info) => formatCellValue(info.getValue()),
     size: 100,
+    minSize: 100,
     filterFn: matchValueOrInList,
     filterType: "string",
     meta: {
@@ -136,6 +136,7 @@ const commonColumns = [
     header: "Obs Reason",
     cell: (info) => formatCellValue(info.getValue()),
     size: 160,
+    minSize: 160,
     filterFn: matchValueOrInList,
     filterType: "string",
     meta: {
@@ -147,6 +148,7 @@ const commonColumns = [
     header: "Target Name",
     cell: (info) => formatCellValue(info.getValue()),
     size: 160,
+    minSize: 160,
     filterFn: matchValueOrInList,
     filterType: "string",
     meta: {
@@ -160,6 +162,7 @@ const commonColumns = [
     header: "Flags",
     cell: (info) => formatCellValue(info.getValue()),
     size: 100,
+    minSize: 100,
     filterFn: matchValueOrInList,
     filterType: "string",
     meta: {
@@ -170,6 +173,7 @@ const commonColumns = [
     header: "Comments",
     cell: (info) => formatCellValue(info.getValue()),
     size: 120,
+    minSize: 120,
     filterType: null,
     meta: {
       tooltip: "Comments from observers associated with flags.",
@@ -181,6 +185,7 @@ const commonColumns = [
     header: "RA",
     cell: (info) => formatCellValue(info.getValue()),
     size: 60,
+    minSize: 60,
     filterType: "number-range",
     meta: {
       tooltip:
@@ -191,6 +196,7 @@ const commonColumns = [
     header: "Dec",
     cell: (info) => formatCellValue(info.getValue()),
     size: 70,
+    minSize: 70,
     filterType: "number-range",
     meta: {
       tooltip:
@@ -201,6 +207,7 @@ const commonColumns = [
     header: "Alt",
     cell: (info) => formatCellValue(info.getValue()),
     size: 70,
+    minSize: 70,
     filterType: "number-range",
     meta: {
       tooltip:
@@ -211,6 +218,7 @@ const commonColumns = [
     header: "Az",
     cell: (info) => formatCellValue(info.getValue()),
     size: 60,
+    minSize: 60,
     filterType: "number-range",
     meta: {
       tooltip:
@@ -221,6 +229,7 @@ const commonColumns = [
     header: "Sky Rotation",
     cell: (info) => formatCellValue(info.getValue()),
     size: 120,
+    minSize: 120,
     filterType: "number-range",
     meta: {
       tooltip: "Targeted sky rotation angle (deg).",
@@ -230,6 +239,7 @@ const commonColumns = [
     header: "Airmass",
     cell: (info) => formatCellValue(info.getValue()),
     size: 90,
+    minSize: 90,
     filterType: "number-range",
     meta: {
       tooltip:
@@ -240,6 +250,7 @@ const commonColumns = [
     header: "DIMM seeing",
     cell: (info) => formatCellValue(info.getValue()),
     size: 130,
+    minSize: 130,
     filterType: "number-range",
     meta: {
       tooltip:
@@ -250,6 +261,7 @@ const commonColumns = [
     header: "Outside Air Temp",
     cell: (info) => formatCellValue(info.getValue()),
     size: 150,
+    minSize: 150,
     filterType: "number-range",
     meta: {
       tooltip: "Outside air temperature in degC.",
@@ -259,6 +271,7 @@ const commonColumns = [
     header: "Can See Sky",
     cell: (info) => formatCellValue(info.getValue()),
     size: 90,
+    minSize: 90,
     filterType: "string",
     filterFn: matchValueOrInList,
     meta: {
@@ -275,6 +288,7 @@ const dataLogColumns = {
       header: "Filter",
       cell: (info) => formatCellValue(info.getValue()),
       size: 100,
+      minSize: 100,
       filterFn: matchValueOrInList,
       filterType: "string",
       meta: {
@@ -288,6 +302,7 @@ const dataLogColumns = {
       header: "Median PSF",
       cell: (info) => formatCellValue(info.getValue()),
       size: 115,
+      minSize: 115,
       filterType: "number-range",
       meta: {
         tooltip:
@@ -302,6 +317,7 @@ const dataLogColumns = {
       header: "Sky Brightness",
       cell: (info) => formatCellValue(info.getValue()),
       size: 140,
+      minSize: 140,
       filterType: "number-range",
       meta: {
         tooltip: "Average sky background (median across all detectors).",
@@ -311,6 +327,7 @@ const dataLogColumns = {
       header: "Photometric ZP",
       cell: (info) => formatCellValue(info.getValue()),
       size: 140,
+      minSize: 140,
       filterType: "number-range",
       meta: {
         tooltip: "Photometric zero point (median across all detectors) (mag).",
@@ -320,6 +337,7 @@ const dataLogColumns = {
       header: "High SNR Source Counts",
       cell: (info) => formatCellValue(info.getValue()),
       size: 200,
+      minSize: 200,
       filterType: "number-range",
       meta: {
         tooltip:
@@ -330,6 +348,7 @@ const dataLogColumns = {
       header: "Dome Temp",
       cell: (info) => formatCellValue(info.getValue()),
       size: 100,
+      minSize: 100,
       filterType: "number-range",
       meta: {
         tooltip: "Temperature in Dome at M2 in degC.",
@@ -459,9 +478,4 @@ const defaultColumnOrder = {
   ],
 };
 
-export {
-  matchValueOrInList,
-  dataLogColumns,
-  defaultColumnVisibility,
-  defaultColumnOrder,
-};
+export { dataLogColumns, defaultColumnVisibility, defaultColumnOrder };
