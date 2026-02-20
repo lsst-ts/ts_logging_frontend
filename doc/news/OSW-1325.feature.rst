@@ -1,2 +1,0 @@
-Refactor repeated table code and implement URL based filtering
-
