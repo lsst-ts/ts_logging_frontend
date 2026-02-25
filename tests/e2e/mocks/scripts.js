@@ -73,14 +73,9 @@ export function generateDataLogMock(
   return { data_log: dl };
 }
 
-export function exportWrapper(data) {
-  return `/// Generated mock fixture
-export default ${JSON.stringify(data, null, 2)};`;
-}
-
 export function writeFixture(data, filename) {
   fs.writeFileSync(
-    path.resolve(import.meta.dirname, "fixtures", `${filename}.js`),
-    exportWrapper(data),
+    path.resolve(import.meta.dirname, "fixtures", `${filename}.json`),
+    JSON.stringify(data, null, 2),
   );
 }
