@@ -1,6 +1,6 @@
 // @ts-check
-import { dataLogFixture } from "../mocks/fixtures/data-log.js";
-import { almanacFixture } from "../mocks/fixtures/almanac.js";
+import dataLogFixture from "../mocks/fixtures/data-log.js";
+import almanacFixture from "../mocks/fixtures/almanac.js";
 
 /**
  * Sets up Playwright route mocks for all backend API endpoints used by the
