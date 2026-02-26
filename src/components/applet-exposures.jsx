@@ -1,6 +1,7 @@
 // Applet: Display a breakdown of the exposures into type, reason, and program.
 
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { createPortal } from 'react-dom';
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
   Select,
@@ -16,7 +17,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
+import { ChartContainer } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { Cell, Bar, BarChart, XAxis, YAxis, Customized } from "recharts";
@@ -51,13 +52,23 @@ function AppletExposures({
   exposureCount,
   sumExpTime,
   flags,
+  testCases = {},
   exposuresLoading = false,
   flagsLoading = false,
 }) {
   const [plotBy, setPlotBy] = useState(PlotByValues.NUMBER);
   const [groupBy, setGroupBy] = useState(GroupByValues.SCIENCE_PROGRAM);
   const [sortBy, setSortBy] = useState(SortByValues.HIGHEST_FIRST);
+
+  // State for bar highlighting, tick label links,
+  // and portalled tooltip.
   const [hovered, setHovered] = useState(null);
+  const [tooltipState, setTooltipState] = useState(null);
+
+  // For rendering tooltip via portal so the bar chart
+  // can scroll without tooltip being clipped.
+  const cardRef = useRef(null);
+  const scrollRef = useRef(null);
 
   const plotByOptions = [
     { value: PlotByValues.NUMBER, label: "Number" },
@@ -95,6 +106,70 @@ function AppletExposures({
         [filterField]: [selectedValue],
       }),
     });
+  };
+
+  // Construct custom tick labels for bar chart.
+  // If grouped by Science Program, and the Test Case group has
+  // Zephyr documentation that can be linked to, provide that link.
+  // Otherwise, display a normal (or trimmed if too long) tick label.
+  const YAxisTick = ({
+    x,
+    y,
+    payload,
+    groupBy,
+    testCases,
+    maxSize,
+  }) => {
+    const fullLabel = payload.value;
+
+    const displayLabel =
+      fullLabel.length > maxSize
+        ? `${fullLabel.slice(0, maxSize - 2)}...`
+        : fullLabel;
+
+    const isScienceProgram =
+      groupBy === GroupByValues.SCIENCE_PROGRAM;
+
+    const mappedValue =
+      testCases?.[fullLabel];
+
+    const isLinked = isScienceProgram && !!mappedValue;
+
+    const parentTestCase = isLinked ? fullLabel.split("_", 1)[0] : null;
+    const href = isLinked
+      ? `https://rubinobs.atlassian.net/projects/BLOCK?selectedItem=com.atlassian.plugins.atlassian-connect-plugin:com.kanoah.test-manager__main-project-page#!/v2/testCase/${parentTestCase}`
+      : null;
+
+    const textElement = (
+      <text
+        x={x}
+        y={y}
+        dy={4}
+        textAnchor="end"
+        fill={isLinked ? "#74d4ff" : "#ffffff"}
+        fontSize={10}
+        style={{
+          cursor: isLinked ? "pointer" : "default",
+          textDecoration: isLinked ? "underline" : "none",
+        }}
+        onMouseEnter={e => isLinked && (e.currentTarget.style.fill = "#00a6f4")}  // darker blue
+        onMouseLeave={e => isLinked && (e.currentTarget.style.fill = "#74d4ff")}  // revert
+      >
+        {displayLabel}
+      </text>
+    );
+
+    if (!isLinked) return textElement;
+
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {textElement}
+      </a>
+    );
   };
 
   const flaggedObsIds = new Set(flags.map((f) => f.obs_id));
@@ -180,6 +255,12 @@ function AppletExposures({
 
   chartData.sort(sorters[sortBy]);
 
+  // Set tooltip position for rendering via portal,
+  // accounting for any scrolling of the bar chart.
+  const scrollTop = scrollRef.current?.scrollTop ?? 0;
+  const left = tooltipState?.x ?? 0;
+  const top = (tooltipState?.y ?? 0) - scrollTop;
+
   return (
     <Card className="border-none p-0 bg-stone-800 gap-2">
       <CardHeader className="grid-cols-3 bg-teal-900 p-4 rounded-sm align-center gap-0">
@@ -219,6 +300,10 @@ function AppletExposures({
               <ul className="list-disc pl-4 mt-1 space-y-1">
                 <li>Hover over a bar to view total and flagged values.</li>
                 <li>
+                  In <strong>Science Program</strong> view, hover to see the test case description (if available). 
+                  Linked labels open the test case documentation.
+                </li>
+                <li>
                   Click a bar to open the Data Log, filtered by that group.
                 </li>
                 <li>Scroll to see additional groups if all are not visible.</li>
@@ -228,7 +313,9 @@ function AppletExposures({
         </div>
       </CardHeader>
 
-      <CardContent className="flex flex-col gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 h-[320px] font-thin">
+      <CardContent
+        className="flex flex-col gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 h-[320px] font-thin"
+      >
         {exposuresLoading ? (
           <>
             {/* Skeleton outline */}
@@ -261,7 +348,10 @@ function AppletExposures({
         ) : (
           <>
             {/* Plot display and controls */}
-            <div className="flex-grow flex flex-row gap-8 overflow-hidden">
+            <div
+              ref={cardRef} // Tooltip is rendered here via portal
+              className="flex-grow flex flex-row gap-8 overflow-hidden relative"
+            >
               {exposureCount === 0 ? (
                 <span className="w-full">
                   No exposures returned for selected dates.
@@ -269,7 +359,10 @@ function AppletExposures({
               ) : (
                 <>
                   {/* Plot display */}
-                  <div className="flex-grow overflow-y-auto">
+                  <div
+                    ref={scrollRef} // For computing tooltip position
+                    className="flex-grow overflow-y-auto"
+                  >
                     <div
                       style={{
                         height: `${chartData.length * BAR_SIZE}px`,
@@ -285,6 +378,36 @@ function AppletExposures({
                           layout="vertical"
                           margin={{
                             left: 30,
+                          }}
+                          // For rendering tooltip
+                          onMouseMove={(state) => {
+                            const payload = state?.activePayload;
+                            const coordinate = state?.activeCoordinate;
+
+                            // Not hovering over a bar?
+                            if (!payload?.length || !coordinate) {
+                              if (tooltipState !== null) {
+                                setTooltipState(null);
+                                setHovered(null);
+                              }
+                              return;
+                            }
+
+                            // Only update tooltip when bar changes
+                            const groupKey = state.activeLabel;
+                            if (tooltipState?.groupKey !== groupKey) {
+                              setTooltipState({
+                                x: coordinate.x,
+                                y: coordinate.y,
+                                payload,
+                                groupKey,
+                              });
+                              setHovered(groupKey);
+                            }
+                          }}
+                          onMouseLeave={() => {
+                            setTooltipState(null);
+                            setHovered(null);
                           }}
                         >
                           {/* Unflagged data stacked bar (bottom) */}
@@ -357,10 +480,6 @@ function AppletExposures({
                                             ? "rgba(255,255,255,0.15)"
                                             : "transparent"
                                         }
-                                        onMouseEnter={() =>
-                                          setHovered(entry.groupKey)
-                                        }
-                                        onMouseLeave={() => setHovered(null)}
                                         onClick={() => handleBarClick(entry)}
                                         style={{ cursor: "pointer" }}
                                       />
@@ -377,33 +496,16 @@ function AppletExposures({
                             type="category"
                             axisLine={{ stroke: "#ffffff", strokeWidth: 2 }}
                             tickLine={false}
-                            // Custom tick component for wrapping long labels
-                            tick={({ x, y, payload }) => (
-                              (<title>{payload.value}</title>),
-                              (
-                                <text
-                                  x={x}
-                                  y={y}
-                                  dy={4}
-                                  textAnchor="end"
-                                  fill="#ffffff"
-                                  fontSize={10}
-                                >
-                                  {payload.value.length > PLOT_YLABELS_MAXSIZE
-                                    ? `${payload.value.slice(
-                                        0,
-                                        PLOT_YLABELS_MAXSIZE - 2,
-                                      )}...`
-                                    : payload.value}
-                                </text>
-                              )
+                            // Render tick labels with links to Test Case docs
+                            tick={(props) => (
+                              <YAxisTick
+                                {...props}
+                                groupBy={groupBy}
+                                testCases={testCases}
+                                maxSize={PLOT_YLABELS_MAXSIZE}
+                              />
                             )}
                             tickMargin={2}
-                            tickFormatter={(value) =>
-                              value === "Unknown" && groupBy === "target_name"
-                                ? "No target"
-                                : value
-                            }
                           />
                           <XAxis
                             type="number"
@@ -420,35 +522,6 @@ function AppletExposures({
                               offset: 0,
                               fill: "#ffffff",
                               style: { fontSize: 12 },
-                            }}
-                          />
-
-                          {/* Tooltip content and styles  */}
-                          <ChartTooltip
-                            cursor={false}
-                            content={({ active, payload }) => {
-                              if (!active || !payload || payload.length === 0)
-                                return null;
-
-                              const group = payload[0].payload.groupKey;
-                              const unflagged = payload.find(
-                                (d) => d.dataKey === "unflagged",
-                              ).value;
-                              const flagged = payload.find(
-                                (d) => d.dataKey === "flagged",
-                              ).value;
-
-                              return (
-                                <div className="bg-white text-black text-xs p-2 border border-white rounded">
-                                  <div className="font-bold">
-                                    {group}:{" "}
-                                    <strong className="font-extra-bold">
-                                      {unflagged + flagged}
-                                    </strong>
-                                  </div>
-                                  {flagged > 0 && <div>Flagged: {flagged}</div>}
-                                </div>
-                              );
                             }}
                           />
                         </BarChart>
@@ -587,6 +660,49 @@ function AppletExposures({
               )}
             </div>
           </>
+        )}
+
+        {/* Tooltip, rendered via portal */}
+        {cardRef.current && tooltipState && createPortal(
+          <div
+            className="absolute z-50 pointer-events-none"
+            // Set location, accounting for scroll.
+            style={{
+              left,
+              top,
+              // Shift tooltip up by its height, so
+              // bottom bar tooltips don't get clipped.
+              transform: "translateY(-100%)",
+            }}
+          >
+            <div className="bg-white text-black text-xs p-2 border border-white rounded">
+              {(() => {
+                const group = tooltipState.payload[0].payload.groupKey;
+                const testCaseName = testCases?.[group];
+                const unflagged = tooltipState.payload.find(
+                  (d) => d.dataKey === "unflagged",
+                ).value;
+                const flagged = tooltipState.payload.find(
+                  (d) => d.dataKey === "flagged",
+                ).value;
+
+                return (
+                  <>
+                    <div className="font-bold">
+                      {group}:{" "}
+                      <strong className="font-extra-bold">
+                        {unflagged + flagged}
+                      </strong>
+                    </div>
+                    {flagged > 0 && <div>Flagged: {flagged}</div>}
+                    {testCaseName && <div className="font-medium">{testCaseName}</div>}
+                  </>
+                );
+              })()}
+            </div>
+          </div>,
+          // Tooltip gets rendered in container with this reference.
+          cardRef.current
         )}
       </CardContent>
     </Card>

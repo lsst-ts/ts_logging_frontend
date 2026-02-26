@@ -1,3 +1,6 @@
+import { Dict } from "@bokeh/bokehjs/build/js/lib/core/kinds";
+import { list } from "postcss";
+
 const httpProtocol = window.location.protocol;
 const host = window.location.host;
 /**
@@ -407,6 +410,35 @@ const fetchVisitMaps = async (
   }
 };
 
+
+/**
+ * Fetches the details of Zephyr test cases from the backend API for a specified set of test case keys.
+ *
+ * @async
+ * @function fetchTestCases
+ * @param {list} keys - The keys for the test cases.
+ * @param {AbortController} abortController - The AbortController used to cancel the request if needed.
+ * @returns {Promise<Dict>} A promise that resolves to a dict of test case details.
+ * @throws {Error} Throws an error if fetching test case details fails for reasons other than an abort.
+ */
+const fetchTestCases = async (keys, abortController) => {
+  // const url = `${backendLocation}/test-cases?testCaseKeys=${keys}`;
+  const params = new URLSearchParams();
+  keys.forEach((key) => params.append("testCaseKeys", key));
+  const url = `${backendLocation}/test-cases?${params.toString()}`;
+  try {
+    // console.log("test case keys from fetchUtil: ", keys);
+    const data = await fetchData(url, abortController);
+    // console.log("test cases: ", data);
+    return data;
+  } catch (err) {
+    if (err.name !== "AbortError") {
+      console.error("Error fetching test cases", err);
+    }
+    throw err;
+  }
+};
+
 export {
   fetchExposures,
   fetchExpectedExposures,
@@ -420,4 +452,5 @@ export {
   fetchContextFeed,
   fetchBackendVersion,
   fetchVisitMaps,
+  fetchTestCases,
 };

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { useSearch } from "@tanstack/react-router";
@@ -9,12 +9,11 @@ import DataLogTable from "@/components/DataLogTable.jsx";
 import {
   fetchDataLogEntriesFromConsDB,
   fetchDataLogEntriesFromExposureLog,
+  fetchTestCases,
 } from "@/utils/fetchUtils";
 import {
   getDatetimeFromDayobsStr,
-  mergeDataLogSources,
-  DEFAULT_PIXEL_SCALE_MEDIAN,
-  PSF_SIGMA_FACTOR,
+  mergeAllSources,
 } from "@/utils/utils";
 
 function DataLog() {
@@ -57,69 +56,120 @@ function DataLog() {
     tableFilters.push({ id: "target_name", value: target_name });
   }
 
-  // Data
-  const [dataLogEntries, setDataLogEntries] = useState([]);
-  const [dataLogLoading, setDataLogLoading] = useState(true);
+  // Data and loading flags
+  const [consDBdata, setConsDBdata] = useState([]);
+  const [consDBdataLoading, setConsDBdataLoading] = useState(false);
+  const [exposureLogData, setExposureLogData] = useState([]);
+  const [exposureLogDataLoading, setExposureLogDataLoading] = useState(false);
+  const [zephyrData, setZephyrData] = useState({});
+  const [zephyrDataLoading, setZephyrDataLoading] = useState(false);
 
+  // Fetch from ConsDB
   useEffect(() => {
-    // To cancel previous fetch if still in progress
     const abortController = new AbortController();
 
-    // Trigger loading skeletons
-    setDataLogLoading(true);
+    setConsDBdataLoading(true);
 
-    // Fetch data from both sources
-    Promise.all([
-      fetchDataLogEntriesFromConsDB(
-        startDayobs,
-        queryEndDayobs,
-        instrument,
-        abortController,
-      ),
-      fetchDataLogEntriesFromExposureLog(
-        startDayobs,
-        queryEndDayobs,
-        instrument,
-        abortController,
-      ),
-    ])
-      .then(([consDBData, exposureLogData]) => {
-        const dataLog = consDBData.data_log ?? [];
+    fetchDataLogEntriesFromConsDB(
+      startDayobs,
+      queryEndDayobs,
+      instrument,
+      abortController,
+    )
+    .then((consDBData) => {
+      const dataLog = consDBData.data_log ?? [];
+      if (dataLog.length === 0) {
+        toast.warning(
+          "No data log records found in ConsDB for the selected date range.",
+        );
+      }
 
-        if (dataLog.length === 0) {
-          toast.warning(
-            "No data log records found in ConsDB for the selected date range.",
-          );
-        }
+      setConsDBdata(dataLog);
+    })
+    .catch((err) => {
+      if (!abortController.signal.aborted) {
+        setConsDBdata([]);
+        const msg = err?.message || "Unknown error";
+        toast.error("Error fetching data from ConsDB!", {
+          description: msg,
+          duration: Infinity,
+        });
+      }
+    })
+    .finally(() => {
+      if (!abortController.signal.aborted) {
+        setConsDBdataLoading(false);
+      }
+    });
 
-        // Merge the two data sources
-        // and apply conversion to required row(s)
-        const mergedData = mergeDataLogSources(dataLog, exposureLogData)
-          .map((entry) => {
-            const psfSigma = Number.parseFloat(entry.psf_sigma_median);
-            const pixelScale = Number.isFinite(entry.pixel_scale_median)
-              ? entry.pixel_scale_median
-              : DEFAULT_PIXEL_SCALE_MEDIAN;
-            const psf_median = Number.isFinite(psfSigma)
-              ? psfSigma * PSF_SIGMA_FACTOR * pixelScale
-              : null;
+    return () => {
+      abortController.abort();
+    };
+  }, [startDayobs, queryEndDayobs, instrument]);
 
-            return {
-              ...entry,
-              psf_median,
-            };
-          })
-          .sort((a, b) => Number(b["exposure_id"]) - Number(a["exposure_id"]));
+  // Fetch flags and comments from Exposure Log
+  useEffect(() => {
+    const abortController = new AbortController();
 
-        // Set the merged data to state
-        setDataLogEntries(mergedData);
-        setDataLogLoading(false);
+    setExposureLogDataLoading(true);
+
+    fetchDataLogEntriesFromExposureLog(
+      startDayobs,
+      queryEndDayobs,
+      instrument,
+      abortController,
+    )
+    .then((exposureLogData) => {
+      setExposureLogData(exposureLogData);
+    })
+    .catch((err) => {
+      if (!abortController.signal.aborted) {
+        setExposureLogData([]);
+        const msg = err?.message || "Unknown error";
+        toast.error("Error fetching exposure log data!", {
+          description: msg,
+          duration: Infinity,
+        });
+      }
+    })
+    .finally(() => {
+      if (!abortController.signal.aborted) {
+        setExposureLogDataLoading(false);
+      }
+    });
+
+    return () => {
+      abortController.abort();
+    };
+  }, [startDayobs, queryEndDayobs, instrument]);
+
+  // Fetch test case details from Zephyr
+  useEffect(() => {
+    const abortController = new AbortController();
+
+    if (consDBdata.length === 0) {
+      return; // don't know which test cases to query
+    }
+
+    setZephyrDataLoading(true);
+
+    // Extrace unique test cases from ConsDB data
+    const testCaseKeys = [...new Set(consDBdata.map(e => e.science_program))];
+    console.log("testCaseKeys: ", testCaseKeys);
+
+    if (testCaseKeys.length === 0) {
+      return; // nothing to fetch
+    }
+    fetchTestCases(testCaseKeys, abortController)
+      .then((testCases) => {
+        console.log("Test cases: ", testCases);
+        setZephyrData(testCases.data);
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          setDataLogEntries([]);
-          const msg = err?.message || "Unknown error";
-          toast.error("Error fetching exposure or data log!", {
+          setZephyrData({});
+          const msg = err?.message;
+          toast.error("Error fetching test case descriptions from Zephyr", {
             description: msg,
             duration: Infinity,
           });
@@ -127,15 +177,27 @@ function DataLog() {
       })
       .finally(() => {
         if (!abortController.signal.aborted) {
-          setDataLogLoading(false);
+          setZephyrDataLoading(false);
         }
       });
+  }, [consDBdata]);
 
-    // Cleanup function
-    return () => {
-      abortController.abort();
-    };
-  }, [startDayobs, queryEndDayobs, instrument]);
+  // Global loading flag
+  const tableLoading =
+    consDBdataLoading || exposureLogDataLoading || zephyrDataLoading;
+
+  // Merge data sources together to form one object
+  // to pass to TanStack Table.
+  const dataLogTableData = useMemo(() => {
+    if (tableLoading) return [];
+    if (!consDBdata.length) return [];
+
+    return mergeAllSources(
+      consDBdata,
+      exposureLogData,
+      zephyrData
+    );
+  }, [tableLoading, consDBdata, exposureLogData, zephyrData]);
 
   return (
     <>
@@ -148,7 +210,7 @@ function DataLog() {
 
         {/* Info section */}
         <div className="min-h-[4.5rem] text-white font-thin text-center pb-4 flex flex-col items-center justify-center gap-2">
-          {dataLogLoading ? (
+          {tableLoading ? (
             <>
               <Skeleton className="h-5 w-3/4 max-w-xl bg-stone-700" />
               <Skeleton className="h-5 w-[90%] max-w-2xl bg-stone-700" />
@@ -156,7 +218,7 @@ function DataLog() {
           ) : (
             <>
               <p>
-                {dataLogEntries.length} exposures returned for {telescope}{" "}
+                {dataLogTableData.length} exposures returned for {telescope}{" "}
                 {dateRangeString}.
               </p>
               <p className="max-w-2xl">
@@ -173,8 +235,8 @@ function DataLog() {
         {/* Table */}
         <DataLogTable
           telescope={telescope}
-          data={dataLogEntries}
-          dataLogLoading={dataLogLoading}
+          data={dataLogTableData}
+          dataLogLoading={tableLoading}
           tableFilters={tableFilters}
         />
       </div>

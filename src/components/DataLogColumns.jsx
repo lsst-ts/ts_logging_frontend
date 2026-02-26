@@ -19,6 +19,36 @@ const matchValueOrInList = (row, columnId, filterValue) => {
   return rowValue === filterValue;
 };
 
+// Conditionally render science programs as links
+// to Zephyr test cases where relevant.
+function renderScienceProgram(info) {
+  const scienceProgram = info.getValue();
+  if (!scienceProgram) return null;
+
+  // If science program does not have a linked test case,
+  // display normally.
+  const testCase = info.row.original.test_case_description;
+  if (!testCase) return (
+    <div>
+      {formatCellValue(scienceProgram)}
+    </div>
+  );
+
+  // Otherwise, display as a link to Zephyr test case
+  const parentTestCase = scienceProgram.split("_", 1)[0];
+  const testCaseUrl = `https://rubinobs.atlassian.net/projects/BLOCK?selectedItem=com.atlassian.plugins.atlassian-connect-plugin:com.kanoah.test-manager__main-project-page#!/v2/testCase/${parentTestCase}`;
+  return (
+    <a
+      href={testCaseUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-sky-400 underline hover:text-sky-700 cursor-pointer"
+    >
+      {formatCellValue(scienceProgram)}
+    </a>
+  );
+}
+
 // Columns common to both telescopes
 const commonColumns = [
   // Link to RubinTV
@@ -112,13 +142,23 @@ const commonColumns = [
   // Observation Categories
   columnHelper.accessor("science_program", {
     header: "Science Program",
-    cell: (info) => formatCellValue(info.getValue()),
-    size: 150,
+    cell: renderScienceProgram,
+    size: 160,
     filterFn: matchValueOrInList,
     filterType: "string",
     meta: {
       urlParam: "science_program",
-      tooltip: "Science program.",
+      tooltip: "Science program, linked to Zephyr scale when test case data is available. Opens in a new tab.",
+    },
+  }),
+  columnHelper.accessor("test_case_description", {
+    header: "Test Case Description",
+    cell: (info) => info.getValue(),
+    size: 240,
+    filterFn: matchValueOrInList,
+    filterType: "string",
+    meta: {
+      tooltip: "Test case description from Zephyr Scale.",
     },
   }),
   columnHelper.accessor("img_type", {
@@ -338,6 +378,7 @@ const defaultColumnVisibility = {
     seq_num: false,
     day_obs: false,
     science_program: true,
+    test_case_description: true,
     observation_reason: true,
     img_type: true,
     target_name: true,
@@ -368,6 +409,7 @@ const defaultColumnVisibility = {
     seq_num: false,
     day_obs: false,
     science_program: true,
+    test_case_description: true,
     observation_reason: true,
     img_type: true,
     target_name: true,
@@ -396,6 +438,7 @@ const defaultColumnOrder = {
     "day_obs",
     "seq_num",
     "science_program",
+    "test_case_description",
     "observation_reason",
     "img_type",
     "target_name",
@@ -426,6 +469,7 @@ const defaultColumnOrder = {
     "day_obs",
     "seq_num",
     "science_program",
+    "test_case_description",
     "observation_reason",
     "img_type",
     "target_name",

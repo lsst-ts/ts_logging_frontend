@@ -18,6 +18,7 @@ import {
   fetchExposureFlags,
   fetchJiraTickets,
   fetchVisitMaps,
+  fetchTestCases,
 } from "@/utils/fetchUtils";
 import {
   calculateEfficiency,
@@ -32,6 +33,10 @@ import { TELESCOPES } from "@/components/Parameters";
 import ObservingConditionsApplet from "@/components/ObservingConditionsApplet";
 import NightSummary from "@/components/NightSummary.jsx";
 import TimeAccountingApplet from "@/components/TimeAccountingApplet";
+
+// import cachedExposures from "../assets/exposures.json";
+// import cachedExposureFlags from "../assets/exposure-flags.json";
+// import cachedTestCases from "../assets/test-cases.json";
 
 export default function Digest() {
   const { startDayobs, endDayobs, telescope } = useSearch({
@@ -66,6 +71,20 @@ export default function Digest() {
   const [interactiveMap, setInteractiveMap] = useState(null);
   const [visitMapLoading, setVisitMapLoading] = useState(false);
 
+  const [testCases, setTestCases] = useState({});
+  const [testCasesLoading, setTestCasesLoading] = useState(false);
+
+  // // Cache data for quick dev
+  // const [cachedDataSet, setCachedDataSet] = useState(false);
+  // useEffect(() => {
+  //   setExposureFields(cachedExposures.exposures);
+  //   setExposureCount(cachedExposures.exposures_count);
+  //   setSumExpTime(cachedExposures.sum_exposure_time);
+  //   setFlags(cachedExposureFlags.exposure_flags);
+  //   setTestCases(cachedTestCases.data);
+  //   setCachedDataSet(true);
+  // }, [])
+
   useEffect(() => {
     const abortController = new AbortController();
     // The end dayobs is inclusive, so we add one day to the
@@ -93,9 +112,6 @@ export default function Digest() {
     setOnSkyExpCount(0);
     setExpectedOnSkyExpCount(0);
     setFlags([]);
-
-    setVisitMapLoading(true);
-    setInteractiveMap(null);
 
     fetchExposures(startDayobs, queryEndDayobs, instrument, abortController)
       .then(
@@ -255,6 +271,7 @@ export default function Digest() {
     fetchExposureFlags(startDayobs, queryEndDayobs, instrument, abortController)
       .then((flags) => {
         setFlags(flags);
+        console.log("flags_via_fetch: ", flags);
         if (flags.length === 0) {
           toast.warning("No exposures flagged for the selected date range.");
         }
@@ -273,6 +290,61 @@ export default function Digest() {
           setFlagsLoading(false);
         }
       });
+
+    return () => {
+      abortController.abort();
+    };
+  }, [startDayobs, endDayobs, telescope]);
+
+  // BUG: Why is the Visit Maps fetch blocking this?
+  useEffect(() => {
+    const abortController = new AbortController();
+    setTestCasesLoading(true);
+
+    const testCaseKeys = [...new Set(exposureFields.map(e => e.science_program))];
+    // console.log("testCaseKeys: ", testCaseKeys);
+
+    // console.log("Checking length of keys.");
+    if (testCaseKeys.length === 0) {
+      return; // nothing to fetch
+    }
+    // console.log("Attempting to call fetch util.");
+    fetchTestCases(testCaseKeys, abortController)
+      .then((testCases) => {
+        console.log("Test cases: ", testCases);
+        setTestCases(testCases.data);
+      })
+      .catch((err) => {
+        if (!abortController.signal.aborted) {
+          const msg = err?.message;
+          toast.error("Error fetching test case descriptions from Zephyr", {
+            description: msg,
+            duration: Infinity,
+          });
+        }
+      })
+      .finally(() => {
+        if (!abortController.signal.aborted) {
+          setTestCasesLoading(false);
+        }
+      });
+    // }, [cachedDataSet]);
+  }, [exposureFields]);
+
+  // Fetch Visit Maps
+  // Separate from other fetches because of response time
+  useEffect(() => {
+    const abortController = new AbortController();
+    // The end dayobs is inclusive, so we add one day to the
+    // endDayobs to get the correct range for the queries
+    const queryEndDayobs = getDatetimeFromDayobsStr(endDayobs.toString())
+      .plus({ days: 1 })
+      .toFormat("yyyyMMdd");
+    const instrument = TELESCOPES[telescope];
+
+    setVisitMapLoading(true);
+    setInteractiveMap(null);
+
     // Visit maps
     fetchVisitMaps(startDayobs, queryEndDayobs, instrument, abortController, {
       appletMode: true,
@@ -396,6 +468,7 @@ export default function Digest() {
               exposureCount={exposureCount}
               sumExpTime={sumExpTime}
               flags={flags}
+              testCases={testCases}
               exposuresLoading={exposuresLoading}
               flagsLoading={flagsLoading}
             />
