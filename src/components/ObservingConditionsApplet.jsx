@@ -39,7 +39,7 @@ import { calculateZoom } from "@/utils/plotUtils";
 import {
   millisToDateTime,
   millisToHHmm,
-  isoToTAI,
+  isoToUTC,
   utcDateTimeStrToTAIMillis,
 } from "@/utils/timeUtils";
 
@@ -296,7 +296,7 @@ function ObservingConditionsApplet({
           typeof obsStart === "string" &&
           DateTime.fromISO(obsStart).isValid
         ) {
-          obs_start_dt = isoToTAI(obsStart).toMillis();
+          obs_start_dt = isoToUTC(obsStart).toMillis();
         }
         // calculate psf_median from psf_sigma_median and pixel_scale_median
         const psfSigma = entry["psf_sigma_median"];
