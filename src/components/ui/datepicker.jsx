@@ -12,6 +12,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
+import { DateTime } from "luxon";
+
 export function DatePicker({
   selectedDate,
   onDateChange,
@@ -21,10 +23,15 @@ export function DatePicker({
   const [date, setDate] = React.useState(selectedDate);
 
   const handleChange = (newDate) => {
-    setDate(newDate);
-    if (newDate) {
-      onDateChange(newDate);
+    if (!newDate) {
+      setDate(null);
+      return;
     }
+    // Create a UTC Date object from the selected date
+    const dateString = DateTime.fromJSDate(newDate).toFormat("yyyy-MM-dd");
+    const utcDate = DateTime.fromISO(dateString, { zone: "utc" }).toJSDate();
+    setDate(utcDate);
+    onDateChange(utcDate);
   };
 
   function formatDisplay(date) {

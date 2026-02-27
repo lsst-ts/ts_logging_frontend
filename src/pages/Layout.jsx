@@ -24,10 +24,10 @@ export default function Layout({ children }) {
     });
   };
   const dayObsDefault = endDayobs
-    ? DateTime.fromFormat(endDayobs.toString(), "yyyyLLdd")
+    ? DateTime.fromFormat(endDayobs.toString(), "yyyyLLdd", { zone: "utc" })
     : null;
   const startDayobsDate = startDayobs
-    ? DateTime.fromFormat(startDayobs.toString(), "yyyyLLdd")
+    ? DateTime.fromFormat(startDayobs.toString(), "yyyyLLdd", { zone: "utc" })
     : dayObsDefault;
   const nightsDefault = dayObsDefault.diff(startDayobsDate).as("days") + 1; // +2 to include both start and end days
 
@@ -46,7 +46,7 @@ export default function Layout({ children }) {
   };
 
   const calculateDayObsRange = (dayobs, noOfNights) => {
-    const dateFromDayobs = DateTime.fromJSDate(dayobs);
+    const dateFromDayobs = DateTime.fromJSDate(dayobs, { zone: "utc" });
     const startDate = dateFromDayobs.minus({ days: noOfNights - 1 });
     const startDayobs = startDate.toFormat("yyyyLLdd");
     const endDayobs = dateFromDayobs.toFormat("yyyyLLdd");
