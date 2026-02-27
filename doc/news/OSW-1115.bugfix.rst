@@ -1,0 +1,1 @@
+Ensuring that dates selected from the date picker and selected time range are parsed and handled in UTC.
