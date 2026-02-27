@@ -37,7 +37,7 @@ import {
   getDatetimeFromDayobsStr,
   prettyTitleFromKey,
 } from "@/utils/utils";
-import { isoToTAI, generateDayObsRange } from "@/utils/timeUtils";
+import { generateDayObsRange, isoToUTC } from "@/utils/timeUtils";
 import {
   prepareAlmanacData,
   prepareMoonIntervals,
@@ -101,7 +101,7 @@ function Plots() {
         const pixelScale = Number.isFinite(entry.pixel_scale_median)
           ? entry.pixel_scale_median
           : DEFAULT_PIXEL_SCALE_MEDIAN;
-        const obsStartDt = isoToTAI(entry.obs_start);
+        const obsStartDt = isoToUTC(entry.obs_start);
         return {
           ...entry,
           obs_start_dt: obsStartDt,

@@ -1,5 +1,4 @@
-import { ISO_DATETIME_FORMAT } from "@/utils/timeUtils";
-import { DateTime } from "luxon";
+import { ISO_DATETIME_FORMAT, millisToDateTime } from "@/utils/timeUtils";
 
 /**
  * Custom tooltip formatter for timeseries plots.
@@ -12,7 +11,7 @@ export const plotTooltipFormatter =
   (title) => (value, name, item, index, payload) => {
     const dayObs = payload.day_obs;
     const seqNum = payload.seq_num;
-    const obsStart = DateTime.fromMillis(payload.obs_start_millis).toFormat(
+    const obsStart = millisToDateTime(payload.obs_start_millis).toFormat(
       ISO_DATETIME_FORMAT,
     );
     const physicalFilter = payload.physical_filter;
