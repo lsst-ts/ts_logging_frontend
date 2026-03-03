@@ -5,7 +5,6 @@ import {
   calculateSumExpTimeBetweenTwilights,
   calculateTimeLoss,
   getDayobsStr,
-  getDatetimeFromDayobsStr,
   getDisplayDateRange,
   getKeyByValue,
   formatCellValue,
@@ -21,6 +20,7 @@ import {
   SITE_CONFIGURATION,
   parseBackendVersion,
 } from "@/utils/utils";
+import { getDayobsStartUTC } from "@/utils/timeUtils";
 import { GLOBAL_SEARCH_PARAMS } from "@/routes";
 
 const sampleAlmanacInfo = [
@@ -238,13 +238,6 @@ describe("utils", () => {
     });
   });
 
-  describe("getDatetimeFromDayobsStr", () => {
-    it("parses correctly into noon UTC", () => {
-      const dt = getDatetimeFromDayobsStr("20240607");
-      expect(dt.toISO()).toBe("2024-06-07T12:00:00.000Z");
-    });
-  });
-
   describe("getDisplayDateRange", () => {
     it("returns empty string if inputs invalid", () => {
       expect(getDisplayDateRange(null, 2)).toBe("");
@@ -334,8 +327,7 @@ describe("utils", () => {
     });
 
     it("uses dev base URL on localhost", () => {
-      const dateStr =
-        getDatetimeFromDayobsStr("20240607").toFormat("yyyy-MM-dd");
+      const dateStr = getDayobsStartUTC("20240607").toFormat("yyyy-MM-dd");
 
       const urlSimonyi = getRubinTVUrl("Simonyi", "20240607", 42);
       const expectedUrlSimonyi =
@@ -361,8 +353,7 @@ describe("utils", () => {
         window.location.host = site;
         window.location.origin = `https://${site}`;
 
-        const dateStr =
-          getDatetimeFromDayobsStr("20240607").toFormat("yyyy-MM-dd");
+        const dateStr = getDayobsStartUTC("20240607").toFormat("yyyy-MM-dd");
 
         const urlSimonyi = getRubinTVUrl("Simonyi", "20240607", 99);
         const expectedUrlSimonyi =

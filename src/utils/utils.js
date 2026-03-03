@@ -1,5 +1,9 @@
 import { DateTime } from "luxon";
-import { TAI_OFFSET_SECONDS, ISO_DATETIME_FORMAT } from "./timeUtils";
+import {
+  TAI_OFFSET_SECONDS,
+  ISO_DATETIME_FORMAT,
+  getDayobsStartUTC,
+} from "./timeUtils";
 import { GLOBAL_SEARCH_PARAMS } from "@/routes";
 
 export const DEFAULT_EXTERNAL_INSTANCE_URL =
@@ -104,19 +108,6 @@ const getDayobsStr = (date, zone = "UTC") => {
 };
 
 /**
- * Converts a date string in 'yyyyMMdd' format that is in UTC timezone
- * to a UTC DateTime object set at 12:00:00 local time.
- *
- * @param {string} dayObsStr - The date string in 'yyyyMMdd' format (e.g., '20240607').
- * @returns luxon {DateTime} The corresponding UTC DateTime object at 12:00:00.
- */
-const getDatetimeFromDayobsStr = (dayObsStr) => {
-  return DateTime.fromFormat(dayObsStr, "yyyyMMdd", {
-    zone: "UTC",
-  }).set({ hour: 12, minute: 0, second: 0 });
-};
-
-/**
  * Generates a display-friendly string representing a range of observing nights (dayobs).
  *
  * Calculates the range of dayobs based on the selected end night (`dayobs`) and the
@@ -133,7 +124,7 @@ const getDatetimeFromDayobsStr = (dayObsStr) => {
 const getDisplayDateRange = (dayobs, noOfNights) => {
   if (!dayobs || !noOfNights) return "";
 
-  const dayobsDate = getDatetimeFromDayobsStr(getDayobsStr(dayobs));
+  const dayobsDate = getDayobsStartUTC(getDayobsStr(dayobs));
   const startDate = dayobsDate.minus({ days: noOfNights - 1 });
   const startStr = startDate.toFormat("yyyyLLdd");
   const endStr = dayobsDate.toFormat("yyyyLLdd");
@@ -269,7 +260,7 @@ const getRubinTVUrl = (telescope, dayObs, seqNum) => {
   }
 
   const { rubinTVSiteSuffix } = getSiteConfig(baseHost);
-  const dateStr = getDatetimeFromDayobsStr(`${dayObs}`).toFormat("yyyy-MM-dd");
+  const dateStr = getDayobsStartUTC(`${dayObs}`).toFormat("yyyy-MM-dd");
   return `${baseUrl}/rubintv/${rubinTVSiteSuffix}/${instr}/event?channel_name=${channel}&date_str=${dateStr}&seq_num=${seqNum}`;
 };
 
@@ -487,7 +478,6 @@ export {
   calculateEfficiency,
   calculateTimeLoss,
   getDayobsStr,
-  getDatetimeFromDayobsStr,
   getDisplayDateRange,
   getKeyByValue,
   formatCellValue,

@@ -34,10 +34,13 @@ import {
 import {
   DEFAULT_PIXEL_SCALE_MEDIAN,
   PSF_SIGMA_FACTOR,
-  getDatetimeFromDayobsStr,
   prettyTitleFromKey,
 } from "@/utils/utils";
-import { generateDayObsRange, isoToUTC } from "@/utils/timeUtils";
+import {
+  generateDayObsRange,
+  isoToUTC,
+  getDayobsStartUTC,
+} from "@/utils/timeUtils";
 import {
   prepareAlmanacData,
   prepareMoonIntervals,
@@ -53,7 +56,7 @@ function Plots() {
 
   // The end dayobs is inclusive, so we add one day to the
   // endDayobs to get the correct range for the queries
-  const queryEndDayobs = getDatetimeFromDayobsStr(endDayobs.toString())
+  const queryEndDayobs = getDayobsStartUTC(endDayobs.toString())
     .plus({ days: 1 })
     .toFormat("yyyyMMdd");
   const instrument = TELESCOPES[telescope];
