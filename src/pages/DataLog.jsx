@@ -25,12 +25,11 @@ import {
   fetchAlmanac,
 } from "@/utils/fetchUtils";
 import {
-  getDatetimeFromDayobsStr,
   mergeDataLogSources,
   DEFAULT_PIXEL_SCALE_MEDIAN,
   PSF_SIGMA_FACTOR,
 } from "@/utils/utils";
-import { isoToTAI } from "@/utils/timeUtils";
+import { isoToTAI, getDayobsStartUTC } from "@/utils/timeUtils";
 import {
   prepareAlmanacData,
   prepareMoonIntervals,
@@ -45,7 +44,7 @@ function DataLog() {
 
   // The end dayobs is inclusive, so we add one day to the
   // endDayobs to get the correct range for the queries
-  const queryEndDayobs = getDatetimeFromDayobsStr(endDayobs.toString())
+  const queryEndDayobs = getDayobsStartUTC(endDayobs.toString())
     .plus({ days: 1 })
     .toFormat("yyyyMMdd");
   const instrument = TELESCOPES[telescope];

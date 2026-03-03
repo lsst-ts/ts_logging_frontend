@@ -25,7 +25,7 @@ import SelectedTimeRangeBar from "@/components/SelectedTimeRangeBar";
 import DownloadIcon from "../assets/DownloadIcon.svg";
 import { fetchAlmanac, fetchContextFeed } from "@/utils/fetchUtils";
 import { isoToUTC } from "@/utils/timeUtils";
-import { getDatetimeFromDayobsStr } from "@/utils/utils";
+import { getDayobsStartUTC } from "@/utils/timeUtils";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
 import { prepareAlmanacData } from "@/utils/timelineUtils";
 import { useUrlSync } from "@/components/DataTable";
@@ -72,7 +72,7 @@ function ContextFeed() {
   // Our dayobs inputs are inclusive, so we add one day to the
   // endDayobs to get the correct range for the queries
   // (which are exclusive of the end date).
-  const queryEndDayobs = getDatetimeFromDayobsStr(endDayobs.toString())
+  const queryEndDayobs = getDayobsStartUTC(endDayobs.toString())
     .plus({ days: 1 })
     .toFormat("yyyyMMdd");
 
