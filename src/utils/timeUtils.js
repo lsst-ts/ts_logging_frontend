@@ -220,6 +220,17 @@ function formatDayobsStrForDisplay(dayobs) {
   );
 }
 
+/**
+ * Converts a dayobs integer (e.g., 20250827) to a Luxon DateTime object.
+ *
+ * @param {number} dayobsInt - The dayobs date as an integer in "yyyyLLdd" format.
+ * @returns {DateTime} A Luxon DateTime object in UTC representing the dayobs date.
+ */
+
+function dayObsIntToDateTime(dayobsInt) {
+  return DateTime.fromFormat(dayobsInt.toString(), "yyyyLLdd", { zone: "utc" });
+}
+
 export {
   isoToTAI,
   isoToUTC,
@@ -238,4 +249,5 @@ export {
   TAI_OFFSET_SECONDS,
   generateDayObsRange,
   formatDayobsStrForDisplay,
+  dayObsIntToDateTime,
 };

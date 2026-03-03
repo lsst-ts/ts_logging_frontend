@@ -39,14 +39,15 @@ function Parameters({
   const { getAvailableDayObsRange } = useHostConfig();
 
   const dateRange = getAvailableDayObsRange();
-  const maxDayObs_dt = DateTime.fromFormat(
-    dateRange.max,
-    "yyyyLLdd",
-  ).toJSDate();
+  const maxDayObs_dt = DateTime.fromFormat(dateRange.max, "yyyyLLdd", {
+    zone: "utc",
+  }).toJSDate();
   const minDayObs_dt =
     dateRange.min === null
       ? dateRange.min
-      : DateTime.fromFormat(dateRange.min, "yyyyLLdd").toJSDate();
+      : DateTime.fromFormat(dateRange.min, "yyyyLLdd", {
+          zone: "utc",
+        }).toJSDate();
 
   return (
     <>

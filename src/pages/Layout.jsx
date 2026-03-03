@@ -7,6 +7,7 @@ import { SidebarToggle } from "@/components/SidebarToggle.jsx";
 import { AppSidebar } from "@/components/AppSidebar.jsx";
 import { TELESCOPES } from "@/components/Parameters";
 import { getKeyByValue } from "@/utils/utils";
+import { dayObsIntToDateTime } from "@/utils/timeUtils";
 import RetentionBanner from "@/components/RetentionBanner";
 
 export default function Layout({ children }) {
@@ -23,11 +24,9 @@ export default function Layout({ children }) {
       }),
     });
   };
-  const dayObsDefault = endDayobs
-    ? DateTime.fromFormat(endDayobs.toString(), "yyyyLLdd", { zone: "utc" })
-    : null;
+  const dayObsDefault = endDayobs ? dayObsIntToDateTime(endDayobs) : null;
   const startDayobsDate = startDayobs
-    ? DateTime.fromFormat(startDayobs.toString(), "yyyyLLdd", { zone: "utc" })
+    ? dayObsIntToDateTime(startDayobs)
     : dayObsDefault;
   const nightsDefault = dayObsDefault.diff(startDayobsDate).as("days") + 1; // +2 to include both start and end days
 
