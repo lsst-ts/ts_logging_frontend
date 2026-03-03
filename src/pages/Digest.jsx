@@ -19,6 +19,7 @@ import {
   fetchExposureFlags,
   fetchJiraTickets,
   fetchVisitMaps,
+  fetchTestCases,
 } from "@/utils/fetchUtils";
 import {
   calculateEfficiency,
@@ -72,6 +73,10 @@ export default function Digest() {
   const [interactiveMap, setInteractiveMap] = useState(null);
   const [visitMapLoading, setVisitMapLoading] = useState(false);
 
+  const [testCases, setTestCases] = useState({});
+
+  // Fetch all data except Zephyr data,
+  // which needs exposure data.
   useEffect(() => {
     const abortController = new AbortController();
     // The end dayobs is inclusive, so we add one day to the
@@ -279,7 +284,7 @@ export default function Digest() {
           setFlagsLoading(false);
         }
       });
-    // Visit maps
+
     fetchVisitMaps(startDayobs, queryEndDayobs, instrument, abortController, {
       appletMode: true,
     })
@@ -304,6 +309,32 @@ export default function Digest() {
       abortController.abort();
     };
   }, [startDayobs, endDayobs, telescope]);
+
+  // Fetch test case details from Zephyr
+  useEffect(() => {
+    const abortController = new AbortController();
+
+    const testCaseKeys = [
+      ...new Set(exposureFields.map((e) => e.science_program)),
+    ];
+
+    if (testCaseKeys.length === 0) {
+      return; // nothing to fetch
+    }
+    fetchTestCases(testCaseKeys, abortController)
+      .then((testCases) => {
+        setTestCases(testCases.data);
+      })
+      .catch((err) => {
+        if (!abortController.signal.aborted) {
+          const msg = err?.message;
+          toast.error("Error fetching test case descriptions from Zephyr", {
+            description: msg,
+            duration: Infinity,
+          });
+        }
+      });
+  }, [exposureFields]);
 
   const nightHours = useMemo(
     () => almanacInfo?.reduce((acc, day) => acc + day.night_hours, 0) ?? 0,
@@ -405,6 +436,7 @@ export default function Digest() {
               exposureCount={exposureCount}
               sumExpTime={sumExpTime}
               flags={flags}
+              testCases={testCases}
               exposuresLoading={exposuresLoading}
               flagsLoading={flagsLoading}
             />

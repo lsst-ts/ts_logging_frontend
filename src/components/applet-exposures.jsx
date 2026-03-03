@@ -1,6 +1,7 @@
 // Applet: Display a breakdown of the exposures into type, reason, and program.
 
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
   Select,
@@ -16,8 +17,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
+import { ChartContainer } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
+import BarChartYAxisTick from "@/components/BarChartYAxisTick";
 
 import { Cell, Bar, BarChart, XAxis, YAxis, Customized } from "recharts";
 
@@ -51,13 +53,23 @@ function AppletExposures({
   exposureCount,
   sumExpTime,
   flags,
+  testCases = {},
   exposuresLoading = false,
   flagsLoading = false,
 }) {
   const [plotBy, setPlotBy] = useState(PlotByValues.NUMBER);
   const [groupBy, setGroupBy] = useState(GroupByValues.SCIENCE_PROGRAM);
   const [sortBy, setSortBy] = useState(SortByValues.HIGHEST_FIRST);
+
+  // State for bar highlighting, tick label links,
+  // and portalled tooltip.
   const [hovered, setHovered] = useState(null);
+  const [tooltipState, setTooltipState] = useState(null);
+
+  // For rendering tooltip via portal so the bar chart
+  // can scroll without tooltip being clipped.
+  const cardRef = useRef(null);
+  const scrollRef = useRef(null);
 
   const plotByOptions = [
     { value: PlotByValues.NUMBER, label: "Number" },
@@ -145,15 +157,13 @@ function AppletExposures({
     console.warn("exposureFields is not an array:", exposureFields);
   }
 
-  const chartData = Object.values(aggregatedMap).map((entry, index) => {
+  let chartData = Object.values(aggregatedMap).map((entry) => {
     const totalValue = entry.unflagged + entry.flagged;
     return {
       groupKey: entry.groupKey,
       unflagged: entry.unflagged,
       flagged: entry.flagged,
       totalValue,
-      fill: `hsl(${index * 40}, 70%, 50%)`,
-      fill_flag: "#ffffff",
     };
   });
 
@@ -177,8 +187,20 @@ function AppletExposures({
     [SortByValues.HIGHEST_FIRST]: (a, b) => b.totalValue - a.totalValue,
     [SortByValues.LOWEST_FIRST]: (a, b) => a.totalValue - b.totalValue,
   };
-
   chartData.sort(sorters[sortBy]);
+
+  // Assign rainbow bar colors after sorting
+  chartData = chartData.map((entry, index) => ({
+    ...entry,
+    fill: `hsl(${index * 40}, 70%, 50%)`,
+    fill_flag: "#ffffff",
+  }));
+
+  // Set tooltip position for rendering via portal,
+  // accounting for any scrolling of the bar chart.
+  const scrollTop = scrollRef.current?.scrollTop ?? 0;
+  const left = tooltipState?.x ?? 0;
+  const top = (tooltipState?.y ?? 0) - scrollTop;
 
   return (
     <Card className="border-none p-0 bg-stone-800 gap-2">
@@ -218,6 +240,11 @@ function AppletExposures({
               <strong>Tips:</strong>
               <ul className="list-disc pl-4 mt-1 space-y-1">
                 <li>Hover over a bar to view total and flagged values.</li>
+                <li>
+                  In <strong>Science Program</strong> view, hover to see the
+                  test case description (if available). Linked labels open the
+                  test case documentation.
+                </li>
                 <li>
                   Click a bar to open the Data Log, filtered by that group.
                 </li>
@@ -261,7 +288,10 @@ function AppletExposures({
         ) : (
           <>
             {/* Plot display and controls */}
-            <div className="flex-grow flex flex-row gap-8 overflow-hidden">
+            <div
+              ref={cardRef} // Tooltip is rendered here via portal
+              className="flex-grow flex flex-row gap-8 overflow-hidden relative"
+            >
               {exposureCount === 0 ? (
                 <span className="w-full">
                   No exposures returned for selected dates.
@@ -269,7 +299,10 @@ function AppletExposures({
               ) : (
                 <>
                   {/* Plot display */}
-                  <div className="flex-grow overflow-y-auto">
+                  <div
+                    ref={scrollRef} // For computing tooltip position
+                    className="flex-grow overflow-y-auto"
+                  >
                     <div
                       style={{
                         height: `${chartData.length * BAR_SIZE}px`,
@@ -285,6 +318,36 @@ function AppletExposures({
                           layout="vertical"
                           margin={{
                             left: 30,
+                          }}
+                          // For rendering tooltip
+                          onMouseMove={(state) => {
+                            const payload = state?.activePayload;
+                            const coordinate = state?.activeCoordinate;
+
+                            // Not hovering over a bar?
+                            if (!payload?.length || !coordinate) {
+                              if (tooltipState !== null) {
+                                setTooltipState(null);
+                                setHovered(null);
+                              }
+                              return;
+                            }
+
+                            // Only update tooltip when bar changes
+                            const groupKey = state.activeLabel;
+                            if (tooltipState?.groupKey !== groupKey) {
+                              setTooltipState({
+                                x: coordinate.x,
+                                y: coordinate.y,
+                                payload,
+                                groupKey,
+                              });
+                              setHovered(groupKey);
+                            }
+                          }}
+                          onMouseLeave={() => {
+                            setTooltipState(null);
+                            setHovered(null);
                           }}
                         >
                           {/* Unflagged data stacked bar (bottom) */}
@@ -357,10 +420,6 @@ function AppletExposures({
                                             ? "rgba(255,255,255,0.15)"
                                             : "transparent"
                                         }
-                                        onMouseEnter={() =>
-                                          setHovered(entry.groupKey)
-                                        }
-                                        onMouseLeave={() => setHovered(null)}
                                         onClick={() => handleBarClick(entry)}
                                         style={{ cursor: "pointer" }}
                                       />
@@ -377,33 +436,17 @@ function AppletExposures({
                             type="category"
                             axisLine={{ stroke: "#ffffff", strokeWidth: 2 }}
                             tickLine={false}
-                            // Custom tick component for wrapping long labels
-                            tick={({ x, y, payload }) => (
-                              (<title>{payload.value}</title>),
-                              (
-                                <text
-                                  x={x}
-                                  y={y}
-                                  dy={4}
-                                  textAnchor="end"
-                                  fill="#ffffff"
-                                  fontSize={10}
-                                >
-                                  {payload.value.length > PLOT_YLABELS_MAXSIZE
-                                    ? `${payload.value.slice(
-                                        0,
-                                        PLOT_YLABELS_MAXSIZE - 2,
-                                      )}...`
-                                    : payload.value}
-                                </text>
-                              )
+                            // Render tick labels with links to Test Case docs
+                            tick={(props) => (
+                              <BarChartYAxisTick
+                                {...props}
+                                groupBy={groupBy}
+                                GroupByValues={GroupByValues}
+                                testCases={testCases}
+                                maxSize={PLOT_YLABELS_MAXSIZE}
+                              />
                             )}
                             tickMargin={2}
-                            tickFormatter={(value) =>
-                              value === "Unknown" && groupBy === "target_name"
-                                ? "No target"
-                                : value
-                            }
                           />
                           <XAxis
                             type="number"
@@ -420,35 +463,6 @@ function AppletExposures({
                               offset: 0,
                               fill: "#ffffff",
                               style: { fontSize: 12 },
-                            }}
-                          />
-
-                          {/* Tooltip content and styles  */}
-                          <ChartTooltip
-                            cursor={false}
-                            content={({ active, payload }) => {
-                              if (!active || !payload || payload.length === 0)
-                                return null;
-
-                              const group = payload[0].payload.groupKey;
-                              const unflagged = payload.find(
-                                (d) => d.dataKey === "unflagged",
-                              ).value;
-                              const flagged = payload.find(
-                                (d) => d.dataKey === "flagged",
-                              ).value;
-
-                              return (
-                                <div className="bg-white text-black text-xs p-2 border border-white rounded">
-                                  <div className="font-bold">
-                                    {group}:{" "}
-                                    <strong className="font-extra-bold">
-                                      {unflagged + flagged}
-                                    </strong>
-                                  </div>
-                                  {flagged > 0 && <div>Flagged: {flagged}</div>}
-                                </div>
-                              );
                             }}
                           />
                         </BarChart>
@@ -588,6 +602,53 @@ function AppletExposures({
             </div>
           </>
         )}
+
+        {/* Tooltip, rendered via portal */}
+        {cardRef.current &&
+          tooltipState &&
+          createPortal(
+            <div
+              className="absolute z-50 pointer-events-none"
+              // Set location, accounting for scroll.
+              style={{
+                left,
+                top,
+                // Shift tooltip up by its height, so
+                // bottom bar tooltips don't get clipped.
+                transform: "translateY(-100%)",
+              }}
+            >
+              <div className="bg-white text-black text-xs p-2 border border-white rounded">
+                {(() => {
+                  const group = tooltipState.payload[0].payload.groupKey;
+                  const testCaseName = testCases?.[group];
+                  const unflagged = tooltipState.payload.find(
+                    (d) => d.dataKey === "unflagged",
+                  ).value;
+                  const flagged = tooltipState.payload.find(
+                    (d) => d.dataKey === "flagged",
+                  ).value;
+
+                  return (
+                    <>
+                      <div className="font-bold">
+                        {group}:{" "}
+                        <strong className="font-extra-bold">
+                          {unflagged + flagged}
+                        </strong>
+                      </div>
+                      {flagged > 0 && <div>Flagged: {flagged}</div>}
+                      {testCaseName && (
+                        <div className="font-medium">{testCaseName}</div>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
+            </div>,
+            // Tooltip gets rendered in container with this reference.
+            cardRef.current,
+          )}
       </CardContent>
     </Card>
   );
