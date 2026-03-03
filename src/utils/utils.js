@@ -1,5 +1,5 @@
 import { DateTime } from "luxon";
-import { TAI_OFFSET_SECONDS, ISO_DATETIME_FORMAT } from "./timeUtils";
+import { TAI_OFFSET_SECONDS, ISO_DATETIME_FORMAT, isoToUTC } from "./timeUtils";
 import { GLOBAL_SEARCH_PARAMS } from "@/routes";
 
 export const DEFAULT_EXTERNAL_INSTANCE_URL =
@@ -209,32 +209,64 @@ const inferDecimals = (value) => {
 };
 
 /**
- * Merges rows from the consDB and exposure log sources.
+ * Merges rows from the consDB, exposure log and zephyr sources.
  *
  * For each consDB row, attempts to enrich it with instrument, exposure flag,
  * and message text from the exposure log (matched via `obs_id` and `exposure name`).
+ * It also attempts to add test case descriptions where relevant (matched via
+ * `science_program`).
  *
  * @param {Object[]} consDbRows - The array of rows from the consDB source.
  * @param {Object[]} exposureLogRows - The array of rows from the exposure log source.
+ * @param {Object{}} testCases - The dict of test case and descriptions from zephyr.
  * @returns {Object[]} A new array of merged row objects with added/enriched fields.
  */
-const mergeDataLogSources = (consDbRows, exposureLogRows) => {
+const mergeAllSources = (consDbRows, exposureLogRows, testCases) => {
+  // Build fast lookup map for exposure log
   const exposureLogMap = new Map();
   exposureLogRows.forEach((entry) => {
     exposureLogMap.set(entry.obs_id, entry);
   });
 
-  return consDbRows.map((row) => {
-    const exposureName = row.exposure_name;
-    const matchingRow = exposureLogMap.get(exposureName);
+  // testCases is already a lookup object
+  const testCaseMap = testCases ?? {};
 
-    return {
-      ...row,
-      instrument: matchingRow?.instrument ?? row.instrument ?? "na",
-      exposure_flag: matchingRow?.exposure_flag ?? "none",
-      message_text: matchingRow?.message_text ?? "",
-    };
-  });
+  return consDbRows
+    .map((row) => {
+      const exposureName = row["exposure name"];
+      const matchingExposure = exposureLogMap.get(exposureName);
+
+      // Derived PSF conversion
+      const psfSigma = Number.parseFloat(row.psf_sigma_median);
+      const pixelScale = Number.isFinite(row.pixel_scale_median)
+        ? row.pixel_scale_median
+        : DEFAULT_PIXEL_SCALE_MEDIAN;
+
+      const psf_median = Number.isFinite(psfSigma)
+        ? psfSigma * PSF_SIGMA_FACTOR * pixelScale
+        : null;
+
+      const obsStartDt = isoToUTC(row.obs_start);
+
+      return {
+        ...row,
+
+        // Exposure log enrichment
+        instrument: matchingExposure?.instrument ?? row.instrument ?? "na",
+        exposure_flag: matchingExposure?.exposure_flag ?? "none",
+        message_text: matchingExposure?.message_text ?? "",
+
+        // Test case enrichment
+        test_case_description: testCaseMap[row.science_program] ?? "",
+
+        // Add derived column
+        psf_median,
+
+        // Timeline index
+        obs_start_millis: obsStartDt.toMillis(),
+      };
+    })
+    .sort((a, b) => Number(b["exposure_id"]) - Number(a["exposure_id"]));
 };
 
 /**
@@ -483,6 +515,20 @@ function parseBackendVersion(versionString) {
   return `${baseVersion}-${suffixType}.${suffixNumber}`;
 }
 
+/**
+ * Generate a Zephyr Scale test case URL for a given test case key.
+ *
+ * Returns the direct link to the Zephyr test case in the BLOCK project.
+ * If no test case key is provided, returns null.
+ *
+ * @param {string} testCase - Zephyr test case key (e.g. "BLOCK-T123")
+ * @returns {string|null} - Full Zephyr URL for the test case, or null if invalid
+ */
+function getZephyrUrl(testCase) {
+  if (!testCase) return null;
+  return `https://rubinobs.atlassian.net/projects/BLOCK?selectedItem=com.atlassian.plugins.atlassian-connect-plugin:com.kanoah.test-manager__main-project-page#!/v2/testCase/${testCase}`;
+}
+
 export {
   calculateEfficiency,
   calculateTimeLoss,
@@ -492,7 +538,7 @@ export {
   getKeyByValue,
   formatCellValue,
   prettyTitleFromKey,
-  mergeDataLogSources,
+  mergeAllSources,
   getRubinTVUrl,
   getSiteConfig,
   buildNavigationWithSearchParams,
@@ -503,4 +549,5 @@ export {
   getDayobsAlmanac,
   calculateSumExpTimeBetweenTwilights,
   parseBackendVersion,
+  getZephyrUrl,
 };

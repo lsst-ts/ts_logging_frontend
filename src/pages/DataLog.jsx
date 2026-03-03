@@ -23,14 +23,9 @@ import {
   fetchDataLogEntriesFromConsDB,
   fetchDataLogEntriesFromExposureLog,
   fetchAlmanac,
+  fetchTestCases,
 } from "@/utils/fetchUtils";
-import {
-  getDatetimeFromDayobsStr,
-  mergeDataLogSources,
-  DEFAULT_PIXEL_SCALE_MEDIAN,
-  PSF_SIGMA_FACTOR,
-} from "@/utils/utils";
-import { isoToTAI } from "@/utils/timeUtils";
+import { getDatetimeFromDayobsStr, mergeAllSources } from "@/utils/utils";
 import {
   prepareAlmanacData,
   prepareMoonIntervals,
@@ -67,9 +62,13 @@ function DataLog() {
     },
   ];
 
-  // Data
-  const [dataLogEntries, setDataLogEntries] = useState([]);
-  const [dataLogLoading, setDataLogLoading] = useState(true);
+  // Data and loading flags
+  const [consDBdata, setConsDBdata] = useState([]);
+  const [consDBdataLoading, setConsDBdataLoading] = useState(false);
+  const [exposureLogData, setExposureLogData] = useState([]);
+  const [exposureLogDataLoading, setExposureLogDataLoading] = useState(false);
+  const [zephyrData, setZephyrData] = useState({});
+  const [zephyrDataLoading, setZephyrDataLoading] = useState(false);
 
   // Almanac data for timeline
   const [twilightValues, setTwilightValues] = useState([]);
@@ -99,27 +98,12 @@ function DataLog() {
     }
   }, [moonValues, fullTimeRange]);
 
-  // Filter data based on selected time range for the table
-  const filteredDataLogEntries = useMemo(() => {
-    if (!selectedTimeRange[0] || !selectedTimeRange[1]) {
-      return dataLogEntries;
-    }
-    const [startMillis, endMillis] = [
-      selectedTimeRange[0].toMillis(),
-      selectedTimeRange[1].toMillis(),
-    ];
-    return dataLogEntries.filter((entry) => {
-      const obsStartMillis = entry.obs_start_millis;
-      return obsStartMillis >= startMillis && obsStartMillis <= endMillis;
-    });
-  }, [dataLogEntries, selectedTimeRange]);
-
+  // Fetch almanac data for timeline
   useEffect(() => {
     // To cancel previous fetch if still in progress
     const abortController = new AbortController();
 
     // Trigger loading skeletons
-    setDataLogLoading(true);
     setAlmanacLoading(true);
 
     // Reset almanac state
@@ -127,74 +111,6 @@ function DataLog() {
     setIllumValues([]);
     setMoonValues([]);
 
-    // Fetch data from both sources
-    Promise.all([
-      fetchDataLogEntriesFromConsDB(
-        startDayobs,
-        queryEndDayobs,
-        instrument,
-        abortController,
-      ),
-      fetchDataLogEntriesFromExposureLog(
-        startDayobs,
-        queryEndDayobs,
-        instrument,
-        abortController,
-      ),
-    ])
-      .then(([consDBData, exposureLogData]) => {
-        const dataLog = consDBData.data_log ?? [];
-
-        if (dataLog.length === 0) {
-          toast.warning(
-            "No data log records found in ConsDB for the selected date range.",
-          );
-        }
-
-        // Merge the two data sources
-        // and apply conversion to required row(s)
-        const mergedData = mergeDataLogSources(dataLog, exposureLogData)
-          .map((entry) => {
-            const psfSigma = Number.parseFloat(entry.psf_sigma_median);
-            const pixelScale = Number.isFinite(entry.pixel_scale_median)
-              ? entry.pixel_scale_median
-              : DEFAULT_PIXEL_SCALE_MEDIAN;
-            const psf_median = Number.isFinite(psfSigma)
-              ? psfSigma * PSF_SIGMA_FACTOR * pixelScale
-              : null;
-
-            // Add obs_start_millis for timeline
-            const obsStartDt = isoToTAI(entry.obs_start);
-
-            return {
-              ...entry,
-              psf_median,
-              obs_start_millis: obsStartDt.toMillis(),
-            };
-          })
-          .sort((a, b) => Number(b["exposure_id"]) - Number(a["exposure_id"]));
-
-        // Set the merged data to state
-        setDataLogEntries(mergedData);
-        setDataLogLoading(false);
-      })
-      .catch((err) => {
-        if (!abortController.signal.aborted) {
-          setDataLogEntries([]);
-          const msg = err?.message || "Unknown error";
-          toast.error("Error fetching exposure or data log!", {
-            description: msg,
-            duration: Infinity,
-          });
-        }
-      })
-      .finally(() => {
-        if (!abortController.signal.aborted) {
-          setDataLogLoading(false);
-        }
-      });
-
-    // Fetch almanac data for timeline
     fetchAlmanac(startDayobs, queryEndDayobs, abortController)
       .then((almanac) => {
         if (almanac === null) {
@@ -229,6 +145,150 @@ function DataLog() {
     };
   }, [startDayobs, queryEndDayobs, instrument]);
 
+  // Fetch from ConsDB
+  useEffect(() => {
+    const abortController = new AbortController();
+
+    setConsDBdataLoading(true);
+
+    fetchDataLogEntriesFromConsDB(
+      startDayobs,
+      queryEndDayobs,
+      instrument,
+      abortController,
+    )
+      .then((consDBData) => {
+        const dataLog = consDBData.data_log ?? [];
+        if (dataLog.length === 0) {
+          toast.warning(
+            "No data log records found in ConsDB for the selected date range.",
+          );
+        }
+
+        setConsDBdata(dataLog);
+      })
+      .catch((err) => {
+        if (!abortController.signal.aborted) {
+          setConsDBdata([]);
+          const msg = err?.message || "Unknown error";
+          toast.error("Error fetching data from ConsDB!", {
+            description: msg,
+            duration: Infinity,
+          });
+        }
+      })
+      .finally(() => {
+        if (!abortController.signal.aborted) {
+          setConsDBdataLoading(false);
+        }
+      });
+
+    return () => {
+      abortController.abort();
+    };
+  }, [startDayobs, queryEndDayobs, instrument]);
+
+  // Fetch flags and comments from Exposure Log
+  useEffect(() => {
+    const abortController = new AbortController();
+
+    setExposureLogDataLoading(true);
+
+    fetchDataLogEntriesFromExposureLog(
+      startDayobs,
+      queryEndDayobs,
+      instrument,
+      abortController,
+    )
+      .then((exposureLogData) => {
+        setExposureLogData(exposureLogData);
+      })
+      .catch((err) => {
+        if (!abortController.signal.aborted) {
+          setExposureLogData([]);
+          const msg = err?.message || "Unknown error";
+          toast.error("Error fetching exposure log data!", {
+            description: msg,
+            duration: Infinity,
+          });
+        }
+      })
+      .finally(() => {
+        if (!abortController.signal.aborted) {
+          setExposureLogDataLoading(false);
+        }
+      });
+
+    return () => {
+      abortController.abort();
+    };
+  }, [startDayobs, queryEndDayobs, instrument]);
+
+  // Fetch test case details from Zephyr
+  useEffect(() => {
+    const abortController = new AbortController();
+
+    if (consDBdata.length === 0) {
+      return; // don't know which test cases to query
+    }
+
+    setZephyrDataLoading(true);
+
+    // Extrace unique test cases from ConsDB data
+    const testCaseKeys = [...new Set(consDBdata.map((e) => e.science_program))];
+
+    if (testCaseKeys.length === 0) {
+      return; // nothing to fetch
+    }
+    fetchTestCases(testCaseKeys, abortController)
+      .then((testCases) => {
+        setZephyrData(testCases.data);
+      })
+      .catch((err) => {
+        if (!abortController.signal.aborted) {
+          setZephyrData({});
+          const msg = err?.message;
+          toast.error("Error fetching test case descriptions from Zephyr", {
+            description: msg,
+            duration: Infinity,
+          });
+        }
+      })
+      .finally(() => {
+        if (!abortController.signal.aborted) {
+          setZephyrDataLoading(false);
+        }
+      });
+  }, [consDBdata]);
+
+  // Global table loading flag
+  const tableLoading =
+    consDBdataLoading || exposureLogDataLoading || zephyrDataLoading;
+
+  // Merge data sources together to form one object
+  // to pass to TanStack Table.
+  const dataLogTableData = useMemo(() => {
+    if (tableLoading) return [];
+    if (!consDBdata.length) return [];
+
+    return mergeAllSources(consDBdata, exposureLogData, zephyrData);
+  }, [tableLoading, consDBdata, exposureLogData, zephyrData]);
+
+  // Filter data based on selected time range for the table
+  const filteredDataLogTableData = useMemo(() => {
+    if (!selectedTimeRange[0] || !selectedTimeRange[1]) {
+      return dataLogTableData;
+    }
+    const [startMillis, endMillis] = [
+      selectedTimeRange[0].toMillis(),
+      selectedTimeRange[1].toMillis(),
+    ];
+    return dataLogTableData.filter((entry) => {
+      const obsStartMillis = entry.obs_start_millis;
+      return obsStartMillis >= startMillis && obsStartMillis <= endMillis;
+    });
+  }, [dataLogTableData, selectedTimeRange]);
+
   return (
     <>
       <div className="flex flex-col h-screen w-full p-8 gap-4">
@@ -237,7 +297,7 @@ function DataLog() {
           {/* Page title + buttons */}
           <PageHeader
             title="Data Log"
-            description="Exposure metadata and related fields from the ConsDB, Exposure Log and Transformed EFD"
+            description="Exposure metadata and related fields from the ConsDB, Exposure Log, Transformed EFD and Zephyr Scale"
             actions={
               <>
                 <Popover>
@@ -303,7 +363,7 @@ function DataLog() {
           {/* Timeline */}
           {timelineVisible && (
             <Card className="grid gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 font-thin shadow-stone-900 shadow-md">
-              {dataLogLoading || almanacLoading ? (
+              {tableLoading || almanacLoading ? (
                 <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
               ) : (
                 <ContextMenuWrapper menuItems={contextMenuItems}>
@@ -311,7 +371,7 @@ function DataLog() {
                     data={[
                       {
                         index: 0.5,
-                        timestamps: dataLogEntries.map(
+                        timestamps: dataLogTableData.map(
                           (d) => d.obs_start_millis,
                         ),
                         color: "#3CAE3F",
@@ -340,10 +400,10 @@ function DataLog() {
             fullTimeRange={fullTimeRange}
             timezone="TAI"
             rightContent={
-              dataLogLoading || almanacLoading ? (
+              tableLoading || almanacLoading ? (
                 <Skeleton className="h-5 w-64 bg-teal-700 inline-block" />
               ) : (
-                `${filteredDataLogEntries.length} of ${dataLogEntries.length} exposures selected`
+                `${filteredDataLogTableData.length} of ${dataLogTableData.length} exposures selected`
               )
             }
           />
@@ -372,8 +432,8 @@ function DataLog() {
         {/* Table */}
         <DataLogTable
           telescope={telescope}
-          data={filteredDataLogEntries}
-          dataLogLoading={dataLogLoading}
+          data={filteredDataLogTableData}
+          dataLogLoading={tableLoading}
         />
       </div>
       <Toaster expand={true} richColors closeButton />

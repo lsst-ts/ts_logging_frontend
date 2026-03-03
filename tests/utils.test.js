@@ -9,7 +9,7 @@ import {
   getDisplayDateRange,
   getKeyByValue,
   formatCellValue,
-  mergeDataLogSources,
+  mergeAllSources,
   getRubinTVUrl,
   getSiteConfig,
   buildNavigationWithSearchParams,
@@ -20,6 +20,7 @@ import {
   DEFAULT_EXTERNAL_INSTANCE_URL,
   SITE_CONFIGURATION,
   parseBackendVersion,
+  getZephyrUrl,
 } from "@/utils/utils";
 import { GLOBAL_SEARCH_PARAMS } from "@/routes";
 
@@ -294,9 +295,21 @@ describe("utils", () => {
     });
   });
 
-  describe("mergeDataLogSources", () => {
-    it("merges matching rows", () => {
-      const consDb = [{ exposure_name: "exp1", instrument: "na" }];
+  describe("mergeAllSources", () => {
+    const baseRow = (overrides = {}) => ({
+      "exposure name": "exp1",
+      exposure_id: "1",
+      psf_sigma_median: "1",
+      pixel_scale_median: 1,
+      science_program: "BLOCK-T250",
+      instrument: "na",
+      obs_start: "2025-01-01T00:00:00Z",
+      ...overrides,
+    });
+
+    it("merges exposure log fields when matching", () => {
+      const consDb = [baseRow()];
+
       const exposureLog = [
         {
           obs_id: "exp1",
@@ -306,18 +319,81 @@ describe("utils", () => {
         },
       ];
 
-      const merged = mergeDataLogSources(consDb, exposureLog);
+      const testCases = {
+        "BLOCK-T250": "TMA Unpark/Checkout",
+      };
+
+      const merged = mergeAllSources(consDb, exposureLog, testCases);
+
       expect(merged[0].instrument).toBe("cam");
       expect(merged[0].exposure_flag).toBe("ok");
       expect(merged[0].message_text).toBe("msg");
     });
 
-    it("fills defaults if no match", () => {
-      const consDb = [{ exposure_name: "exp2" }];
-      const merged = mergeDataLogSources(consDb, []);
+    it("fills defaults if no exposure log match", () => {
+      const consDb = [baseRow()];
+
+      const merged = mergeAllSources(consDb, [], {});
+
       expect(merged[0].instrument).toBe("na");
       expect(merged[0].exposure_flag).toBe("none");
       expect(merged[0].message_text).toBe("");
+    });
+
+    it("adds test case description when science_program matches", () => {
+      const consDb = [baseRow()];
+
+      const testCases = {
+        "BLOCK-T250": "TMA Unpark/Checkout",
+      };
+
+      const merged = mergeAllSources(consDb, [], testCases);
+
+      expect(merged[0].test_case_description).toBe("TMA Unpark/Checkout");
+    });
+
+    it("defaults test_case_description to empty string if no match", () => {
+      const consDb = [baseRow({ science_program: "UNKNOWN" })];
+
+      const merged = mergeAllSources(consDb, [], {});
+
+      expect(merged[0].test_case_description).toBe("");
+    });
+
+    it("computes psf_median correctly", () => {
+      const consDb = [
+        baseRow({
+          psf_sigma_median: "2",
+          pixel_scale_median: 1,
+        }),
+      ];
+
+      const merged = mergeAllSources(consDb, [], {});
+
+      expect(merged[0].psf_median).toBe(2 * PSF_SIGMA_FACTOR * 1);
+    });
+
+    it("sorts rows by exposure_id descending", () => {
+      const consDb = [
+        baseRow({ exposure_id: "1" }),
+        baseRow({
+          "exposure name": "exp2",
+          exposure_id: "2",
+        }),
+      ];
+
+      const merged = mergeAllSources(consDb, [], {});
+
+      expect(merged[0].exposure_id).toBe("2");
+      expect(merged[1].exposure_id).toBe("1");
+    });
+
+    it("adds obs_start_millis derived from obs_start", () => {
+      const consDb = [baseRow({ obs_start: "2025-01-01T00:00:00Z" })];
+
+      const merged = mergeAllSources(consDb, [], {});
+
+      expect(merged[0].obs_start_millis).toBe(1735689600000);
     });
   });
 
@@ -527,6 +603,24 @@ describe("utils", () => {
       expect(parseBackendVersion("1.2.3-alpha.1")).toBe("main");
       expect(parseBackendVersion("1.2.3a-1")).toBe("main");
       expect(parseBackendVersion("1.2.3b1")).toBe("main");
+    });
+  });
+
+  describe("getZephyrUrl", () => {
+    it("returns null if testCase is missing", () => {
+      expect(getZephyrUrl(null)).toBeNull();
+      expect(getZephyrUrl(undefined)).toBeNull();
+      expect(getZephyrUrl("")).toBeNull();
+    });
+
+    it("returns correct Zephyr URL for valid test case key", () => {
+      const key = "BLOCK-T123";
+      const expectedUrl =
+        "https://rubinobs.atlassian.net/projects/BLOCK" +
+        "?selectedItem=com.atlassian.plugins.atlassian-connect-plugin:com.kanoah.test-manager__main-project-page" +
+        "#!/v2/testCase/BLOCK-T123";
+
+      expect(getZephyrUrl(key)).toBe(expectedUrl);
     });
   });
 });
