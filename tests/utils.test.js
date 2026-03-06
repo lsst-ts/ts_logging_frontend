@@ -208,14 +208,14 @@ describe("utils", () => {
   describe("calculateTimeLoss", () => {
     it("returns defaults when no loss", () => {
       expect(calculateTimeLoss(0, 0)).toEqual([
-        "0 hours",
+        "0 hrs",
         "(- weather; - fault)",
       ]);
     });
 
     it("returns total loss and breakdown", () => {
       const [loss, breakdown] = calculateTimeLoss(2, 2);
-      expect(loss).toBe("4.00 hours");
+      expect(loss).toBe("4.00 hrs");
       expect(breakdown).toBe("(50% weather; 50% fault)");
     });
   });

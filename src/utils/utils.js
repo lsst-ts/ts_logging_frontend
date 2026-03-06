@@ -79,13 +79,13 @@ const calculateEfficiency = (
  */
 const calculateTimeLoss = (weatherLoss, faultLoss) => {
   let loss = weatherLoss + faultLoss;
-  let timeLoss = "0 hours";
+  let timeLoss = "0 hrs";
   let timeLossDetails = "(- weather; - fault)";
 
   if (loss > 0) {
     let weatherPercent = Math.round((weatherLoss / loss) * 100);
     let faultPercent = Math.round((faultLoss / loss) * 100);
-    timeLoss = `${loss.toFixed(2)} hours`;
+    timeLoss = `${loss.toFixed(2)} hrs`;
     timeLossDetails = `(${weatherPercent}% weather; ${faultPercent}% fault)`;
   }
 
