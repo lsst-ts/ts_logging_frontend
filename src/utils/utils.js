@@ -214,6 +214,7 @@ const inferDecimals = (value) => {
  * @param {Object{}} blockLookup - The dict of BLOCK objects from Zephyr/Jira.
  * @returns {Object[]} A new array of merged row objects with added/enriched fields.
  */
+
 const mergeAllDataLogSources = (consDbRows, exposureLogRows, blockLookup) => {
   // Build fast lookup map for exposure log
   const exposureLogMap = new Map();
