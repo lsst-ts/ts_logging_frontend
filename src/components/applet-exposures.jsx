@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { createPortal } from "react-dom";
-import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useSearch, useRouter } from "@tanstack/react-router";
 import {
   Select,
   SelectContent,
@@ -90,24 +90,23 @@ function AppletExposures({
     { value: SortByValues.LOWEST_FIRST, label: "Lowest number first" },
   ];
 
-  const navigate = useNavigate();
+  const router = useRouter();
   const { startDayobs, endDayobs, telescope } = useSearch({ from: "/" });
 
-  const handleBarClick = (data) => {
-    const filterField = groupBy;
-    const selectedValue = data.groupKey;
-
-    navigate({
+  // Build url to link clickable bars to the
+  // Data Log, filtered by that group.
+  function buildBarUrl(entry) {
+    return {
       to: "/data-log",
       search: (prev) => ({
         ...prev,
         startDayobs,
         endDayobs,
         telescope,
-        [filterField]: [selectedValue],
+        [groupBy]: [entry.groupKey],
       }),
-    });
-  };
+    };
+  }
 
   const flaggedObsIds = new Set(flags.map((f) => f.obs_id));
   const aggregatedMap = {};
@@ -409,20 +408,27 @@ function AppletExposures({
                                       y + (bandwidth - BAR_SIZE) / 2;
 
                                     return (
-                                      <rect
+                                      <a
                                         key={`overlay-${index}`}
-                                        x={0}
-                                        y={offsetY}
-                                        width={width}
-                                        height={BAR_SIZE}
-                                        fill={
-                                          hovered === entry.groupKey
-                                            ? "rgba(255,255,255,0.15)"
-                                            : "transparent"
+                                        href={
+                                          router.buildLocation(
+                                            buildBarUrl(entry),
+                                          ).href
                                         }
-                                        onClick={() => handleBarClick(entry)}
-                                        style={{ cursor: "pointer" }}
-                                      />
+                                      >
+                                        <rect
+                                          x={0}
+                                          y={offsetY}
+                                          width={width}
+                                          height={BAR_SIZE}
+                                          fill={
+                                            hovered === entry.groupKey
+                                              ? "rgba(255,255,255,0.15)"
+                                              : "transparent"
+                                          }
+                                          style={{ cursor: "pointer" }}
+                                        />
+                                      </a>
                                     );
                                   })}
                                 </g>
