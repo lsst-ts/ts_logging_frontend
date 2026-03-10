@@ -231,6 +231,21 @@ function dayObsIntToDateTime(dayobsInt) {
   return DateTime.fromFormat(dayobsInt.toString(), "yyyyLLdd", { zone: "utc" });
 }
 
+/**
+ * Converts a calendar-safe local JS Date object to a long format string
+ * using Luxon DateTime.
+ *
+ * @param {Date} calendarDate - The input JS date in the local timezone.
+ * @returns {string} A date string formatted as "LLL dd, yyyy".
+ */
+function calendarDateToLongFormat(calendarDate) {
+  return calendarDate instanceof Date && !isNaN(calendarDate)
+    ? DateTime.fromJSDate(calendarDate, { zone: "utc" }).toFormat(
+        "LLL dd, yyyy",
+      )
+    : "";
+}
+
 export {
   isoToTAI,
   isoToUTC,
@@ -250,4 +265,5 @@ export {
   generateDayObsRange,
   formatDayobsStrForDisplay,
   dayObsIntToDateTime,
+  calendarDateToLongFormat,
 };
