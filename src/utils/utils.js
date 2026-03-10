@@ -1,5 +1,6 @@
 import { DateTime } from "luxon";
 import { TAI_OFFSET_SECONDS, ISO_DATETIME_FORMAT, isoToUTC } from "./timeUtils";
+import { CATEGORY_INDEX_INFO } from "@/components/context-feed-definitions.js";
 import { GLOBAL_SEARCH_PARAMS } from "@/routes";
 
 export const DEFAULT_EXTERNAL_INSTANCE_URL =
@@ -221,7 +222,7 @@ const inferDecimals = (value) => {
  * @param {Object{}} testCases - The dict of test case and descriptions from zephyr.
  * @returns {Object[]} A new array of merged row objects with added/enriched fields.
  */
-const mergeAllSources = (consDbRows, exposureLogRows, testCases) => {
+const mergeAllDataLogSources = (consDbRows, exposureLogRows, testCases) => {
   // Build fast lookup map for exposure log
   const exposureLogMap = new Map();
   exposureLogRows.forEach((entry) => {
@@ -267,6 +268,58 @@ const mergeAllSources = (consDbRows, exposureLogRows, testCases) => {
       };
     })
     .sort((a, b) => Number(b["exposure_id"]) - Number(a["exposure_id"]));
+};
+
+/**
+ * Merges rows from rubin-nights and zephyr.
+ *
+ * For each rubin-nights row, attempts to enrich it with details about
+ * the current task, display information (colours, labels, etc.), and
+ * test case descriptions where relevant (matched via `name`).
+ *
+ * @param {Object[]} rubinNightsRows - The array of rows from rubin-nights.
+ * @param {Object{}} testCases - The dict of test cases and descriptions from zephyr.
+ * @returns {Object[]} A new array of merged row objects with added/enriched fields.
+ */
+const mergeContextFeedSources = (rubinNightsRows, testCases) => {
+  // testCases is already a lookup object
+  const testCaseMap = testCases ?? {};
+
+  // To set currentTask for all events until next task change
+  let currentTask = null;
+
+  return (
+    rubinNightsRows
+      .map((entry) => {
+        if (entry.finalStatus === "Task Change") {
+          currentTask = entry.name;
+        }
+
+        // New BLOCK added, so add Zephyr test case details
+        let description = entry.description;
+        if (entry.category_index == 10 && entry.name.startsWith("BLOCK")) {
+          description = testCaseMap[entry.name]
+            ? `Test case: ${testCaseMap[entry.name]}`
+            : entry.description;
+        }
+
+        // Get display info for each category
+        let categoryInfo = CATEGORY_INDEX_INFO[entry.category_index] || {};
+
+        return {
+          ...entry,
+          event_time_dt: isoToUTC(entry["time"]),
+          event_time_millis: isoToUTC(entry["time"]).toMillis(),
+          event_type: categoryInfo.label,
+          event_color: categoryInfo.color ?? "#ffffff",
+          displayIndex: categoryInfo.displayIndex,
+          current_task: currentTask,
+          description: description,
+        };
+      })
+      // Chronological order
+      .sort((a, b) => a.event_time_millis - b.event_time_millis)
+  );
 };
 
 /**
@@ -538,7 +591,8 @@ export {
   getKeyByValue,
   formatCellValue,
   prettyTitleFromKey,
-  mergeAllSources,
+  mergeAllDataLogSources,
+  mergeContextFeedSources,
   getRubinTVUrl,
   getSiteConfig,
   buildNavigationWithSearchParams,
