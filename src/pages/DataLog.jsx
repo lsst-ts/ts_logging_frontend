@@ -25,8 +25,8 @@ import {
   fetchAlmanac,
   fetchTestCases,
 } from "@/utils/fetchUtils";
-import { mergeAllSources } from "@/utils/utils";
 import { getDayobsStartUTC } from "@/utils/timeUtils";
+import { mergeAllDataLogSources } from "@/utils/utils";
 import {
   prepareAlmanacData,
   prepareMoonIntervals,
@@ -272,7 +272,7 @@ function DataLog() {
     if (tableLoading) return [];
     if (!consDBdata.length) return [];
 
-    return mergeAllSources(consDBdata, exposureLogData, zephyrData);
+    return mergeAllDataLogSources(consDBdata, exposureLogData, zephyrData);
   }, [tableLoading, consDBdata, exposureLogData, zephyrData]);
 
   // Filter data based on selected time range for the table

@@ -8,7 +8,8 @@ import {
   getDisplayDateRange,
   getKeyByValue,
   formatCellValue,
-  mergeAllSources,
+  mergeAllDataLogSources,
+  mergeContextFeedSources,
   getRubinTVUrl,
   getSiteConfig,
   buildNavigationWithSearchParams,
@@ -22,6 +23,7 @@ import {
   getZephyrUrl,
 } from "@/utils/utils";
 import { getDayobsStartUTC } from "@/utils/timeUtils";
+import { CATEGORY_INDEX_INFO } from "@/components/context-feed-definitions.js";
 import { GLOBAL_SEARCH_PARAMS } from "@/routes";
 
 const sampleAlmanacInfo = [
@@ -288,7 +290,7 @@ describe("utils", () => {
     });
   });
 
-  describe("mergeAllSources", () => {
+  describe("mergeAllDataLogSources", () => {
     const baseRow = (overrides = {}) => ({
       "exposure name": "exp1",
       exposure_id: "1",
@@ -316,7 +318,7 @@ describe("utils", () => {
         "BLOCK-T250": "TMA Unpark/Checkout",
       };
 
-      const merged = mergeAllSources(consDb, exposureLog, testCases);
+      const merged = mergeAllDataLogSources(consDb, exposureLog, testCases);
 
       expect(merged[0].instrument).toBe("cam");
       expect(merged[0].exposure_flag).toBe("ok");
@@ -326,7 +328,7 @@ describe("utils", () => {
     it("fills defaults if no exposure log match", () => {
       const consDb = [baseRow()];
 
-      const merged = mergeAllSources(consDb, [], {});
+      const merged = mergeAllDataLogSources(consDb, [], {});
 
       expect(merged[0].instrument).toBe("na");
       expect(merged[0].exposure_flag).toBe("none");
@@ -340,7 +342,7 @@ describe("utils", () => {
         "BLOCK-T250": "TMA Unpark/Checkout",
       };
 
-      const merged = mergeAllSources(consDb, [], testCases);
+      const merged = mergeAllDataLogSources(consDb, [], testCases);
 
       expect(merged[0].test_case_description).toBe("TMA Unpark/Checkout");
     });
@@ -348,7 +350,7 @@ describe("utils", () => {
     it("defaults test_case_description to empty string if no match", () => {
       const consDb = [baseRow({ science_program: "UNKNOWN" })];
 
-      const merged = mergeAllSources(consDb, [], {});
+      const merged = mergeAllDataLogSources(consDb, [], {});
 
       expect(merged[0].test_case_description).toBe("");
     });
@@ -361,7 +363,7 @@ describe("utils", () => {
         }),
       ];
 
-      const merged = mergeAllSources(consDb, [], {});
+      const merged = mergeAllDataLogSources(consDb, [], {});
 
       expect(merged[0].psf_median).toBe(2 * PSF_SIGMA_FACTOR * 1);
     });
@@ -375,7 +377,7 @@ describe("utils", () => {
         }),
       ];
 
-      const merged = mergeAllSources(consDb, [], {});
+      const merged = mergeAllDataLogSources(consDb, [], {});
 
       expect(merged[0].exposure_id).toBe("2");
       expect(merged[1].exposure_id).toBe("1");
@@ -384,9 +386,120 @@ describe("utils", () => {
     it("adds obs_start_millis derived from obs_start", () => {
       const consDb = [baseRow({ obs_start: "2025-01-01T00:00:00Z" })];
 
-      const merged = mergeAllSources(consDb, [], {});
+      const merged = mergeAllDataLogSources(consDb, [], {});
 
       expect(merged[0].obs_start_millis).toBe(1735689600000);
+    });
+  });
+
+  describe("mergeContextFeedSources", () => {
+    const baseRow = (overrides = {}) => ({
+      name: "BLOCK-T250",
+      description: "original description",
+      category_index: 10,
+      finalStatus: "Something",
+      time: "2025-01-01T00:00:00Z",
+      ...overrides,
+    });
+
+    it("adds test case description when BLOCK test case matches", () => {
+      const rubinRows = [baseRow()];
+
+      const testCases = {
+        "BLOCK-T250": "TMA Unpark/Checkout",
+      };
+
+      const merged = mergeContextFeedSources(rubinRows, testCases);
+
+      expect(merged[0].description).toBe("Test case: TMA Unpark/Checkout");
+    });
+
+    it("keeps original description if no test case match", () => {
+      const rubinRows = [
+        baseRow({
+          name: "BLOCK-UNKNOWN",
+          description: "original description",
+        }),
+      ];
+
+      const merged = mergeContextFeedSources(rubinRows, {});
+
+      expect(merged[0].description).toBe("original description");
+    });
+
+    it("does not override description if category_index is not 10", () => {
+      const rubinRows = [
+        baseRow({
+          category_index: 5,
+          description: "original description",
+        }),
+      ];
+
+      const testCases = {
+        "BLOCK-T250": "TMA Unpark/Checkout",
+      };
+
+      const merged = mergeContextFeedSources(rubinRows, testCases);
+
+      expect(merged[0].description).toBe("original description");
+    });
+
+    it("sets current_task when a Task Change occurs", () => {
+      const rubinRows = [
+        baseRow({
+          name: "BLOCK-T100",
+          finalStatus: "Task Change",
+        }),
+        baseRow({
+          name: "event1",
+        }),
+      ];
+
+      const merged = mergeContextFeedSources(rubinRows, {});
+
+      expect(merged[0].current_task).toBe("BLOCK-T100");
+      expect(merged[1].current_task).toBe("BLOCK-T100");
+    });
+
+    it("adds derived event_time_millis", () => {
+      const rubinRows = [
+        baseRow({
+          time: "2025-01-01T00:00:00Z",
+        }),
+      ];
+
+      const merged = mergeContextFeedSources(rubinRows, {});
+
+      expect(merged[0].event_time_millis).toBe(1735689600000);
+    });
+
+    it("sorts rows chronologically by event_time_millis", () => {
+      const rubinRows = [
+        baseRow({
+          time: "2025-01-02T00:00:00Z",
+        }),
+        baseRow({
+          name: "earlier",
+          time: "2025-01-01T00:00:00Z",
+        }),
+      ];
+
+      const merged = mergeContextFeedSources(rubinRows, {});
+
+      expect(merged[0].name).toBe("earlier");
+      expect(merged[1].name).toBe("BLOCK-T250");
+    });
+
+    it("adds category display metadata", () => {
+      const rubinRows = [baseRow({ category_index: 10 })];
+
+      const merged = mergeContextFeedSources(rubinRows, {});
+
+      const expectedInfo = CATEGORY_INDEX_INFO[10];
+
+      expect(merged[0].event_type).toBe(expectedInfo.label);
+      expect(merged[0].event_color).toBe(expectedInfo.color ?? "#ffffff");
+      expect(merged[0].displayIndex).toBe(expectedInfo.displayIndex);
     });
   });
 
