@@ -7,12 +7,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { DatePicker } from "@/components/ui/datepicker.jsx";
+import { UTCDatePicker } from "@/components/UTCDatePicker";
 import { Input } from "@/components/ui/input";
 
 import { useHostConfig } from "@/contexts/HostConfigContext";
 
 import { getDisplayDateRange } from "@/utils/utils";
+import { utcDateToCalendarDate } from "@/utils/timeUtils";
 import { DateTime } from "luxon";
 
 export const TELESCOPES = Object.freeze({
@@ -76,13 +77,13 @@ function Parameters({
         <Label htmlFor="dayobs" className="text-white text-base pb-1">
           Night (dayobs)
         </Label>
-        <DatePicker
+        <UTCDatePicker
           id="dayobs"
           selectedDate={dayobs}
           onDateChange={onDayobsChange}
           disabled={{
-            before: minDayObs_dt,
-            after: maxDayObs_dt,
+            before: utcDateToCalendarDate(minDayObs_dt),
+            after: utcDateToCalendarDate(maxDayObs_dt),
           }}
         />
       </div>
