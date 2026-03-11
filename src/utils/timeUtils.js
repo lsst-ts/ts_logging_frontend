@@ -241,9 +241,26 @@ function dayObsIntToDateTime(dayobsInt) {
 function calendarDateToLongFormat(calendarDate) {
   return calendarDate instanceof Date && !isNaN(calendarDate)
     ? DateTime.fromJSDate(calendarDate, { zone: "utc" }).toFormat(
-        "LLL dd, yyyy",
+        "LLLL dd, yyyy",
       )
     : "";
+}
+
+/**
+ * Converts a UTC Date object to a local Date object that can be used with the calendar component.
+ *
+ * The calendar component expects a local date, but we want to ensure that the date is treated as UTC.
+ * To achieve this, we create a new Date object using the year, month, and day from the UTC date,
+ * which effectively gives us a local date that corresponds to the same calendar day in UTC.
+ *
+ * @param {Date} utcDate - The input JS date in UTC.
+ * @returns {Date} A local JS Date object that represents the same calendar day as the input UTC date.
+ */
+function utcDateToCalendarDate(utcDate) {
+  if (!utcDate) return undefined;
+  const d = DateTime.fromJSDate(utcDate, { zone: "utc" });
+  // Create a local date with the same year/month/day as the UTC date
+  return new Date(d.year, d.month - 1, d.day);
 }
 
 export {
@@ -266,4 +283,5 @@ export {
   formatDayobsStrForDisplay,
   dayObsIntToDateTime,
   calendarDateToLongFormat,
+  utcDateToCalendarDate,
 };
