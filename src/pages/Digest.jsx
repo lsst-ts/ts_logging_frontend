@@ -340,9 +340,9 @@ export default function Digest() {
 
   return (
     <>
-      <div className="flex flex-col w-full p-8 gap-8">
+      <div className="flex flex-col w-full p-8 gap-6">
         {/* Metrics */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricsCard
             icon={ShutterIcon}
             data={onSkyExpCount}
@@ -369,7 +369,7 @@ export default function Digest() {
           <MetricsCard
             icon={TimeLossIcon}
             data={timeLoss}
-            label="Time loss"
+            label="Time loss (Narrative Log)"
             metadata={timeLossDetails}
             tooltip="Time loss as reported in the Narrative Log."
             loading={narrativeLoading}
