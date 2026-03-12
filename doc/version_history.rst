@@ -1,3 +1,25 @@
+v0.16.0-alpha.1 (2026-03-12)
+============================
+
+New Features
+------------
+
+- Align Plots page layout with DataLog and ContextFeed (`OSW-1828 <https://rubinobs.atlassian.net//browse/OSW-1828>`_)
+
+
+Bug Fixes
+---------
+
+- Fix double conversion to TAI and ensure UTC is used for date handling in ObservingConditionsApplet and Plots pages. (`OSW-1115 <https://rubinobs.atlassian.net//browse/OSW-1115>`_)
+- Ensuring that dates selected from the date picker and selected time range are parsed and handled in UTC. (`OSW-1115 <https://rubinobs.atlassian.net//browse/OSW-1115>`_)
+
+
+Other Changes and Additions
+---------------------------
+
+- Add data source to the title of the Time loss card for improved clarity (`OSW-1923 <https://rubinobs.atlassian.net//browse/OSW-1923>`_)
+
+
 v0.15.0 (2026-02-19)
 ====================
 
