@@ -291,7 +291,7 @@ const mergeContextFeedSources = (rubinNightsRows, testCases) => {
         let description = entry.description;
         if (entry.category_index == 10 && entry.name.startsWith("BLOCK")) {
           description = testCaseMap[entry.name]
-            ? `Test case: ${testCaseMap[entry.name]}`
+            ? testCaseMap[entry.name]
             : entry.description;
         }
 
