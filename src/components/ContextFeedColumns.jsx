@@ -11,7 +11,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { createColumnHelper } from "@tanstack/react-table";
-import { formatCellValue } from "@/utils/utils";
+import { formatCellValue, getZephyrUrl } from "@/utils/utils";
 import { matchValueOrInList } from "@/components/DataTable/tableUtils";
 import { CATEGORY_INDEX_INFO } from "@/components/context-feed-definitions.js";
 
@@ -84,6 +84,33 @@ function renderDescriptionCell(info) {
     } catch (err) {
       // Parsing failed, fallback to raw string.
       console.error("Failed to parse link in description:", err);
+    }
+  }
+
+  // Show zephyr test case names as links
+  const name = info.row.original.name;
+  if (name.startsWith("BLOCK")) {
+    try {
+      const parentTestCase = name.split("_", 1)[0];
+      const testCaseUrl = getZephyrUrl(parentTestCase);
+
+      return (
+        // Wrap in a dark background for visibility
+        // when row is highlighted.
+        <div className="bg-stone-800 p-1 rounded">
+          <a
+            href={testCaseUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sky-500 underline"
+          >
+            {formatCellValue(description)}
+          </a>
+        </div>
+      );
+    } catch (err) {
+      // Fallback to raw string.
+      console.error("Failed to get zephyr link:", err);
     }
   }
 

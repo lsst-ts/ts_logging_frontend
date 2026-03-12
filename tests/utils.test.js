@@ -411,7 +411,7 @@ describe("utils", () => {
 
       const merged = mergeContextFeedSources(rubinRows, testCases);
 
-      expect(merged[0].description).toBe("Test case: TMA Unpark/Checkout");
+      expect(merged[0].description).toBe("TMA Unpark/Checkout");
     });
 
     it("keeps original description if no test case match", () => {
