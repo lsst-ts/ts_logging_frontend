@@ -220,6 +220,49 @@ function formatDayobsStrForDisplay(dayobs) {
   );
 }
 
+/**
+ * Converts a dayobs integer (e.g., 20250827) to a Luxon DateTime object.
+ *
+ * @param {number} dayobsInt - The dayobs date as an integer in "yyyyLLdd" format.
+ * @returns {DateTime} A Luxon DateTime object in UTC representing the dayobs date.
+ */
+
+function dayObsIntToDateTime(dayobsInt) {
+  return DateTime.fromFormat(dayobsInt.toString(), "yyyyLLdd", { zone: "utc" });
+}
+
+/**
+ * Converts a calendar-safe local JS Date object to a long format string
+ * using Luxon DateTime.
+ *
+ * @param {Date} calendarDate - The input JS date in the local timezone.
+ * @returns {string} A date string formatted as "LLL dd, yyyy".
+ */
+function calendarDateToLongFormat(calendarDate) {
+  return calendarDate instanceof Date && !isNaN(calendarDate)
+    ? DateTime.fromJSDate(calendarDate, { zone: "utc" }).toFormat(
+        "LLLL dd, yyyy",
+      )
+    : "";
+}
+
+/**
+ * Converts a UTC Date object to a local Date object that can be used with the calendar component.
+ *
+ * The calendar component expects a local date, but we want to ensure that the date is treated as UTC.
+ * To achieve this, we create a new Date object using the year, month, and day from the UTC date,
+ * which effectively gives us a local date that corresponds to the same calendar day in UTC.
+ *
+ * @param {Date} utcDate - The input JS date in UTC.
+ * @returns {Date} A local JS Date object that represents the same calendar day as the input UTC date.
+ */
+function utcDateToCalendarDate(utcDate) {
+  if (!utcDate) return undefined;
+  const d = DateTime.fromJSDate(utcDate, { zone: "utc" });
+  // Create a local date with the same year/month/day as the UTC date
+  return new Date(d.year, d.month - 1, d.day);
+}
+
 export {
   isoToTAI,
   isoToUTC,
@@ -238,4 +281,7 @@ export {
   TAI_OFFSET_SECONDS,
   generateDayObsRange,
   formatDayobsStrForDisplay,
+  dayObsIntToDateTime,
+  calendarDateToLongFormat,
+  utcDateToCalendarDate,
 };

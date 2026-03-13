@@ -11,7 +11,8 @@ import { TELESCOPES } from "@/components/Parameters";
 import BokehPlot from "@/components/BokehPlot";
 
 import { fetchVisitMaps } from "@/utils/fetchUtils";
-import { getDatetimeFromDayobsStr, getNightSummaryLink } from "@/utils/utils";
+import { getNightSummaryLink } from "@/utils/utils";
+import { getDayobsStartUTC } from "@/utils/timeUtils";
 
 function VisitMaps() {
   // Routing and URL params
@@ -21,7 +22,7 @@ function VisitMaps() {
 
   // The end dayobs is inclusive, so we add one day to the
   // endDayobs to get the correct range for the queries
-  const queryEndDayobs = getDatetimeFromDayobsStr(endDayobs.toString())
+  const queryEndDayobs = getDayobsStartUTC(endDayobs.toString())
     .plus({ days: 1 })
     .toFormat("yyyyMMdd");
   const instrument = TELESCOPES[telescope];
@@ -33,8 +34,8 @@ function VisitMaps() {
     const format = "yyyyLLdd";
     const dates = [];
 
-    let currentDate = getDatetimeFromDayobsStr(startDayObs.toString());
-    const endDate = getDatetimeFromDayobsStr(endDayObs.toString());
+    let currentDate = getDayobsStartUTC(startDayObs.toString());
+    const endDate = getDayobsStartUTC(endDayObs.toString());
 
     while (currentDate <= endDate) {
       dates.push(currentDate.toFormat(format));

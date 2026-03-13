@@ -1,0 +1,1 @@
+Fix double conversion to TAI and ensure UTC is used for date handling in ObservingConditionsApplet and Plots pages.
