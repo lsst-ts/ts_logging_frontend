@@ -478,7 +478,7 @@ describe("utils", () => {
       expect(merged[1].current_task).toBe("BLOCK-T100");
     });
 
-    it("adds derived event_time_millis", () => {
+    it("adds derived time fields", () => {
       const rubinRows = [
         baseRow({
           time: "2025-01-01T00:00:00Z",
@@ -488,6 +488,13 @@ describe("utils", () => {
       const merged = mergeContextFeedSources(rubinRows, {});
 
       expect(merged[0].event_time_millis).toBe(1735689600000);
+
+      // New derived fields
+      expect(merged[0].event_time_dt.toISO()).toBe("2025-01-01T00:00:00.000Z");
+      expect(merged[0].event_date).toBe("2025-01-01");
+      expect(merged[0].event_dayobs).toBe("2024-12-31"); // before midday UTC
+      expect(merged[0].event_time_tai).toBeDefined();
+      expect(merged[0].event_time_chile).toBeDefined();
     });
 
     it("sorts rows chronologically by event_time_millis", () => {
