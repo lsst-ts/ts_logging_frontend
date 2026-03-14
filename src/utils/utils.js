@@ -3,7 +3,9 @@ import {
   TAI_OFFSET_SECONDS,
   ISO_DATETIME_FORMAT,
   getDayobsStartUTC,
-  isoToUTC,
+  isoToTAI,
+  isoToChile,
+  getDayobsUTC,
 } from "./timeUtils";
 import { CATEGORY_INDEX_INFO } from "@/components/context-feed-definitions.js";
 import { GLOBAL_SEARCH_PARAMS } from "@/routes";
@@ -299,10 +301,17 @@ const mergeContextFeedSources = (rubinNightsRows, blockLookup) => {
         // Get display info for each category
         let categoryInfo = CATEGORY_INDEX_INFO[entry.category_index] || {};
 
+        // Get Luxon DateTime object
+        const timeUTC = isoToUTC(entry["time"]);
+
         return {
           ...entry,
-          event_time_dt: isoToUTC(entry["time"]),
-          event_time_millis: isoToUTC(entry["time"]).toMillis(),
+          event_time_dt: timeUTC,
+          event_date: timeUTC.toFormat("yyyy-LL-dd"),
+          event_dayobs: getDayobsUTC(timeUTC),
+          event_time_millis: timeUTC.toMillis(),
+          event_time_tai: isoToTAI(entry["time"]),
+          event_time_chile: isoToChile(entry["time"]),
           event_type: categoryInfo.label,
           event_color: categoryInfo.color ?? "#ffffff",
           displayIndex: categoryInfo.displayIndex,
