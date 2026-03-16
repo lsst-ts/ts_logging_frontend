@@ -1,0 +1,1 @@
+Add the option to group by filter in the Exposure Breakdown applet.
