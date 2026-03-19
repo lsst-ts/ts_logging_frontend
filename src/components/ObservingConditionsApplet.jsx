@@ -415,8 +415,37 @@ function ObservingConditionsApplet({
         xTicks.push(Math.round(xMin + i * step));
       }
     }
+
     return { xMin, xMax, xTicks };
   }, [chartData, twilightValues, selectedMinMillis, selectedMaxMillis]);
+
+  const psfTicks = useMemo(() => {
+    const [min, max] = currentPsfYDomain;
+
+    if (!isValidNumber(min) || !isValidNumber(max) || max <= min) return [1];
+
+    // Pick a step that gives ~5 ticks even when zoomed in, and divides into 1
+    const CANDIDATE_STEPS = [0.1, 0.2, 0.25, 0.5, 1];
+    const idealStep = (max - min) / 4; // 4 intervals = 5 ticks
+    const step = CANDIDATE_STEPS.find((s) => s >= idealStep) ?? 1;
+
+    // make min and max fall on the grid
+    const gridMin = Math.floor(min / step) * step;
+    const gridMax = Math.ceil(max / step) * step;
+
+    const ticks = [];
+    const totalSteps = Math.round((gridMax - gridMin) / step);
+    for (let i = 0; i <= totalSteps; i++) {
+      ticks.push(Math.round((gridMin + i * step) * 10) / 10);
+    }
+
+    // just in case of edge cases and 1 isn't included, add it
+    if (!ticks.includes(1) && min <= 1 && max >= 1) {
+      ticks.push(1);
+      ticks.sort((a, b) => a - b);
+    }
+    return ticks;
+  }, [currentPsfYDomain]);
 
   // Calculate X domain clamped to actual data range
   const xDomain = useMemo(() => {
@@ -682,7 +711,8 @@ function ObservingConditionsApplet({
                       <YAxis
                         yAxisId="left"
                         tick={{ fill: "white" }}
-                        domain={currentPsfYDomain}
+                        domain={[psfTicks[0], psfTicks[psfTicks.length - 1]]}
+                        ticks={psfTicks}
                         allowDataOverflow={true}
                         tickFormatter={(tick) => Number(tick).toFixed(1)}
                         label={{
@@ -745,6 +775,16 @@ function ObservingConditionsApplet({
                           />
                         ) : null,
                       )}
+                      /* Reference line at PSF FWHM = 1 arcsec as baseline for
+                      good seeing */
+                      <ReferenceLine
+                        yAxisId="left"
+                        y={1}
+                        stroke="#FFFFFF"
+                        strokeOpacity={0.35}
+                        strokeWidth={1.5}
+                        strokeDasharray="6 4"
+                      />
                       <ChartTooltip
                         content={(props) => (
                           <CustomTooltip {...props} xDomain={xDomain} />
