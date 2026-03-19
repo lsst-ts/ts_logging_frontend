@@ -34,6 +34,7 @@ const GroupByValues = Object.freeze({
   IMG_TYPE: "img_type",
   SCIENCE_PROGRAM: "science_program",
   TARGET_NAME: "target_name",
+  FILTER: "physical_filter",
 });
 
 const SortByValues = Object.freeze({
@@ -69,6 +70,7 @@ function AppletExposures({
     { value: GroupByValues.IMG_TYPE, label: "Img. type" },
     { value: GroupByValues.SCIENCE_PROGRAM, label: "Science program" },
     { value: GroupByValues.TARGET_NAME, label: "Target name" },
+    { value: GroupByValues.FILTER, label: "Filter" },
   ];
 
   const sortByOptions = [
