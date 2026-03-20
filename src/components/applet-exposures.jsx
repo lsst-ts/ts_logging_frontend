@@ -1,6 +1,6 @@
 // Applet: Display a breakdown of the exposures into type, reason, and program.
 
-import { useState, useRef } from "react";
+import { useState, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useSearch, useRouter } from "@tanstack/react-router";
 import {
@@ -110,98 +110,115 @@ function AppletExposures({
     };
   }
 
-  const flaggedObsIds = new Set(flags.map((f) => f.obs_id));
-  const aggregatedMap = {};
+  // Memoize data handling computations
+  const { chartData, chartConfig, totalFlaggedCount, totalFlaggedTime } = useMemo(() => {
+    const flaggedObsIds = new Set(flags.map((f) => f.obs_id));
+    const aggregatedMap = {};
 
-  let totalFlaggedCount = 0;
-  let totalFlaggedTime = 0;
+    let totalFlaggedCount = 0;
+    let totalFlaggedTime = 0;
 
-  if (Array.isArray(exposureFields)) {
-    exposureFields.forEach((row) => {
-      const rawValue = row[groupBy];
-      const groupKey =
-        rawValue === null || rawValue === undefined || rawValue === ""
-          ? groupBy === GroupByValues.TARGET_NAME
-            ? "No target"
-            : "Unknown"
-          : rawValue;
-      const expTime = parseFloat(row.exp_time ?? 0);
-      const isFlagged = flaggedObsIds.has(row.exposure_name);
+    if (Array.isArray(exposureFields)) {
+      exposureFields.forEach((row) => {
+        const rawValue = row[groupBy];
+        const groupKey =
+          rawValue === null || rawValue === undefined || rawValue === ""
+            ? groupBy === GroupByValues.TARGET_NAME
+              ? "No target"
+              : "Unknown"
+            : rawValue;
 
-      if (!aggregatedMap[groupKey]) {
-        aggregatedMap[groupKey] = {
-          groupKey,
-          unflagged: 0,
-          flagged: 0,
-        };
-      }
+        const expTime = parseFloat(row.exp_time ?? 0);
+        const isFlagged = flaggedObsIds.has(row.exposure_name);
 
-      if (plotBy === PlotByValues.TIME) {
-        if (isFlagged) {
-          const time = isNaN(expTime) ? 0 : expTime;
-          aggregatedMap[groupKey].flagged += time;
-          totalFlaggedTime += time;
-          totalFlaggedCount += 1;
-        } else {
-          aggregatedMap[groupKey].unflagged += isNaN(expTime) ? 0 : expTime;
+        if (!aggregatedMap[groupKey]) {
+          aggregatedMap[groupKey] = {
+            groupKey,
+            unflagged: 0,
+            flagged: 0,
+          };
         }
-      } else {
-        if (isFlagged) {
-          aggregatedMap[groupKey].flagged += 1;
-          totalFlaggedCount += 1;
+
+        if (plotBy === PlotByValues.TIME) {
+          if (isFlagged) {
+            const time = isNaN(expTime) ? 0 : expTime;
+            aggregatedMap[groupKey].flagged += time;
+            totalFlaggedTime += time;
+            totalFlaggedCount += 1;
+          } else {
+            aggregatedMap[groupKey].unflagged += isNaN(expTime) ? 0 : expTime;
+          }
         } else {
-          aggregatedMap[groupKey].unflagged += 1;
+          if (isFlagged) {
+            aggregatedMap[groupKey].flagged += 1;
+            totalFlaggedCount += 1;
+          } else {
+            aggregatedMap[groupKey].unflagged += 1;
+          }
         }
-      }
+      });
+    } else {
+      console.warn("exposureFields is not an array:", exposureFields);
+    }
+
+    let chartData = Object.values(aggregatedMap).map((entry) => {
+      const totalValue = entry.unflagged + entry.flagged;
+      return {
+        groupKey: entry.groupKey,
+        unflagged: entry.unflagged,
+        flagged: entry.flagged,
+        totalValue,
+      };
     });
-  } else {
-    console.warn("exposureFields is not an array:", exposureFields);
-  }
 
-  let chartData = Object.values(aggregatedMap).map((entry) => {
-    const totalValue = entry.unflagged + entry.flagged;
-    return {
-      groupKey: entry.groupKey,
-      unflagged: entry.unflagged,
-      flagged: entry.flagged,
-      totalValue,
+    const chartConfig = {
+      unflagged: {
+        label: "Unflagged",
+        color: "",
+      },
+      flagged: {
+        label: "Flagged",
+        color: "#ffffff",
+      },
     };
-  });
 
-  const chartConfig = {
-    unflagged: {
-      label: "Unflagged",
-      color: "",
-    },
-    flagged: {
-      label: "Flagged",
-      color: "#ffffff",
-    },
-  };
+    // Sort chartData based on sortBy
+    const sorters = {
+      [SortByValues.ALPHABETICAL_ASC]: (a, b) =>
+        a.groupKey.localeCompare(b.groupKey),
+      [SortByValues.ALPHABETICAL_DESC]: (a, b) =>
+        b.groupKey.localeCompare(a.groupKey),
+      [SortByValues.HIGHEST_FIRST]: (a, b) => b.totalValue - a.totalValue,
+      [SortByValues.LOWEST_FIRST]: (a, b) => a.totalValue - b.totalValue,
+    };
 
-  // Sort chartData based on sortBy
-  const sorters = {
-    [SortByValues.ALPHABETICAL_ASC]: (a, b) =>
-      a.groupKey.localeCompare(b.groupKey),
-    [SortByValues.ALPHABETICAL_DESC]: (a, b) =>
-      b.groupKey.localeCompare(a.groupKey),
-    [SortByValues.HIGHEST_FIRST]: (a, b) => b.totalValue - a.totalValue,
-    [SortByValues.LOWEST_FIRST]: (a, b) => a.totalValue - b.totalValue,
-  };
-  chartData.sort(sorters[sortBy]);
+    chartData.sort(sorters[sortBy]);
 
-  // Assign rainbow bar colors after sorting
-  chartData = chartData.map((entry, index) => ({
-    ...entry,
-    fill: `hsl(${index * 40}, 70%, 50%)`,
-    fill_flag: "#ffffff",
-  }));
+    // Assign rainbow bar colors after sorting
+    chartData = chartData.map((entry, index) => ({
+      ...entry,
+      fill: `hsl(${index * 40}, 70%, 50%)`,
+      fill_flag: "#ffffff",
+    }));
+
+    return {
+      chartData,
+      chartConfig,
+      totalFlaggedCount,
+      totalFlaggedTime,
+    };
+  }, [flags, exposureFields, groupBy, plotBy, sortBy]);
 
   // Set tooltip position for rendering via portal,
   // accounting for any scrolling of the bar chart.
   const scrollTop = scrollRef.current?.scrollTop ?? 0;
   const left = tooltipState?.x ?? 0;
   const top = (tooltipState?.y ?? 0) - scrollTop;
+
+  // Check which half of chart tooltip is in, to
+  // flip tooltip up/down to avoid clipping.
+  const containerHeight = scrollRef.current?.clientHeight ?? 0;
+  const isBottomHalf = top > containerHeight / 2;
 
   return (
     <Card className="border-none p-0 bg-stone-800 gap-2">
@@ -464,7 +481,8 @@ function AppletExposures({
                             tick={{ fill: "#ffffff", fontSize: 12 }}
                             label={{
                               value:
-                                plotBy === "Time"
+                                // plotBy === "Time"
+                                plotBy == PlotByValues.TIME
                                   ? "Exposure time (s)"
                                   : "Number of exposures",
                               position: "insideTop",
@@ -582,7 +600,8 @@ function AppletExposures({
 
             {/* Totals */}
             <div className="text-[12px] flex flex-row gap-8 items-end">
-              {plotBy === "Time" ? (
+              {/* {plotBy === "Time" ? ( */}
+              {plotBy === PlotByValues.TIME ? (
                 <>
                   <div>Total exposure time: {sumExpTime} s</div>
                   <div className="flex flex-row items-end">
@@ -621,21 +640,22 @@ function AppletExposures({
               style={{
                 left,
                 top,
-                // Shift tooltip up by its height, so
-                // bottom bar tooltips don't get clipped.
-                transform: "translateY(-100%)",
+                // If in bottom half of chart, flip tooltip up
+                // by its height, so tooltips don't get clipped.
+                transform: isBottomHalf ? "translateY(-100%)" : "none",
               }}
             >
               <div className="bg-white text-black text-xs p-2 border border-white rounded">
                 {(() => {
                   const group = tooltipState.payload[0].payload.groupKey;
                   const testCaseName = testCases?.[group];
-                  const unflagged = tooltipState.payload.find(
-                    (d) => d.dataKey === "unflagged",
-                  ).value;
-                  const flagged = tooltipState.payload.find(
-                    (d) => d.dataKey === "flagged",
-                  ).value;
+                  // Get flagged/unflagged counts
+                  const values = tooltipState.payload.reduce((acc, d) => {
+                    acc[d.dataKey] = d.value;
+                    return acc;
+                  }, {});
+                  const unflagged = values.unflagged ?? 0;
+                  const flagged = values.flagged ?? 0;
 
                   return (
                     <>
