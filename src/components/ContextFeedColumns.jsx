@@ -29,6 +29,40 @@ function formatTimestamp(tsString) {
   return dt.isValid ? dt.toFormat("yyyy-LL-dd HH:mm:ss.S") : tsString;
 }
 
+// Handles Zephyr links on BLOCK names and plain text.
+function renderNameCell(info) {
+  const name = info.getValue();
+  if (!name) return null;
+
+  // Show zephyr test case names as links
+  if (name.startsWith("BLOCK")) {
+    try {
+      const parentTestCase = name.split("_", 1)[0];
+      const testCaseUrl = getZephyrUrl(parentTestCase);
+
+      return (
+        // Wrap in a dark background for visibility
+        // when row is highlighted.
+        <div className="bg-stone-800 p-1 rounded">
+          <a
+            href={testCaseUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sky-500 underline"
+          >
+            {formatCellValue(name)}
+          </a>
+        </div>
+      );
+    } catch (err) {
+      // Fallback to raw string.
+      console.error("Failed to get zephyr link:", err);
+    }
+  }
+
+  return formatCellValue(name);
+}
+
 // Handles links (<a> tags → styled link), plain text descriptions, and
 // expandable tracebacks (with copy/fullscreen).
 // Expansion tracked in `expandedRows` and toggled on click.
@@ -87,32 +121,32 @@ function renderDescriptionCell(info) {
     }
   }
 
-  // Show zephyr test case names as links
-  const name = info.row.original.name;
-  if (name.startsWith("BLOCK")) {
-    try {
-      const parentTestCase = name.split("_", 1)[0];
-      const testCaseUrl = getZephyrUrl(parentTestCase);
+  // // Show zephyr test case names as links
+  // const name = info.row.original.name;
+  // if (name.startsWith("BLOCK")) {
+  //   try {
+  //     const parentTestCase = name.split("_", 1)[0];
+  //     const testCaseUrl = getZephyrUrl(parentTestCase);
 
-      return (
-        // Wrap in a dark background for visibility
-        // when row is highlighted.
-        <div className="bg-stone-800 p-1 rounded">
-          <a
-            href={testCaseUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sky-500 underline"
-          >
-            {formatCellValue(description)}
-          </a>
-        </div>
-      );
-    } catch (err) {
-      // Fallback to raw string.
-      console.error("Failed to get zephyr link:", err);
-    }
-  }
+  //     return (
+  //       // Wrap in a dark background for visibility
+  //       // when row is highlighted.
+  //       <div className="bg-stone-800 p-1 rounded">
+  //         <a
+  //           href={testCaseUrl}
+  //           target="_blank"
+  //           rel="noopener noreferrer"
+  //           className="text-sky-500 underline"
+  //         >
+  //           {formatCellValue(description)}
+  //         </a>
+  //       </div>
+  //     );
+  //   } catch (err) {
+  //     // Fallback to raw string.
+  //     console.error("Failed to get zephyr link:", err);
+  //   }
+  // }
 
   if (!isTraceback) return formatCellValue(description);
 
@@ -389,14 +423,14 @@ export const contextFeedColumns = [
   }),
   columnHelper.accessor("name", {
     header: "Name",
-    cell: (info) => formatCellValue(info.getValue()),
     size: 300,
-    // minSize: 300,
+    minSize: 300,
     filterFn: matchValueOrInList,
     filterType: "string",
     meta: {
-      tooltip: "Name of event.",
+      tooltip: "Name of event and link to details (if available).",
     },
+    cell: renderNameCell,
   }),
   columnHelper.accessor("description", {
     header: "Description",

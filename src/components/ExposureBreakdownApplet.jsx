@@ -2,7 +2,10 @@
 
 import { useState, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
+
 import { useSearch, useRouter } from "@tanstack/react-router";
+import { Cell, Bar, BarChart, XAxis, YAxis, Customized } from "recharts";
+
 import {
   Select,
   SelectContent,
@@ -20,8 +23,6 @@ import {
 import { ChartContainer } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
 import BarChartYAxisTick from "@/components/BarChartYAxisTick";
-
-import { Cell, Bar, BarChart, XAxis, YAxis, Customized } from "recharts";
 
 import InfoIcon from "../assets/InfoIcon.svg";
 import DownloadIcon from "../assets/DownloadIcon.svg";
@@ -49,7 +50,7 @@ const SortByValues = Object.freeze({
 const PLOT_YLABELS_MAXSIZE = 14;
 const BAR_SIZE = 35;
 
-function AppletExposures({
+function ExposureBreakdown({
   exposureFields,
   exposureCount,
   sumExpTime,
@@ -111,103 +112,104 @@ function AppletExposures({
   }
 
   // Memoize data handling computations
-  const { chartData, chartConfig, totalFlaggedCount, totalFlaggedTime } = useMemo(() => {
-    const flaggedObsIds = new Set(flags.map((f) => f.obs_id));
-    const aggregatedMap = {};
+  const { chartData, chartConfig, totalFlaggedCount, totalFlaggedTime } =
+    useMemo(() => {
+      const flaggedObsIds = new Set(flags.map((f) => f.obs_id));
+      const aggregatedMap = {};
 
-    let totalFlaggedCount = 0;
-    let totalFlaggedTime = 0;
+      let totalFlaggedCount = 0;
+      let totalFlaggedTime = 0;
 
-    if (Array.isArray(exposureFields)) {
-      exposureFields.forEach((row) => {
-        const rawValue = row[groupBy];
-        const groupKey =
-          rawValue === null || rawValue === undefined || rawValue === ""
-            ? groupBy === GroupByValues.TARGET_NAME
-              ? "No target"
-              : "Unknown"
-            : rawValue;
+      if (Array.isArray(exposureFields)) {
+        exposureFields.forEach((row) => {
+          const rawValue = row[groupBy];
+          const groupKey =
+            rawValue === null || rawValue === undefined || rawValue === ""
+              ? groupBy === GroupByValues.TARGET_NAME
+                ? "No target"
+                : "Unknown"
+              : rawValue;
 
-        const expTime = parseFloat(row.exp_time ?? 0);
-        const isFlagged = flaggedObsIds.has(row.exposure_name);
+          const expTime = parseFloat(row.exp_time ?? 0);
+          const isFlagged = flaggedObsIds.has(row.exposure_name);
 
-        if (!aggregatedMap[groupKey]) {
-          aggregatedMap[groupKey] = {
-            groupKey,
-            unflagged: 0,
-            flagged: 0,
-          };
-        }
-
-        if (plotBy === PlotByValues.TIME) {
-          if (isFlagged) {
-            const time = isNaN(expTime) ? 0 : expTime;
-            aggregatedMap[groupKey].flagged += time;
-            totalFlaggedTime += time;
-            totalFlaggedCount += 1;
-          } else {
-            aggregatedMap[groupKey].unflagged += isNaN(expTime) ? 0 : expTime;
+          if (!aggregatedMap[groupKey]) {
+            aggregatedMap[groupKey] = {
+              groupKey,
+              unflagged: 0,
+              flagged: 0,
+            };
           }
-        } else {
-          if (isFlagged) {
-            aggregatedMap[groupKey].flagged += 1;
-            totalFlaggedCount += 1;
+
+          if (plotBy === PlotByValues.TIME) {
+            if (isFlagged) {
+              const time = isNaN(expTime) ? 0 : expTime;
+              aggregatedMap[groupKey].flagged += time;
+              totalFlaggedTime += time;
+              totalFlaggedCount += 1;
+            } else {
+              aggregatedMap[groupKey].unflagged += isNaN(expTime) ? 0 : expTime;
+            }
           } else {
-            aggregatedMap[groupKey].unflagged += 1;
+            if (isFlagged) {
+              aggregatedMap[groupKey].flagged += 1;
+              totalFlaggedCount += 1;
+            } else {
+              aggregatedMap[groupKey].unflagged += 1;
+            }
           }
-        }
+        });
+      } else {
+        console.warn("exposureFields is not an array:", exposureFields);
+      }
+
+      let chartData = Object.values(aggregatedMap).map((entry) => {
+        const totalValue = entry.unflagged + entry.flagged;
+        return {
+          groupKey: entry.groupKey,
+          unflagged: entry.unflagged,
+          flagged: entry.flagged,
+          totalValue,
+        };
       });
-    } else {
-      console.warn("exposureFields is not an array:", exposureFields);
-    }
 
-    let chartData = Object.values(aggregatedMap).map((entry) => {
-      const totalValue = entry.unflagged + entry.flagged;
-      return {
-        groupKey: entry.groupKey,
-        unflagged: entry.unflagged,
-        flagged: entry.flagged,
-        totalValue,
+      const chartConfig = {
+        unflagged: {
+          label: "Unflagged",
+          color: "",
+        },
+        flagged: {
+          label: "Flagged",
+          color: "#ffffff",
+        },
       };
-    });
 
-    const chartConfig = {
-      unflagged: {
-        label: "Unflagged",
-        color: "",
-      },
-      flagged: {
-        label: "Flagged",
-        color: "#ffffff",
-      },
-    };
+      // Sort chartData based on sortBy
+      const sorters = {
+        [SortByValues.ALPHABETICAL_ASC]: (a, b) =>
+          a.groupKey.localeCompare(b.groupKey),
+        [SortByValues.ALPHABETICAL_DESC]: (a, b) =>
+          b.groupKey.localeCompare(a.groupKey),
+        [SortByValues.HIGHEST_FIRST]: (a, b) => b.totalValue - a.totalValue,
+        [SortByValues.LOWEST_FIRST]: (a, b) => a.totalValue - b.totalValue,
+      };
 
-    // Sort chartData based on sortBy
-    const sorters = {
-      [SortByValues.ALPHABETICAL_ASC]: (a, b) =>
-        a.groupKey.localeCompare(b.groupKey),
-      [SortByValues.ALPHABETICAL_DESC]: (a, b) =>
-        b.groupKey.localeCompare(a.groupKey),
-      [SortByValues.HIGHEST_FIRST]: (a, b) => b.totalValue - a.totalValue,
-      [SortByValues.LOWEST_FIRST]: (a, b) => a.totalValue - b.totalValue,
-    };
+      chartData.sort(sorters[sortBy]);
 
-    chartData.sort(sorters[sortBy]);
+      // Assign rainbow bar colors after sorting
+      chartData = chartData.map((entry, index) => ({
+        ...entry,
+        fill: `hsl(${index * 40}, 70%, 50%)`,
+        fill_flag: "#ffffff",
+      }));
 
-    // Assign rainbow bar colors after sorting
-    chartData = chartData.map((entry, index) => ({
-      ...entry,
-      fill: `hsl(${index * 40}, 70%, 50%)`,
-      fill_flag: "#ffffff",
-    }));
-
-    return {
-      chartData,
-      chartConfig,
-      totalFlaggedCount,
-      totalFlaggedTime,
-    };
-  }, [flags, exposureFields, groupBy, plotBy, sortBy]);
+      return {
+        chartData,
+        chartConfig,
+        totalFlaggedCount,
+        totalFlaggedTime,
+      };
+    }, [flags, exposureFields, groupBy, plotBy, sortBy]);
 
   // Set tooltip position for rendering via portal,
   // accounting for any scrolling of the bar chart.
@@ -682,4 +684,4 @@ function AppletExposures({
   );
 }
 
-export default AppletExposures;
+export default ExposureBreakdown;
