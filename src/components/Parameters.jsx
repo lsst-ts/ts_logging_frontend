@@ -40,9 +40,7 @@ function Parameters({
   const { getAvailableDayObsRange } = useHostConfig();
 
   const dateRange = getAvailableDayObsRange();
-  const maxDayObs_dt = DateTime.fromFormat(dateRange.max, "yyyyLLdd", {
-    zone: "utc",
-  }).toJSDate();
+
   const minDayObs_dt =
     dateRange.min === null
       ? dateRange.min
@@ -83,7 +81,6 @@ function Parameters({
           onDateChange={onDayobsChange}
           disabled={{
             before: utcDateToCalendarDate(minDayObs_dt),
-            after: utcDateToCalendarDate(maxDayObs_dt),
           }}
         />
       </div>
