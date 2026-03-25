@@ -19,12 +19,13 @@ import {
   fetchExposureFlags,
   fetchJiraTickets,
   fetchVisitMaps,
-  fetchTestCases,
+  fetchBlockDetails,
 } from "@/utils/fetchUtils";
 import {
   calculateEfficiency,
   calculateTimeLoss,
   calculateSumExpTimeBetweenTwilights,
+  getBlockSourceLabel,
 } from "@/utils/utils";
 import { getDayobsStartUTC } from "@/utils/timeUtils";
 import DialogMetricsCard from "@/components/dialog-metrics-card";
@@ -73,7 +74,7 @@ export default function Digest() {
   const [interactiveMap, setInteractiveMap] = useState(null);
   const [visitMapLoading, setVisitMapLoading] = useState(false);
 
-  const [testCases, setTestCases] = useState({});
+  const [blockLookup, setBlockLookup] = useState({});
 
   // Fetch all data except Zephyr data,
   // which needs exposure data.
@@ -310,25 +311,40 @@ export default function Digest() {
     };
   }, [startDayobs, endDayobs, telescope]);
 
-  // Fetch test case details from Zephyr
+  // Fetch BLOCK details from Zephyr/Jira
   useEffect(() => {
     const abortController = new AbortController();
 
-    const testCaseKeys = [
+    const blockKeys = [
       ...new Set(exposureFields.map((e) => e.science_program)),
     ];
 
-    if (testCaseKeys.length === 0) {
+    if (blockKeys.length === 0) {
       return; // nothing to fetch
     }
-    fetchTestCases(testCaseKeys, abortController)
-      .then((testCases) => {
-        setTestCases(testCases.data);
+    fetchBlockDetails(blockKeys, abortController)
+      .then((blocks) => {
+        setBlockLookup(blocks.data);
+
+        // Handle partial errors (one of Zephyr/Jira failing)
+        if (blocks.errors) {
+          Object.entries(blocks.errors).forEach(([source, message]) => {
+            toast.error(
+              `Error fetching BLOCK descriptions from ${getBlockSourceLabel(
+                source,
+              )}`,
+              {
+                description: message,
+                duration: Infinity,
+              },
+            );
+          });
+        }
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
           const msg = err?.message;
-          toast.error("Error fetching test case descriptions from Zephyr", {
+          toast.error("Error fetching BLOCK descriptions from Zephyr/Jira", {
             description: msg,
             duration: Infinity,
           });
@@ -436,7 +452,7 @@ export default function Digest() {
               exposureCount={exposureCount}
               sumExpTime={sumExpTime}
               flags={flags}
-              testCases={testCases}
+              blockLookup={blockLookup}
               exposuresLoading={exposuresLoading}
               flagsLoading={flagsLoading}
             />

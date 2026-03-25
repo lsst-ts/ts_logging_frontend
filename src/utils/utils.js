@@ -202,19 +202,19 @@ const inferDecimals = (value) => {
 };
 
 /**
- * Merges rows from the consDB, exposure log and zephyr sources.
+ * Merges rows from the consDB, exposure log and Zephyr/Jira sources.
  *
  * For each consDB row, attempts to enrich it with instrument, exposure flag,
  * and message text from the exposure log (matched via `obs_id` and `exposure name`).
- * It also attempts to add test case descriptions where relevant (matched via
+ * It also attempts to add BLOCK descriptions where relevant (matched via
  * `science_program`).
  *
  * @param {Object[]} consDbRows - The array of rows from the consDB source.
  * @param {Object[]} exposureLogRows - The array of rows from the exposure log source.
- * @param {Object{}} testCases - The dict of test case and descriptions from zephyr.
+ * @param {Object{}} blockLookup - The dict of BLOCK objects from Zephyr/Jira.
  * @returns {Object[]} A new array of merged row objects with added/enriched fields.
  */
-const mergeAllDataLogSources = (consDbRows, exposureLogRows, testCases) => {
+const mergeAllDataLogSources = (consDbRows, exposureLogRows, blockLookup) => {
   // Build fast lookup map for exposure log
   const exposureLogMap = new Map();
   exposureLogRows.forEach((entry) => {
@@ -222,7 +222,7 @@ const mergeAllDataLogSources = (consDbRows, exposureLogRows, testCases) => {
   });
 
   // testCases is already a lookup object
-  const testCaseMap = testCases ?? {};
+  const blockMap = blockLookup ?? {};
 
   return consDbRows
     .map((row) => {
@@ -249,8 +249,8 @@ const mergeAllDataLogSources = (consDbRows, exposureLogRows, testCases) => {
         exposure_flag: matchingExposure?.exposure_flag ?? "none",
         message_text: matchingExposure?.message_text ?? "",
 
-        // Test case enrichment
-        test_case_description: testCaseMap[row.science_program] ?? "",
+        // BLOCK enrichment
+        block_description: blockMap[row.science_program]?.summary ?? "",
 
         // Add derived column
         psf_median,
@@ -263,19 +263,19 @@ const mergeAllDataLogSources = (consDbRows, exposureLogRows, testCases) => {
 };
 
 /**
- * Merges rows from rubin-nights and zephyr.
+ * Merges rows from rubin-nights and Zephyr/Jira.
  *
  * For each rubin-nights row, attempts to enrich it with details about
  * the current task, display information (colours, labels, etc.), and
- * test case descriptions where relevant (matched via `name`).
+ * BLOCK descriptions where relevant (matched via `name`).
  *
  * @param {Object[]} rubinNightsRows - The array of rows from rubin-nights.
- * @param {Object{}} testCases - The dict of test cases and descriptions from zephyr.
+ * @param {Object{}} blockLookup - The BLOCK lookup with descriptions from Zephyr/Jira.
  * @returns {Object[]} A new array of merged row objects with added/enriched fields.
  */
-const mergeContextFeedSources = (rubinNightsRows, testCases) => {
+const mergeContextFeedSources = (rubinNightsRows, blockLookup) => {
   // testCases is already a lookup object
-  const testCaseMap = testCases ?? {};
+  const blockMap = blockLookup ?? {};
 
   // To set currentTask for all events until next task change
   let currentTask = null;
@@ -290,8 +290,8 @@ const mergeContextFeedSources = (rubinNightsRows, testCases) => {
         // New BLOCK added, so add Zephyr test case details
         let description = entry.description;
         if (entry.category_index == 10 && entry.name.startsWith("BLOCK")) {
-          description = testCaseMap[entry.name]
-            ? testCaseMap[entry.name]
+          description = blockMap[entry.name]?.summary
+            ? blockMap[entry.name]?.summary
             : entry.description;
         }
 
@@ -574,6 +574,21 @@ function getZephyrUrl(testCase) {
   return `https://rubinobs.atlassian.net/projects/BLOCK?selectedItem=com.atlassian.plugins.atlassian-connect-plugin:com.kanoah.test-manager__main-project-page#!/v2/testCase/${testCase}`;
 }
 
+/**
+ * Converts a backend error source key into a user-friendly label.
+ *
+ * Maps known sources (e.g., "zephyr", "jira") to display names,
+ * and falls back to the original string if no mapping exists.
+ *
+ * @param {string} source - The backend source key.
+ * @returns {string} The human-readable label for display in the UI.
+ */
+const getBlockSourceLabel = (source) =>
+  ({
+    zephyr: "Zephyr",
+    jira: "Jira",
+  })[source] || source;
+
 export {
   calculateEfficiency,
   calculateTimeLoss,
@@ -595,4 +610,5 @@ export {
   calculateSumExpTimeBetweenTwilights,
   parseBackendVersion,
   getZephyrUrl,
+  getBlockSourceLabel,
 };

@@ -1,8 +1,6 @@
-import { getZephyrUrl } from "@/utils/utils";
-
 // Custom tick label component for Exposures bar chart.
-// If grouped by Science Program, and the Test Case group has
-// Zephyr documentation that can be linked to, provide that link.
+// If grouped by Science Program, and the BLOCK group has
+// Zephyr/Jira documentation that can be linked to, provide that link.
 // Otherwise, display a normal (or trimmed if too long) tick label.
 const BarChartYAxisTick = ({
   x,
@@ -10,7 +8,7 @@ const BarChartYAxisTick = ({
   payload,
   groupBy,
   GroupByValues,
-  testCases,
+  blockLookup,
   maxSize,
 }) => {
   const fullLabel = payload.value;
@@ -22,11 +20,10 @@ const BarChartYAxisTick = ({
 
   const isScienceProgram = groupBy === GroupByValues.SCIENCE_PROGRAM;
 
-  const mappedValue = testCases?.[fullLabel];
+  // Get url for BLOCK links
+  const mappedValue = blockLookup?.[fullLabel];
   const isLinked = isScienceProgram && !!mappedValue;
-
-  const parentTestCase = isLinked ? fullLabel.split("_", 1)[0] : null;
-  const href = isLinked ? getZephyrUrl(parentTestCase) : null;
+  const href = isLinked ? blockLookup?.[fullLabel]?.url : null;
 
   const textElement = (
     <text

@@ -314,11 +314,15 @@ describe("utils", () => {
         },
       ];
 
-      const testCases = {
-        "BLOCK-T250": "TMA Unpark/Checkout",
+      const blockLookup = {
+        "BLOCK-T250": {
+          summary: "This block tests some things",
+          url: "zephyr/things/BLOCK-T250",
+          source: "zephyr",
+        },
       };
 
-      const merged = mergeAllDataLogSources(consDb, exposureLog, testCases);
+      const merged = mergeAllDataLogSources(consDb, exposureLog, blockLookup);
 
       expect(merged[0].instrument).toBe("cam");
       expect(merged[0].exposure_flag).toBe("ok");
@@ -335,24 +339,28 @@ describe("utils", () => {
       expect(merged[0].message_text).toBe("");
     });
 
-    it("adds test case description when science_program matches", () => {
+    it("adds BLOCK description when science_program matches", () => {
       const consDb = [baseRow()];
 
-      const testCases = {
-        "BLOCK-T250": "TMA Unpark/Checkout",
+      const blockLookup = {
+        "BLOCK-T250": {
+          summary: "This block tests some things",
+          url: "zephyr/things/BLOCK-T250",
+          source: "zephyr",
+        },
       };
 
-      const merged = mergeAllDataLogSources(consDb, [], testCases);
+      const merged = mergeAllDataLogSources(consDb, [], blockLookup);
 
-      expect(merged[0].test_case_description).toBe("TMA Unpark/Checkout");
+      expect(merged[0].block_description).toBe("This block tests some things");
     });
 
-    it("defaults test_case_description to empty string if no match", () => {
+    it("defaults block_description to empty string if no match", () => {
       const consDb = [baseRow({ science_program: "UNKNOWN" })];
 
       const merged = mergeAllDataLogSources(consDb, [], {});
 
-      expect(merged[0].test_case_description).toBe("");
+      expect(merged[0].block_description).toBe("");
     });
 
     it("computes psf_median correctly", () => {
@@ -402,19 +410,23 @@ describe("utils", () => {
       ...overrides,
     });
 
-    it("adds test case description when BLOCK test case matches", () => {
+    it("adds BLOCK description when BLOCK key matches", () => {
       const rubinRows = [baseRow()];
 
-      const testCases = {
-        "BLOCK-T250": "TMA Unpark/Checkout",
+      const blockLookup = {
+        "BLOCK-T250": {
+          summary: "This block tests some things",
+          url: "zephyr/things/BLOCK-T250",
+          source: "zephyr",
+        },
       };
 
-      const merged = mergeContextFeedSources(rubinRows, testCases);
+      const merged = mergeContextFeedSources(rubinRows, blockLookup);
 
-      expect(merged[0].description).toBe("TMA Unpark/Checkout");
+      expect(merged[0].description).toBe("This block tests some things");
     });
 
-    it("keeps original description if no test case match", () => {
+    it("keeps original description if no BLOCKs match", () => {
       const rubinRows = [
         baseRow({
           name: "BLOCK-UNKNOWN",
@@ -435,11 +447,15 @@ describe("utils", () => {
         }),
       ];
 
-      const testCases = {
-        "BLOCK-T250": "TMA Unpark/Checkout",
+      const blockLookup = {
+        "BLOCK-T250": {
+          summary: "This block tests some things",
+          url: "zephyr/things/BLOCK-T250",
+          source: "zephyr",
+        },
       };
 
-      const merged = mergeContextFeedSources(rubinRows, testCases);
+      const merged = mergeContextFeedSources(rubinRows, blockLookup);
 
       expect(merged[0].description).toBe("original description");
     });

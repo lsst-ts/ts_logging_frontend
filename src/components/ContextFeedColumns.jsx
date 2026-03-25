@@ -11,7 +11,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { createColumnHelper } from "@tanstack/react-table";
-import { formatCellValue, getZephyrUrl } from "@/utils/utils";
+import { formatCellValue } from "@/utils/utils";
 import { matchValueOrInList } from "@/components/DataTable/tableUtils";
 import { CATEGORY_INDEX_INFO } from "@/components/context-feed-definitions.js";
 
@@ -29,38 +29,35 @@ function formatTimestamp(tsString) {
   return dt.isValid ? dt.toFormat("yyyy-LL-dd HH:mm:ss.S") : tsString;
 }
 
-// Handles Zephyr links on BLOCK names and plain text.
+// Handles Zephyr/Jira links on BLOCK names and plain text.
 function renderNameCell(info) {
-  const name = info.getValue();
-  if (!name) return null;
+  const value = info.getValue();
+  if (!value) return null;
 
-  // Show zephyr test case names as links
-  if (name.startsWith("BLOCK")) {
-    try {
-      const parentTestCase = name.split("_", 1)[0];
-      const testCaseUrl = getZephyrUrl(parentTestCase);
+  // Get BLOCK lookup
+  const blockMap = info.table.options.meta?.blockLookup;
+  const block = blockMap?.[value];
 
-      return (
-        // Wrap in a dark background for visibility
-        // when row is highlighted.
-        <div className="bg-stone-800 p-1 rounded">
-          <a
-            href={testCaseUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sky-500 underline"
-          >
-            {formatCellValue(name)}
-          </a>
-        </div>
-      );
-    } catch (err) {
-      // Fallback to raw string.
-      console.error("Failed to get zephyr link:", err);
-    }
+  // If available, display BLOCK names as Zephyr/Jira links
+  if (block) {
+    return (
+      // Wrap in a dark background for visibility
+      // when row is highlighted.
+      <div className="bg-stone-800 p-1 rounded">
+        <a
+          href={block.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sky-500 underline hover:text-sky-400"
+        >
+          {formatCellValue(value)}
+        </a>
+      </div>
+    );
   }
 
-  return formatCellValue(name);
+  // Otherwise, render plain string
+  return formatCellValue(value);
 }
 
 // Handles links (<a> tags → styled link), plain text descriptions, and
@@ -102,7 +99,7 @@ function renderDescriptionCell(info) {
               href={href}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sky-500 underline"
+              className="text-sky-500 underline hover:text-sky-400"
             >
               {/* Iterate over the link text lines */}
               {lines.map((line, idx) => (
@@ -120,33 +117,6 @@ function renderDescriptionCell(info) {
       console.error("Failed to parse link in description:", err);
     }
   }
-
-  // // Show zephyr test case names as links
-  // const name = info.row.original.name;
-  // if (name.startsWith("BLOCK")) {
-  //   try {
-  //     const parentTestCase = name.split("_", 1)[0];
-  //     const testCaseUrl = getZephyrUrl(parentTestCase);
-
-  //     return (
-  //       // Wrap in a dark background for visibility
-  //       // when row is highlighted.
-  //       <div className="bg-stone-800 p-1 rounded">
-  //         <a
-  //           href={testCaseUrl}
-  //           target="_blank"
-  //           rel="noopener noreferrer"
-  //           className="text-sky-500 underline"
-  //         >
-  //           {formatCellValue(description)}
-  //         </a>
-  //       </div>
-  //     );
-  //   } catch (err) {
-  //     // Fallback to raw string.
-  //     console.error("Failed to get zephyr link:", err);
-  //   }
-  // }
 
   if (!isTraceback) return formatCellValue(description);
 

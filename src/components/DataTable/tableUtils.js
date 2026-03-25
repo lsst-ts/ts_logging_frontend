@@ -55,10 +55,22 @@ export function getColumnUrlMappings(columns) {
  */
 export const matchValueOrInList = (row, columnId, filterValue) => {
   const rowValue = row.getValue(columnId);
+  // console.log("rowValue: ", rowValue);
+  // console.log("typeof rowValue: ", typeof rowValue);
+
+  // if (Array.isArray(filterValue)) {
+  //   return filterValue.includes(rowValue);
+  // }
+
+  // return rowValue === filterValue;
+
+  // Normalize row value to string
+  const normalized =
+    typeof rowValue === "string" ? rowValue : rowValue?.key ?? ""; // 👈 use key for BLOCKs
 
   if (Array.isArray(filterValue)) {
-    return filterValue.includes(rowValue);
+    return filterValue.includes(normalized);
   }
 
-  return rowValue === filterValue;
+  return normalized === filterValue;
 };
