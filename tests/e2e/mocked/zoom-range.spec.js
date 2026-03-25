@@ -129,14 +129,21 @@ test.describe("Timeline — drag range selection", () => {
     // than the full range
     expect(endTime - startTime).toBeLessThan(FULL_RANGE);
   });
+});
+
+// ---------------------------------------------------------------------------
+
+test.describe("Timeline — double-click resets selection", () => {
+  test.beforeEach(async ({ page }) => {
+    // Start with a pre-existing selection so there is something to reset
+    await setupApiMocks(page, { "data-log": ZOOM_MOCK_DATA });
+    await page.goto(`${PLOTS_URL}&startTime=${recTAI(2)}&endTime=${recTAI(8)}`);
+    await waitForPlotsLoad(page);
+  });
 
   test("double-click on timeline resets to the full time range", async ({
     page,
   }) => {
-    // Navigate with a pre-existing selection so there is something to reset
-    await page.goto(`${PLOTS_URL}&startTime=${recTAI(2)}&endTime=${recTAI(8)}`);
-    await waitForPlotsLoad(page);
-
     const timelineSvg = page.locator(
       ':not([data-slot="chart"]) > .recharts-responsive-container svg.recharts-surface',
     );
