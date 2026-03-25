@@ -39,12 +39,12 @@ function Parameters({
   const displayRange = getDisplayDateRange(dayobs, noOfNights);
   const { getAvailableDayObsRange } = useHostConfig();
 
-  const dateRange = getAvailableDayObsRange();
+  const { min: minDayObs } = getAvailableDayObsRange();
 
   const minDayObs_dt =
-    dateRange.min === null
-      ? dateRange.min
-      : DateTime.fromFormat(dateRange.min, "yyyyLLdd", {
+    minDayObs === null
+      ? null
+      : DateTime.fromFormat(minDayObs, "yyyyLLdd", {
           zone: "utc",
         }).toJSDate();
 
