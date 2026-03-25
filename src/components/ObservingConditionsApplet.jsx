@@ -439,11 +439,6 @@ function ObservingConditionsApplet({
       ticks.push(Math.round((gridMin + i * step) * 10) / 10);
     }
 
-    // just in case of edge cases and 1 isn't included, add it
-    if (!ticks.includes(1) && min <= 1 && max >= 1) {
-      ticks.push(1);
-      ticks.sort((a, b) => a - b);
-    }
     return ticks;
   }, [currentPsfYDomain]);
 
@@ -714,7 +709,6 @@ function ObservingConditionsApplet({
                         domain={[psfTicks[0], psfTicks[psfTicks.length - 1]]}
                         ticks={psfTicks}
                         allowDataOverflow={true}
-                        tickFormatter={(tick) => Number(tick).toFixed(1)}
                         label={{
                           value: "PSF FWHM (arcsec)",
                           angle: -90,
@@ -781,9 +775,8 @@ function ObservingConditionsApplet({
                         yAxisId="left"
                         y={1}
                         stroke="#FFFFFF"
-                        strokeOpacity={0.35}
-                        strokeWidth={1.5}
-                        strokeDasharray="6 4"
+                        strokeOpacity={0.5}
+                        strokeWidth={2}
                       />
                       <ChartTooltip
                         content={(props) => (
