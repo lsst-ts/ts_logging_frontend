@@ -23,10 +23,10 @@ import {
   fetchDataLogEntriesFromConsDB,
   fetchDataLogEntriesFromExposureLog,
   fetchAlmanac,
-  fetchTestCases,
+  fetchBlockDetails,
 } from "@/utils/fetchUtils";
 import { getDayobsStartUTC } from "@/utils/timeUtils";
-import { mergeAllDataLogSources } from "@/utils/utils";
+import { mergeAllDataLogSources, getBlockSourceLabel } from "@/utils/utils";
 import {
   prepareAlmanacData,
   prepareMoonIntervals,
@@ -68,8 +68,8 @@ function DataLog() {
   const [consDBdataLoading, setConsDBdataLoading] = useState(false);
   const [exposureLogData, setExposureLogData] = useState([]);
   const [exposureLogDataLoading, setExposureLogDataLoading] = useState(false);
-  const [zephyrData, setZephyrData] = useState({});
-  const [zephyrDataLoading, setZephyrDataLoading] = useState(false);
+  const [blockLookup, setBlockLookup] = useState({});
+  const [blockLookupLoading, setBlockLookupLoading] = useState(false);
 
   // Almanac data for timeline
   const [twilightValues, setTwilightValues] = useState([]);
@@ -225,31 +225,46 @@ function DataLog() {
     };
   }, [startDayobs, queryEndDayobs, instrument]);
 
-  // Fetch test case details from Zephyr
+  // Fetch BLOCK details from Zephyr/Jira
   useEffect(() => {
     const abortController = new AbortController();
 
     if (consDBdata.length === 0) {
-      return; // don't know which test cases to query
+      return; // don't know which BLOCKs to query
     }
 
-    setZephyrDataLoading(true);
+    setBlockLookupLoading(true);
 
-    // Extrace unique test cases from ConsDB data
-    const testCaseKeys = [...new Set(consDBdata.map((e) => e.science_program))];
+    // Extrace unique BLOCKs from ConsDB data
+    const blockKeys = [...new Set(consDBdata.map((e) => e.science_program))];
 
-    if (testCaseKeys.length === 0) {
+    if (blockKeys.length === 0) {
       return; // nothing to fetch
     }
-    fetchTestCases(testCaseKeys, abortController)
-      .then((testCases) => {
-        setZephyrData(testCases.data);
+    fetchBlockDetails(blockKeys, abortController)
+      .then((blocks) => {
+        setBlockLookup(blocks.data);
+
+        // Handle partial errors (one of Zephyr/Jira failing)
+        if (blocks.errors) {
+          Object.entries(blocks.errors).forEach(([source, message]) => {
+            toast.error(
+              `Error fetching BLOCK descriptions from ${getBlockSourceLabel(
+                source,
+              )}`,
+              {
+                description: message,
+                duration: Infinity,
+              },
+            );
+          });
+        }
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          setZephyrData({});
+          setBlockLookup({});
           const msg = err?.message;
-          toast.error("Error fetching test case descriptions from Zephyr", {
+          toast.error("Error fetching BLOCK lookups from Zephyr/Jira", {
             description: msg,
             duration: Infinity,
           });
@@ -257,14 +272,14 @@ function DataLog() {
       })
       .finally(() => {
         if (!abortController.signal.aborted) {
-          setZephyrDataLoading(false);
+          setBlockLookupLoading(false);
         }
       });
   }, [consDBdata]);
 
   // Global table loading flag
   const tableLoading =
-    consDBdataLoading || exposureLogDataLoading || zephyrDataLoading;
+    consDBdataLoading || exposureLogDataLoading || blockLookupLoading;
 
   // Merge data sources together to form one object
   // to pass to TanStack Table.
@@ -272,8 +287,8 @@ function DataLog() {
     if (tableLoading) return [];
     if (!consDBdata.length) return [];
 
-    return mergeAllDataLogSources(consDBdata, exposureLogData, zephyrData);
-  }, [tableLoading, consDBdata, exposureLogData, zephyrData]);
+    return mergeAllDataLogSources(consDBdata, exposureLogData, blockLookup);
+  }, [tableLoading, consDBdata, exposureLogData, blockLookup]);
 
   // Filter data based on selected time range for the table
   const filteredDataLogTableData = useMemo(() => {
@@ -298,7 +313,7 @@ function DataLog() {
           {/* Page title + buttons */}
           <PageHeader
             title="Data Log"
-            description="Exposure metadata and related fields from the ConsDB, Exposure Log, Transformed EFD and Zephyr Scale"
+            description="Exposure metadata and related fields from the ConsDB, Exposure Log, Transformed EFD, Zephyr & Jira."
             actions={
               <>
                 <Popover>
@@ -435,6 +450,7 @@ function DataLog() {
           telescope={telescope}
           data={filteredDataLogTableData}
           dataLogLoading={tableLoading}
+          blockLookup={blockLookup}
         />
       </div>
       <Toaster expand={true} richColors closeButton />

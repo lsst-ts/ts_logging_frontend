@@ -55,7 +55,7 @@ function ExposureBreakdown({
   exposureCount,
   sumExpTime,
   flags,
-  testCases = {},
+  blockLookup = {},
   exposuresLoading = false,
   flagsLoading = false,
 }) {
@@ -469,7 +469,7 @@ function ExposureBreakdown({
                                 {...props}
                                 groupBy={groupBy}
                                 GroupByValues={GroupByValues}
-                                testCases={testCases}
+                                blockLookup={blockLookup}
                                 maxSize={PLOT_YLABELS_MAXSIZE}
                               />
                             )}
@@ -650,7 +650,7 @@ function ExposureBreakdown({
               <div className="bg-white text-black text-xs p-2 border border-white rounded">
                 {(() => {
                   const group = tooltipState.payload[0].payload.groupKey;
-                  const testCaseName = testCases?.[group];
+                  const blockSummary = blockLookup?.[group]?.summary;
                   // Get flagged/unflagged counts
                   const values = tooltipState.payload.reduce((acc, d) => {
                     acc[d.dataKey] = d.value;
@@ -668,8 +668,8 @@ function ExposureBreakdown({
                         </strong>
                       </div>
                       {flagged > 0 && <div>Flagged: {flagged}</div>}
-                      {testCaseName && (
-                        <div className="font-medium">{testCaseName}</div>
+                      {blockSummary && (
+                        <div className="font-medium">{blockSummary}</div>
                       )}
                     </>
                   );

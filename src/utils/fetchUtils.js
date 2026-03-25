@@ -410,26 +410,27 @@ const fetchVisitMaps = async (
 };
 
 /**
- * Fetches the details of Zephyr test cases from the backend API for a specified set of test case keys.
+ * Fetches the details of BLOCKs from the backend API for a specified set of test case keys.
  *
  * @async
- * @function fetchTestCases
- * @param {Array} keys - The keys for the test cases.
+ * @function fetchBlockDetails
+ * @param {Array} keys - The keys for the BLOCKs.
  * @param {AbortController} abortController - The AbortController used to cancel the request if needed.
- * @returns {Promise<Dict>} A promise that resolves to a dict of test case details.
- * @throws {Error} Throws an error if fetching test case details fails for reasons other than an abort.
+ * @returns {Promise<Dict>} A promise that resolves to a dict of BLOCK details.
+ * @throws {Error} Throws an error if fetching BLOCK details fails for reasons other than an abort.
  */
-const fetchTestCases = async (keys, abortController) => {
-  // Construct API url containing multiple keys
+const fetchBlockDetails = async (keys, abortController) => {
+  // Construct API url containing multiple (unique) keys
   const params = new URLSearchParams();
-  keys.forEach((key) => params.append("key", key));
-  const url = `${backendLocation}/test-cases?${params.toString()}`;
+  const uniqueKeys = [...new Set(keys)];
+  uniqueKeys.forEach((key) => params.append("key", key));
+  const url = `${backendLocation}/block-details?${params.toString()}`;
   try {
     const data = await fetchData(url, abortController);
     return data;
   } catch (err) {
     if (err.name !== "AbortError") {
-      console.error("Error fetching test cases", err);
+      console.error("Error fetching BLOCK details", err);
     }
     throw err;
   }
@@ -448,5 +449,5 @@ export {
   fetchContextFeed,
   fetchBackendVersion,
   fetchVisitMaps,
-  fetchTestCases,
+  fetchBlockDetails,
 };

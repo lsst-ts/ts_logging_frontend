@@ -14,8 +14,9 @@ import {
  * @param {string} props.telescope - Current telescope ("Simonyi" or "AuxTel")
  * @param {Array} props.data - Data Log row data
  * @param {boolean} props.dataLogLoading - Whether data is loading
+ * @param {Object} props.blockLookup - BLOCK data map
  */
-function DataLogTable({ telescope, data, dataLogLoading }) {
+function DataLogTable({ telescope, data, dataLogLoading, blockLookup }) {
   // Get column filters synced with URL
   const { columnFilters, setColumnFilters, resetFilters } = useUrlSync({
     routePath: "/data-log",
@@ -43,6 +44,7 @@ function DataLogTable({ telescope, data, dataLogLoading }) {
         showReset: true,
       }}
       onReset={handleReset}
+      tableMeta={{ blockLookup }}
     />
   );
 }

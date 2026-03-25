@@ -33,13 +33,17 @@ export default function RubinTVLink({ dayObs, seqNum, exposureName }) {
   if (!url) return null;
 
   return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-sky-400 underline hover:text-sky-700"
-    >
-      {telescope === "Simonyi" ? "Post-ISR Mosaic" : "Mount Monitor"}
-    </a>
+    // Wrap in a dark background for visibility
+    // when row is highlighted.
+    <div className="bg-stone-800 p-1 rounded">
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-sky-500 underline hover:text-sky-400"
+      >
+        {telescope === "Simonyi" ? "Post-ISR Mosaic" : "Mount Monitor"}
+      </a>
+    </div>
   );
 }

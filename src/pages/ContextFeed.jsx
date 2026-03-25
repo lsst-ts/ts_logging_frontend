@@ -27,9 +27,9 @@ import { getDayobsStartUTC } from "@/utils/timeUtils";
 import {
   fetchAlmanac,
   fetchContextFeed,
-  fetchTestCases,
+  fetchBlockDetails,
 } from "@/utils/fetchUtils";
-import { mergeContextFeedSources } from "@/utils/utils";
+import { mergeContextFeedSources, getBlockSourceLabel } from "@/utils/utils";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
 import { prepareAlmanacData } from "@/utils/timelineUtils";
 import { useUrlSync } from "@/components/DataTable";
@@ -87,8 +87,8 @@ function ContextFeed() {
   // Data and loading flags
   const [rubinNightsData, setRubinNightsData] = useState([]);
   const [rubinNightsDataLoading, setRubinNightsDataLoading] = useState(false);
-  const [zephyrData, setZephyrData] = useState({});
-  const [zephyrDataLoading, setZephyrDataLoading] = useState(false);
+  const [blockLookup, setBlockLookup] = useState({});
+  const [blockLookupLoading, setBlockLookupLoading] = useState(false);
 
   // Almanac data for timeline
   const [twilightValues, setTwilightValues] = useState([]);
@@ -228,35 +228,50 @@ function ContextFeed() {
     };
   }, [startDayobs, endDayobs, telescope]);
 
-  // Fetch test case details from Zephyr
+  // Fetch BLOCK details from Zephyr/Jira
   useEffect(() => {
     const abortController = new AbortController();
 
     if (rubinNightsData.length === 0) {
-      return; // don't know which test cases to query
+      return; // don't know which BLOCK to query
     }
 
-    setZephyrDataLoading(true);
+    setBlockLookupLoading(true);
 
-    // Extrace unique test cases from rubin-nights data
+    // Extract unique BLOCKs from rubin-nights data
     const newBlockOrFBS = rubinNightsData.filter(
       (e) => e.category_index === 10,
     );
     const names = newBlockOrFBS.map((e) => e.name);
-    const testCaseKeys = [...new Set(names)];
+    const blockKeys = [...new Set(names)];
 
-    if (testCaseKeys.length === 0) {
+    if (blockKeys.length === 0) {
       return; // nothing to fetch
     }
-    fetchTestCases(testCaseKeys, abortController)
-      .then((testCases) => {
-        setZephyrData(testCases.data);
+    fetchBlockDetails(blockKeys, abortController)
+      .then((blocks) => {
+        setBlockLookup(blocks.data);
+
+        // Handle partial errors (one of Zephyr/Jira failing)
+        if (blocks.errors) {
+          Object.entries(blocks.errors).forEach(([source, message]) => {
+            toast.error(
+              `Error fetching BLOCK descriptions from ${getBlockSourceLabel(
+                source,
+              )}`,
+              {
+                description: message,
+                duration: Infinity,
+              },
+            );
+          });
+        }
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          setZephyrData({});
+          setBlockLookup({});
           const msg = err?.message;
-          toast.error("Error fetching test case descriptions from Zephyr", {
+          toast.error("Error fetching BLOCK descriptions from Zephyr/Jira", {
             description: msg,
             duration: Infinity,
           });
@@ -264,14 +279,14 @@ function ContextFeed() {
       })
       .finally(() => {
         if (!abortController.signal.aborted) {
-          setZephyrDataLoading(false);
+          setBlockLookupLoading(false);
         }
       });
   }, [rubinNightsData]);
 
   // Global table loading flag
   const tableLoading =
-    rubinNightsDataLoading || almanacLoading || zephyrDataLoading;
+    rubinNightsDataLoading || almanacLoading || blockLookupLoading;
 
   // Merge data sources together to form one object
   // to pass to TanStack Table.
@@ -279,8 +294,8 @@ function ContextFeed() {
     if (tableLoading) return [];
     if (!rubinNightsData.length) return [];
 
-    return mergeContextFeedSources(rubinNightsData, zephyrData);
-  }, [tableLoading, rubinNightsData, zephyrData]);
+    return mergeContextFeedSources(rubinNightsData, blockLookup);
+  }, [tableLoading, rubinNightsData, blockLookup]);
 
   // Filter data based on selected time range
   const filteredData = useMemo(
@@ -480,6 +495,7 @@ function ContextFeed() {
           columnFilters={columnFilters}
           setColumnFilters={setColumnFilters}
           resetFilters={resetFilters}
+          blockLookup={blockLookup}
         />
       </div>
       {/* Error / warning / info message pop-ups */}
