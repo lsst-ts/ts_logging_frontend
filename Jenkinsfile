@@ -51,7 +51,7 @@ pipeline {
         script {
           sh """
             source /home/saluser/.setup_dev.sh
-            npx playwright install --with-deps chromium
+            npx playwright install chromium
             npm run test:e2e
           """
         }
