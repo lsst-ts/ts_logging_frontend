@@ -76,12 +76,12 @@ const applyDateValidation = (schema) => {
       const range = getAvailableDayObsRange();
       if (!range.retentionDays)
         return {
-          message: `Date range must be before current dayObs ${range.max}).`,
+          message: `You selected a date in the future; current dayObs is ${range.max}.`,
           path: ["startDayobs"],
         };
 
       return {
-        message: `Date range must be within the last ${range.retentionDays} days (${range.min} to ${range.max}).`,
+        message: `You selected a date range that is outside the allowed retention period. Date range must be within the last ${range.retentionDays} days (${range.min} to ${range.max}).`,
         path: ["startDayobs"],
       };
     },
