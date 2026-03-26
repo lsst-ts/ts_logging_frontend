@@ -425,8 +425,8 @@ function ObservingConditionsApplet({
     if (!isValidNumber(min) || !isValidNumber(max) || max <= min) return [1];
 
     // Pick a step that gives ~5 ticks even when zoomed in, and divides into 1
-    const CANDIDATE_STEPS = [0.1, 0.2, 0.25, 0.5, 1];
-    const idealStep = (max - min) / 4; // 4 intervals = 5 ticks
+    const CANDIDATE_STEPS = [0.01, 0.02, 0.05, 0.1, 0.2, 0.25, 0.5, 1];
+    const idealStep = (max - min) / 6; // 7 intervals = 5 ticks
     const step = CANDIDATE_STEPS.find((s) => s >= idealStep) ?? 1;
 
     // make min and max fall on the grid
@@ -436,7 +436,10 @@ function ObservingConditionsApplet({
     const ticks = [];
     const totalSteps = Math.round((gridMax - gridMin) / step);
     for (let i = 0; i <= totalSteps; i++) {
-      ticks.push(Math.round((gridMin + i * step) * 10) / 10);
+      const tick = Math.round((gridMin + i * step) * 100) / 100;
+      if (tick >= min && tick <= max) {
+        ticks.push(tick);
+      }
     }
 
     return ticks;
@@ -706,7 +709,7 @@ function ObservingConditionsApplet({
                       <YAxis
                         yAxisId="left"
                         tick={{ fill: "white" }}
-                        domain={[psfTicks[0], psfTicks[psfTicks.length - 1]]}
+                        domain={currentPsfYDomain}
                         ticks={psfTicks}
                         allowDataOverflow={true}
                         label={{
