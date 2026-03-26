@@ -475,6 +475,7 @@ function ObservingConditionsApplet({
         zoomDirection,
         xDomain,
         fullTimeRangeMillis,
+        5 * 60 * 1000, // minimum 5 minutes
       );
       setSelectedTimeRange([
         millisToDateTime(Math.round(newMinMillis)),
@@ -489,6 +490,7 @@ function ObservingConditionsApplet({
           zoomDirection,
           [yMinFraction, yMaxFraction],
           [0, 1],
+          0.05, // minimum 5% of auto Y range
         );
 
         setYMinFraction(newMinFraction);
