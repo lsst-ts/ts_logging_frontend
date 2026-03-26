@@ -210,4 +210,36 @@ test.describe("Plot Format — band marker", () => {
     const bandKey = page.getByText("Bands:").locator("..");
     await expect(bandKey.locator("polygon").first()).toBeVisible();
   });
+
+  test("Colors: y-band dots use the band color (#fdc900) on bandMarker plots", async ({
+    page,
+  }) => {
+    // Default fixture has all records with band="y".  Switch to Colors mode and
+    // check that a dot in the PSF chart (which has bandMarker=true) uses the y
+    // band color.
+    await page.getByRole("button", { name: "Plot Format" }).click();
+    await page.locator("label[for='band-bandColor']").click();
+    await page.keyboard.press("Escape");
+
+    const psfChart = page.locator(
+      '[data-slot="chart"][title="Seeing (PSF FWHM)"]',
+    );
+    await expect(
+      psfChart.locator('[data-obsid][fill="#fdc900"]').first(),
+    ).toBeVisible();
+  });
+
+  test("Colors: Airmass dots do not use the band color (bandMarker=false)", async ({
+    page,
+  }) => {
+    await page.getByRole("button", { name: "Plot Format" }).click();
+    await page.locator("label[for='band-bandColor']").click();
+    await page.keyboard.press("Escape");
+
+    const airmassChart = page.locator('[data-slot="chart"][title="Airmass"]');
+    // Airmass has bandMarker=false so its dots must NOT be coloured by band
+    await expect(
+      airmassChart.locator('[data-obsid][fill="#fdc900"]'),
+    ).toHaveCount(0);
+  });
 });

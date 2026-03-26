@@ -22,6 +22,29 @@ test.describe("Time range synchronisation", () => {
     await waitForPlotsLoad(page);
   });
 
+  test("page loaded with startTime/endTime in URL reflects them in the bar immediately", async ({
+    page,
+  }) => {
+    // Use clean round-hour offsets so expected strings are exact.
+    // FULL_START = 2026-01-01T12:00:00Z; +6 h = 18:00 Jan 1; +18 h = 06:00 Jan 2.
+    const START = FULL_START + 6 * 3600 * 1000;
+    const END = FULL_START + 18 * 3600 * 1000;
+
+    await setupApiMocks(page);
+    await page.goto(`${PLOTS_URL}&startTime=${START}&endTime=${END}`);
+    await waitForPlotsLoad(page);
+
+    const bar = page
+      .locator("[data-slot='card']")
+      .filter({ hasText: "Selected Time Range" });
+    await expect(bar.locator("input[type='text']").first()).toHaveValue(
+      "18:00  2026-01-01",
+    );
+    await expect(bar.locator("input[type='text']").last()).toHaveValue(
+      "06:00  2026-01-02",
+    );
+  });
+
   test("editing the end time input updates the URL", async ({ page }) => {
     const bar = page
       .locator("[data-slot='card']")

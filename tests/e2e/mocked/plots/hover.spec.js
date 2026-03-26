@@ -50,6 +50,18 @@ test.describe("Hover interactions — tooltip", () => {
     await expect(tooltip).toContainText(/\d\.\d{4}/);
   });
 
+  test("tooltip value matches the mock data for the hovered record", async ({
+    page,
+  }) => {
+    // seq_num=1 with postProcess airmass = 1.0 + 1*0.2 = 1.2
+    // The tooltip formatter rounds to 4 d.p. → "1.2000"
+    const firstChart = page.locator("[data-slot='chart']").first();
+    await hoverDot(page, firstChart, 0);
+    const tooltip = firstChart.locator(".recharts-tooltip-wrapper");
+    await expect(tooltip).toBeVisible();
+    await expect(tooltip).toContainText("1.2000");
+  });
+
   test("tooltip shows accurate observation metadata", async ({ page }) => {
     const firstChart = page.locator("[data-slot='chart']").first();
     await hoverDot(page, firstChart);

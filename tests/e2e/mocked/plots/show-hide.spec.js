@@ -93,6 +93,38 @@ test.describe("Show / Hide Plots — null/disabled plots", () => {
       page.locator("label[for='plot-selected-airmass']"),
     ).toContainText("(null)");
   });
+
+  test("multiple null plot fields are all disabled and labelled (null)", async ({
+    page,
+  }) => {
+    const mockData = generateDataLogMock(5, {
+      dayobs: TEST_DAYOBS_INT,
+      overrides: {
+        psf_sigma_median: null,
+        zero_point_median: null,
+        sky_bg_median: null,
+      },
+    });
+    await setupApiMocks(page, { "data-log": mockData });
+    await page.goto(PLOTS_URL);
+    await waitForPlotsLoad(page);
+
+    await page.getByRole("button", { name: "Show / Hide Plots" }).click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+
+    for (const key of [
+      "psf_sigma_median",
+      "zero_point_median",
+      "sky_bg_median",
+    ]) {
+      await expect(page.locator(`#plot-selected-${key}`)).toBeDisabled();
+      await expect(
+        page.locator(`label[for='plot-selected-${key}']`),
+      ).toContainText("(null)");
+    }
+    // Airmass has data and must remain enabled
+    await expect(page.locator("#plot-selected-airmass")).not.toBeDisabled();
+  });
 });
 
 // ---------------------------------------------------------------------------
