@@ -1,18 +1,19 @@
 // @ts-check
 import { test, expect } from "@playwright/test";
-import { setupApiMocks } from "../helpers/mock-api.js";
-import { generateDataLogMock } from "../helpers/mock-generators.js";
-
-const TEST_DAYOBS = "20260101";
-const TEST_DAYOBS_INT = 20260101;
-const PLOTS_URL = `/nightlydigest/plots?startDayobs=${TEST_DAYOBS}&endDayobs=${TEST_DAYOBS}&telescope=Simonyi`;
-
-// Full time range UTC boundaries for dayobs=20260101:
-//   getDayobsStartUTC("20260101") = 2026-01-01T12:00:00Z = 1767268800000 ms
-//   getDayobsEndUTC("20260101")   = 2026-01-02T11:59:59Z = 1767355199000 ms
-const FULL_START = 1767268800000;
-const FULL_END = 1767355199000;
-const FULL_RANGE = FULL_END - FULL_START;
+import { setupApiMocks } from "../../helpers/mock-api.js";
+import { generateDataLogMock } from "../../helpers/mock-generators.js";
+import {
+  waitForPlotsLoad,
+  dragOn,
+  getTimeParams,
+} from "../../helpers/plots-helpers.js";
+import {
+  PLOTS_URL,
+  TEST_DAYOBS_INT,
+  FULL_START,
+  FULL_END,
+  FULL_RANGE,
+} from "../../helpers/constants.js";
 
 // Mock record TAI timestamps.
 // obs_start for record N (1-indexed) is UTC midnight of 2026-01-02 + (N-1) minutes.
@@ -22,67 +23,7 @@ function recTAI(n) {
   return 1767312000000 + (n - 1) * 60000 + 37000;
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/** Waits for the Plots page to finish loading data. */
-async function waitForPlotsLoad(page) {
-  await expect(
-    page.getByRole("button", { name: "Show / Hide Plots" }),
-  ).toBeVisible({ timeout: 15000 });
-}
-
-/**
- * Simulates a mouse drag on a locator element using page.mouse.
- *
- * fromX/toX/fromY/toY are fractions [0,1] of the element's bounding box.
- * Modifier keys are held for the entire gesture.
- * The mouse moves in 10 steps so that Recharts receives plenty of mousemove
- * events and correctly computes chart-relative coordinates.
- */
-async function dragOn(
-  page,
-  locator,
-  { fromX, toX, fromY, toY, shiftKey = false, ctrlKey = false },
-) {
-  await locator.scrollIntoViewIfNeeded();
-  const box = await locator.boundingBox();
-  const sx = box.x + box.width * fromX;
-  const sy = box.y + box.height * fromY;
-  const ex = box.x + box.width * toX;
-  const ey = box.y + box.height * toY;
-
-  if (shiftKey) await page.keyboard.down("Shift");
-  if (ctrlKey) await page.keyboard.down("Control");
-
-  await page.mouse.move(sx, sy);
-  await page.mouse.down();
-  for (let i = 1; i <= 10; i++) {
-    const t = i / 10;
-    await page.mouse.move(sx + (ex - sx) * t, sy + (ey - sy) * t);
-  }
-  await page.mouse.up();
-
-  if (shiftKey) await page.keyboard.up("Shift");
-  if (ctrlKey) await page.keyboard.up("Control");
-}
-
-/**
- * Returns { startTime, endTime } from the current page URL.
- * Values are numbers, or null if the param is absent.
- */
-function getTimeParams(page) {
-  const params = new URL(page.url()).searchParams;
-  return {
-    startTime: params.has("startTime") ? Number(params.get("startTime")) : null,
-    endTime: params.has("endTime") ? Number(params.get("endTime")) : null,
-  };
-}
-
-// ---------------------------------------------------------------------------
 // Shared mock data (spread-out airmass values so dots are well-separated)
-// ---------------------------------------------------------------------------
 const ZOOM_MOCK_DATA = generateDataLogMock(10, {
   dayobs: TEST_DAYOBS_INT,
   postProcess: (r) => ({ ...r, airmass: 1.0 + r.seq_num * 0.15 }),

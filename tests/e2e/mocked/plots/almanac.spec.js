@@ -1,15 +1,14 @@
 // @ts-check
 import { test, expect } from "@playwright/test";
-import { setupApiMocks } from "../helpers/mock-api.js";
-import { generateDataLogMock } from "../helpers/mock-generators.js";
-
-const TEST_DAYOBS = "20260101";
-const TEST_DAYOBS_INT = 20260101;
-const PLOTS_URL = `/nightlydigest/plots?startDayobs=${TEST_DAYOBS}&endDayobs=${TEST_DAYOBS}&telescope=Simonyi`;
-
-// Full night boundaries (UTC ms)
-const FULL_START = 1767268800000; // 2026-01-01T12:00:00Z
-const FULL_END = 1767355199000; //   2026-01-02T11:59:59Z
+import { setupApiMocks } from "../../helpers/mock-api.js";
+import { generateDataLogMock } from "../../helpers/mock-generators.js";
+import { waitForPlotsLoad } from "../../helpers/plots-helpers.js";
+import {
+  PLOTS_URL,
+  TEST_DAYOBS_INT,
+  FULL_START,
+  FULL_END,
+} from "../../helpers/constants.js";
 
 // Almanac events placed well within the observable night.
 // UTC strings are converted internally via UTC + 37 s → TAI ms.
@@ -42,12 +41,6 @@ const TWILIGHT_STROKE = "#0ea5e9";
 const MOON_FILL = "#EAB308";
 
 const MOCK_DATA = generateDataLogMock(10, { dayobs: TEST_DAYOBS_INT });
-
-async function waitForPlotsLoad(page) {
-  await expect(
-    page.getByRole("button", { name: "Show / Hide Plots" }),
-  ).toBeVisible({ timeout: 15000 });
-}
 
 // ---------------------------------------------------------------------------
 
