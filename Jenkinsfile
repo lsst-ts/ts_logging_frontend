@@ -20,7 +20,7 @@ pipeline {
     docker {
       alwaysPull true
       image 'lsstts/develop-env:develop'
-      args "--entrypoint='' -v playwright-cache:/home/saluser/.cache/ms-playwright"
+      args "--entrypoint=''"
     }
   }
   environment {
