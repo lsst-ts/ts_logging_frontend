@@ -36,6 +36,9 @@ import ObservingConditionsApplet from "@/components/ObservingConditionsApplet";
 import NightSummary from "@/components/NightSummary.jsx";
 import TimeAccountingApplet from "@/components/TimeAccountingApplet";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
+// import { NotificationBannerStack } from "@/components/NotificationBannerStack";
+// import { getDisplayDateRange } from "@/utils/utils";
+import { NotificationBannerSolid } from "@/components/NotificationBannerSolid";
 
 export default function Digest() {
   const { startDayobs, endDayobs, telescope } = useSearch({
@@ -73,6 +76,7 @@ export default function Digest() {
 
   const [interactiveMap, setInteractiveMap] = useState(null);
   const [visitMapLoading, setVisitMapLoading] = useState(false);
+  const [banners, setBanners] = useState([]);
 
   const [blockLookup, setBlockLookup] = useState({});
 
@@ -108,6 +112,8 @@ export default function Digest() {
 
     setVisitMapLoading(true);
     setInteractiveMap(null);
+    setBanners([]);
+    toast.dismiss();
 
     fetchExposures(startDayobs, queryEndDayobs, instrument, abortController)
       .then(
@@ -127,17 +133,37 @@ export default function Digest() {
           setExposuresLoading(false);
           setOpenDomeTimes(openDomeTimes);
           if (exposuresNo === 0) {
-            toast.warning("No exposures found for the selected date range.");
+            // toast.warning("No exposures found for the selected date range.");
+            setBanners((prev) => [
+              ...prev,
+              {
+                type: "noData",
+                source: "exposures",
+                title: "No exposure entries found",
+                description:
+                  "No exposures were recorded for this dayobs range.",
+              },
+            ]);
           }
         },
       )
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          const msg = err?.message;
-          toast.error("Error fetching exposures!", {
-            description: msg,
-            duration: Infinity,
-          });
+          // const msg = err?.message;
+          // toast.error("Error fetching exposures!", {
+          //   description: msg,
+          //   duration: Infinity,
+          // });
+          console.error("Error fetching exposures:", err);
+          setBanners((prev) => [
+            ...prev,
+            {
+              type: "error",
+              source: "exposures",
+              title: "Error fetching exposures",
+              description: "An error occurred while fetching exposure data.",
+            },
+          ]);
         }
       })
       .finally(() => {
@@ -157,11 +183,22 @@ export default function Digest() {
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          const msg = err?.message;
-          toast.error("Error fetching expected exposures!", {
-            description: msg,
-            duration: Infinity,
-          });
+          // const msg = err?.message;
+          console.error("Error fetching expected exposures:", err);
+          // toast.error("Error fetching expected exposures!", {
+          //   description: msg,
+          //   duration: Infinity,
+          // });
+          setBanners((prev) => [
+            ...prev,
+            {
+              type: "error",
+              source: "expected-exposures",
+              title: "Error fetching expected exposures",
+              description:
+                "An error occurred while fetching expected exposure data.",
+            },
+          ]);
           // Display on card
           setExpectedOnSkyExpCount("-");
         }
@@ -388,6 +425,18 @@ export default function Digest() {
   return (
     <>
       <div className="flex flex-col w-full p-8 gap-6">
+        <div className="flex flex-col gap-4">
+          {banners.map((banner) => (
+            <NotificationBannerSolid
+              key={banner.source}
+              type={banner.type}
+              source={banner.source}
+              title={banner.title}
+              description={banner.description}
+              meta={banner.meta}
+            />
+          ))}
+        </div>
         {/* Metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricsCard
