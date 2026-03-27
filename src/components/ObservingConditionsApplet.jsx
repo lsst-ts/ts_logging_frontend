@@ -226,6 +226,7 @@ function ObservingConditionsApplet({
   fullTimeRange,
   selectedTimeRange,
   setSelectedTimeRange,
+  hoveredExposureIds = null,
 }) {
   // Router and search params for context menu navigation
   const search = useSearch({ from: "/" });
@@ -261,21 +262,6 @@ function ObservingConditionsApplet({
   // Convert selected time range to millis for ReferenceArea
   const selectedMinMillis = selectedTimeRange?.[0]?.toMillis();
   const selectedMaxMillis = selectedTimeRange?.[1]?.toMillis();
-
-  // opacity for each band based on hovering state
-  // if hoveredBand is set, the opacity for that band is 1, otherwise it
-  // is set to 0 to hide the line
-
-  const opacity = useMemo(() => {
-    return {
-      u: hoveredBand && hoveredBand !== "u" ? 0 : 1,
-      r: hoveredBand && hoveredBand !== "r" ? 0 : 1,
-      y: hoveredBand && hoveredBand !== "y" ? 0 : 1,
-      i: hoveredBand && hoveredBand !== "i" ? 0 : 1,
-      z: hoveredBand && hoveredBand !== "z" ? 0 : 1,
-      g: hoveredBand && hoveredBand !== "g" ? 0 : 1,
-    };
-  }, [hoveredBand]);
 
   const handleMouseEnter = (payload) => {
     setHoveredBand(payload.dataKey);
@@ -432,6 +418,51 @@ function ObservingConditionsApplet({
     // Otherwise use selected range as-is
     return [selectedMinMillis, selectedMaxMillis];
   }, [selectedMinMillis, selectedMaxMillis, xMin, xMax]);
+
+  // opacity for each band based on hovering state.
+  // EBA bar hover takes precedence: dims bands with no matching exposures
+  // within the currently visible x range. Otherwise falls back to legend
+  // hover (hide non-hovered bands).
+  const opacity = useMemo(() => {
+    if (hoveredExposureIds !== null) {
+      const visibleData = chartData.filter(
+        (d) => d.obs_start_dt >= xDomain[0] && d.obs_start_dt <= xDomain[1],
+      );
+      return Object.fromEntries(
+        ["u", "g", "r", "i", "z", "y"].map((band) => [
+          band,
+          visibleData.some(
+            (d) =>
+              d.band === band && hoveredExposureIds.has(String(d.exposure_id)),
+          )
+            ? 1
+            : 0.12,
+        ]),
+      );
+    }
+    return {
+      u: hoveredBand && hoveredBand !== "u" ? 0 : 1,
+      r: hoveredBand && hoveredBand !== "r" ? 0 : 1,
+      y: hoveredBand && hoveredBand !== "y" ? 0 : 1,
+      i: hoveredBand && hoveredBand !== "i" ? 0 : 1,
+      z: hoveredBand && hoveredBand !== "z" ? 0 : 1,
+      g: hoveredBand && hoveredBand !== "g" ? 0 : 1,
+    };
+  }, [hoveredBand, hoveredExposureIds, chartData, xDomain]);
+
+  // Returns the opacity for a single dot.
+  // When an EBA bar is hovered, matching exposures are full opacity and
+  // non-matching are dimmed. Otherwise falls back to band-level opacity
+  // (driven by legend hover).
+  const dotOpacity = useCallback(
+    (exposureId, bandOpacity) => {
+      if (hoveredExposureIds !== null) {
+        return hoveredExposureIds.has(String(exposureId)) ? 1 : 0.12;
+      }
+      return bandOpacity;
+    },
+    [hoveredExposureIds],
+  );
 
   // Click & Drag plot hooks
   const handleSelection = useCallback(
@@ -761,13 +792,13 @@ function ObservingConditionsApplet({
                         yAxisId="right"
                         type="monotone"
                         dataKey="zero_point_median"
-                        dot={({ key, ...restProps }) => (
+                        dot={({ key, payload, ...restProps }) => (
                           <ObservingConditionsAppletDot
                             key={key}
                             {...restProps}
                             band="u"
                             r={2}
-                            opacity={opacity.u}
+                            opacity={dotOpacity(payload.exposure_id, opacity.u)}
                           />
                         )}
                         strokeOpacity={opacity.u}
@@ -781,13 +812,13 @@ function ObservingConditionsApplet({
                         dataKey="zero_point_median"
                         stroke={BAND_COLORS.g}
                         strokeOpacity={opacity.g}
-                        dot={({ key, ...restProps }) => (
+                        dot={({ key, payload, ...restProps }) => (
                           <ObservingConditionsAppletDot
                             key={key}
                             {...restProps}
                             band="g"
                             r={2}
-                            opacity={opacity.g}
+                            opacity={dotOpacity(payload.exposure_id, opacity.g)}
                           />
                         )}
                         data={dataWithNightGaps(groupedChartData, "g")}
@@ -800,13 +831,13 @@ function ObservingConditionsApplet({
                         dataKey="zero_point_median"
                         stroke={BAND_COLORS.r}
                         strokeOpacity={opacity.r}
-                        dot={({ key, ...restProps }) => (
+                        dot={({ key, payload, ...restProps }) => (
                           <ObservingConditionsAppletDot
                             key={key}
                             {...restProps}
                             band="r"
                             r={2}
-                            opacity={opacity.r}
+                            opacity={dotOpacity(payload.exposure_id, opacity.r)}
                           />
                         )}
                         data={dataWithNightGaps(groupedChartData, "r")}
@@ -819,13 +850,13 @@ function ObservingConditionsApplet({
                         dataKey="zero_point_median"
                         stroke={BAND_COLORS.i}
                         strokeOpacity={opacity.i}
-                        dot={({ key, ...restProps }) => (
+                        dot={({ key, payload, ...restProps }) => (
                           <ObservingConditionsAppletDot
                             key={key}
                             {...restProps}
                             band="i"
                             r={2}
-                            opacity={opacity.i}
+                            opacity={dotOpacity(payload.exposure_id, opacity.i)}
                           />
                         )}
                         data={dataWithNightGaps(groupedChartData, "i")}
@@ -838,13 +869,13 @@ function ObservingConditionsApplet({
                         dataKey="zero_point_median"
                         stroke={BAND_COLORS.z}
                         strokeOpacity={opacity.z}
-                        dot={({ key, ...restProps }) => (
+                        dot={({ key, payload, ...restProps }) => (
                           <ObservingConditionsAppletDot
                             key={key}
                             {...restProps}
                             band="z"
                             r={2}
-                            opacity={opacity.z}
+                            opacity={dotOpacity(payload.exposure_id, opacity.z)}
                           />
                         )}
                         data={dataWithNightGaps(groupedChartData, "z")}
@@ -857,13 +888,13 @@ function ObservingConditionsApplet({
                         dataKey="zero_point_median"
                         stroke={BAND_COLORS.y}
                         strokeOpacity={opacity.y}
-                        dot={({ key, ...restProps }) => (
+                        dot={({ key, payload, ...restProps }) => (
                           <ObservingConditionsAppletDot
                             key={key}
                             {...restProps}
                             band="y"
                             r={2}
-                            opacity={opacity.y}
+                            opacity={dotOpacity(payload.exposure_id, opacity.y)}
                           />
                         )}
                         data={dataWithNightGaps(groupedChartData, "y")}
@@ -880,7 +911,10 @@ function ObservingConditionsApplet({
                             {...restProps}
                             color="#fff"
                             band="seeing"
-                            opacity={opacity[payload.band] ?? 1}
+                            opacity={dotOpacity(
+                              payload.exposure_id,
+                              opacity[payload.band] ?? 1,
+                            )}
                           />
                         )}
                         yAxisId="left"
