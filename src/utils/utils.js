@@ -226,7 +226,7 @@ const mergeAllDataLogSources = (consDbRows, exposureLogRows, blockLookup) => {
 
   return consDbRows
     .map((row) => {
-      const exposureName = row["exposure name"];
+      const exposureName = row.exposure_name;
       const matchingExposure = exposureLogMap.get(exposureName);
 
       // Derived PSF conversion
