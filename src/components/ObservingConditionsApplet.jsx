@@ -731,7 +731,7 @@ function ObservingConditionsApplet({
                         tick={{ fill: "white" }}
                         domain={currentZeroPointYDomain}
                         allowDataOverflow={true}
-                        tickFormatter={(tick) => Number(tick).toFixed(0)}
+                        tickFormatter={(tick) => Number(tick).toFixed(1)}
                         label={{
                           value: "Zero Points (mag)",
                           angle: 90,
