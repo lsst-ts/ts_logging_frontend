@@ -52,6 +52,11 @@ import {
 // Constants for gap detection
 const GAP_THRESHOLD = 5 * 60 * 1000;
 
+// Opacity applied to dimmed zero-point bands/dots (EBA hover or legend hover)
+const DIMMED_OPACITY_ZP = 0.02;
+// Opacity applied to dimmed seeing dots (EBA hover or legend hover)
+const DIMMED_OPACITY_SEEING = 0.06;
+
 const CustomTooltip = ({ active, payload, label, xDomain }) => {
   const dataKeyTitles = {
     psf_median: "PSF FWHM",
@@ -436,17 +441,17 @@ function ObservingConditionsApplet({
               d.band === band && hoveredExposureIds.has(String(d.exposure_id)),
           )
             ? 1
-            : 0.12,
+            : DIMMED_OPACITY_ZP,
         ]),
       );
     }
     return {
-      u: hoveredBand && hoveredBand !== "u" ? 0 : 1,
-      r: hoveredBand && hoveredBand !== "r" ? 0 : 1,
-      y: hoveredBand && hoveredBand !== "y" ? 0 : 1,
-      i: hoveredBand && hoveredBand !== "i" ? 0 : 1,
-      z: hoveredBand && hoveredBand !== "z" ? 0 : 1,
-      g: hoveredBand && hoveredBand !== "g" ? 0 : 1,
+      u: hoveredBand && hoveredBand !== "u" ? DIMMED_OPACITY_ZP : 1,
+      r: hoveredBand && hoveredBand !== "r" ? DIMMED_OPACITY_ZP : 1,
+      y: hoveredBand && hoveredBand !== "y" ? DIMMED_OPACITY_ZP : 1,
+      i: hoveredBand && hoveredBand !== "i" ? DIMMED_OPACITY_ZP : 1,
+      z: hoveredBand && hoveredBand !== "z" ? DIMMED_OPACITY_ZP : 1,
+      g: hoveredBand && hoveredBand !== "g" ? DIMMED_OPACITY_ZP : 1,
     };
   }, [hoveredBand, hoveredExposureIds, chartData, xDomain]);
 
@@ -457,7 +462,9 @@ function ObservingConditionsApplet({
   const dotOpacity = useCallback(
     (exposureId, bandOpacity) => {
       if (hoveredExposureIds !== null) {
-        return hoveredExposureIds.has(String(exposureId)) ? 1 : 0.12;
+        return hoveredExposureIds.has(String(exposureId))
+          ? 1
+          : DIMMED_OPACITY_ZP;
       }
       return bandOpacity;
     },
@@ -586,6 +593,19 @@ function ObservingConditionsApplet({
       if (i === 0) return filtered;
 
       return [{ obs_start_dt: null, zero_point_median: null }, ...filtered];
+    });
+  };
+
+  // Like dataWithNightGaps, but additionally nulls out zero_point_median for
+  // exposures not in hoveredExposureIds. Used to draw the full-opacity overlay
+  // line that connects only matching dots when an EBA bar is hovered.
+  const filterByBandAndHover = (data, band) => {
+    return dataWithNightGaps(data, band).map((d) => {
+      if (d.zero_point_median === null) return d;
+      if (!hoveredExposureIds.has(String(d.exposure_id))) {
+        return { ...d, zero_point_median: null };
+      }
+      return d;
     });
   };
 
@@ -787,119 +807,69 @@ function ObservingConditionsApplet({
                         isAnimationActive={false}
                       />
                       /* line plots for zero point median filtered by band */
-                      <Line
-                        name="zero_point_median_u"
-                        yAxisId="right"
-                        type="monotone"
-                        dataKey="zero_point_median"
-                        dot={({ key, payload, ...restProps }) => (
-                          <ObservingConditionsAppletDot
-                            key={key}
-                            {...restProps}
-                            band="u"
-                            r={2}
-                            opacity={dotOpacity(payload.exposure_id, opacity.u)}
+                      {/* Base lines — dimmed when EBA bar hovered, dots hidden
+                          in that case (overlay lines handle matching dots) */}
+                      {["u", "g", "r", "i", "z", "y"].map((band) => (
+                        <Line
+                          key={`zero_point_median_${band}`}
+                          name={`zero_point_median_${band}`}
+                          yAxisId="right"
+                          type="monotone"
+                          dataKey="zero_point_median"
+                          stroke={BAND_COLORS[band]}
+                          strokeOpacity={
+                            hoveredExposureIds !== null
+                              ? DIMMED_OPACITY_ZP
+                              : opacity[band]
+                          }
+                          dot={({ key, payload, ...restProps }) => (
+                            <ObservingConditionsAppletDot
+                              key={key}
+                              {...restProps}
+                              band={band}
+                              r={2}
+                              opacity={
+                                hoveredExposureIds !== null
+                                  ? DIMMED_OPACITY_ZP
+                                  : dotOpacity(
+                                      payload.exposure_id,
+                                      opacity[band],
+                                    )
+                              }
+                            />
+                          )}
+                          activeDot={
+                            hoveredExposureIds !== null ? false : undefined
+                          }
+                          data={dataWithNightGaps(groupedChartData, band)}
+                          isAnimationActive={false}
+                        />
+                      ))}
+                      {/* Overlay lines — full opacity, only matching dots and
+                          the segments connecting them, rendered on top of base */}
+                      {hoveredExposureIds !== null &&
+                        ["u", "g", "r", "i", "z", "y"].map((band) => (
+                          <Line
+                            key={`zero_point_median_${band}_overlay`}
+                            name={`zero_point_median_${band}_overlay`}
+                            yAxisId="right"
+                            type="monotone"
+                            dataKey="zero_point_median"
+                            stroke={BAND_COLORS[band]}
+                            strokeOpacity={1}
+                            dot={({ key, ...restProps }) => (
+                              <ObservingConditionsAppletDot
+                                key={key}
+                                {...restProps}
+                                band={band}
+                                r={2}
+                                opacity={1}
+                              />
+                            )}
+                            data={filterByBandAndHover(groupedChartData, band)}
+                            isAnimationActive={false}
                           />
-                        )}
-                        strokeOpacity={opacity.u}
-                        data={dataWithNightGaps(groupedChartData, "u")}
-                        isAnimationActive={false}
-                      />
-                      <Line
-                        name="zero_point_median_g"
-                        yAxisId="right"
-                        type="monotone"
-                        dataKey="zero_point_median"
-                        stroke={BAND_COLORS.g}
-                        strokeOpacity={opacity.g}
-                        dot={({ key, payload, ...restProps }) => (
-                          <ObservingConditionsAppletDot
-                            key={key}
-                            {...restProps}
-                            band="g"
-                            r={2}
-                            opacity={dotOpacity(payload.exposure_id, opacity.g)}
-                          />
-                        )}
-                        data={dataWithNightGaps(groupedChartData, "g")}
-                        isAnimationActive={false}
-                      />
-                      <Line
-                        name="zero_point_median_r"
-                        yAxisId="right"
-                        type="monotone"
-                        dataKey="zero_point_median"
-                        stroke={BAND_COLORS.r}
-                        strokeOpacity={opacity.r}
-                        dot={({ key, payload, ...restProps }) => (
-                          <ObservingConditionsAppletDot
-                            key={key}
-                            {...restProps}
-                            band="r"
-                            r={2}
-                            opacity={dotOpacity(payload.exposure_id, opacity.r)}
-                          />
-                        )}
-                        data={dataWithNightGaps(groupedChartData, "r")}
-                        isAnimationActive={false}
-                      />
-                      <Line
-                        name="zero_point_median_i"
-                        yAxisId="right"
-                        type="monotone"
-                        dataKey="zero_point_median"
-                        stroke={BAND_COLORS.i}
-                        strokeOpacity={opacity.i}
-                        dot={({ key, payload, ...restProps }) => (
-                          <ObservingConditionsAppletDot
-                            key={key}
-                            {...restProps}
-                            band="i"
-                            r={2}
-                            opacity={dotOpacity(payload.exposure_id, opacity.i)}
-                          />
-                        )}
-                        data={dataWithNightGaps(groupedChartData, "i")}
-                        isAnimationActive={false}
-                      />
-                      <Line
-                        name="zero_point_median_z"
-                        yAxisId="right"
-                        type="monotone"
-                        dataKey="zero_point_median"
-                        stroke={BAND_COLORS.z}
-                        strokeOpacity={opacity.z}
-                        dot={({ key, payload, ...restProps }) => (
-                          <ObservingConditionsAppletDot
-                            key={key}
-                            {...restProps}
-                            band="z"
-                            r={2}
-                            opacity={dotOpacity(payload.exposure_id, opacity.z)}
-                          />
-                        )}
-                        data={dataWithNightGaps(groupedChartData, "z")}
-                        isAnimationActive={false}
-                      />
-                      <Line
-                        name="zero_point_median_y"
-                        yAxisId="right"
-                        type="monotone"
-                        dataKey="zero_point_median"
-                        stroke={BAND_COLORS.y}
-                        strokeOpacity={opacity.y}
-                        dot={({ key, payload, ...restProps }) => (
-                          <ObservingConditionsAppletDot
-                            key={key}
-                            {...restProps}
-                            band="y"
-                            r={2}
-                            opacity={dotOpacity(payload.exposure_id, opacity.y)}
-                          />
-                        )}
-                        data={dataWithNightGaps(groupedChartData, "y")}
-                        isAnimationActive={false}
-                      />
+                        ))}
                       /* Scatter plot for PSF FWHM */
                       <Scatter
                         name="psf_median"
@@ -911,10 +881,17 @@ function ObservingConditionsApplet({
                             {...restProps}
                             color="#fff"
                             band="seeing"
-                            opacity={dotOpacity(
-                              payload.exposure_id,
-                              opacity[payload.band] ?? 1,
-                            )}
+                            opacity={
+                              hoveredExposureIds !== null
+                                ? hoveredExposureIds.has(
+                                    String(payload.exposure_id),
+                                  )
+                                  ? 1
+                                  : DIMMED_OPACITY_SEEING
+                                : hoveredBand && hoveredBand !== payload.band
+                                  ? DIMMED_OPACITY_SEEING
+                                  : 1
+                            }
                           />
                         )}
                         yAxisId="left"
