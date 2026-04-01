@@ -39,6 +39,7 @@ import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
 // import { NotificationBannerStack } from "@/components/NotificationBannerStack";
 // import { getDisplayDateRange } from "@/utils/utils";
 import { NotificationBannerSolid } from "@/components/NotificationBannerSolid";
+import { DateTime } from "luxon";
 
 export default function Digest() {
   const { startDayobs, endDayobs, telescope } = useSearch({
@@ -76,7 +77,6 @@ export default function Digest() {
 
   const [interactiveMap, setInteractiveMap] = useState(null);
   const [visitMapLoading, setVisitMapLoading] = useState(false);
-  const [banners, setBanners] = useState([]);
 
   const [blockLookup, setBlockLookup] = useState({});
 
@@ -86,6 +86,25 @@ export default function Digest() {
     [],
   );
   const onBarLeave = useCallback(() => setHoveredExposureIds(null), []);
+
+  const [banners, setBanners] = useState([]);
+
+  const addBanner = useCallback((type, source, title, description) => {
+    const timestamp = DateTime.utc().toFormat("yyyy-MM-dd HH:mm");
+    setBanners((prev) => [
+      ...prev,
+      {
+        type,
+        source,
+        title,
+        description,
+        meta:
+          type === "error"
+            ? `${source} - ${timestamp} UTC`
+            : `${timestamp} UTC`,
+      },
+    ]);
+  }, []);
 
   // Fetch all data except Zephyr data,
   // which needs exposure data.
@@ -140,37 +159,24 @@ export default function Digest() {
           setExposuresLoading(false);
           setOpenDomeTimes(openDomeTimes);
           if (exposuresNo === 0) {
-            // toast.warning("No exposures found for the selected date range.");
-            setBanners((prev) => [
-              ...prev,
-              {
-                type: "noData",
-                source: "exposures",
-                title: "No exposure entries found",
-                description:
-                  "No exposures were recorded for this dayobs range.",
-              },
-            ]);
+            addBanner(
+              "noData",
+              "exposures",
+              "No exposure entries found",
+              "No exposures found for this dayobs range. Try a different date range.",
+            );
           }
         },
       )
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          // const msg = err?.message;
-          // toast.error("Error fetching exposures!", {
-          //   description: msg,
-          //   duration: Infinity,
-          // });
           console.error("Error fetching exposures:", err);
-          setBanners((prev) => [
-            ...prev,
-            {
-              type: "error",
-              source: "exposures",
-              title: "Error fetching exposures",
-              description: "An error occurred while fetching exposure data.",
-            },
-          ]);
+          addBanner(
+            "error",
+            "exposures",
+            "Error fetching exposures",
+            "An error occurred while fetching exposure data.",
+          );
         }
       })
       .finally(() => {
@@ -184,28 +190,19 @@ export default function Digest() {
         setExpectedOnSkyExpCount(expectedSumExposures);
         if (expectedSumExposures === 0) {
           toast.warning(
-            "No expected exposures found for the selected date range.",
+            "Expected number of exposures is zero for the selected date range.",
           );
         }
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          // const msg = err?.message;
           console.error("Error fetching expected exposures:", err);
-          // toast.error("Error fetching expected exposures!", {
-          //   description: msg,
-          //   duration: Infinity,
-          // });
-          setBanners((prev) => [
-            ...prev,
-            {
-              type: "error",
-              source: "expected-exposures",
-              title: "Error fetching expected exposures",
-              description:
-                "An error occurred while fetching expected exposure data.",
-            },
-          ]);
+          addBanner(
+            "error",
+            "expected-exposures",
+            "Error fetching expected exposures",
+            "An error occurred while fetching number of expected exposures.",
+          );
           // Display on card
           setExpectedOnSkyExpCount("-");
         }
@@ -222,11 +219,13 @@ export default function Digest() {
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          const msg = err?.message;
-          toast.error("Error fetching almanac!", {
-            description: msg,
-            duration: Infinity,
-          });
+          console.error("Error fetching almanac:", err);
+          addBanner(
+            "error",
+            "almanac",
+            "Error fetching almanac",
+            "An error occurred while fetching almanac.",
+          );
         }
       })
       .finally(() => {
@@ -239,17 +238,16 @@ export default function Digest() {
       .then(([weather, fault]) => {
         setWeatherLoss(weather);
         setFaultLoss(fault);
-        if (weather === 0 && fault === 0) {
-          toast.warning("No time loss reported in the Narrative Log.");
-        }
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          const msg = err?.message;
-          toast.error("Error fetching narrative log!", {
-            description: msg,
-            duration: Infinity,
-          });
+          console.error("Error fetching narrative log:", err);
+          addBanner(
+            "error",
+            "narrative-log",
+            "Error fetching narrative log",
+            "An error occurred while fetching narrative log.",
+          );
         }
       })
       .finally(() => {
@@ -273,11 +271,13 @@ export default function Digest() {
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          const msg = err?.message;
-          toast.error("Error fetching night reports!", {
-            description: msg,
-            duration: Infinity,
-          });
+          console.error("Error fetching night reports:", err);
+          addBanner(
+            "error",
+            "night-reports",
+            "Error fetching night reports",
+            "An error occurred while fetching night reports.",
+          );
         }
       })
       .finally(() => {
@@ -289,17 +289,16 @@ export default function Digest() {
     fetchJiraTickets(startDayobs, queryEndDayobs, instrument, abortController)
       .then((issues) => {
         setJiraTickets(issues);
-        if (issues.length === 0) {
-          toast.warning("No Jira tickets reported.");
-        }
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          const msg = err?.message;
-          toast.error("Error fetching Jira!", {
-            description: msg,
-            duration: Infinity,
-          });
+          console.error("Error fetching Jira tickets:", err);
+          addBanner(
+            "error",
+            "jira-tickets",
+            "Error fetching Jira tickets",
+            "An error occurred while fetching Jira tickets.",
+          );
         }
       })
       .finally(() => {
@@ -311,17 +310,19 @@ export default function Digest() {
     fetchExposureFlags(startDayobs, queryEndDayobs, instrument, abortController)
       .then((flags) => {
         setFlags(flags);
-        if (flags.length === 0) {
-          toast.warning("No exposures flagged for the selected date range.");
-        }
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          const msg = err?.message;
-          toast.error("Error fetching exposure flags!", {
-            description: msg,
-            duration: Infinity,
-          });
+          console.error(
+            "Error fetching flagged exposures from exposure Log:",
+            err,
+          );
+          addBanner(
+            "error",
+            "flagged-exposures",
+            "Error fetching flagged exposures",
+            "An error occurred while fetching flagged exposures.",
+          );
         }
       })
       .finally(() => {
@@ -338,10 +339,13 @@ export default function Digest() {
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          toast.error("Error fetching visit maps!", {
-            description: err?.message,
-            duration: Infinity,
-          });
+          console.error("Error generating visit maps:", err);
+          addBanner(
+            "error",
+            "visit-maps",
+            "Error generating visit maps",
+            "An error occurred while generating visit maps.",
+          );
         }
       })
       .finally(() => {
@@ -429,21 +433,56 @@ export default function Digest() {
   const [timeLoss, timeLossDetails] = calculateTimeLoss(weatherLoss, faultLoss);
   const newTicketsCount = jiraTickets.filter((tix) => tix.isNew).length;
 
+  const allLoaded =
+    !exposuresLoading &&
+    !expectedExposuresLoading &&
+    !almanacLoading &&
+    !narrativeLoading &&
+    !nightreportLoading &&
+    !jiraLoading &&
+    !flagsLoading &&
+    !visitMapLoading;
+
+  const processedBanners = useMemo(() => {
+    if (!allLoaded) return banners;
+    const errorBanners = banners.filter((b) => b.type === "error");
+    if (errorBanners.length > 3) {
+      const failedSources = errorBanners.map((b) => b.source);
+      const systemicBanner = {
+        type: "systemicError",
+        title: "Several data sources are unavailable",
+        description: `${errorBanners.length} sources failed to respond. Data may be incomplete -- likely a backend or network error.`,
+        meta: failedSources.join(" . "),
+        source: "systemic",
+      };
+      return banners.filter((b) => b.type !== "error").concat(systemicBanner);
+    }
+    return banners;
+  }, [banners, allLoaded]);
+
+  const BANNER_ORDER = ["maintenance", "noData", "error", "systemicError"];
+
+  const sortedBanners = processedBanners.sort(
+    (a, b) => BANNER_ORDER.indexOf(a.type) - BANNER_ORDER.indexOf(b.type),
+  );
+
   return (
     <>
-      <div className="flex flex-col w-full p-8 gap-6">
-        <div className="flex flex-col gap-4">
-          {banners.map((banner) => (
-            <NotificationBannerSolid
-              key={banner.source}
-              type={banner.type}
-              source={banner.source}
-              title={banner.title}
-              description={banner.description}
-              meta={banner.meta}
-            />
-          ))}
-        </div>
+      <div className="flex flex-col w-full px-8 pb-8 gap-4">
+        {allLoaded && sortedBanners.length > 0 && (
+          <div className="flex flex-col gap-4">
+            {sortedBanners.map((banner) => (
+              <NotificationBannerSolid
+                key={banner.source}
+                type={banner.type}
+                source={banner.source}
+                title={banner.title}
+                description={banner.description}
+                meta={banner.meta}
+              />
+            ))}
+          </div>
+        )}
         {/* Metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricsCard
