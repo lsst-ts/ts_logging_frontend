@@ -2,7 +2,7 @@ import { useState } from "react";
 import { X } from "lucide-react";
 
 const config = {
-  maintenance: {
+  systemNotice: {
     dismissible: true,
     icon: "i",
     container:
@@ -35,7 +35,7 @@ const config = {
     meta: "text-red-400",
     dismiss: "",
   },
-  systemic_error: {
+  systemicError: {
     dismissible: false,
     icon: "!",
     container:
