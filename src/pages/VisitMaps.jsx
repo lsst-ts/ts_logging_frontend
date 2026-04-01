@@ -80,7 +80,7 @@ function VisitMaps() {
 
   return (
     <>
-      <div className="flex flex-col w-full p-8 gap-4">
+      <div className="flex flex-col w-full px-8 pb-8 gap-4">
         {/* Interactive Visit Maps */}
         <div className="mt-8 mb-8 text-white font-thin text-center">
           <h1 className="flex flex-row gap-2 text-white text-5xl uppercase justify-center pb-8">
