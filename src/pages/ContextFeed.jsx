@@ -329,7 +329,7 @@ function ContextFeed() {
 
   return (
     <>
-      <div className="flex flex-col w-full h-screen p-8 gap-4">
+      <div className="flex flex-col w-full h-screen px-8 pb-8 gap-4">
         {/* Page Header, Timeline & Tips Banners */}
         <div className="flex flex-col gap-2">
           {/* Page title + buttons */}
