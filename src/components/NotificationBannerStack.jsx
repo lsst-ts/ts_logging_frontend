@@ -1,15 +1,13 @@
-import { useState } from "react";
-import { NotificationBanner } from "@/components/NotificationBanner";
 import { NotificationBannerSolid } from "@/components/NotificationBannerSolid";
 
 export function NotificationBannerStack({ banners }) {
-  const [visibleBanners, setVisibleBanners] = useState(banners);
+  // const [visibleBanners, setVisibleBanners] = useState(banners);
 
-  for (const banner of banners) {
-    if (!visibleBanners.some((b) => b.source === banner.source)) {
-      setVisibleBanners([...visibleBanners, banner]);
-    }
-  }
+  // for (const banner of banners) {
+  //   if (!visibleBanners.some((b) => b.source === banner.source)) {
+  //     setVisibleBanners([...visibleBanners, banner]);
+  //   }
+  // }
 
   // const dismissBanner = (source) => {
   //     setVisibleBanners(visibleBanners.filter(b => b.source !== source));
