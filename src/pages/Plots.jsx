@@ -291,7 +291,7 @@ function Plots() {
   // Temporary display message for AuxTel queries
   if (telescope === "AuxTel") {
     return (
-      <div className="flex flex-col w-full p-8 gap-4">
+      <div className="flex flex-col w-full px-8 pb-8 gap-4">
         <PageHeader
           title="Plots"
           description="An interactive visual overview of exposure metadata from the ConsDB and related sources."
@@ -307,7 +307,7 @@ function Plots() {
 
   return (
     <>
-      <div className="flex flex-col h-screen w-full p-8 gap-4">
+      <div className="flex flex-col h-screen w-full px-8 pb-8 gap-4">
         {/* Page Header, Timeline & Tips Banners */}
         <div className="flex flex-col gap-2">
           {/* Page title + buttons */}
