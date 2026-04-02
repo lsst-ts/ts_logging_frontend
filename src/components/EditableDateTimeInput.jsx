@@ -3,6 +3,8 @@ import { DateTime } from "luxon";
 
 import { Input } from "@/components/ui/input";
 
+const dateTimeFormat = "H:mm  yyyy-LL-dd";
+
 function EditableDateTimeInput({
   value,
   onValidChange,
@@ -10,15 +12,15 @@ function EditableDateTimeInput({
   otherBound, // the "other" DateTime (start or end)
   isStart = false, // true if this is the start input
 }) {
-  const [draft, setDraft] = useState(value.toFormat("HH:mm  yyyy-LL-dd"));
+  const [draft, setDraft] = useState(value.toFormat(dateTimeFormat));
 
   // Keep draft synced with external values
   useEffect(() => {
-    setDraft(value.toFormat("HH:mm  yyyy-LL-dd"));
+    setDraft(value.toFormat(dateTimeFormat));
   }, [value]);
 
   // Validation checks
-  const dt = DateTime.fromFormat(draft, "HH:mm  yyyy-LL-dd", { zone: "utc" });
+  const dt = DateTime.fromFormat(draft, dateTimeFormat, { zone: "utc" });
   const inRange =
     dt.isValid && dt >= fullTimeRange[0] && dt <= fullTimeRange[1];
 
@@ -34,9 +36,9 @@ function EditableDateTimeInput({
   const tryCommit = () => {
     if (isValid) {
       onValidChange(dt);
-      setDraft(dt.toFormat("HH:mm  yyyy-LL-dd"));
+      setDraft(dt.toFormat(dateTimeFormat));
     } else {
-      setDraft(value.toFormat("HH:mm  yyyy-LL-dd")); // revert
+      setDraft(value.toFormat(dateTimeFormat)); // revert
     }
   };
 
@@ -52,7 +54,7 @@ function EditableDateTimeInput({
           e.target.blur();
         }
         if (e.key === "Escape") {
-          setDraft(value.toFormat("HH:mm  yyyy-LL-dd")); // revert
+          setDraft(value.toFormat(dateTimeFormat)); // revert
           e.target.blur();
         }
       }}
