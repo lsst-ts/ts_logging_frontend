@@ -292,7 +292,7 @@ describe("utils", () => {
 
   describe("mergeAllDataLogSources", () => {
     const baseRow = (overrides = {}) => ({
-      "exposure name": "exp1",
+      exposure_name: "exp1",
       exposure_id: "1",
       psf_sigma_median: "1",
       pixel_scale_median: 1,
