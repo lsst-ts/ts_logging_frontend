@@ -39,14 +39,12 @@ function Parameters({
   const displayRange = getDisplayDateRange(dayobs, noOfNights);
   const { getAvailableDayObsRange } = useHostConfig();
 
-  const dateRange = getAvailableDayObsRange();
-  const maxDayObs_dt = DateTime.fromFormat(dateRange.max, "yyyyLLdd", {
-    zone: "utc",
-  }).toJSDate();
+  const { min: minDayObs } = getAvailableDayObsRange();
+
   const minDayObs_dt =
-    dateRange.min === null
-      ? dateRange.min
-      : DateTime.fromFormat(dateRange.min, "yyyyLLdd", {
+    minDayObs === null
+      ? null
+      : DateTime.fromFormat(minDayObs, "yyyyLLdd", {
           zone: "utc",
         }).toJSDate();
 
@@ -83,7 +81,6 @@ function Parameters({
           onDateChange={onDayobsChange}
           disabled={{
             before: utcDateToCalendarDate(minDayObs_dt),
-            after: utcDateToCalendarDate(maxDayObs_dt),
           }}
         />
       </div>

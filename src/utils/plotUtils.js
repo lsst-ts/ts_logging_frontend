@@ -85,7 +85,13 @@ export function calculateDecimalPlaces(yRange) {
  * @param {[number, number]} maxDomain - Maximum domain at minimum zoom [min, max]
  * @returns {[number, number]} New domain [min, max], clamped to maxDomain
  */
-export function calculateZoom(selection, direction, currentDomain, maxDomain) {
+export function calculateZoom(
+  selection,
+  direction,
+  currentDomain,
+  maxDomain,
+  minRange = null,
+) {
   const [startFraction, endFraction] = selection;
   const [currentMin, currentMax] = currentDomain;
   const [maxMin, maxMax] = maxDomain;
@@ -100,8 +106,15 @@ export function calculateZoom(selection, direction, currentDomain, maxDomain) {
     // Zoom in: selection becomes the new domain
 
     // Clamp to max domain bounds
-    const newMin = Math.max(maxMin, selectionMin);
-    const newMax = Math.min(maxMax, selectionMax);
+    let newMin = Math.max(maxMin, selectionMin);
+    let newMax = Math.min(maxMax, selectionMax);
+
+    // Enforce minimum range (maximum zoom level)
+    if (minRange !== null && newMax - newMin < minRange) {
+      const center = (newMin + newMax) / 2;
+      newMin = center - minRange / 2;
+      newMax = center + minRange / 2;
+    }
 
     return [newMin, newMax];
   } else if (direction === "out") {

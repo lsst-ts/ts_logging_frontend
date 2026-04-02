@@ -415,8 +415,35 @@ function ObservingConditionsApplet({
         xTicks.push(Math.round(xMin + i * step));
       }
     }
+
     return { xMin, xMax, xTicks };
   }, [chartData, twilightValues, selectedMinMillis, selectedMaxMillis]);
+
+  const psfTicks = useMemo(() => {
+    const [min, max] = currentPsfYDomain;
+
+    if (!isValidNumber(min) || !isValidNumber(max) || max <= min) return [1];
+
+    // Pick a step that gives ~5 ticks even when zoomed in, and divides into 1
+    const CANDIDATE_STEPS = [0.01, 0.02, 0.05, 0.1, 0.2, 0.25, 0.5, 1];
+    const idealStep = (max - min) / 6; // 7 intervals = 5 ticks
+    const step = CANDIDATE_STEPS.find((s) => s >= idealStep) ?? 1;
+
+    // make min and max fall on the grid
+    const gridMin = Math.floor(min / step) * step;
+    const gridMax = Math.ceil(max / step) * step;
+
+    const ticks = [];
+    const totalSteps = Math.round((gridMax - gridMin) / step);
+    for (let i = 0; i <= totalSteps; i++) {
+      const tick = Math.round((gridMin + i * step) * 100) / 100;
+      if (tick >= min && tick <= max) {
+        ticks.push(tick);
+      }
+    }
+
+    return ticks;
+  }, [currentPsfYDomain]);
 
   // Calculate X domain clamped to actual data range
   const xDomain = useMemo(() => {
@@ -448,6 +475,7 @@ function ObservingConditionsApplet({
         zoomDirection,
         xDomain,
         fullTimeRangeMillis,
+        5 * 60 * 1000, // minimum 5 minutes
       );
       setSelectedTimeRange([
         millisToDateTime(Math.round(newMinMillis)),
@@ -462,6 +490,7 @@ function ObservingConditionsApplet({
           zoomDirection,
           [yMinFraction, yMaxFraction],
           [0, 1],
+          0.05, // minimum 5% of auto Y range
         );
 
         setYMinFraction(newMinFraction);
@@ -683,8 +712,8 @@ function ObservingConditionsApplet({
                         yAxisId="left"
                         tick={{ fill: "white" }}
                         domain={currentPsfYDomain}
+                        ticks={psfTicks}
                         allowDataOverflow={true}
-                        tickFormatter={(tick) => Number(tick).toFixed(1)}
                         label={{
                           value: "PSF FWHM (arcsec)",
                           angle: -90,
@@ -702,7 +731,7 @@ function ObservingConditionsApplet({
                         tick={{ fill: "white" }}
                         domain={currentZeroPointYDomain}
                         allowDataOverflow={true}
-                        tickFormatter={(tick) => Number(tick).toFixed(0)}
+                        tickFormatter={(tick) => Number(tick).toFixed(1)}
                         label={{
                           value: "Zero Points (mag)",
                           angle: 90,
@@ -745,6 +774,15 @@ function ObservingConditionsApplet({
                           />
                         ) : null,
                       )}
+                      /* Reference line at PSF FWHM = 1 arcsec as baseline for
+                      good seeing */
+                      <ReferenceLine
+                        yAxisId="left"
+                        y={1}
+                        stroke="#FFFFFF"
+                        strokeOpacity={0.5}
+                        strokeWidth={2}
+                      />
                       <ChartTooltip
                         content={(props) => (
                           <CustomTooltip {...props} xDomain={xDomain} />

@@ -292,6 +292,7 @@ const dataLogColumns = {
       filterFn: matchValueOrInList,
       filterType: "string",
       meta: {
+        urlParam: "physical_filter",
         tooltip:
           "ID of physical filter, the filter associated with a particular instrument.",
       },
