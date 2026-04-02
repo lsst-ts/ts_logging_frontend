@@ -94,21 +94,15 @@ const getDayobsEndUTC = (dayobsStr) => {
 /**
  * Converts a Luxon DateTime object in UTC to a string in "yyyy-LL-dd" format.
  *
- * Each dayobs ends at midday UTC the next day, so if the DateTime is in the AM,
- * the dayobs is set as the previous day's date.
+ * Each dayobs ends at midday UTC the next day, so times in the AM belong to the
+ * previous day's observations. This is implemented by subtracting 12 hours before
+ * taking the date.
  *
  * @param {DateTime} dateTimeUTC - A Luxon DateTime object in UTC.
  * @returns {string} The dayobs date string in "yyyy-LL-dd" format (e.g., "2025-08-27").
  */
-const getDayobsUTC = (dateTimeUTC) => {
-  const date = dateTimeUTC.startOf("day");
-  // If time before midday, take one day
-  return (
-    dateTimeUTC < getDayobsStartUTC(date.toFormat("yyyyLLdd"))
-      ? date.minus({ days: 1 })
-      : date
-  ).toFormat("yyyy-LL-dd");
-};
+const getDayobsUTC = (dateTimeUTC) =>
+  dateTimeUTC.toUTC().minus({ hours: 12 }).toFormat("yyyy-LL-dd");
 
 /**
  * Adjusts an almanac-provided dayobs number to the plotting convention.
