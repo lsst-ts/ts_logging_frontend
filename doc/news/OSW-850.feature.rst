@@ -1,1 +1,1 @@
-Add Zephyr details where Science Program is displayed.
+Add BLOCK details where Science Program is displayed.
