@@ -221,7 +221,7 @@ const mergeAllDataLogSources = (consDbRows, exposureLogRows, blockLookup) => {
     exposureLogMap.set(entry.obs_id, entry);
   });
 
-  // testCases is already a lookup object
+  // blockLookup is already a lookup object
   const blockMap = blockLookup ?? {};
 
   return consDbRows
@@ -274,7 +274,7 @@ const mergeAllDataLogSources = (consDbRows, exposureLogRows, blockLookup) => {
  * @returns {Object[]} A new array of merged row objects with added/enriched fields.
  */
 const mergeContextFeedSources = (rubinNightsRows, blockLookup) => {
-  // testCases is already a lookup object
+  // blockLookup is already a lookup object
   const blockMap = blockLookup ?? {};
 
   // To set currentTask for all events until next task change
@@ -287,9 +287,9 @@ const mergeContextFeedSources = (rubinNightsRows, blockLookup) => {
           currentTask = entry.name;
         }
 
-        // New BLOCK added, so add Zephyr test case details
+        // New BLOCK added, so add BLOCK details
         let description = entry.description;
-        if (entry.category_index == 10 && entry.name.startsWith("BLOCK")) {
+        if (entry.category_index === 10 && entry.name.startsWith("BLOCK")) {
           description = blockMap[entry.name]?.summary
             ? blockMap[entry.name]?.summary
             : entry.description;

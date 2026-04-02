@@ -26,7 +26,7 @@ import DownloadIcon from "../assets/DownloadIcon.svg";
 import { getDayobsStartUTC } from "@/utils/timeUtils";
 import {
   fetchAlmanac,
-  fetchContextFeed,
+  fetchContextFeedFromRubinNights,
   fetchBlockDetails,
 } from "@/utils/fetchUtils";
 import { mergeContextFeedSources, getBlockSourceLabel } from "@/utils/utils";
@@ -198,7 +198,7 @@ function ContextFeed() {
         }
       });
 
-    fetchContextFeed(startDayobs, endDayobs, abortController)
+    fetchContextFeedFromRubinNights(startDayobs, endDayobs, abortController)
       .then(([data]) => {
         if (data.length === 0) {
           toast.warning("No Context Feed entries found in the date range.");
@@ -211,7 +211,7 @@ function ContextFeed() {
         // then toast the error message.
         if (!abortController.signal.aborted) {
           const msg = err?.message;
-          toast.error("Error fetching Context Feed data!", {
+          toast.error("Error fetching Context Feed data from Rubin-nights!", {
             description: msg,
             duration: Infinity,
           });
@@ -245,8 +245,10 @@ function ContextFeed() {
     const names = newBlockOrFBS.map((e) => e.name);
     const blockKeys = [...new Set(names)];
 
+    // There is nothing to fetch
     if (blockKeys.length === 0) {
-      return; // nothing to fetch
+      setBlockLookupLoading(false);
+      return;
     }
     fetchBlockDetails(blockKeys, abortController)
       .then((blocks) => {

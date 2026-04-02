@@ -50,7 +50,7 @@ const SortByValues = Object.freeze({
 const PLOT_YLABELS_MAXSIZE = 14;
 const BAR_SIZE = 35;
 
-function ExposureBreakdown({
+function ExposureBreakdownApplet({
   exposureFields,
   exposureCount,
   sumExpTime,
@@ -110,6 +110,26 @@ function ExposureBreakdown({
       }),
     };
   }
+
+  // Handle bar clicks so SPA nav occurs for normal (left)
+  // clicks, but also allows for modified clicks (opening
+  // in a new tab, etc.).
+  const handleBarClick = (to) => (e) => {
+    // If modified click, fallback to buildLocation
+    if (
+      e.defaultPrevented ||
+      e.button !== 0 || // Not left click
+      e.metaKey || // Mac new tab
+      e.ctrlKey || // Windows new tab
+      e.shiftKey || // New window
+      e.altKey
+    ) {
+      return;
+    }
+
+    e.preventDefault(); // Stop full page reload
+    router.navigate(to); // SPA navigation
+  };
 
   // Memoize data handling computations
   const { chartData, chartConfig, totalFlaggedCount, totalFlaggedTime } =
@@ -196,7 +216,10 @@ function ExposureBreakdown({
 
       chartData.sort(sorters[sortBy]);
 
-      // Assign rainbow bar colors after sorting
+      // After sorting, assign bar colors based on vertical
+      // position to display an ordered rainbow of colours.
+      // This is to help stop associations being made
+      // between bars and their colours.
       chartData = chartData.map((entry, index) => ({
         ...entry,
         fill: `hsl(${index * 40}, 70%, 50%)`,
@@ -262,8 +285,8 @@ function ExposureBreakdown({
                 <li>Hover over a bar to view total and flagged values.</li>
                 <li>
                   In <strong>Science Program</strong> view, hover to see the
-                  test case description (if available). Linked labels open the
-                  test case documentation.
+                  BLOCK description (if available). Linked labels open the
+                  BLOCK documentation.
                 </li>
                 <li>
                   Click a bar to open the Data Log, filtered by that group.
@@ -428,14 +451,16 @@ function ExposureBreakdown({
                                     const offsetY =
                                       y + (bandwidth - BAR_SIZE) / 2;
 
+                                    // Get url of data-log, filtered by group
+                                    const url = buildBarUrl(entry);
+
                                     return (
                                       <a
                                         key={`overlay-${index}`}
-                                        href={
-                                          router.buildLocation(
-                                            buildBarUrl(entry),
-                                          ).href
-                                        }
+                                        // Normal behaviour for modified clicks
+                                        href={router.buildLocation(url).href}
+                                        // SPA navigation for normal click
+                                        onClick={handleBarClick(url)}
                                       >
                                         <rect
                                           x={0}
@@ -463,7 +488,7 @@ function ExposureBreakdown({
                             type="category"
                             axisLine={{ stroke: "#ffffff", strokeWidth: 2 }}
                             tickLine={false}
-                            // Render tick labels with links to Test Case docs
+                            // Render tick labels with links to BLOCK docs
                             tick={(props) => (
                               <BarChartYAxisTick
                                 {...props}
@@ -632,7 +657,10 @@ function ExposureBreakdown({
           </>
         )}
 
-        {/* Tooltip, rendered via portal */}
+        {/* Tooltip, rendered via portal, instead of Rechart's native tooltip
+        because the native tooltip does not allow both the chart to scroll
+        and the tooltip to escape the chart boundaries. For this, we need
+        a portal. */}
         {cardRef.current &&
           tooltipState &&
           createPortal(
@@ -684,4 +712,4 @@ function ExposureBreakdown({
   );
 }
 
-export default ExposureBreakdown;
+export default ExposureBreakdownApplet;

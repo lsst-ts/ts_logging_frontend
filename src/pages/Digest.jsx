@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
-import ExposureBreakdown from "@/components/ExposureBreakdownApplet.jsx";
+import ExposureBreakdownApplet from "@/components/ExposureBreakdownApplet.jsx";
 import MetricsCard from "@/components/metrics-card.jsx";
 import VisitMapApplet from "@/components/VisitMapApplet";
 
@@ -447,7 +447,7 @@ export default function Digest() {
               selectedTimeRange={selectedTimeRange}
               setSelectedTimeRange={setSelectedTimeRange}
             />
-            <ExposureBreakdown
+            <ExposureBreakdownApplet
               exposureFields={exposureFields}
               exposureCount={exposureCount}
               sumExpTime={sumExpTime}

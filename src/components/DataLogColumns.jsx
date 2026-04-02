@@ -10,7 +10,7 @@ import { matchValueOrInList } from "@/components/DataTable/tableUtils";
 const columnHelper = createColumnHelper();
 
 // Conditionally render science programs as links
-// to Zephyr/Jira test cases where relevant.
+// to Zephyr/Jira BLOCKs where relevant.
 function renderScienceProgram(info) {
   const value = info.getValue();
   if (!value) return null;

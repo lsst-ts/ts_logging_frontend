@@ -31,14 +31,12 @@ const BarChartYAxisTick = ({
       y={y}
       dy={4}
       textAnchor="end"
-      fill={isLinked ? "#74d4ff" : "#ffffff"}
       fontSize={10}
-      style={{
-        cursor: isLinked ? "pointer" : "default",
-        textDecoration: isLinked ? "underline" : "none",
-      }}
-      onMouseEnter={(e) => isLinked && (e.currentTarget.style.fill = "#00a6f4")} // darker blue
-      onMouseLeave={(e) => isLinked && (e.currentTarget.style.fill = "#74d4ff")} // revert
+      className={
+        isLinked
+          ? "fill-[#74d4ff] hover:fill-[#00a6f4] cursor-pointer underline"
+          : "fill-white"
+      }
     >
       {displayLabel}
     </text>

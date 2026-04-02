@@ -238,9 +238,12 @@ function DataLog() {
     // Extrace unique BLOCKs from ConsDB data
     const blockKeys = [...new Set(consDBdata.map((e) => e.science_program))];
 
+    // There is nothing to fetch
     if (blockKeys.length === 0) {
-      return; // nothing to fetch
+      setBlockLookupLoading(false);
+      return;
     }
+
     fetchBlockDetails(blockKeys, abortController)
       .then((blocks) => {
         setBlockLookup(blocks.data);
