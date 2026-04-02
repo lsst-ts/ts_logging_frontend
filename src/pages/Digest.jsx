@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import ExposureBreakdownApplet from "@/components/ExposureBreakdownApplet.jsx";
@@ -26,6 +26,7 @@ import {
   calculateTimeLoss,
   calculateSumExpTimeBetweenTwilights,
   getBlockSourceLabel,
+  createAddBanner,
 } from "@/utils/utils";
 import { getDayobsStartUTC } from "@/utils/timeUtils";
 import DialogMetricsCard from "@/components/dialog-metrics-card";
@@ -36,10 +37,7 @@ import ObservingConditionsApplet from "@/components/ObservingConditionsApplet";
 import NightSummary from "@/components/NightSummary.jsx";
 import TimeAccountingApplet from "@/components/TimeAccountingApplet";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
-// import { NotificationBannerStack } from "@/components/NotificationBannerStack";
-// import { getDisplayDateRange } from "@/utils/utils";
 import { NotificationBannerSolid } from "@/components/NotificationBannerSolid";
-import { DateTime } from "luxon";
 
 export default function Digest() {
   const { startDayobs, endDayobs, telescope } = useSearch({
@@ -82,22 +80,7 @@ export default function Digest() {
 
   const [banners, setBanners] = useState([]);
 
-  const addBanner = useCallback((type, source, title, description) => {
-    const timestamp = DateTime.utc().toFormat("yyyy-MM-dd HH:mm");
-    setBanners((prev) => [
-      ...prev,
-      {
-        type,
-        source,
-        title,
-        description,
-        meta:
-          type === "error"
-            ? `${source} - ${timestamp} UTC`
-            : `${timestamp} UTC`,
-      },
-    ]);
-  }, []);
+  const addBanner = createAddBanner(setBanners);
 
   // Fetch all data except Zephyr data,
   // which needs exposure data.
@@ -156,7 +139,7 @@ export default function Digest() {
               "noData",
               "exposures",
               "No exposure entries found",
-              "No exposures found for this dayobs range. Try a different date range.",
+              "Parts of the dashboard that depend on exposure data will appear empty. Try a different date range.",
             );
           }
         },
@@ -167,8 +150,8 @@ export default function Digest() {
           addBanner(
             "error",
             "exposures",
-            "Error fetching exposures",
-            "An error occurred while fetching exposure data.",
+            "Exposure data unavailable",
+            "An error occurred while fetching exposures.",
           );
         }
       })
@@ -436,9 +419,16 @@ export default function Digest() {
     !flagsLoading &&
     !visitMapLoading;
 
+  const BANNER_ORDER = ["maintenance", "noData", "error", "systemicError"];
+
+  // Process banners: if there are more than 3 error banners, consolidate into one systemic banner
+  // also sort banners by type according to BANNER_ORDER
   const processedBanners = useMemo(() => {
     if (!allLoaded) return banners;
+
     const errorBanners = banners.filter((b) => b.type === "error");
+
+    let finalBanners;
     if (errorBanners.length > 3) {
       const failedSources = errorBanners.map((b) => b.source);
       const systemicBanner = {
@@ -448,23 +438,24 @@ export default function Digest() {
         meta: failedSources.join(" . "),
         source: "systemic",
       };
-      return banners.filter((b) => b.type !== "error").concat(systemicBanner);
+      finalBanners = banners
+        .filter((b) => b.type !== "error")
+        .concat(systemicBanner);
+    } else {
+      finalBanners = banners;
     }
-    return banners;
+
+    return [...finalBanners].sort(
+      (a, b) => BANNER_ORDER.indexOf(a.type) - BANNER_ORDER.indexOf(b.type),
+    );
   }, [banners, allLoaded]);
-
-  const BANNER_ORDER = ["maintenance", "noData", "error", "systemicError"];
-
-  const sortedBanners = processedBanners.sort(
-    (a, b) => BANNER_ORDER.indexOf(a.type) - BANNER_ORDER.indexOf(b.type),
-  );
 
   return (
     <>
       <div className="flex flex-col w-full px-8 pb-8 gap-4">
-        {allLoaded && sortedBanners.length > 0 && (
-          <div className="flex flex-col gap-4">
-            {sortedBanners.map((banner) => (
+        {allLoaded && processedBanners.length > 0 && (
+          <div className="flex flex-col gap-2">
+            {processedBanners.map((banner) => (
               <NotificationBannerSolid
                 key={banner.source}
                 type={banner.type}
