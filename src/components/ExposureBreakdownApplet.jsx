@@ -285,8 +285,8 @@ function ExposureBreakdownApplet({
                 <li>Hover over a bar to view total and flagged values.</li>
                 <li>
                   In <strong>Science Program</strong> view, hover to see the
-                  BLOCK description (if available). Linked labels open the
-                  BLOCK documentation.
+                  BLOCK description (if available). Linked labels open the BLOCK
+                  documentation.
                 </li>
                 <li>
                   Click a bar to open the Data Log, filtered by that group.
