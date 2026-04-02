@@ -28,6 +28,13 @@ import {
 import { getDayobsStartUTC } from "@/utils/timeUtils";
 import { mergeAllDataLogSources, getBlockSourceLabel } from "@/utils/utils";
 import {
+  mergeDataLogSources,
+  DEFAULT_PIXEL_SCALE_MEDIAN,
+  PSF_SIGMA_FACTOR,
+  createAddBanner,
+} from "@/utils/utils";
+import { isoToTAI, getDayobsStartUTC } from "@/utils/timeUtils";
+import {
   prepareAlmanacData,
   prepareMoonIntervals,
 } from "@/utils/timelineUtils";
@@ -86,6 +93,10 @@ function DataLog() {
   const { selectedTimeRange, setSelectedTimeRange, fullTimeRange } =
     useTimeRangeFromURL("/data-log");
 
+  // Notification banners
+  const [banners, setBanners] = useState([]);
+  const addBanner = createAddBanner(setBanners);
+
   // Calculate moon intervals when moon values or full time range changes
   useEffect(() => {
     const [xMinMillis, xMaxMillis] = fullTimeRange;
@@ -112,6 +123,84 @@ function DataLog() {
     setIllumValues([]);
     setMoonValues([]);
 
+    // Reset notifications
+    setBanners([]);
+    toast.dismiss();
+
+    // Fetch data from both sources
+    Promise.all([
+      fetchDataLogEntriesFromConsDB(
+        startDayobs,
+        queryEndDayobs,
+        instrument,
+        abortController,
+      ),
+      fetchDataLogEntriesFromExposureLog(
+        startDayobs,
+        queryEndDayobs,
+        instrument,
+        abortController,
+      ),
+    ])
+      .then(([consDBData, exposureLogData]) => {
+        const dataLog = consDBData.data_log ?? [];
+
+        if (dataLog.length === 0) {
+          addBanner(
+            "noData",
+            "data-log",
+            "No data log entries found",
+            "Table and timeline will appear empty. Try a different date range.",
+          );
+        }
+
+        // Merge the two data sources
+        // and apply conversion to required row(s)
+        const mergedData = mergeDataLogSources(dataLog, exposureLogData)
+          .map((entry) => {
+            const psfSigma = Number.parseFloat(entry.psf_sigma_median);
+            const pixelScale = Number.isFinite(entry.pixel_scale_median)
+              ? entry.pixel_scale_median
+              : DEFAULT_PIXEL_SCALE_MEDIAN;
+            const psf_median = Number.isFinite(psfSigma)
+              ? psfSigma * PSF_SIGMA_FACTOR * pixelScale
+              : null;
+
+            // Add obs_start_millis for timeline
+            const obsStartDt = isoToTAI(entry.obs_start);
+
+            return {
+              ...entry,
+              psf_median,
+              obs_start_millis: obsStartDt.toMillis(),
+            };
+          })
+          .sort((a, b) => Number(b["exposure_id"]) - Number(a["exposure_id"]));
+
+        // Set the merged data to state
+        setDataLogEntries(mergedData);
+        setDataLogLoading(false);
+      })
+      .catch((err) => {
+        if (!abortController.signal.aborted) {
+          console.error("Error fetching data log entries:", err);
+          addBanner(
+            "error",
+            "data-log",
+            "Data log data unavailable",
+            "Error fetching exposure log or data log",
+          );
+
+          setDataLogEntries([]);
+        }
+      })
+      .finally(() => {
+        if (!abortController.signal.aborted) {
+          setDataLogLoading(false);
+        }
+      });
+
+    // Fetch almanac data for timeline
     fetchAlmanac(startDayobs, queryEndDayobs, abortController)
       .then((almanac) => {
         if (almanac === null) {
@@ -128,10 +217,13 @@ function DataLog() {
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          toast.error("Error fetching almanac!", {
-            description: err?.message,
-            duration: Infinity,
-          });
+          console.error("Error fetching almanac:", err);
+          addBanner(
+            "error",
+            "almanac",
+            "Almanac data unavailable",
+            "An error occurred while fetching almanac. Timeline will be displayed without accompanying almanac information.",
+          );
         }
       })
       .finally(() => {
@@ -307,10 +399,37 @@ function DataLog() {
       return obsStartMillis >= startMillis && obsStartMillis <= endMillis;
     });
   }, [dataLogTableData, selectedTimeRange]);
+  const allLoaded = !almanacLoading && !dataLogLoading;
+
+  const BANNER_ORDER = ["maintenance", "noData", "error", "systemicError"];
+
+  //  Sort banners by type according to BANNER_ORDER
+  const processedBanners = useMemo(() => {
+    if (!allLoaded) return banners;
+    return [...banners].sort(
+      (a, b) => BANNER_ORDER.indexOf(a.type) - BANNER_ORDER.indexOf(b.type),
+    );
+  }, [banners, allLoaded]);
+
+  console.log("Processed Banners:", processedBanners);
 
   return (
     <>
       <div className="flex flex-col h-screen w-full px-8 pb-8 gap-4">
+        {allLoaded && processedBanners.length > 0 && (
+          <div className="flex flex-col gap-2">
+            {processedBanners.map((banner) => (
+              <NotificationBannerSolid
+                key={banner.source}
+                type={banner.type}
+                source={banner.source}
+                title={banner.title}
+                description={banner.description}
+                meta={banner.meta}
+              />
+            ))}
+          </div>
+        )}
         {/* Page Header, Timeline & Tips Banners */}
         <div className="flex flex-col gap-2">
           {/* Page title + buttons */}
