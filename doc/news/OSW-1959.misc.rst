@@ -1,1 +1,0 @@
-Remove the maximum date on the date picker so there is no need to hit reload every day to see that day’s data.

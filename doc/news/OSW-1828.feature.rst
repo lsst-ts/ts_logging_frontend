@@ -1,1 +1,0 @@
-Align Plots page layout with DataLog and ContextFeed
