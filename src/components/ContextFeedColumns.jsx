@@ -20,12 +20,13 @@ import FullScreenIcon from "../assets/FullScreenIcon.svg";
 
 const columnHelper = createColumnHelper();
 
-// Helper function to make time columns more readable
+// Helper function to make time columns more readable.
+// Default zone is UTC; otherwise pass in IANA identifier.
 // Luxon only natively supports millisecond precision, not microseconds.
 // Will need to extract microseconds if this precision is required.
-function formatTimestamp(tsString) {
+function formatTimestamp(tsString, tsZone = "utc") {
   if (!tsString) return null;
-  const dt = DateTime.fromISO(tsString, { zone: "utc" });
+  const dt = DateTime.fromISO(tsString, { zone: tsZone });
   return dt.isValid ? dt.toFormat("yyyy-LL-dd HH:mm:ss.S") : tsString;
 }
 
@@ -304,7 +305,11 @@ export const defaultColumnVisibility = {
   category_index: false,
   event_type: true,
   current_task: false,
+  event_date: false,
+  event_dayobs: false,
   time: true,
+  event_time_tai: false,
+  event_time_chile: false,
   name: true,
   description: true,
   config: true,
@@ -321,7 +326,11 @@ export const defaultColumnOrder = [
   "category_index",
   "event_type",
   "current_task",
+  "event_date",
+  "event_dayobs",
   "time",
+  "event_time_tai",
+  "event_time_chile",
   "name",
   "description",
   "config",
@@ -381,6 +390,28 @@ export const contextFeedColumns = [
       tooltip: "BLOCK or FBS configuration.",
     },
   }),
+  columnHelper.accessor("event_date", {
+    header: "Date",
+    cell: (info) => info.getValue(),
+    size: 120,
+    minSize: 100,
+    filterFn: matchValueOrInList,
+    filterType: "string",
+    meta: {
+      tooltip: "Date of event.",
+    },
+  }),
+  columnHelper.accessor("event_dayobs", {
+    header: "Dayobs",
+    cell: (info) => info.getValue(),
+    size: 120,
+    minSize: 100,
+    filterFn: matchValueOrInList,
+    filterType: "string",
+    meta: {
+      tooltip: "Dayobs of event.",
+    },
+  }),
   columnHelper.accessor("time", {
     header: "Time (UTC)",
     cell: (info) => formatTimestamp(info.getValue()),
@@ -388,7 +419,27 @@ export const contextFeedColumns = [
     minSize: 220,
     filterType: "number-range",
     meta: {
-      tooltip: "Time associated with event.",
+      tooltip: "Time (UTC) associated with event.",
+    },
+  }),
+  columnHelper.accessor("event_time_tai", {
+    header: "Time (TAI)",
+    cell: (info) => formatTimestamp(info.getValue()),
+    size: 220,
+    minSize: 220,
+    filterType: "number-range",
+    meta: {
+      tooltip: "Time (TAI) associated with event.",
+    },
+  }),
+  columnHelper.accessor("event_time_chile", {
+    header: "Time (Chile)",
+    cell: (info) => formatTimestamp(info.getValue(), "America/Santiago"),
+    size: 220,
+    minSize: 220,
+    filterType: "number-range",
+    meta: {
+      tooltip: "Time (Chile) associated with event.",
     },
   }),
   columnHelper.accessor("name", {

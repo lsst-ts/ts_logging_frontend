@@ -4,7 +4,7 @@ const TAI_OFFSET_SECONDS = 37;
 const ISO_DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss"; // Twilight time format string
 
 /**
- * Converts an ISO 8601 string (representing TAI time) to a Luxon DateTime object in TAI.
+ * Converts an ISO 8601 string to a Luxon DateTime object in TAI.
  *
  * Parses the string as UTC and applies the 37-second TAI offset.
  *
@@ -23,6 +23,15 @@ const isoToTAI = (isoStr) =>
  * @returns {DateTime} A Luxon DateTime object in UTC.
  */
 const isoToUTC = (isoStr) => DateTime.fromISO(isoStr, { zone: "utc" });
+
+/**
+ * Converts an ISO 8601 string to a Luxon DateTime object in Chilean Time.
+ *
+ * @param {string} isoStr - The ISO date-time string (e.g., "2025-08-27T12:34:56Z").
+ * @returns {DateTime} A Luxon DateTime object in Chilean Time.
+ */
+const isoToChile = (isoStr) =>
+  DateTime.fromISO(isoStr, { zone: "America/Santiago" });
 
 /**
  * Converts a dayobs string to the "start" boundary (12:00 noon) in TAI.
@@ -81,6 +90,19 @@ const getDayobsEndUTC = (dayobsStr) => {
   });
   return dayobsDate.plus({ days: 1 }).set({ hour: 11, minute: 59, second: 59 });
 };
+
+/**
+ * Converts a Luxon DateTime object in UTC to a string in "yyyy-LL-dd" format.
+ *
+ * Each dayobs ends at midday UTC the next day, so times in the AM belong to the
+ * previous day's observations. This is implemented by subtracting 12 hours before
+ * taking the date.
+ *
+ * @param {DateTime} dateTimeUTC - A Luxon DateTime object in UTC.
+ * @returns {string} The dayobs date string in "yyyy-LL-dd" format (e.g., "2025-08-27").
+ */
+const getDayobsUTC = (dateTimeUTC) =>
+  dateTimeUTC.toUTC().minus({ hours: 12 }).toFormat("yyyy-LL-dd");
 
 /**
  * Adjusts an almanac-provided dayobs number to the plotting convention.
@@ -266,10 +288,12 @@ function utcDateToCalendarDate(utcDate) {
 export {
   isoToTAI,
   isoToUTC,
+  isoToChile,
   getDayobsStartTAI,
   getDayobsEndTAI,
   getDayobsStartUTC,
   getDayobsEndUTC,
+  getDayobsUTC,
   almanacDayobsForPlot,
   millisToDateTime,
   millisToHHmm,
