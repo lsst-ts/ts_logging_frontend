@@ -4,7 +4,6 @@ import {
   formatCellValue,
   DEFAULT_PIXEL_SCALE_MEDIAN,
   PSF_SIGMA_FACTOR,
-  getZephyrUrl,
 } from "@/utils/utils";
 import { matchValueOrInList } from "@/components/DataTable/tableUtils";
 
