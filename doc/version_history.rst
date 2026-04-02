@@ -1,3 +1,12 @@
+v0.16.1 (2026-04-02)
+====================
+
+Bug Fixes
+---------
+
+- Allow inputting hour with no padding in editable datetime inputs. (`OSW-1482 <https://rubinobs.atlassian.net//browse/OSW-1482>`_)
+
+
 v0.16.0 (2026-03-31)
 ====================
 
