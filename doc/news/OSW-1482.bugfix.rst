@@ -1,1 +1,0 @@
-Allow inputting hour with no padding in editable datetime inputs.

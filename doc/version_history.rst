@@ -1,3 +1,31 @@
+v0.17.0-alpha.1 (2026-04-02)
+============================
+
+New Features
+------------
+
+- Add BLOCK details where Science Program is displayed. (`OSW-850 <https://rubinobs.atlassian.net//browse/OSW-850>`_)
+- Make several new date/time columns available to display in the Context Feed table. (`OSW-1255 <https://rubinobs.atlassian.net//browse/OSW-1255>`_)
+- Align Plots page layout with DataLog and ContextFeed (`OSW-1828 <https://rubinobs.atlassian.net//browse/OSW-1828>`_)
+
+
+Bug Fixes
+---------
+
+- Ensuring that dates selected from the date picker and selected time range are parsed and handled in UTC. (`OSW-1115 <https://rubinobs.atlassian.net//browse/OSW-1115>`_)
+- Fix double conversion to TAI and ensure UTC is used for date handling in ObservingConditionsApplet and Plots pages. (`OSW-1115 <https://rubinobs.atlassian.net//browse/OSW-1115>`_)
+- Allow inputting hour with no padding in editable datetime inputs. (`OSW-1482 <https://rubinobs.atlassian.net//browse/OSW-1482>`_)
+
+
+Other Changes and Additions
+---------------------------
+
+- Add a faint line at 1 arcsec to Observing Conditions applet as a reference for users to quickly assess the quality of the PSF FWHM values. (`OSW-1857 <https://rubinobs.atlassian.net//browse/OSW-1857>`_)
+- Add data source to the title of the Time loss card for improved clarity (`OSW-1923 <https://rubinobs.atlassian.net//browse/OSW-1923>`_)
+- Remove the maximum date on the date picker so there is no need to hit reload every day to see that day’s data. (`OSW-1959 <https://rubinobs.atlassian.net//browse/OSW-1959>`_)
+- Add the option to group by filter in the Exposure Breakdown applet. (`OSW-1983 <https://rubinobs.atlassian.net//browse/OSW-1983>`_)
+
+
 v0.15.0 (2026-02-19)
 ====================
 
