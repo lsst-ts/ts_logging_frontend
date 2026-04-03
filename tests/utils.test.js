@@ -8,7 +8,8 @@ import {
   getDisplayDateRange,
   getKeyByValue,
   formatCellValue,
-  mergeDataLogSources,
+  mergeAllDataLogSources,
+  mergeContextFeedSources,
   getRubinTVUrl,
   getSiteConfig,
   buildNavigationWithSearchParams,
@@ -19,8 +20,10 @@ import {
   DEFAULT_EXTERNAL_INSTANCE_URL,
   SITE_CONFIGURATION,
   parseBackendVersion,
+  getZephyrUrl,
 } from "@/utils/utils";
 import { getDayobsStartUTC } from "@/utils/timeUtils";
+import { CATEGORY_INDEX_INFO } from "@/components/context-feed-definitions.js";
 import { GLOBAL_SEARCH_PARAMS } from "@/routes";
 
 const sampleAlmanacInfo = [
@@ -287,9 +290,21 @@ describe("utils", () => {
     });
   });
 
-  describe("mergeDataLogSources", () => {
-    it("merges matching rows", () => {
-      const consDb = [{ exposure_name: "exp1", instrument: "na" }];
+  describe("mergeAllDataLogSources", () => {
+    const baseRow = (overrides = {}) => ({
+      exposure_name: "exp1",
+      exposure_id: "1",
+      psf_sigma_median: "1",
+      pixel_scale_median: 1,
+      science_program: "BLOCK-T250",
+      instrument: "na",
+      obs_start: "2025-01-01T00:00:00Z",
+      ...overrides,
+    });
+
+    it("merges exposure log fields when matching", () => {
+      const consDb = [baseRow()];
+
       const exposureLog = [
         {
           obs_id: "exp1",
@@ -299,18 +314,208 @@ describe("utils", () => {
         },
       ];
 
-      const merged = mergeDataLogSources(consDb, exposureLog);
+      const blockLookup = {
+        "BLOCK-T250": {
+          summary: "This block tests some things",
+          url: "zephyr/things/BLOCK-T250",
+          source: "zephyr",
+        },
+      };
+
+      const merged = mergeAllDataLogSources(consDb, exposureLog, blockLookup);
+
       expect(merged[0].instrument).toBe("cam");
       expect(merged[0].exposure_flag).toBe("ok");
       expect(merged[0].message_text).toBe("msg");
     });
 
-    it("fills defaults if no match", () => {
-      const consDb = [{ exposure_name: "exp2" }];
-      const merged = mergeDataLogSources(consDb, []);
+    it("fills defaults if no exposure log match", () => {
+      const consDb = [baseRow()];
+
+      const merged = mergeAllDataLogSources(consDb, [], {});
+
       expect(merged[0].instrument).toBe("na");
       expect(merged[0].exposure_flag).toBe("none");
       expect(merged[0].message_text).toBe("");
+    });
+
+    it("adds BLOCK description when science_program matches", () => {
+      const consDb = [baseRow()];
+
+      const blockLookup = {
+        "BLOCK-T250": {
+          summary: "This block tests some things",
+          url: "zephyr/things/BLOCK-T250",
+          source: "zephyr",
+        },
+      };
+
+      const merged = mergeAllDataLogSources(consDb, [], blockLookup);
+
+      expect(merged[0].block_description).toBe("This block tests some things");
+    });
+
+    it("defaults block_description to empty string if no match", () => {
+      const consDb = [baseRow({ science_program: "UNKNOWN" })];
+
+      const merged = mergeAllDataLogSources(consDb, [], {});
+
+      expect(merged[0].block_description).toBe("");
+    });
+
+    it("computes psf_median correctly", () => {
+      const consDb = [
+        baseRow({
+          psf_sigma_median: "2",
+          pixel_scale_median: 1,
+        }),
+      ];
+
+      const merged = mergeAllDataLogSources(consDb, [], {});
+
+      expect(merged[0].psf_median).toBe(2 * PSF_SIGMA_FACTOR * 1);
+    });
+
+    it("sorts rows by exposure_id descending", () => {
+      const consDb = [
+        baseRow({ exposure_id: "1" }),
+        baseRow({
+          "exposure name": "exp2",
+          exposure_id: "2",
+        }),
+      ];
+
+      const merged = mergeAllDataLogSources(consDb, [], {});
+
+      expect(merged[0].exposure_id).toBe("2");
+      expect(merged[1].exposure_id).toBe("1");
+    });
+
+    it("adds obs_start_millis derived from obs_start", () => {
+      const consDb = [baseRow({ obs_start: "2025-01-01T00:00:00Z" })];
+
+      const merged = mergeAllDataLogSources(consDb, [], {});
+
+      expect(merged[0].obs_start_millis).toBe(1735689600000);
+    });
+  });
+
+  describe("mergeContextFeedSources", () => {
+    const baseRow = (overrides = {}) => ({
+      name: "BLOCK-T250",
+      description: "original description",
+      category_index: 10,
+      finalStatus: "Something",
+      time: "2025-01-01T00:00:00Z",
+      ...overrides,
+    });
+
+    it("adds BLOCK description when BLOCK key matches", () => {
+      const rubinRows = [baseRow()];
+
+      const blockLookup = {
+        "BLOCK-T250": {
+          summary: "This block tests some things",
+          url: "zephyr/things/BLOCK-T250",
+          source: "zephyr",
+        },
+      };
+
+      const merged = mergeContextFeedSources(rubinRows, blockLookup);
+
+      expect(merged[0].description).toBe("This block tests some things");
+    });
+
+    it("keeps original description if no BLOCKs match", () => {
+      const rubinRows = [
+        baseRow({
+          name: "BLOCK-UNKNOWN",
+          description: "original description",
+        }),
+      ];
+
+      const merged = mergeContextFeedSources(rubinRows, {});
+
+      expect(merged[0].description).toBe("original description");
+    });
+
+    it("does not override description if category_index is not 10", () => {
+      const rubinRows = [
+        baseRow({
+          category_index: 5,
+          description: "original description",
+        }),
+      ];
+
+      const blockLookup = {
+        "BLOCK-T250": {
+          summary: "This block tests some things",
+          url: "zephyr/things/BLOCK-T250",
+          source: "zephyr",
+        },
+      };
+
+      const merged = mergeContextFeedSources(rubinRows, blockLookup);
+
+      expect(merged[0].description).toBe("original description");
+    });
+
+    it("sets current_task when a Task Change occurs", () => {
+      const rubinRows = [
+        baseRow({
+          name: "BLOCK-T100",
+          finalStatus: "Task Change",
+        }),
+        baseRow({
+          name: "event1",
+        }),
+      ];
+
+      const merged = mergeContextFeedSources(rubinRows, {});
+
+      expect(merged[0].current_task).toBe("BLOCK-T100");
+      expect(merged[1].current_task).toBe("BLOCK-T100");
+    });
+
+    it("adds derived event_time_millis", () => {
+      const rubinRows = [
+        baseRow({
+          time: "2025-01-01T00:00:00Z",
+        }),
+      ];
+
+      const merged = mergeContextFeedSources(rubinRows, {});
+
+      expect(merged[0].event_time_millis).toBe(1735689600000);
+    });
+
+    it("sorts rows chronologically by event_time_millis", () => {
+      const rubinRows = [
+        baseRow({
+          time: "2025-01-02T00:00:00Z",
+        }),
+        baseRow({
+          name: "earlier",
+          time: "2025-01-01T00:00:00Z",
+        }),
+      ];
+
+      const merged = mergeContextFeedSources(rubinRows, {});
+
+      expect(merged[0].name).toBe("earlier");
+      expect(merged[1].name).toBe("BLOCK-T250");
+    });
+
+    it("adds category display metadata", () => {
+      const rubinRows = [baseRow({ category_index: 10 })];
+
+      const merged = mergeContextFeedSources(rubinRows, {});
+
+      const expectedInfo = CATEGORY_INDEX_INFO[10];
+
+      expect(merged[0].event_type).toBe(expectedInfo.label);
+      expect(merged[0].event_color).toBe(expectedInfo.color ?? "#ffffff");
+      expect(merged[0].displayIndex).toBe(expectedInfo.displayIndex);
     });
   });
 
@@ -518,6 +723,24 @@ describe("utils", () => {
       expect(parseBackendVersion("1.2.3-alpha.1")).toBe("main");
       expect(parseBackendVersion("1.2.3a-1")).toBe("main");
       expect(parseBackendVersion("1.2.3b1")).toBe("main");
+    });
+  });
+
+  describe("getZephyrUrl", () => {
+    it("returns null if testCase is missing", () => {
+      expect(getZephyrUrl(null)).toBeNull();
+      expect(getZephyrUrl(undefined)).toBeNull();
+      expect(getZephyrUrl("")).toBeNull();
+    });
+
+    it("returns correct Zephyr URL for valid test case key", () => {
+      const key = "BLOCK-T123";
+      const expectedUrl =
+        "https://rubinobs.atlassian.net/projects/BLOCK" +
+        "?selectedItem=com.atlassian.plugins.atlassian-connect-plugin:com.kanoah.test-manager__main-project-page" +
+        "#!/v2/testCase/BLOCK-T123";
+
+      expect(getZephyrUrl(key)).toBe(expectedUrl);
     });
   });
 });

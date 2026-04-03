@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
-import AppletExposures from "@/components/applet-exposures.jsx";
+import ExposureBreakdownApplet from "@/components/ExposureBreakdownApplet.jsx";
 import MetricsCard from "@/components/metrics-card.jsx";
 import VisitMapApplet from "@/components/VisitMapApplet";
 
@@ -19,11 +19,13 @@ import {
   fetchExposureFlags,
   fetchJiraTickets,
   fetchVisitMaps,
+  fetchBlockDetails,
 } from "@/utils/fetchUtils";
 import {
   calculateEfficiency,
   calculateTimeLoss,
   calculateSumExpTimeBetweenTwilights,
+  getBlockSourceLabel,
 } from "@/utils/utils";
 import { getDayobsStartUTC } from "@/utils/timeUtils";
 import DialogMetricsCard from "@/components/dialog-metrics-card";
@@ -72,6 +74,10 @@ export default function Digest() {
   const [interactiveMap, setInteractiveMap] = useState(null);
   const [visitMapLoading, setVisitMapLoading] = useState(false);
 
+  const [blockLookup, setBlockLookup] = useState({});
+
+  // Fetch all data except Zephyr data,
+  // which needs exposure data.
   useEffect(() => {
     const abortController = new AbortController();
     // The end dayobs is inclusive, so we add one day to the
@@ -279,7 +285,7 @@ export default function Digest() {
           setFlagsLoading(false);
         }
       });
-    // Visit maps
+
     fetchVisitMaps(startDayobs, queryEndDayobs, instrument, abortController, {
       appletMode: true,
     })
@@ -304,6 +310,47 @@ export default function Digest() {
       abortController.abort();
     };
   }, [startDayobs, endDayobs, telescope]);
+
+  // Fetch BLOCK details from Zephyr/Jira
+  useEffect(() => {
+    const abortController = new AbortController();
+
+    const blockKeys = [
+      ...new Set(exposureFields.map((e) => e.science_program)),
+    ];
+
+    if (blockKeys.length === 0) {
+      return; // nothing to fetch
+    }
+    fetchBlockDetails(blockKeys, abortController)
+      .then((blocks) => {
+        setBlockLookup(blocks.data);
+
+        // Handle partial errors (one of Zephyr/Jira failing)
+        if (blocks.errors) {
+          Object.entries(blocks.errors).forEach(([source, message]) => {
+            toast.error(
+              `Error fetching BLOCK descriptions from ${getBlockSourceLabel(
+                source,
+              )}`,
+              {
+                description: message,
+                duration: Infinity,
+              },
+            );
+          });
+        }
+      })
+      .catch((err) => {
+        if (!abortController.signal.aborted) {
+          const msg = err?.message;
+          toast.error("Error fetching BLOCK descriptions from Zephyr/Jira", {
+            description: msg,
+            duration: Infinity,
+          });
+        }
+      });
+  }, [exposureFields]);
 
   const nightHours = useMemo(
     () => almanacInfo?.reduce((acc, day) => acc + day.night_hours, 0) ?? 0,
@@ -400,11 +447,12 @@ export default function Digest() {
               selectedTimeRange={selectedTimeRange}
               setSelectedTimeRange={setSelectedTimeRange}
             />
-            <AppletExposures
+            <ExposureBreakdownApplet
               exposureFields={exposureFields}
               exposureCount={exposureCount}
               sumExpTime={sumExpTime}
               flags={flags}
+              blockLookup={blockLookup}
               exposuresLoading={exposuresLoading}
               flagsLoading={flagsLoading}
             />

@@ -21,6 +21,7 @@ import {
  * @param {Array} props.columnFilters - Current column filter state
  * @param {Function} props.setColumnFilters - Column filter setter
  * @param {Function} props.resetFilters - Reset filters to defaults
+ * @param {Object} props.blockLookup - BLOCK data map
  */
 function ContextFeedTable({
   data,
@@ -28,6 +29,7 @@ function ContextFeedTable({
   columnFilters,
   setColumnFilters,
   resetFilters,
+  blockLookup,
 }) {
   const tableRef = useRef();
 
@@ -122,6 +124,7 @@ function ContextFeedTable({
       tableMeta={{
         collapseTracebacks,
         collapseYaml,
+        blockLookup,
       }}
       toolbar={{
         showColumnVisibility: true,

@@ -23,9 +23,13 @@ import PageHeader from "@/components/PageHeader";
 import TipsCard from "@/components/TipsCard";
 import SelectedTimeRangeBar from "@/components/SelectedTimeRangeBar";
 import DownloadIcon from "../assets/DownloadIcon.svg";
-import { fetchAlmanac, fetchContextFeed } from "@/utils/fetchUtils";
-import { isoToUTC } from "@/utils/timeUtils";
 import { getDayobsStartUTC } from "@/utils/timeUtils";
+import {
+  fetchAlmanac,
+  fetchContextFeedFromRubinNights,
+  fetchBlockDetails,
+} from "@/utils/fetchUtils";
+import { mergeContextFeedSources, getBlockSourceLabel } from "@/utils/utils";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
 import { prepareAlmanacData } from "@/utils/timelineUtils";
 import { useUrlSync } from "@/components/DataTable";
@@ -80,10 +84,17 @@ function ContextFeed() {
   const { selectedTimeRange, setSelectedTimeRange, fullTimeRange } =
     useTimeRangeFromURL("/context-feed");
 
-  const [contextFeedData, setContextFeedData] = useState([]);
-  const [contextFeedLoading, setContextFeedLoading] = useState(true);
+  // Data and loading flags
+  const [rubinNightsData, setRubinNightsData] = useState([]);
+  const [rubinNightsDataLoading, setRubinNightsDataLoading] = useState(false);
+  const [blockLookup, setBlockLookup] = useState({});
+  const [blockLookupLoading, setBlockLookupLoading] = useState(false);
+
+  // Almanac data for timeline
   const [twilightValues, setTwilightValues] = useState([]);
-  const [almanacLoading, setAlmanacLoading] = useState(true);
+  const [almanacLoading, setAlmanacLoading] = useState(false);
+
+  // Visibility toggles
   const [timelineVisible, setTimelineVisible] = useState(true);
   const [tipsVisible, setTipsVisible] = useState(true);
 
@@ -159,7 +170,7 @@ function ContextFeed() {
     // In case we need to cancel a fetch
     const abortController = new AbortController();
 
-    setContextFeedLoading(true);
+    setRubinNightsDataLoading(true);
     setAlmanacLoading(true);
 
     fetchAlmanac(startDayobs, queryEndDayobs, abortController)
@@ -187,43 +198,20 @@ function ContextFeed() {
         }
       });
 
-    fetchContextFeed(startDayobs, endDayobs, abortController)
+    fetchContextFeedFromRubinNights(startDayobs, endDayobs, abortController)
       .then(([data]) => {
-        let currentTask = null;
-
-        const preparedData = data
-          .map((entry) => {
-            if (entry.finalStatus === "Task Change") {
-              currentTask = entry.name;
-            }
-
-            let categoryInfo = CATEGORY_INDEX_INFO[entry.category_index] || {};
-
-            return {
-              ...entry,
-              event_time_dt: isoToUTC(entry["time"]),
-              event_time_millis: isoToUTC(entry["time"]).toMillis(),
-              event_type: categoryInfo.label,
-              event_color: categoryInfo.color ?? "#ffffff",
-              displayIndex: categoryInfo.displayIndex,
-              current_task: currentTask,
-            };
-          })
-          // Chronological order
-          .sort((a, b) => a.event_time_millis - b.event_time_millis);
-
-        setContextFeedData(preparedData);
-
         if (data.length === 0) {
           toast.warning("No Context Feed entries found in the date range.");
         }
+
+        setRubinNightsData(data);
       })
       .catch((err) => {
         // If the error is not caused by the fetch being aborted
         // then toast the error message.
         if (!abortController.signal.aborted) {
           const msg = err?.message;
-          toast.error("Error fetching Context Feed data!", {
+          toast.error("Error fetching Context Feed data from Rubin-nights!", {
             description: msg,
             duration: Infinity,
           });
@@ -231,7 +219,7 @@ function ContextFeed() {
       })
       .finally(() => {
         if (!abortController.signal.aborted) {
-          setContextFeedLoading(false);
+          setRubinNightsDataLoading(false);
         }
       });
 
@@ -240,15 +228,86 @@ function ContextFeed() {
     };
   }, [startDayobs, endDayobs, telescope]);
 
+  // Fetch BLOCK details from Zephyr/Jira
+  useEffect(() => {
+    const abortController = new AbortController();
+
+    if (rubinNightsData.length === 0) {
+      return; // don't know which BLOCK to query
+    }
+
+    setBlockLookupLoading(true);
+
+    // Extract unique BLOCKs from rubin-nights data
+    const newBlockOrFBS = rubinNightsData.filter(
+      (e) => e.category_index === 10,
+    );
+    const names = newBlockOrFBS.map((e) => e.name);
+    const blockKeys = [...new Set(names)];
+
+    // There is nothing to fetch
+    if (blockKeys.length === 0) {
+      setBlockLookupLoading(false);
+      return;
+    }
+    fetchBlockDetails(blockKeys, abortController)
+      .then((blocks) => {
+        setBlockLookup(blocks.data);
+
+        // Handle partial errors (one of Zephyr/Jira failing)
+        if (blocks.errors) {
+          Object.entries(blocks.errors).forEach(([source, message]) => {
+            toast.error(
+              `Error fetching BLOCK descriptions from ${getBlockSourceLabel(
+                source,
+              )}`,
+              {
+                description: message,
+                duration: Infinity,
+              },
+            );
+          });
+        }
+      })
+      .catch((err) => {
+        if (!abortController.signal.aborted) {
+          setBlockLookup({});
+          const msg = err?.message;
+          toast.error("Error fetching BLOCK descriptions from Zephyr/Jira", {
+            description: msg,
+            duration: Infinity,
+          });
+        }
+      })
+      .finally(() => {
+        if (!abortController.signal.aborted) {
+          setBlockLookupLoading(false);
+        }
+      });
+  }, [rubinNightsData]);
+
+  // Global table loading flag
+  const tableLoading =
+    rubinNightsDataLoading || almanacLoading || blockLookupLoading;
+
+  // Merge data sources together to form one object
+  // to pass to TanStack Table.
+  const contextFeedTableData = useMemo(() => {
+    if (tableLoading) return [];
+    if (!rubinNightsData.length) return [];
+
+    return mergeContextFeedSources(rubinNightsData, blockLookup);
+  }, [tableLoading, rubinNightsData, blockLookup]);
+
   // Filter data based on selected time range
   const filteredData = useMemo(
     () =>
-      contextFeedData.filter(
+      contextFeedTableData.filter(
         (entry) =>
           entry.event_time_dt >= selectedTimeRange[0] &&
           entry.event_time_dt <= selectedTimeRange[1],
       ),
-    [contextFeedData, selectedTimeRange],
+    [contextFeedTableData, selectedTimeRange],
   );
 
   const timelineData = useMemo(() => {
@@ -259,14 +318,14 @@ function ContextFeed() {
       .map((info, _idx, arr) => {
         return {
           index: arr.length - info.displayIndex + 1,
-          timestamps: contextFeedData
+          timestamps: contextFeedTableData
             .filter((d) => d.displayIndex === info.displayIndex)
             .map((d) => d.event_time_millis),
           color: info.color,
           isActive: activeLabels.includes(info.label),
         };
       });
-  }, [contextFeedData, columnFilters]);
+  }, [contextFeedTableData, columnFilters]);
 
   return (
     <>
@@ -337,7 +396,7 @@ function ContextFeed() {
           {/* Timeline */}
           {timelineVisible && (
             <Card className="grid gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 font-thin shadow-stone-900 shadow-md">
-              {contextFeedLoading || almanacLoading ? (
+              {tableLoading ? (
                 <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
               ) : (
                 <div className="flex flex-row">
@@ -398,10 +457,10 @@ function ContextFeed() {
             setSelectedTimeRange={setSelectedTimeRange}
             fullTimeRange={fullTimeRange}
             rightContent={
-              contextFeedLoading || almanacLoading ? (
+              tableLoading ? (
                 <Skeleton className="h-5 w-64 bg-teal-700 inline-block" />
               ) : (
-                `${filteredData.length} of ${contextFeedData.length} events selected`
+                `${filteredData.length} of ${contextFeedTableData.length} events selected`
               )
             }
           />
@@ -434,10 +493,11 @@ function ContextFeed() {
         {/* Table */}
         <ContextFeedTable
           data={filteredData}
-          dataLoading={contextFeedLoading}
+          dataLoading={tableLoading}
           columnFilters={columnFilters}
           setColumnFilters={setColumnFilters}
           resetFilters={resetFilters}
+          blockLookup={blockLookup}
         />
       </div>
       {/* Error / warning / info message pop-ups */}
