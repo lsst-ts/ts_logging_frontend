@@ -3,7 +3,9 @@ import {
   TAI_OFFSET_SECONDS,
   ISO_DATETIME_FORMAT,
   getDayobsStartUTC,
+  isoToUTC,
 } from "./timeUtils";
+import { CATEGORY_INDEX_INFO } from "@/components/context-feed-definitions.js";
 import { GLOBAL_SEARCH_PARAMS } from "@/routes";
 
 export const DEFAULT_EXTERNAL_INSTANCE_URL =
@@ -200,32 +202,116 @@ const inferDecimals = (value) => {
 };
 
 /**
- * Merges rows from the consDB and exposure log sources.
+ * Merges rows from the consDB, exposure log and Zephyr/Jira sources.
  *
  * For each consDB row, attempts to enrich it with instrument, exposure flag,
  * and message text from the exposure log (matched via `obs_id` and `exposure name`).
+ * It also attempts to add BLOCK descriptions where relevant (matched via
+ * `science_program`).
  *
  * @param {Object[]} consDbRows - The array of rows from the consDB source.
  * @param {Object[]} exposureLogRows - The array of rows from the exposure log source.
+ * @param {Object{}} blockLookup - The dict of BLOCK objects from Zephyr/Jira.
  * @returns {Object[]} A new array of merged row objects with added/enriched fields.
  */
-const mergeDataLogSources = (consDbRows, exposureLogRows) => {
+const mergeAllDataLogSources = (consDbRows, exposureLogRows, blockLookup) => {
+  // Build fast lookup map for exposure log
   const exposureLogMap = new Map();
   exposureLogRows.forEach((entry) => {
     exposureLogMap.set(entry.obs_id, entry);
   });
 
-  return consDbRows.map((row) => {
-    const exposureName = row.exposure_name;
-    const matchingRow = exposureLogMap.get(exposureName);
+  // blockLookup is already a lookup object
+  const blockMap = blockLookup ?? {};
 
-    return {
-      ...row,
-      instrument: matchingRow?.instrument ?? row.instrument ?? "na",
-      exposure_flag: matchingRow?.exposure_flag ?? "none",
-      message_text: matchingRow?.message_text ?? "",
-    };
-  });
+  return consDbRows
+    .map((row) => {
+      const exposureName = row.exposure_name;
+      const matchingExposure = exposureLogMap.get(exposureName);
+
+      // Derived PSF conversion
+      const psfSigma = Number.parseFloat(row.psf_sigma_median);
+      const pixelScale = Number.isFinite(row.pixel_scale_median)
+        ? row.pixel_scale_median
+        : DEFAULT_PIXEL_SCALE_MEDIAN;
+
+      const psf_median = Number.isFinite(psfSigma)
+        ? psfSigma * PSF_SIGMA_FACTOR * pixelScale
+        : null;
+
+      const obsStartDt = isoToUTC(row.obs_start);
+
+      return {
+        ...row,
+
+        // Exposure log enrichment
+        instrument: matchingExposure?.instrument ?? row.instrument ?? "na",
+        exposure_flag: matchingExposure?.exposure_flag ?? "none",
+        message_text: matchingExposure?.message_text ?? "",
+
+        // BLOCK enrichment
+        block_description: blockMap[row.science_program]?.summary ?? "",
+
+        // Add derived column
+        psf_median,
+
+        // Timeline index
+        obs_start_millis: obsStartDt.toMillis(),
+      };
+    })
+    .sort((a, b) => Number(b["exposure_id"]) - Number(a["exposure_id"]));
+};
+
+/**
+ * Merges rows from rubin-nights and Zephyr/Jira.
+ *
+ * For each rubin-nights row, attempts to enrich it with details about
+ * the current task, display information (colours, labels, etc.), and
+ * BLOCK descriptions where relevant (matched via `name`).
+ *
+ * @param {Object[]} rubinNightsRows - The array of rows from rubin-nights.
+ * @param {Object{}} blockLookup - The BLOCK lookup with descriptions from Zephyr/Jira.
+ * @returns {Object[]} A new array of merged row objects with added/enriched fields.
+ */
+const mergeContextFeedSources = (rubinNightsRows, blockLookup) => {
+  // blockLookup is already a lookup object
+  const blockMap = blockLookup ?? {};
+
+  // To set currentTask for all events until next task change
+  let currentTask = null;
+
+  return (
+    rubinNightsRows
+      .map((entry) => {
+        if (entry.finalStatus === "Task Change") {
+          currentTask = entry.name;
+        }
+
+        // New BLOCK added, so add BLOCK details
+        let description = entry.description;
+        if (entry.category_index === 10 && entry.name.startsWith("BLOCK")) {
+          description = blockMap[entry.name]?.summary
+            ? blockMap[entry.name]?.summary
+            : entry.description;
+        }
+
+        // Get display info for each category
+        let categoryInfo = CATEGORY_INDEX_INFO[entry.category_index] || {};
+
+        return {
+          ...entry,
+          event_time_dt: isoToUTC(entry["time"]),
+          event_time_millis: isoToUTC(entry["time"]).toMillis(),
+          event_type: categoryInfo.label,
+          event_color: categoryInfo.color ?? "#ffffff",
+          displayIndex: categoryInfo.displayIndex,
+          current_task: currentTask,
+          description: description,
+        };
+      })
+      // Chronological order
+      .sort((a, b) => a.event_time_millis - b.event_time_millis)
+  );
 };
 
 /**
@@ -474,6 +560,35 @@ function parseBackendVersion(versionString) {
   return `${baseVersion}-${suffixType}.${suffixNumber}`;
 }
 
+/**
+ * Generate a Zephyr Scale test case URL for a given test case key.
+ *
+ * Returns the direct link to the Zephyr test case in the BLOCK project.
+ * If no test case key is provided, returns null.
+ *
+ * @param {string} testCase - Zephyr test case key (e.g. "BLOCK-T123")
+ * @returns {string|null} - Full Zephyr URL for the test case, or null if invalid
+ */
+function getZephyrUrl(testCase) {
+  if (!testCase) return null;
+  return `https://rubinobs.atlassian.net/projects/BLOCK?selectedItem=com.atlassian.plugins.atlassian-connect-plugin:com.kanoah.test-manager__main-project-page#!/v2/testCase/${testCase}`;
+}
+
+/**
+ * Converts a backend error source key into a user-friendly label.
+ *
+ * Maps known sources (e.g., "zephyr", "jira") to display names,
+ * and falls back to the original string if no mapping exists.
+ *
+ * @param {string} source - The backend source key.
+ * @returns {string} The human-readable label for display in the UI.
+ */
+const getBlockSourceLabel = (source) =>
+  ({
+    zephyr: "Zephyr",
+    jira: "Jira",
+  })[source] || source;
+
 export {
   calculateEfficiency,
   calculateTimeLoss,
@@ -482,7 +597,8 @@ export {
   getKeyByValue,
   formatCellValue,
   prettyTitleFromKey,
-  mergeDataLogSources,
+  mergeAllDataLogSources,
+  mergeContextFeedSources,
   getRubinTVUrl,
   getSiteConfig,
   buildNavigationWithSearchParams,
@@ -493,4 +609,6 @@ export {
   getDayobsAlmanac,
   calculateSumExpTimeBetweenTwilights,
   parseBackendVersion,
+  getZephyrUrl,
+  getBlockSourceLabel,
 };

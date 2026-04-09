@@ -325,7 +325,7 @@ const fetchDataLogEntriesFromExposureLog = async (
  * Fetches the context feed data for a specified date range.
  *
  * @async
- * @function fetchContextFeed
+ * @function fetchContextFeedFromRubinNights
  * @param {string} start - The start date for the observation range (format: YYYYMMDD).
  * @param {string} end - The end date for the observation range (format: YYYYMMDD).
  * @param {AbortController} abortController - The AbortController used to cancel the request if needed.
@@ -334,14 +334,14 @@ const fetchDataLogEntriesFromExposureLog = async (
  *   - cols (string[]): The short-list of columns for display in the table.
  * @throws {Error} Throws an error if the context feed data cannot be fetched and the request was not aborted.
  */
-const fetchContextFeed = async (start, end, abortController) => {
+const fetchContextFeedFromRubinNights = async (start, end, abortController) => {
   const url = `${backendLocation}/context-feed?dayObsStart=${start}&dayObsEnd=${end}`;
   try {
     const data = await fetchData(url, abortController);
     return [data.data, data.cols];
   } catch (err) {
     if (err.name !== "AbortError") {
-      console.error("Error fetching ContextFeed API:", err);
+      console.error("Error fetching ContextFeed API from Rubin Nights:", err);
     }
     throw err;
   }
@@ -407,6 +407,33 @@ const fetchVisitMaps = async (
   }
 };
 
+/**
+ * Fetches the details of BLOCKs from the backend API for a specified set of keys.
+ *
+ * @async
+ * @function fetchBlockDetails
+ * @param {Array} keys - The keys for the BLOCKs.
+ * @param {AbortController} abortController - The AbortController used to cancel the request if needed.
+ * @returns {Promise<Object>} A promise that resolves to an object mapping BLOCK keys to their details.
+ * @throws {Error} Throws an error if fetching BLOCK details fails for reasons other than an abort.
+ */
+const fetchBlockDetails = async (keys, abortController) => {
+  // Construct API url containing multiple (unique) keys
+  const params = new URLSearchParams();
+  const uniqueKeys = [...new Set(keys)];
+  uniqueKeys.forEach((key) => params.append("key", key));
+  const url = `${backendLocation}/block-details?${params.toString()}`;
+  try {
+    const data = await fetchData(url, abortController);
+    return data;
+  } catch (err) {
+    if (err.name !== "AbortError") {
+      console.error("Error fetching BLOCK details", err);
+    }
+    throw err;
+  }
+};
+
 export {
   fetchExposures,
   fetchExpectedExposures,
@@ -417,7 +444,8 @@ export {
   fetchJiraTickets,
   fetchDataLogEntriesFromConsDB,
   fetchDataLogEntriesFromExposureLog,
-  fetchContextFeed,
+  fetchContextFeedFromRubinNights,
   fetchBackendVersion,
   fetchVisitMaps,
+  fetchBlockDetails,
 };

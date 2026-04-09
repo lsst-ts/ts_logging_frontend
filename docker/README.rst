@@ -102,3 +102,22 @@ This is **not required**; not having these credentials will not break anything, 
             - ~/.aws:/home/saluser/.aws:ro
 
    The file location goes on the left side, before the first colon ( : ).
+
+**Test Cases** (`Zephyr <https://rubinobs.atlassian.net/projects/BLOCK?selectedItem=com.atlassian.plugins.atlassian-connect-plugin:com.kanoah.test-manager__main-project-page#!/v2/testCases>`_)
+
+1. **Get Zephyr Token from Jira**:
+   Open Jira and open the account menu (top-right of screen, circle with initials inside).
+   Click on "Zephyr Scale API Access Tokens", create a token, and copy it.
+
+2. **Add Token to .env file**:
+   Add the copied token to your .env file like so:
+   ::
+      ZEPHYR_API_TOKEN=<paste_zephyr_token_here>
+
+3. **Tell Docker Where Token Is**:
+   This should already be merged into the codebase, but, for completeness:
+   In your `docker-compose.yaml`, indicate in the env section where to grab the env variables from:
+   ::
+      backend:
+         environment:
+            - ZEPHYR_API_TOKEN=${ZEPHYR_API_TOKEN}

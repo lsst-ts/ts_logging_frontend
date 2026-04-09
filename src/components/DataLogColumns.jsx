@@ -9,6 +9,38 @@ import { matchValueOrInList } from "@/components/DataTable/tableUtils";
 
 const columnHelper = createColumnHelper();
 
+// Conditionally render science programs as links
+// to Zephyr/Jira BLOCKs where relevant.
+function renderScienceProgram(info) {
+  const value = info.getValue();
+  if (!value) return null;
+
+  // Get BLOCK lookup
+  const blockMap = info.table.options.meta?.blockLookup;
+  const block = blockMap?.[value];
+
+  // If available, display BLOCK names as Zephyr/Jira links
+  if (block) {
+    return (
+      // Wrap in a dark background for visibility
+      // when row is highlighted.
+      <div className="bg-stone-800 p-1 rounded">
+        <a
+          href={block.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sky-500 underline hover:text-sky-400"
+        >
+          {formatCellValue(value)}
+        </a>
+      </div>
+    );
+  }
+
+  // Otherwise, render plain string
+  return formatCellValue(value);
+}
+
 // Columns common to both telescopes
 const commonColumns = [
   // Link to RubinTV
@@ -110,14 +142,24 @@ const commonColumns = [
   // Observation Categories
   columnHelper.accessor("science_program", {
     header: "Science Program",
-    cell: (info) => formatCellValue(info.getValue()),
-    size: 150,
-    minSize: 150,
+    cell: renderScienceProgram,
+    size: 160,
     filterFn: matchValueOrInList,
     filterType: "string",
     meta: {
       urlParam: "science_program",
-      tooltip: "Science program.",
+      tooltip:
+        "Science program, linked to Zephyr/Jira where possible. Opens in a new tab.",
+    },
+  }),
+  columnHelper.accessor("block_description", {
+    header: "BLOCK Description",
+    cell: (info) => info.getValue(),
+    size: 240,
+    filterFn: matchValueOrInList,
+    filterType: "string",
+    meta: {
+      tooltip: "BLOCK descriptions from Zephyr/Jira.",
     },
   }),
   columnHelper.accessor("img_type", {
@@ -368,6 +410,7 @@ const defaultColumnVisibility = {
     seq_num: false,
     day_obs: false,
     science_program: true,
+    block_description: true,
     observation_reason: true,
     img_type: true,
     can_see_sky: true,
@@ -399,6 +442,7 @@ const defaultColumnVisibility = {
     seq_num: false,
     day_obs: false,
     science_program: true,
+    block_description: true,
     observation_reason: true,
     img_type: true,
     can_see_sky: true,
@@ -428,6 +472,7 @@ const defaultColumnOrder = {
     "day_obs",
     "seq_num",
     "science_program",
+    "block_description",
     "observation_reason",
     "img_type",
     "can_see_sky",
@@ -459,6 +504,7 @@ const defaultColumnOrder = {
     "day_obs",
     "seq_num",
     "science_program",
+    "block_description",
     "observation_reason",
     "img_type",
     "can_see_sky",
