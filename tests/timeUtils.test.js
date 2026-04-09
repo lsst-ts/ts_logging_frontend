@@ -8,6 +8,7 @@ import {
   getDayobsEndTAI,
   getDayobsStartUTC,
   getDayobsEndUTC,
+  getDayobsUTC,
   almanacDayobsForPlot,
   millisToDateTime,
   millisToHHmm,
@@ -60,6 +61,20 @@ describe("timeUtils", () => {
     it("returns 11:59 next day UTC for the given dayobs", () => {
       const dt = getDayobsEndUTC("20250818");
       expect(dt.toISO()).toBe("2025-08-19T11:59:59.000Z");
+    });
+  });
+
+  describe("getDayobsUTC", () => {
+    it("returns the previous day if the time is before midday UTC", () => {
+      const dt = DateTime.fromISO("2025-08-19T09:00:00Z");
+      const dayobs = getDayobsUTC(dt);
+      expect(dayobs).toBe("2025-08-18");
+    });
+
+    it("returns the same day if the time is after midday UTC", () => {
+      const dt = DateTime.fromISO("2025-08-19T15:00:00Z");
+      const dayobs = getDayobsUTC(dt);
+      expect(dayobs).toBe("2025-08-19");
     });
   });
 
