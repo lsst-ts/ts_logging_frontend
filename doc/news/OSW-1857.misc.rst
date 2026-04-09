@@ -1,1 +1,0 @@
-Add a faint line at 1 arcsec to Observing Conditions applet as a reference for users to quickly assess the quality of the PSF FWHM values.
