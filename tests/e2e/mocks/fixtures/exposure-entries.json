@@ -1,0 +1,58 @@
+{
+  "exposure_entries": [
+    {
+      "obs_id": "MC_O_20260101_000001",
+      "instrument": "LSSTCam",
+      "exposure_flag": "none",
+      "message_text": ""
+    },
+    {
+      "obs_id": "MC_O_20260101_000005",
+      "instrument": "LSSTCam",
+      "exposure_flag": "questionable",
+      "message_text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+    },
+    {
+      "obs_id": "MC_O_20260101_000008",
+      "instrument": "LSSTCam",
+      "exposure_flag": "junk",
+      "message_text": "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+    },
+    {
+      "obs_id": "MC_O_20260101_000012",
+      "instrument": "LSSTCam",
+      "exposure_flag": "questionable",
+      "message_text": "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris."
+    },
+    {
+      "obs_id": "MC_O_20260101_000015",
+      "instrument": "LSSTCam",
+      "exposure_flag": "none",
+      "message_text": "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum."
+    },
+    {
+      "obs_id": "MC_O_20260101_000018",
+      "instrument": "LSSTCam",
+      "exposure_flag": "bad",
+      "message_text": "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim."
+    },
+    {
+      "obs_id": "MC_O_20260101_000022",
+      "instrument": "LSSTCam",
+      "exposure_flag": "questionable",
+      "message_text": "Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit."
+    },
+    {
+      "obs_id": "MC_O_20260101_000027",
+      "instrument": "LSSTCam",
+      "exposure_flag": "junk",
+      "message_text": "Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet."
+    },
+    {
+      "obs_id": "MC_O_20260101_000030",
+      "instrument": "LSSTCam",
+      "exposure_flag": "none",
+      "message_text": "Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil."
+    }
+  ]
+}
