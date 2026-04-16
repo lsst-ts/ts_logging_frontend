@@ -1,3 +1,13 @@
+v0.17.0 (2026-04-16)
+====================
+
+New Features
+------------
+
+- Add BLOCK details where Science Program is displayed. (`OSW-850 <https://rubinobs.atlassian.net//browse/OSW-850>`_)
+- Make several new date/time columns available to display in the Context Feed table. (`OSW-1255 <https://rubinobs.atlassian.net//browse/OSW-1255>`_)
+
+
 v0.16.1 (2026-04-02)
 ====================
 
