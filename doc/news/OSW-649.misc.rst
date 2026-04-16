@@ -1,0 +1,1 @@
+Strikethrough Jira tickets table rows for tickets with status equals to Done.
