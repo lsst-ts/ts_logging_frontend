@@ -58,6 +58,8 @@ function ExposureBreakdownApplet({
   blockLookup = {},
   exposuresLoading = false,
   flagsLoading = false,
+  onBarHover,
+  onBarLeave,
 }) {
   const [plotBy, setPlotBy] = useState(PlotByValues.NUMBER);
   const [groupBy, setGroupBy] = useState(GroupByValues.SCIENCE_PROGRAM);
@@ -158,8 +160,10 @@ function ExposureBreakdownApplet({
               groupKey,
               unflagged: 0,
               flagged: 0,
+              exposureIds: [],
             };
           }
+          aggregatedMap[groupKey].exposureIds.push(String(row.exposure_id));
 
           if (plotBy === PlotByValues.TIME) {
             if (isFlagged) {
@@ -189,6 +193,7 @@ function ExposureBreakdownApplet({
           groupKey: entry.groupKey,
           unflagged: entry.unflagged,
           flagged: entry.flagged,
+          exposureIds: entry.exposureIds,
           totalValue,
         };
       });
@@ -282,7 +287,11 @@ function ExposureBreakdownApplet({
               <br />
               <strong>Tips:</strong>
               <ul className="list-disc pl-4 mt-1 space-y-1">
-                <li>Hover over a bar to view total and flagged values.</li>
+                <li>
+                  Hover over a bar to view total and flagged values, and
+                  highlight the corresponding observations in the{" "}
+                  <strong>Observing Conditions</strong> chart.
+                </li>
                 <li>
                   In <strong>Science Program</strong> view, hover to see the
                   BLOCK description (if available). Linked labels open the BLOCK
@@ -372,6 +381,7 @@ function ExposureBreakdownApplet({
                               if (tooltipState !== null) {
                                 setTooltipState(null);
                                 setHovered(null);
+                                onBarLeave?.();
                               }
                               return;
                             }
@@ -386,11 +396,16 @@ function ExposureBreakdownApplet({
                                 groupKey,
                               });
                               setHovered(groupKey);
+                              const entry = chartData.find(
+                                (d) => d.groupKey === groupKey,
+                              );
+                              onBarHover?.(entry?.exposureIds ?? []);
                             }
                           }}
                           onMouseLeave={() => {
                             setTooltipState(null);
                             setHovered(null);
+                            onBarLeave?.();
                           }}
                         >
                           {/* Unflagged data stacked bar (bottom) */}
