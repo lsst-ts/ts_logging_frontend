@@ -21,6 +21,7 @@ services:
     image: nightlydigest-backend-local
     environment:
       - ACCESS_TOKEN=${ACCESS_TOKEN}
+      - ACCESS_TOKEN_INT=${ACCESS_TOKEN_INT}
       - JIRA_API_TOKEN=${JIRA_API_TOKEN}
       - JIRA_API_HOSTNAME=${JIRA_API_HOSTNAME}
       - ZEPHYR_API_TOKEN=${ZEPHYR_API_TOKEN}
