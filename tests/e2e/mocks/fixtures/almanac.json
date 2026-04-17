@@ -1,0 +1,13 @@
+{
+  "almanac_info": [
+    {
+      "dayobs": 20260101,
+      "night_hours": 8,
+      "twilight_evening": "2026-01-01 01:00:00",
+      "twilight_morning": "2026-01-01 09:00:00",
+      "moon_rise_time": "2026-01-01 04:00:00",
+      "moon_set_time": "2025-12-31 16:00:00",
+      "moon_illumination": "50%"
+    }
+  ]
+}

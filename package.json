@@ -9,6 +9,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "test": "vitest run",
+    "test:e2e": "playwright test --config playwright.mocked.config.js",
+    "test:e2e:stress": "playwright test --config playwright.config.js",
     "preview": "vite preview"
   },
   "overrides": {

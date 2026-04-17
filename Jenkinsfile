@@ -36,12 +36,23 @@ pipeline {
         script {
           sh """
             source /home/saluser/.setup_dev.sh
-            
+
             npm install
             pre-commit run --all-files
-            
+
             npm install vitest
             npx vitest run --run --no-color --reporter=verbose
+          """
+        }
+      }
+    }
+    stage("Run e2e tests") {
+      steps {
+        script {
+          sh """
+            source /home/saluser/.setup_dev.sh
+            npx playwright install chromium
+            npm run test:e2e
           """
         }
       }
