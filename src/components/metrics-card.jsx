@@ -30,26 +30,24 @@ export default function MetricsCard({
           {loading ? <Skeleton className="h-6 w-20 bg-teal-700" /> : data}
         </div>
         {/* Render dynamic component and static icons */}
-        {loading ? (
-          <Skeleton className="h-8 w-8 rounded-full bg-teal-700" />
-        ) : typeof icon === "string" ? (
+        {typeof icon === "string" ? (
           <img src={icon} alt={label} />
+        ) : loading ? (
+          <Skeleton className="h-[40px] w-[40px] rounded-full border-8 border-teal-700 bg-transparent" />
         ) : (
           icon
         )}
       </div>
       <div className="flex flex-row justify-between min-h-12">
         <div className="flex flex-col justify-between">
-          <div className="text-md">
-            {loading ? <Skeleton className="h-4 w-24 bg-teal-700" /> : label}
-          </div>
+          <div className="text-md">{label}</div>
           {loading ? (
             <Skeleton className="h-3 w-16 bg-teal-700" />
           ) : (
             metadata && <div className="text-sm">{metadata}</div>
           )}
         </div>
-        {tooltip && !loading && (
+        {tooltip && (
           <Popover>
             <PopoverTrigger
               className="self-end min-w-4"
