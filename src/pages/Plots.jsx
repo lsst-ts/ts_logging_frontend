@@ -3,7 +3,6 @@ import { useEffect, useState, useMemo } from "react";
 import { useSearch } from "@tanstack/react-router";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import { Toaster } from "@/components/ui/sonner";
 import { NotificationBannerStack } from "@/components/NotificationBannerStack";
 import { useNotifications } from "@/hooks/useNotifications";
 import { Card } from "@/components/ui/card";
@@ -323,14 +322,13 @@ function Plots() {
           AuxTel is currently not supported in this page. Contact the Logging
           team if this is a priority for you.
         </p>
-        <Toaster expand={true} richColors closeButton />
       </div>
     );
   }
 
   return (
     <>
-      <div className="flex flex-col h-screen w-full px-8 pb-8 gap-4">
+      <div className="flex flex-col h-screen w-full p-8 gap-6">
         {displayedNotifications.length > 0 && (
           <NotificationBannerStack
             notifications={displayedNotifications}
@@ -584,7 +582,6 @@ function Plots() {
           )}
         </div>
       </div>
-      <Toaster expand={true} richColors closeButton />
     </>
   );
 }
