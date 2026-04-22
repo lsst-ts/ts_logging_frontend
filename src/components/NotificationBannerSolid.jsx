@@ -81,6 +81,7 @@ export function NotificationBannerSolid({
         )}
       </div>
 
+      {/* {c.dismissible && onDismiss && ( */}
       {c.dismissible && (
         <button
           onClick={onDismiss ? onDismiss : () => setVisible(false)}
