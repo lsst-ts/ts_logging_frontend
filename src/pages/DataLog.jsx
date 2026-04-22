@@ -31,9 +31,10 @@ import {
   mergeDataLogSources,
   DEFAULT_PIXEL_SCALE_MEDIAN,
   PSF_SIGMA_FACTOR,
-  createAddBanner,
 } from "@/utils/utils";
 import { isoToTAI, getDayobsStartUTC } from "@/utils/timeUtils";
+import { useNotifications } from "@/hooks/useNotifications";
+import { NotificationBannerStack } from "@/components/NotificationBannerStack";
 import {
   prepareAlmanacData,
   prepareMoonIntervals,
@@ -94,8 +95,12 @@ function DataLog() {
     useTimeRangeFromURL("/data-log");
 
   // Notification banners
-  const [banners, setBanners] = useState([]);
-  const addBanner = createAddBanner(setBanners);
+  const {
+    processedNotifications,
+    addNotification,
+    removeNotification,
+    clearNotifications,
+  } = useNotifications({ consolidateErrors: false });
 
   // Calculate moon intervals when moon values or full time range changes
   useEffect(() => {
@@ -124,7 +129,7 @@ function DataLog() {
     setMoonValues([]);
 
     // Reset notifications
-    setBanners([]);
+    clearNotifications();
     toast.dismiss();
 
     // Fetch data from both sources
@@ -146,12 +151,13 @@ function DataLog() {
         const dataLog = consDBData.data_log ?? [];
 
         if (dataLog.length === 0) {
-          addBanner(
-            "noData",
-            "data-log",
-            "No data log entries found",
-            "Table and timeline will appear empty. Try a different date range.",
-          );
+          addNotification({
+            type: "noData",
+            source: "data-log",
+            title: "No data log entries found",
+            description:
+              "Table and timeline will appear empty. Try a different date range.",
+          });
         }
 
         // Merge the two data sources
@@ -184,12 +190,12 @@ function DataLog() {
       .catch((err) => {
         if (!abortController.signal.aborted) {
           console.error("Error fetching data log entries:", err);
-          addBanner(
-            "error",
-            "data-log",
-            "Data log data unavailable",
-            "Error fetching exposure log or data log",
-          );
+          addNotification({
+            type: "error",
+            source: "data-log",
+            title: "Data log data unavailable",
+            description: "Error fetching exposure log or data log",
+          });
 
           setDataLogEntries([]);
         }
@@ -218,12 +224,13 @@ function DataLog() {
       .catch((err) => {
         if (!abortController.signal.aborted) {
           console.error("Error fetching almanac:", err);
-          addBanner(
-            "error",
-            "almanac",
-            "Almanac data unavailable",
-            "An error occurred while fetching almanac. Timeline will be displayed without accompanying almanac information.",
-          );
+          addNotification({
+            type: "error",
+            source: "almanac",
+            title: "Almanac data unavailable",
+            description:
+              "An error occurred while fetching almanac. Timeline will be displayed without accompanying almanac information.",
+          });
         }
       })
       .finally(() => {
@@ -400,35 +407,16 @@ function DataLog() {
     });
   }, [dataLogTableData, selectedTimeRange]);
   const allLoaded = !almanacLoading && !dataLogLoading;
-
-  const BANNER_ORDER = ["maintenance", "noData", "error", "systemicError"];
-
-  //  Sort banners by type according to BANNER_ORDER
-  const processedBanners = useMemo(() => {
-    if (!allLoaded) return banners;
-    return [...banners].sort(
-      (a, b) => BANNER_ORDER.indexOf(a.type) - BANNER_ORDER.indexOf(b.type),
-    );
-  }, [banners, allLoaded]);
-
-  console.log("Processed Banners:", processedBanners);
+  const displayedNotifications = allLoaded ? processedNotifications : [];
 
   return (
     <>
       <div className="flex flex-col h-screen w-full px-8 pb-8 gap-4">
-        {allLoaded && processedBanners.length > 0 && (
-          <div className="flex flex-col gap-2">
-            {processedBanners.map((banner) => (
-              <NotificationBannerSolid
-                key={banner.source}
-                type={banner.type}
-                source={banner.source}
-                title={banner.title}
-                description={banner.description}
-                meta={banner.meta}
-              />
-            ))}
-          </div>
+        {displayedNotifications.length > 0 && (
+          <NotificationBannerStack
+            notifications={displayedNotifications}
+            onDismiss={removeNotification}
+          />
         )}
         {/* Page Header, Timeline & Tips Banners */}
         <div className="flex flex-col gap-2">
