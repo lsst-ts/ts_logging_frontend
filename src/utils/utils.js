@@ -600,33 +600,6 @@ const getBlockSourceLabel = (source) =>
     jira: "Jira",
   })[source] || source;
 
-
-/**
- * Creates an addBanner function for managing notification banners.
- * The returned function can be used to add banners to a component's state.
- *
- * @param {Function} setBanners - The state setter function for banners array.
- * @returns {Function} A function that adds a banner with the given parameters.
- */
-const createAddBanner = (setBanners) => {
-  return (type, source, title, description) => {
-    const timestamp = DateTime.utc().toFormat("yyyy-MM-dd HH:mm");
-    setBanners((prev) => [
-      ...prev,
-      {
-        type,
-        source,
-        title,
-        description,
-        meta:
-          type === "error"
-            ? `${source} - ${timestamp} UTC`
-            : `${timestamp} UTC`,
-      },
-    ]);
-  };
-};
-
 export {
   calculateEfficiency,
   calculateTimeLoss,
@@ -649,5 +622,4 @@ export {
   parseBackendVersion,
   getZephyrUrl,
   getBlockSourceLabel,
-  createAddBanner,
 };

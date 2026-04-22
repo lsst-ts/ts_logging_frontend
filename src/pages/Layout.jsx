@@ -80,7 +80,7 @@ export default function Layout({ children }) {
           instrument={instrument}
           onInstrumentChange={handleInstrumentChange}
         />
-        <main className="flex flex-col flex-1 bg-stone-800 overflow-x-hidden gap-4">
+        <main className="flex flex-col flex-1 bg-stone-800 overflow-x-hidden">
           {/* Show/Hide Sidebar toggle */}
           <SidebarToggle />
           <div className="flex flex-col gap-4 px-8">
