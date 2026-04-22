@@ -434,19 +434,6 @@ const fetchBlockDetails = async (keys, abortController) => {
   }
 };
 
-const fetchSystemNotices = async (abortController) => {
-  const url = `${backendLocation}/notices`;
-  try {
-    const data = await fetchData(url, abortController);
-    return data.notices;
-  } catch (err) {
-    if (err.name !== "AbortError") {
-      console.error("Error fetching system notices:", err);
-    }
-    throw err;
-  }
-};
-
 export {
   fetchExposures,
   fetchExpectedExposures,
@@ -455,7 +442,7 @@ export {
   fetchNightreport,
   fetchExposureFlags,
   fetchJiraTickets,
-  fetchSystemNotices,
+  // fetchSystemNotices,
   fetchDataLogEntriesFromConsDB,
   fetchDataLogEntriesFromExposureLog,
   fetchContextFeedFromRubinNights,

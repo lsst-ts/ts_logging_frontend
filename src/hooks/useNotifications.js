@@ -1,11 +1,7 @@
 import { useMemo, useState } from "react";
-import {
-  createNotification,
-  consolidateNotifications,
-  sortNotifications,
-} from "@/utils/notifications";
+import { createNotification, mergeNotifications } from "@/utils/notifications";
 
-export function useNotifications({ consolidateErrors = true } = {}) {
+export function useNotifications() {
   const [notifications, setNotifications] = useState([]);
 
   const addNotification = (notification) => {
@@ -23,12 +19,10 @@ export function useNotifications({ consolidateErrors = true } = {}) {
   };
 
   const processedNotifications = useMemo(() => {
-    const nextNotifications = consolidateErrors
-      ? consolidateNotifications(notifications)
-      : notifications;
+    const nextNotifications = mergeNotifications(notifications);
 
-    return sortNotifications(nextNotifications);
-  }, [notifications, consolidateErrors]);
+    return nextNotifications;
+  }, [notifications]);
 
   return {
     notifications,
@@ -38,3 +32,16 @@ export function useNotifications({ consolidateErrors = true } = {}) {
     clearNotifications,
   };
 }
+
+// Placeholder for system notices — to be wired up in a later PR
+// once the authoring workflow is decided.
+//
+// export function useSystemNotices() {
+//   const { addNotification, processedNotifications, removeNotification } = useNotifications();
+//
+//   useEffect(() => {
+//     // fetch from /notices, populate via addNotification
+//   }, []);
+//
+//   return { systemNotices: processedNotifications, removeNotification };
+// }

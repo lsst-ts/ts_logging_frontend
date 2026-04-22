@@ -191,7 +191,7 @@ function ContextFeed() {
             source: "almanac",
             title: "No almanac data available",
             description:
-              "Context Feed will be displayed without accompanying almanac information.",
+              "Context Feed and timeline will be displayed without accompanying almanac information.",
           });
         } else {
           const { twilightValues } = prepareAlmanacData(almanac);
@@ -223,7 +223,7 @@ function ContextFeed() {
             source: "context-feed",
             title: "No Context Feed entries found",
             description:
-              "The selected date range contains no context feed entries.",
+              "The table and the timeline will be empty, but you can still view the almanac data (if available).",
           });
         }
 
@@ -336,7 +336,8 @@ function ContextFeed() {
     [contextFeedTableData, selectedTimeRange],
   );
 
-  const displayedNotifications = processedNotifications;
+  const allLoaded = !almanacLoading && !contextFeedLoading;
+  const displayedNotifications = allLoaded ? processedNotifications : [];
 
   const timelineData = useMemo(() => {
     const activeLabels =

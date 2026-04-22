@@ -89,7 +89,7 @@ function Plots() {
     addNotification,
     removeNotification,
     clearNotifications,
-  } = useNotifications({ consolidateErrors: false });
+  } = useNotifications();
 
   // Visibility toggles
   const [timelineVisible, setTimelineVisible] = useState(true);
@@ -119,8 +119,6 @@ function Plots() {
       (entry) => entry.obs_start_millis >= s && entry.obs_start_millis <= e,
     ).length;
   }, [dataLogEntries, selectedTimeRange]);
-
-  const displayedNotifications = processedNotifications;
 
   function prepareExposureData(dataLog) {
     // Prepare data for plots
@@ -202,8 +200,9 @@ function Plots() {
           addNotification({
             type: "noData",
             source: "plots",
-            title: "No exposure entries found",
-            description: "No exposures were found for the selected date range.",
+            title: "No exposure entries found in ConsDB",
+            description:
+              "Plots will not be displayed. Try a different date range.",
           });
         } else {
           prepareExposureData(dataLog);
@@ -310,6 +309,7 @@ function Plots() {
   ]);
 
   const loading = dataLogLoading || almanacLoading;
+  const displayedNotifications = loading ? [] : processedNotifications;
 
   // Temporary display message for AuxTel queries
   if (telescope === "AuxTel") {

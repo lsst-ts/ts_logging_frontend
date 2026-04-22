@@ -151,7 +151,7 @@ export default function Digest() {
             addNotification({
               type: "noData",
               source: "exposures",
-              title: "No exposure entries found",
+              title: "No exposure entries found in ConsDB",
               description:
                 "Parts of the dashboard that depend on exposure data will appear empty. Try a different date range.",
             });
@@ -434,6 +434,9 @@ export default function Digest() {
     !flagsLoading &&
     !visitMapLoading;
 
+  // processedNotifications recomputes incrementally as fetches settle.
+  // Withhold banners until all fetches are done to avoid showing
+  // intermediate or contradictory states mid-load.
   const displayedNotifications = allLoaded ? processedNotifications : [];
 
   return (
