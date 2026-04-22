@@ -3,7 +3,6 @@ import { useEffect, useState, useMemo } from "react";
 import { useSearch } from "@tanstack/react-router";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import { Toaster } from "@/components/ui/sonner";
 
 import { TELESCOPES } from "@/components/Parameters";
 
@@ -35,7 +34,7 @@ function VisitMaps() {
     addNotification,
     removeNotification,
     clearNotifications,
-  } = useNotifications({ consolidateErrors: false });
+  } = useNotifications();
 
   function getDayObsBetween(startDayObs, endDayObs) {
     const format = "yyyyLLdd";
@@ -100,7 +99,7 @@ function VisitMaps() {
 
   return (
     <>
-      <div className="flex flex-col w-full px-8 pb-8 gap-4">
+      <div className="flex flex-col w-full p-8 gap-6">
         {processedNotifications?.length > 0 && (
           <NotificationBannerStack
             notifications={processedNotifications}
@@ -309,7 +308,6 @@ function VisitMaps() {
           )}
         </div>
       </div>
-      <Toaster expand={true} richColors closeButton />
     </>
   );
 }

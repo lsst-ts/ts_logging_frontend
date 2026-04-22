@@ -1,6 +1,5 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 
-import { Toaster } from "@/components/ui/sonner";
 import { useSearch } from "@tanstack/react-router";
 
 import { NotificationBannerStack } from "@/components/NotificationBannerStack";
@@ -105,7 +104,7 @@ function ContextFeed() {
     addNotification,
     removeNotification,
     clearNotifications,
-  } = useNotifications({ consolidateErrors: false });
+  } = useNotifications();
 
   // Default event type filters based on telescope
   const defaultEventTypes = filterDefaultEventsByTelescope(telescope);
@@ -232,14 +231,16 @@ function ContextFeed() {
       .catch((err) => {
         // If the error is not caused by the fetch being aborted
         // then notify the error.
+        console.error(
+          "Error fetching Context Feed data from Rubin Nights",
+          err,
+        );
         if (!abortController.signal.aborted) {
           addNotification({
             type: "error",
             source: "context-feed",
             title: "Error fetching Context Feed data",
-            description:
-              err?.message ||
-              "An error occurred while fetching context feed data.",
+            description: "An error occurred while fetching context feed data.",
           });
         }
       })
@@ -283,14 +284,18 @@ function ContextFeed() {
         // Handle partial errors (one of Zephyr/Jira failing)
         if (blocks.errors) {
           Object.entries(blocks.errors).forEach(([source, message]) => {
-            toast.error(
+            addNotification({
+              type: "error",
+              source: `${getBlockSourceLabel(source)}`,
+              title: "Error fetching BLOCK descriptions",
+              description:
+                "An error occurred while fetching context feed data.",
+            });
+            console.error(
               `Error fetching BLOCK descriptions from ${getBlockSourceLabel(
                 source,
               )}`,
-              {
-                description: message,
-                duration: Infinity,
-              },
+              message,
             );
           });
         }
@@ -298,10 +303,16 @@ function ContextFeed() {
       .catch((err) => {
         if (!abortController.signal.aborted) {
           setBlockLookup({});
-          const msg = err?.message;
-          toast.error("Error fetching BLOCK descriptions from Zephyr/Jira", {
-            description: msg,
-            duration: Infinity,
+          console.error(
+            "Error fetching BLOCK descriptions from Zephyr/Jira",
+            err,
+          );
+          addNotification({
+            type: "error",
+            source: "block-lookup",
+            title: "Error fetching BLOCK descriptions",
+            description:
+              "An error occurred while fetching BLOCK descriptions from Zephyr/Jira.",
           });
         }
       })
@@ -336,8 +347,7 @@ function ContextFeed() {
     [contextFeedTableData, selectedTimeRange],
   );
 
-  const allLoaded = !almanacLoading && !contextFeedLoading;
-  const displayedNotifications = allLoaded ? processedNotifications : [];
+  const displayedNotifications = tableLoading ? [] : processedNotifications;
 
   const timelineData = useMemo(() => {
     const activeLabels =
@@ -536,7 +546,6 @@ function ContextFeed() {
         />
       </div>
       {/* Error / warning / info message pop-ups */}
-      <Toaster expand={true} richColors closeButton />
     </>
   );
 }

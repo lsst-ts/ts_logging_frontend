@@ -442,7 +442,6 @@ export {
   fetchNightreport,
   fetchExposureFlags,
   fetchJiraTickets,
-  // fetchSystemNotices,
   fetchDataLogEntriesFromConsDB,
   fetchDataLogEntriesFromExposureLog,
   fetchContextFeedFromRubinNights,

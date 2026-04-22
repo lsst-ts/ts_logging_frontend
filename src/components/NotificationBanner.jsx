@@ -35,17 +35,6 @@ const config = {
     meta: "text-red-400",
     dismiss: "",
   },
-  // systemicError: {
-  //   dismissible: false,
-  //   icon: "!",
-  //   container:
-  //     "bg-red-950/60 border-l-red-500 border-t-red-950 border-r-red-950 border-b-red-950",
-  //   icon_style: "bg-red-900 border-red-500 text-red-300",
-  //   title: "text-red-200",
-  //   description: "text-red-300",
-  //   meta: "text-red-400",
-  //   dismiss: "",
-  // },
 };
 
 export function NotificationBanner({
@@ -55,9 +44,6 @@ export function NotificationBanner({
   meta,
   onDismiss,
 }) {
-  // const [visible, setVisible] = useState(true);
-  // if (!visible) return null;
-
   const c = config[type];
   if (!c) return null;
 
