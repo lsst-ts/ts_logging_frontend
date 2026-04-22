@@ -1,8 +1,10 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 
-import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { useSearch } from "@tanstack/react-router";
+
+import { NotificationBannerStack } from "@/components/NotificationBannerStack";
+import { useNotifications } from "@/hooks/useNotifications";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -98,6 +100,13 @@ function ContextFeed() {
   const [timelineVisible, setTimelineVisible] = useState(true);
   const [tipsVisible, setTipsVisible] = useState(false);
 
+  const {
+    processedNotifications,
+    addNotification,
+    removeNotification,
+    clearNotifications,
+  } = useNotifications({ consolidateErrors: false });
+
   // Default event type filters based on telescope
   const defaultEventTypes = filterDefaultEventsByTelescope(telescope);
 
@@ -172,13 +181,18 @@ function ContextFeed() {
 
     setRubinNightsDataLoading(true);
     setAlmanacLoading(true);
+    clearNotifications();
 
     fetchAlmanac(startDayobs, queryEndDayobs, abortController)
       .then((almanac) => {
         if (almanac === null) {
-          toast.warning(
-            "No almanac data available. Context Feed will be displayed without accompanying almanac information.",
-          );
+          addNotification({
+            type: "noData",
+            source: "almanac",
+            title: "No almanac data available",
+            description:
+              "Context Feed will be displayed without accompanying almanac information.",
+          });
         } else {
           const { twilightValues } = prepareAlmanacData(almanac);
           setTwilightValues(twilightValues);
@@ -186,9 +200,12 @@ function ContextFeed() {
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          toast.error("Error fetching almanac!", {
-            description: err?.message,
-            duration: Infinity,
+          console.error("Error fetching almanac data:", err);
+          addNotification({
+            type: "error",
+            source: "almanac",
+            title: "Error fetching almanac",
+            description: "An error occurred while fetching almanac.",
           });
         }
       })
@@ -201,19 +218,28 @@ function ContextFeed() {
     fetchContextFeedFromRubinNights(startDayobs, endDayobs, abortController)
       .then(([data]) => {
         if (data.length === 0) {
-          toast.warning("No Context Feed entries found in the date range.");
+          addNotification({
+            type: "noData",
+            source: "context-feed",
+            title: "No Context Feed entries found",
+            description:
+              "The selected date range contains no context feed entries.",
+          });
         }
 
         setRubinNightsData(data);
       })
       .catch((err) => {
         // If the error is not caused by the fetch being aborted
-        // then toast the error message.
+        // then notify the error.
         if (!abortController.signal.aborted) {
-          const msg = err?.message;
-          toast.error("Error fetching Context Feed data from Rubin-nights!", {
-            description: msg,
-            duration: Infinity,
+          addNotification({
+            type: "error",
+            source: "context-feed",
+            title: "Error fetching Context Feed data",
+            description:
+              err?.message ||
+              "An error occurred while fetching context feed data.",
           });
         }
       })
@@ -310,6 +336,8 @@ function ContextFeed() {
     [contextFeedTableData, selectedTimeRange],
   );
 
+  const displayedNotifications = processedNotifications;
+
   const timelineData = useMemo(() => {
     const activeLabels =
       columnFilters.find((f) => f.id === "event_type")?.value ?? [];
@@ -330,6 +358,12 @@ function ContextFeed() {
   return (
     <>
       <div className="flex flex-col w-full h-screen px-8 pb-8 gap-4">
+        {displayedNotifications.length > 0 && (
+          <NotificationBannerStack
+            notifications={displayedNotifications}
+            onDismiss={removeNotification}
+          />
+        )}
         {/* Page Header, Timeline & Tips Banners */}
         <div className="flex flex-col gap-2">
           {/* Page title + buttons */}

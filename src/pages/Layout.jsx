@@ -136,6 +136,7 @@ export default function Layout({ children }) {
         <main className="flex flex-col flex-1 bg-stone-800 overflow-x-hidden gap-4">
           {/* Show/Hide Sidebar toggle */}
           <SidebarToggle />
+          {/* <div className="flex flex-col gap-4 px-8"> */}
           <div className="flex flex-col gap-4 px-8 pt-8">
             <RetentionBanner />
             {systemNotices.length > 0 && (

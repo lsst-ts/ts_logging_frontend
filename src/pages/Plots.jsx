@@ -1,10 +1,11 @@
 import { useEffect, useState, useMemo } from "react";
 
-import { toast } from "sonner";
 import { useSearch } from "@tanstack/react-router";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Toaster } from "@/components/ui/sonner";
+import { NotificationBannerStack } from "@/components/NotificationBannerStack";
+import { useNotifications } from "@/hooks/useNotifications";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -83,6 +84,13 @@ function Plots() {
   const { selectedTimeRange, setSelectedTimeRange, fullTimeRange } =
     useTimeRangeFromURL("/plots");
 
+  const {
+    processedNotifications,
+    addNotification,
+    removeNotification,
+    clearNotifications,
+  } = useNotifications({ consolidateErrors: false });
+
   // Visibility toggles
   const [timelineVisible, setTimelineVisible] = useState(true);
   const [tipsVisible, setTipsVisible] = useState(false);
@@ -111,6 +119,8 @@ function Plots() {
       (entry) => entry.obs_start_millis >= s && entry.obs_start_millis <= e,
     ).length;
   }, [dataLogEntries, selectedTimeRange]);
+
+  const displayedNotifications = processedNotifications;
 
   function prepareExposureData(dataLog) {
     // Prepare data for plots
@@ -176,6 +186,7 @@ function Plots() {
 
     setDataLogLoading(true);
     setAlmanacLoading(true);
+    clearNotifications();
 
     resetState();
 
@@ -188,18 +199,23 @@ function Plots() {
       .then((consDBData) => {
         const dataLog = consDBData.data_log ?? [];
         if (dataLog.length === 0) {
-          toast.warning(
-            "No data log records found in ConsDB for the selected date range.",
-          );
+          addNotification({
+            type: "noData",
+            source: "plots",
+            title: "No exposure entries found",
+            description: "No exposures were found for the selected date range.",
+          });
         } else {
           prepareExposureData(dataLog);
         }
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          toast.error("Error fetching data log!", {
+          addNotification({
+            type: "error",
+            source: "data-log",
+            title: "Error fetching data log",
             description: err?.message || "Unknown error",
-            duration: Infinity,
           });
         }
       })
@@ -212,9 +228,13 @@ function Plots() {
     fetchAlmanac(startDayobs, queryEndDayobs, abortController)
       .then((almanac) => {
         if (almanac === null) {
-          toast.warning(
-            "No almanac data available. Plots will be displayed without accompanying almanac information.",
-          );
+          addNotification({
+            type: "noData",
+            source: "almanac",
+            title: "No almanac data available",
+            description:
+              "Plots will be displayed without accompanying almanac information.",
+          });
         } else {
           const { twilightValues, illumValues, moonValues } =
             prepareAlmanacData(almanac);
@@ -225,9 +245,12 @@ function Plots() {
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          toast.error("Error fetching almanac!", {
-            description: err?.message,
-            duration: Infinity,
+          addNotification({
+            type: "error",
+            source: "almanac",
+            title: "Error fetching almanac",
+            description:
+              err?.message || "An error occurred while fetching almanac.",
           });
         }
       })
@@ -308,6 +331,12 @@ function Plots() {
   return (
     <>
       <div className="flex flex-col h-screen w-full px-8 pb-8 gap-4">
+        {displayedNotifications.length > 0 && (
+          <NotificationBannerStack
+            notifications={displayedNotifications}
+            onDismiss={removeNotification}
+          />
+        )}
         {/* Page Header, Timeline & Tips Banners */}
         <div className="flex flex-col gap-2">
           {/* Page title + buttons */}
