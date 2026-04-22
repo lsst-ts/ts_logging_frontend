@@ -154,7 +154,7 @@ function DataLog() {
           addNotification({
             type: "noData",
             source: "data-log",
-            title: "No data log entries found",
+            title: "No exposure entries found in ConsDB",
             description:
               "Table and timeline will appear empty. Try a different date range.",
           });
@@ -209,6 +209,9 @@ function DataLog() {
     // Fetch almanac data for timeline
     fetchAlmanac(startDayobs, queryEndDayobs, abortController)
       .then((almanac) => {
+        // when does this happen? if the date range is in the future and almanac data is not yet available?
+        // should we show a different message for that case?
+        // should we differentiate between no data vs error fetching data for almanac?
         if (almanac === null) {
           toast.warning(
             "No almanac data available. Timeline will be displayed without accompanying almanac information.",

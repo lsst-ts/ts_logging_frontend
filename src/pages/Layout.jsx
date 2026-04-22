@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { DateTime } from "luxon";
 import { Outlet, useRouter, useSearch } from "@tanstack/react-router";
 
@@ -7,10 +7,8 @@ import { SidebarToggle } from "@/components/SidebarToggle.jsx";
 import { AppSidebar } from "@/components/AppSidebar.jsx";
 import { TELESCOPES } from "@/components/Parameters";
 import { getKeyByValue } from "@/utils/utils";
-import { dayObsIntToDateTime, isoToUTC } from "@/utils/timeUtils";
+import { dayObsIntToDateTime } from "@/utils/timeUtils";
 import RetentionBanner from "@/components/RetentionBanner";
-import { fetchSystemNotices } from "@/utils/fetchUtils";
-import { NotificationBannerSolid } from "@/components/NotificationBannerSolid";
 
 export default function Layout({ children }) {
   const router = useRouter();
@@ -38,11 +36,6 @@ export default function Layout({ children }) {
   const [instrument, setInstrument] = useState(
     telescope ? TELESCOPES[telescope] : "LSSTCam",
   );
-
-  const [systemNotices, setSystemNotices] = useState([]);
-
-  const CACHE_KEY = "systemNoticesCache";
-  const CACHE_DURATION = 60 * 60 * 1000; // 1 hour in ms
 
   const setDayObsRange = (start, end) => {
     setQuery("startDayobs", parseInt(start));
@@ -76,52 +69,6 @@ export default function Layout({ children }) {
     setQuery("telescope", getKeyByValue(TELESCOPES, inst));
   };
 
-  useEffect(() => {
-    const abortController = new AbortController();
-    setSystemNotices([]);
-
-    // Check cache
-    const cachedData = localStorage.getItem(CACHE_KEY);
-    const now = Date.now();
-
-    if (cachedData) {
-      try {
-        const { notices, timestamp } = JSON.parse(cachedData);
-        if (notices && timestamp && now - timestamp < CACHE_DURATION) {
-          console.log("Using cached system notices");
-          setSystemNotices(notices);
-          return; // Skip fetch
-        }
-      } catch {
-        console.warn("Invalid cache data, fetching fresh notices");
-      }
-    }
-
-    // Fetch if no valid cache
-    fetchSystemNotices(abortController)
-      .then((notices) => {
-        console.log("Fetched system notices:", notices);
-        setSystemNotices(notices);
-        // Cache the result
-        const cacheData = { notices, timestamp: now };
-        localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
-      })
-      .catch((error) => {
-        if (error.name !== "AbortError") {
-          console.error("Error fetching system notices:", error);
-          // Optionally, fall back to cached notices if fetch fails
-          if (cachedData) {
-            try {
-              const { notices } = JSON.parse(cachedData);
-              if (notices) setSystemNotices(notices);
-            } catch {
-              console.warn("Could not parse cached data");
-            }
-          }
-        }
-      });
-  }, []);
-
   return (
     <>
       <SidebarProvider>
@@ -136,24 +83,11 @@ export default function Layout({ children }) {
         <main className="flex flex-col flex-1 bg-stone-800 overflow-x-hidden gap-4">
           {/* Show/Hide Sidebar toggle */}
           <SidebarToggle />
-          {/* <div className="flex flex-col gap-4 px-8"> */}
-          <div className="flex flex-col gap-4 px-8 pt-8">
+          <div className="flex flex-col gap-4 px-8">
             <RetentionBanner />
-            {systemNotices.length > 0 && (
-              <div className="flex flex-col gap-4">
-                {systemNotices.map((notice) => (
-                  <NotificationBannerSolid
-                    key={notice.id}
-                    type="systemNotice"
-                    title={notice.title}
-                    description={notice.description}
-                    meta={`${notice.meta} . posted ${isoToUTC(
-                      notice.created_at,
-                    ).toFormat("yyyy-MM-dd HH:mm")} UTC`}
-                  />
-                ))}
-              </div>
-            )}
+            {/* System notices — deferred, see JIRA-XXX
+              Hook placeholder: hooks/useNotifications.js
+              Creation workflow to be decided before implementation */}
           </div>
           {children}
           {/* Main content */}

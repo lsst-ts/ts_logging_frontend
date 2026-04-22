@@ -27,7 +27,6 @@ services:
       - EXTERNAL_INSTANCE_URL=${EXTERNAL_INSTANCE_URL}
       - RUBIN_SIM_DATA_DIR=/home/saluser/develop/rubin_sim_data # Rubin SIM data
       - LSST_DISABLE_BUCKET_VALIDATION=${LSST_DISABLE_BUCKET_VALIDATION}
-      - NOTICES_PATH=${NOTICES_PATH}
 
     ports:
       - "8080:8080"
