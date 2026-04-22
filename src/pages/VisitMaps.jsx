@@ -65,6 +65,15 @@ function VisitMaps() {
 
     fetchVisitMaps(startDayobs, queryEndDayobs, instrument, abortController)
       .then((interactivePlot) => {
+        if (interactivePlot === null) {
+          addNotification({
+            type: "noData",
+            source: "visit-maps",
+            title: "No visit entries found in ConsDB",
+            description:
+              "Visit maps couldn't be generated for the selected date range.",
+          });
+        }
         setInteractiveMap(interactivePlot);
       })
       .catch((err) => {
@@ -92,7 +101,7 @@ function VisitMaps() {
   return (
     <>
       <div className="flex flex-col w-full px-8 pb-8 gap-4">
-        {processedNotifications.length > 0 && (
+        {processedNotifications?.length > 0 && (
           <NotificationBannerStack
             notifications={processedNotifications}
             onDismiss={removeNotification}

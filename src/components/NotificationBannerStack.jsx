@@ -1,4 +1,4 @@
-import { NotificationBannerSolid } from "@/components/NotificationBannerSolid";
+import { NotificationBanner } from "@/components/NotificationBanner";
 
 export function NotificationBannerStack({ notifications, onDismiss }) {
   const items = notifications ?? [];
@@ -6,7 +6,7 @@ export function NotificationBannerStack({ notifications, onDismiss }) {
   return (
     <div className="flex flex-col gap-4">
       {items.map((banner) => (
-        <NotificationBannerSolid
+        <NotificationBanner
           key={banner.id || banner.source}
           type={banner.type}
           source={banner.source}

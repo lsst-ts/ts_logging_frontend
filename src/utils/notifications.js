@@ -1,13 +1,11 @@
 import { DateTime } from "luxon";
 
-export const NOTIFICATION_ORDER = [
-  "maintenance",
-  "noData",
-  "error",
-  "systemicError",
-];
+// export const NOTIFICATION_ORDER = [
+//   "noData",
+//   "error",
+// ];
 
-export const ERROR_CONSOLIDATION_THRESHOLD = 1;
+// export const ERROR_CONSOLIDATION_THRESHOLD = 1;
 
 const makeNotificationId = ({ id, source }) =>
   id ||
@@ -25,14 +23,14 @@ export const createNotification = ({
   timestamp,
 }) => {
   const time = timestamp ?? DateTime.utc().toFormat("yyyy-MM-dd HH:mm");
-  const normalizedSource = source ?? "unknown";
+  // const normalizedSource = source ?? "unknown";
   const defaultMeta =
-    type === "error" ? `${normalizedSource} - ${time} UTC` : `${time} UTC`;
+    type === "error" ? `${source} - ${time} UTC` : `${time} UTC`;
 
   return {
-    id: makeNotificationId({ id, source: normalizedSource }),
+    id: makeNotificationId({ id, source }),
     type,
-    source: normalizedSource,
+    source,
     title,
     description,
     meta: meta ?? defaultMeta,
@@ -40,33 +38,32 @@ export const createNotification = ({
   };
 };
 
-export const sortNotifications = (notifications) => {
-  const orderMap = Object.fromEntries(
-    NOTIFICATION_ORDER.map((type, index) => [type, index]),
-  );
-  return [...notifications].sort((a, b) => {
-    const aOrder = orderMap[a.type] ?? NOTIFICATION_ORDER.length;
-    const bOrder = orderMap[b.type] ?? NOTIFICATION_ORDER.length;
-    return aOrder - bOrder;
-  });
-};
+// export const sortNotifications = (notifications) => {
 
-export const consolidateNotifications = (notifications) => {
+//   const orderMap = Object.fromEntries(
+//     NOTIFICATION_ORDER.map((type, index) => [type, index]),
+//   );
+//   return [...notifications].sort((a, b) => {
+//     const aOrder = orderMap[a.type] ?? NOTIFICATION_ORDER.length;
+//     const bOrder = orderMap[b.type] ?? NOTIFICATION_ORDER.length;
+//     return aOrder - bOrder;
+//   });
+// };
+
+export const mergeNotifications = (notifications) => {
   const errorNotifications = notifications.filter((n) => n.type === "error");
-  if (errorNotifications.length <= ERROR_CONSOLIDATION_THRESHOLD) {
-    return notifications;
-  }
+  const rest = notifications.filter((n) => n.type !== "error");
+
+  if (errorNotifications.length === 0) return notifications;
 
   const failedSources = errorNotifications.map((n) => n.source);
-  const systemicNotification = createNotification({
-    type: "systemicError",
-    source: "systemic",
-    title: "Several data sources are unavailable",
-    description: `${errorNotifications.length} sources failed to respond. Data may be incomplete.`,
+  const mergedErrorNotification = createNotification({
+    type: "error",
+    source: "multiple",
+    title: "One or more data sources are unavailable",
+    description: `${errorNotifications.length} source(s) failed to respond. Data may be incomplete.`,
     meta: failedSources.join(" . "),
   });
 
-  return notifications
-    .filter((n) => n.type !== "error")
-    .concat(systemicNotification);
+  return [...rest, mergedErrorNotification];
 };
