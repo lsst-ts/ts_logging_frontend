@@ -26,7 +26,6 @@ import {
   calculateTimeLoss,
   calculateSumExpTimeBetweenTwilights,
   getBlockSourceLabel,
-  createAddBanner,
 } from "@/utils/utils";
 import { getDayobsStartUTC } from "@/utils/timeUtils";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -78,9 +77,6 @@ export default function Digest() {
   const [visitMapLoading, setVisitMapLoading] = useState(false);
 
   const [blockLookup, setBlockLookup] = useState({});
-
-  const [banners, setBanners] = useState([]);
-  const addBanner = createAddBanner(setBanners);
 
   const {
     processedNotifications,
@@ -362,24 +358,34 @@ export default function Digest() {
         // Handle partial errors (one of Zephyr/Jira failing)
         if (blocks.errors) {
           Object.entries(blocks.errors).forEach(([source, message]) => {
-            toast.error(
+            addNotification({
+              type: "error",
+              source: `${getBlockSourceLabel(source)}`,
+              title: "Error fetching BLOCK descriptions",
+              description:
+                "An error occurred while fetching context feed data.",
+            });
+            console.error(
               `Error fetching BLOCK descriptions from ${getBlockSourceLabel(
                 source,
               )}`,
-              {
-                description: message,
-                duration: Infinity,
-              },
+              message,
             );
           });
         }
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          const msg = err?.message;
-          toast.error("Error fetching BLOCK descriptions from Zephyr/Jira", {
-            description: msg,
-            duration: Infinity,
+          console.error(
+            "Error fetching BLOCK descriptions from Zephyr/Jira",
+            err,
+          );
+          addNotification({
+            type: "error",
+            source: "block-lookup",
+            title: "Error fetching BLOCK descriptions",
+            description:
+              "An error occurred while fetching BLOCK descriptions from Zephyr/Jira.",
           });
         }
       });
@@ -435,7 +441,7 @@ export default function Digest() {
 
   return (
     <>
-      <div className="flex flex-col w-full px-8 pb-8 gap-4">
+      <div className="flex flex-col w-full p-8 gap-6">
         {displayedNotifications.length > 0 && (
           <NotificationBannerStack
             notifications={displayedNotifications}

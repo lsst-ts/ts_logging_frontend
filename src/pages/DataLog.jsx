@@ -25,14 +25,8 @@ import {
   fetchAlmanac,
   fetchBlockDetails,
 } from "@/utils/fetchUtils";
-import { getDayobsStartUTC } from "@/utils/timeUtils";
 import { mergeAllDataLogSources, getBlockSourceLabel } from "@/utils/utils";
-import {
-  mergeDataLogSources,
-  DEFAULT_PIXEL_SCALE_MEDIAN,
-  PSF_SIGMA_FACTOR,
-} from "@/utils/utils";
-import { isoToTAI, getDayobsStartUTC } from "@/utils/timeUtils";
+import { getDayobsStartUTC } from "@/utils/timeUtils";
 import { useNotifications } from "@/hooks/useNotifications";
 import { NotificationBannerStack } from "@/components/NotificationBannerStack";
 import {
@@ -100,7 +94,7 @@ function DataLog() {
     addNotification,
     removeNotification,
     clearNotifications,
-  } = useNotifications({ consolidateErrors: false });
+  } = useNotifications();
 
   // Calculate moon intervals when moon values or full time range changes
   useEffect(() => {
@@ -127,86 +121,9 @@ function DataLog() {
     setTwilightValues([]);
     setIllumValues([]);
     setMoonValues([]);
-
-    // Reset notifications
     clearNotifications();
     toast.dismiss();
 
-    // Fetch data from both sources
-    Promise.all([
-      fetchDataLogEntriesFromConsDB(
-        startDayobs,
-        queryEndDayobs,
-        instrument,
-        abortController,
-      ),
-      fetchDataLogEntriesFromExposureLog(
-        startDayobs,
-        queryEndDayobs,
-        instrument,
-        abortController,
-      ),
-    ])
-      .then(([consDBData, exposureLogData]) => {
-        const dataLog = consDBData.data_log ?? [];
-
-        if (dataLog.length === 0) {
-          addNotification({
-            type: "noData",
-            source: "data-log",
-            title: "No exposure entries found in ConsDB",
-            description:
-              "Table and timeline will appear empty. Try a different date range.",
-          });
-        }
-
-        // Merge the two data sources
-        // and apply conversion to required row(s)
-        const mergedData = mergeDataLogSources(dataLog, exposureLogData)
-          .map((entry) => {
-            const psfSigma = Number.parseFloat(entry.psf_sigma_median);
-            const pixelScale = Number.isFinite(entry.pixel_scale_median)
-              ? entry.pixel_scale_median
-              : DEFAULT_PIXEL_SCALE_MEDIAN;
-            const psf_median = Number.isFinite(psfSigma)
-              ? psfSigma * PSF_SIGMA_FACTOR * pixelScale
-              : null;
-
-            // Add obs_start_millis for timeline
-            const obsStartDt = isoToTAI(entry.obs_start);
-
-            return {
-              ...entry,
-              psf_median,
-              obs_start_millis: obsStartDt.toMillis(),
-            };
-          })
-          .sort((a, b) => Number(b["exposure_id"]) - Number(a["exposure_id"]));
-
-        // Set the merged data to state
-        setDataLogEntries(mergedData);
-        setDataLogLoading(false);
-      })
-      .catch((err) => {
-        if (!abortController.signal.aborted) {
-          console.error("Error fetching data log entries:", err);
-          addNotification({
-            type: "error",
-            source: "data-log",
-            title: "Data log data unavailable",
-            description: "Error fetching exposure log or data log",
-          });
-
-          setDataLogEntries([]);
-        }
-      })
-      .finally(() => {
-        if (!abortController.signal.aborted) {
-          setDataLogLoading(false);
-        }
-      });
-
-    // Fetch almanac data for timeline
     fetchAlmanac(startDayobs, queryEndDayobs, abortController)
       .then((almanac) => {
         // when does this happen? if the date range is in the future and almanac data is not yet available?
@@ -263,9 +180,13 @@ function DataLog() {
       .then((consDBData) => {
         const dataLog = consDBData.data_log ?? [];
         if (dataLog.length === 0) {
-          toast.warning(
-            "No data log records found in ConsDB for the selected date range.",
-          );
+          addNotification({
+            type: "noData",
+            source: "data-log",
+            title: "No exposure entries found in ConsDB",
+            description:
+              "Table and timeline will appear empty. Try a different date range.",
+          });
         }
 
         setConsDBdata(dataLog);
@@ -273,10 +194,12 @@ function DataLog() {
       .catch((err) => {
         if (!abortController.signal.aborted) {
           setConsDBdata([]);
-          const msg = err?.message || "Unknown error";
-          toast.error("Error fetching data from ConsDB!", {
-            description: msg,
-            duration: Infinity,
+          console.error("Error fetching data log entries:", err);
+          addNotification({
+            type: "error",
+            source: "data-log",
+            title: "Data log data unavailable",
+            description: "Error fetching exposure log or data log",
           });
         }
       })
@@ -309,10 +232,13 @@ function DataLog() {
       .catch((err) => {
         if (!abortController.signal.aborted) {
           setExposureLogData([]);
-          const msg = err?.message || "Unknown error";
-          toast.error("Error fetching exposure log data!", {
-            description: msg,
-            duration: Infinity,
+          console.error("Error fetching exposure log entries:", err);
+          addNotification({
+            type: "error",
+            source: "exposure-log",
+            title: "Exposure log data unavailable",
+            description:
+              "Error fetching exposure log data. Flags and comments will be missing from the table.",
           });
         }
       })
@@ -353,14 +279,18 @@ function DataLog() {
         // Handle partial errors (one of Zephyr/Jira failing)
         if (blocks.errors) {
           Object.entries(blocks.errors).forEach(([source, message]) => {
-            toast.error(
+            addNotification({
+              type: "error",
+              source: `${getBlockSourceLabel(source)}`,
+              title: "Error fetching BLOCK descriptions",
+              description:
+                "An error occurred while fetching context feed data.",
+            });
+            console.error(
               `Error fetching BLOCK descriptions from ${getBlockSourceLabel(
                 source,
               )}`,
-              {
-                description: message,
-                duration: Infinity,
-              },
+              message,
             );
           });
         }
@@ -368,10 +298,16 @@ function DataLog() {
       .catch((err) => {
         if (!abortController.signal.aborted) {
           setBlockLookup({});
-          const msg = err?.message;
-          toast.error("Error fetching BLOCK lookups from Zephyr/Jira", {
-            description: msg,
-            duration: Infinity,
+          console.error(
+            "Error fetching BLOCK descriptions from Zephyr/Jira",
+            err,
+          );
+          addNotification({
+            type: "error",
+            source: "block-lookup",
+            title: "Error fetching BLOCK descriptions",
+            description:
+              "An error occurred while fetching BLOCK descriptions from Zephyr/Jira.",
           });
         }
       })
@@ -409,12 +345,13 @@ function DataLog() {
       return obsStartMillis >= startMillis && obsStartMillis <= endMillis;
     });
   }, [dataLogTableData, selectedTimeRange]);
-  const allLoaded = !almanacLoading && !dataLogLoading;
-  const displayedNotifications = allLoaded ? processedNotifications : [];
+
+  const displayedNotifications =
+    tableLoading || almanacLoading ? [] : processedNotifications;
 
   return (
     <>
-      <div className="flex flex-col h-screen w-full px-8 pb-8 gap-4">
+      <div className="flex flex-col h-screen w-full p-8 gap-6">
         {displayedNotifications.length > 0 && (
           <NotificationBannerStack
             notifications={displayedNotifications}
