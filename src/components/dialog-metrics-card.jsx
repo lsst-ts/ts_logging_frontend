@@ -1,5 +1,5 @@
 import React from "react";
-import MetricsCard from "./metrics-card";
+import MetricsCard from "./MetricsCard";
 import {
   Dialog,
   DialogClose,

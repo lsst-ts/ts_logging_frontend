@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import ExposureBreakdownApplet from "@/components/ExposureBreakdownApplet.jsx";
-import MetricsCard from "@/components/metrics-card.jsx";
+import MetricsCard from "@/components/MetricsCard.jsx";
 import VisitMapApplet from "@/components/VisitMapApplet";
 
 import { EfficiencyChart } from "@/components/ui/RadialChart.jsx";
