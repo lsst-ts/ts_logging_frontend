@@ -1,1 +1,0 @@
-Hovering a bar in the Exposure Breakdown applet now highlights the corresponding observations in the Observing Conditions applet.

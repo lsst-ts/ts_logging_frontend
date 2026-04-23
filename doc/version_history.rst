@@ -1,3 +1,19 @@
+v0.18.0-alpha.1 (2026-04-23)
+============================
+
+New Features
+------------
+
+- Hovering a bar in the Exposure Breakdown applet now highlights the corresponding observations in the Observing Conditions applet. (`OSW-1004 <https://rubinobs.atlassian.net//browse/OSW-1004>`_)
+- Introduce a new notification banner system to replace the existing toast-based alert system on all pages with a persistent notification banner component. Notification types include "noData" for when no data is found for a given query, and "error" for when errors occur during data fetching. (`OSW-1305 <https://rubinobs.atlassian.net//browse/OSW-1305>`_)
+
+
+Other Changes and Additions
+---------------------------
+
+- Strikethrough Jira tickets table rows for tickets with status equals to Done. (`OSW-649 <https://rubinobs.atlassian.net//browse/OSW-649>`_)
+
+
 v0.17.0 (2026-04-16)
 ====================
 
