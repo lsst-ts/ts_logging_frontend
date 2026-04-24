@@ -39,19 +39,27 @@ const yyyymmddRegex = /^\d{8}$/;
 
 const dayobsInt = z.coerce
   .string()
-  .regex(yyyymmddRegex, "Dayobs must be in yyyyMMdd format.")
-  .refine(
-    (val) => {
-      const y = parseInt(val.slice(0, 4));
-      const m = parseInt(val.slice(4, 6));
-      const d = parseInt(val.slice(6, 8));
-      const dt = DateTime.fromObject({ year: y, month: m, day: d });
-      return dt.isValid;
-    },
-    {
-      message: "Not a valid calendar date. Dayobs must be in yyyyMMdd format.",
-    },
-  )
+  .superRefine((val, ctx) => {
+    if (!yyyymmddRegex.test(val)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.invalid_string,
+        validation: "regex",
+        message: "Dayobs must be in yyyyMMdd format.",
+      });
+      return z.NEVER;
+    }
+    const y = parseInt(val.slice(0, 4));
+    const m = parseInt(val.slice(4, 6));
+    const d = parseInt(val.slice(6, 8));
+    const dt = DateTime.fromObject({ year: y, month: m, day: d });
+    if (!dt.isValid) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "Not a valid calendar date. Dayobs must be in yyyyMMdd format.",
+      });
+    }
+  })
   .transform((val) => parseInt(val, 10));
 
 const defaultDayObs = () =>
