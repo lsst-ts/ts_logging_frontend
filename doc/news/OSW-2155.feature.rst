@@ -1,0 +1,1 @@
+Add playwright tests to cover use cases for the data-log page
