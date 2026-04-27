@@ -382,7 +382,6 @@ const fetchBackendVersion = async (abortController) => {
  * @returns {Promise<Object>} A promise that resolves to interactive visit map data.
  * @throws {Error} Throws an error if the fetch fails or returns invalid data and the request was not aborted.
  * @param {Object} options - Optional parameters.
- * @param {boolean} options.planisphereOnly - If true, fetches only the planisphere view. Default is false.
  * @param {boolean} options.appletMode - If true, fetches data formatted for applet mode. Default is false.
  */
 const fetchVisitMaps = async (
@@ -390,9 +389,9 @@ const fetchVisitMaps = async (
   end,
   instrument,
   abortController,
-  { planisphereOnly = false, appletMode = false } = {},
+  { appletMode = false } = {},
 ) => {
-  const url = `${backendLocation}/multi-night-visit-maps?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}&planisphereOnly=${planisphereOnly}&appletMode=${appletMode}`;
+  const url = `${backendLocation}/multi-night-visit-maps?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}&appletMode=${appletMode}`;
   try {
     const data = await fetchData(url, abortController);
     if (!data) {
