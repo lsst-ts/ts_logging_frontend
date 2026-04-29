@@ -80,10 +80,15 @@ export default function Layout({ children }) {
           instrument={instrument}
           onInstrumentChange={handleInstrumentChange}
         />
-        <main className="flex-1 bg-stone-800 overflow-x-hidden">
+        <main className="flex flex-col flex-1 bg-stone-800 overflow-x-hidden">
           {/* Show/Hide Sidebar toggle */}
           <SidebarToggle />
-          <RetentionBanner />
+          <div className="flex flex-col gap-4 px-8">
+            <RetentionBanner />
+            {/* System notices — deferred, see JIRA-XXX
+              Hook placeholder: hooks/useNotifications.js
+              Creation workflow to be decided before implementation */}
+          </div>
           {children}
           {/* Main content */}
           <Outlet />

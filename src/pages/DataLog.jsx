@@ -25,8 +25,10 @@ import {
   fetchAlmanac,
   fetchBlockDetails,
 } from "@/utils/fetchUtils";
-import { getDayobsStartUTC } from "@/utils/timeUtils";
 import { mergeAllDataLogSources, getBlockSourceLabel } from "@/utils/utils";
+import { getDayobsStartUTC } from "@/utils/timeUtils";
+import { useNotifications } from "@/hooks/useNotifications";
+import { NotificationBannerStack } from "@/components/NotificationBannerStack";
 import {
   prepareAlmanacData,
   prepareMoonIntervals,
@@ -86,6 +88,14 @@ function DataLog() {
   const { selectedTimeRange, setSelectedTimeRange, fullTimeRange } =
     useTimeRangeFromURL("/data-log");
 
+  // Notification banners
+  const {
+    processedNotifications,
+    addNotification,
+    removeNotification,
+    clearNotifications,
+  } = useNotifications();
+
   // Calculate moon intervals when moon values or full time range changes
   useEffect(() => {
     const [xMinMillis, xMaxMillis] = fullTimeRange;
@@ -111,9 +121,14 @@ function DataLog() {
     setTwilightValues([]);
     setIllumValues([]);
     setMoonValues([]);
+    clearNotifications();
+    toast.dismiss();
 
     fetchAlmanac(startDayobs, queryEndDayobs, abortController)
       .then((almanac) => {
+        // when does this happen? if the date range is in the future and almanac data is not yet available?
+        // should we show a different message for that case?
+        // should we differentiate between no data vs error fetching data for almanac?
         if (almanac === null) {
           toast.warning(
             "No almanac data available. Timeline will be displayed without accompanying almanac information.",
@@ -128,9 +143,13 @@ function DataLog() {
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          toast.error("Error fetching almanac!", {
-            description: err?.message,
-            duration: Infinity,
+          console.error("Error fetching almanac:", err);
+          addNotification({
+            type: "error",
+            source: "almanac",
+            title: "Almanac data unavailable",
+            description:
+              "An error occurred while fetching almanac. Timeline will be displayed without accompanying almanac information.",
           });
         }
       })
@@ -161,9 +180,13 @@ function DataLog() {
       .then((consDBData) => {
         const dataLog = consDBData.data_log ?? [];
         if (dataLog.length === 0) {
-          toast.warning(
-            "No data log records found in ConsDB for the selected date range.",
-          );
+          addNotification({
+            type: "noData",
+            source: "data-log",
+            title: "No exposure entries found in ConsDB",
+            description:
+              "Table and timeline will appear empty. Try a different date range.",
+          });
         }
 
         setConsDBdata(dataLog);
@@ -171,10 +194,12 @@ function DataLog() {
       .catch((err) => {
         if (!abortController.signal.aborted) {
           setConsDBdata([]);
-          const msg = err?.message || "Unknown error";
-          toast.error("Error fetching data from ConsDB!", {
-            description: msg,
-            duration: Infinity,
+          console.error("Error fetching data log entries:", err);
+          addNotification({
+            type: "error",
+            source: "data-log",
+            title: "Data log data unavailable",
+            description: "Error fetching exposure log or data log",
           });
         }
       })
@@ -207,10 +232,13 @@ function DataLog() {
       .catch((err) => {
         if (!abortController.signal.aborted) {
           setExposureLogData([]);
-          const msg = err?.message || "Unknown error";
-          toast.error("Error fetching exposure log data!", {
-            description: msg,
-            duration: Infinity,
+          console.error("Error fetching exposure log entries:", err);
+          addNotification({
+            type: "error",
+            source: "exposure-log",
+            title: "Exposure log data unavailable",
+            description:
+              "Error fetching exposure log data. Flags and comments will be missing from the table.",
           });
         }
       })
@@ -251,14 +279,18 @@ function DataLog() {
         // Handle partial errors (one of Zephyr/Jira failing)
         if (blocks.errors) {
           Object.entries(blocks.errors).forEach(([source, message]) => {
-            toast.error(
+            addNotification({
+              type: "error",
+              source: `${getBlockSourceLabel(source)}`,
+              title: "Error fetching BLOCK descriptions",
+              description:
+                "An error occurred while fetching context feed data.",
+            });
+            console.error(
               `Error fetching BLOCK descriptions from ${getBlockSourceLabel(
                 source,
               )}`,
-              {
-                description: message,
-                duration: Infinity,
-              },
+              message,
             );
           });
         }
@@ -266,10 +298,16 @@ function DataLog() {
       .catch((err) => {
         if (!abortController.signal.aborted) {
           setBlockLookup({});
-          const msg = err?.message;
-          toast.error("Error fetching BLOCK lookups from Zephyr/Jira", {
-            description: msg,
-            duration: Infinity,
+          console.error(
+            "Error fetching BLOCK descriptions from Zephyr/Jira",
+            err,
+          );
+          addNotification({
+            type: "error",
+            source: "block-lookup",
+            title: "Error fetching BLOCK descriptions",
+            description:
+              "An error occurred while fetching BLOCK descriptions from Zephyr/Jira.",
           });
         }
       })
@@ -308,9 +346,18 @@ function DataLog() {
     });
   }, [dataLogTableData, selectedTimeRange]);
 
+  const displayedNotifications =
+    tableLoading || almanacLoading ? [] : processedNotifications;
+
   return (
     <>
-      <div className="flex flex-col h-screen w-full p-8 gap-4">
+      <div className="flex flex-col h-screen w-full p-8 gap-6">
+        {displayedNotifications.length > 0 && (
+          <NotificationBannerStack
+            notifications={displayedNotifications}
+            onDismiss={removeNotification}
+          />
+        )}
         {/* Page Header, Timeline & Tips Banners */}
         <div className="flex flex-col gap-2">
           {/* Page title + buttons */}
