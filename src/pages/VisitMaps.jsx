@@ -10,8 +10,10 @@ import { TELESCOPES } from "@/components/Parameters";
 import PageHeader from "@/components/PageHeader";
 import TipsCard from "@/components/TipsCard";
 import DownloadIcon from "../assets/DownloadIcon.svg";
+import { VISIT_SHAPE, VISIT_SHAPE_INNER } from "@/components/PLOT_DEFINITIONS";
 
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
   Popover,
   PopoverTrigger,
@@ -39,7 +41,7 @@ function VisitMaps() {
 
   const [interactiveMap, setInteractiveMap] = useState(null);
   const [visitMapsLoading, setVisitMapsLoading] = useState(false);
-  const [tipsVisible, setTipsVisible] = useState(false);
+  const [guideVisible, setGuideVisible] = useState(false);
 
   function getDayObsBetween(startDayObs, endDayObs) {
     const format = "yyyyLLdd";
@@ -92,12 +94,12 @@ function VisitMaps() {
   return (
     <>
       <div className="flex flex-col w-full p-8 gap-4">
-        {/* Page Header & Tips Banners */}
+        {/* Page Header, legend and collapsible guide */}
         <div className="flex flex-col gap-2">
           {/* Page title + buttons */}
           <PageHeader
-            title="Visit maps"
-            description="These plots show nighttime visit data in two formats inspired by observing tools: the armillary sphere (a 3D celestial model centered on Earth) and the planisphere (a flat sky map for a specific place and time)."
+            title="Visit Maps"
+            description="Interactive sky-maps of visits collected during the night."
             actions={
               <>
                 <Popover>
@@ -110,154 +112,194 @@ function VisitMaps() {
                     the table to a .csv file.
                   </PopoverContent>
                 </Popover>
-                {/* Button to toggle tips visibility */}
+                {/* Button to toggle guide visibility */}
                 <Button
-                  onClick={() => setTipsVisible((prev) => !prev)}
+                  onClick={() => setGuideVisible((prev) => !prev)}
                   className="bg-amber-400 text-teal-900 font-sm h-6 rounded-md px-2 shadow-[3px_3px_3px_0px_#0d9488] cursor-pointer hover:bg-amber-300 hover:shadow-[4px_4px_8px_0px_#0d9488] transition-all duration-200"
                 >
-                  {tipsVisible ? "Hide Tips" : "Show Tips"}
+                  {guideVisible ? "Hide Guide" : "Show Guide"}
                 </Button>
               </>
             }
           />
 
-          {/* Timeline Tips */}
-          {tipsVisible && (
-            <TipsCard title="Tips">
-              <div>
-                <p>
-                  Both plots show the footprints of camera pointings taken up to
-                  the time set by the MJD slider, with the most recent three
-                  pointings outlined in{" "}
-                  <span className="text-cyan-500 font-normal">cyan</span>. The
-                  fill colors are set according to the{" "}
-                  <a
-                    className="text-blue-600 font-normal underline"
-                    href="https://rtn-095.lsst.io/"
-                    target="_blank"
-                  >
-                    RTN-95
-                  </a>
-                  :
-                </p>
-                <div className="flex flex-wrap justify-center gap-4 items-center pt-4">
-                  <div className="flex items-center gap-1">
-                    <span className="w-3 h-3 bg-band-u"></span>
-                    <span>u band</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="w-3 h-3 bg-band-g"></span>
-                    <span>g band</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="w-3 h-3 bg-band-r"></span>
-                    <span>r band</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="w-3 h-3 bg-band-i"></span>
-                    <span>i band</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="w-3 h-3 bg-band-z"></span>
-                    <span>z band</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="w-3 h-3 bg-band-y"></span>
-                    <span>y band</span>
-                  </div>
-                </div>
-                <p className="mt-4">
-                  Both plots have the following additional annotations:
-                </p>
-                <ul className="list-disc pl-6 space-y-1">
-                  <li>
-                    The gray background shows the planned final depth of the
-                    LSST survey.
-                  </li>
-                  <li>
-                    The{" "}
-                    <span className="text-orange-500 font-normal">
-                      orange disk
-                    </span>{" "}
-                    shows the coordinates of the moon.
-                  </li>
-                  <li>
-                    The{" "}
-                    <span className="text-yellow-400 font-normal">
-                      yellow disk
-                    </span>{" "}
-                    shows the coordinates of the sun.
-                  </li>
-                  <li>
-                    The{" "}
-                    <span className="text-green-500 font-normal">
-                      green line
-                    </span>{" "}
-                    (oval) shows the ecliptic.
-                  </li>
-                  <ul className="list-disc pl-6 mt-1">
+          {/* Map Guide */}
+          {guideVisible && (
+            <TipsCard title="Guide">
+              <div className="flex flex-col gap-6 text-left">
+                {/* Maps */}
+                <div>
+                  <h3 className="text-lg font-medium mb-2">
+                    Understanding the Maps
+                  </h3>
+                  <p>
+                    These maps show the visits collected during the night in two
+                    different sky representations.
+                  </p>
+                  <ul className="list-disc list-outside ml-5 my-3 space-y-1">
                     <li>
-                      The sun moves along the ecliptic in the direction of
-                      increasing R.A. (counter-clockwise in the planisphere
-                      figure) such that it makes a full revolution in one year.
+                      <strong>Armillary Sphere</strong> (left): a spherical
+                      model of the sky centered on Earth.
                     </li>
                     <li>
-                      The moon moves roughly (within 5.14°) along the ecliptic
-                      in the direction of increasing R.A. (counter-clockwise in
-                      the planisphere figure), completing a full revolution in
-                      one sidereal month (a bit over 27 days), about 14° per
-                      day.
+                      <strong>Planisphere</strong> (right): a flat sky map for
+                      the observing site and selected time.
                     </li>
                   </ul>
-                  <li>
-                    The{" "}
-                    <span className="text-blue-500 font-normal">blue line</span>{" "}
-                    (oval) shows the plane of the Milky Way.
-                  </li>
-                  <li>
-                    The{" "}
-                    <span className="text-white font-normal">white line</span>{" "}
-                    shows the horizon at the time set by the MJD slider.
-                  </li>
-                  <li>
-                    The{" "}
-                    <span className="text-red-500 font-normal">red line</span>{" "}
-                    shows a zenith distance of 70° (airmass = 2.9) at the time
-                    set by the MJD slider.
-                  </li>
-                </ul>
-                <h3 className="text-lg font-normal mt-6 mb-2">
-                  Multi-night Visits
-                </h3>
-                <p>
-                  When data from several nights are loaded, all visits are
-                  plotted together, and the <strong>MJD slider</strong> lets you
-                  step through time continuously across the full dayobs range.
-                </p>
+                  <p>
+                    Each footprint represents a camera pointing and is coloured
+                    by band according to{" "}
+                    <a
+                      className="font-normal underline text-blue-500 hover:text-blue-400"
+                      href="https://rtn-095.lsst.io/"
+                      target="_blank"
+                    >
+                      RTN-95
+                    </a>
+                    :
+                  </p>
+                </div>
 
-                <p>As you move the slider:</p>
-                <ul className="list-disc pl-6 space-y-1">
-                  <li>
-                    Visits from earlier nights fade out while more recent ones
-                    appear.
-                  </li>
-                  <li>
-                    A <strong>night label</strong> below the map updates to
-                    indicate the currently active night (between twilights) and
-                    disappears otherwise.
-                  </li>
-                  <li>
-                    The <strong>Sun and Moon positions</strong> update
-                    dynamically based on the selected MJD.
-                  </li>
-                </ul>
+                {/* Multi-night */}
+                <div>
+                  <h3 className="text-lg font-medium mb-2">Multi-night Data</h3>
+                  <ul className="list-disc list-outside ml-5 mt-3 space-y-1">
+                    <li>
+                      Visits accumulate during each observing night, and are
+                      cleared between nights.
+                    </li>
+                    <li>
+                      <strong>Sun</strong> and <strong>Moon</strong> positions
+                      update dynamically.
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Controls */}
+                <div>
+                  <h3 className="text-lg font-medium mb-2">Controls</h3>
+                  <p>
+                    Use the <strong>UTC date/time slider</strong> to step
+                    through observations continuously.
+                  </p>
+                  <ul className="list-disc list-outside ml-5 my-3 space-y-1">
+                    <li>
+                      <span className="bg-stone-200 font-medium py-1 px-2 rounded text-stone-800">
+                        Center zenith
+                      </span>{" "}
+                      re-centres the map on the current zenith.
+                    </li>
+                    <li>
+                      The coordinate toggle switches sliders between{" "}
+                      <strong>R.A./Dec</strong> and <strong>Alt/Az</strong>.
+                    </li>
+                    <li>
+                      The{" "}
+                      <span className="bg-blue-400 font-medium py-1 px-2 rounded">
+                        Play
+                      </span>{" "}
+                      button animates the sliders automatically through time.
+                    </li>
+                  </ul>
+                </div>
               </div>
             </TipsCard>
           )}
+
+          {/* Legend */}
+          <Card className="grid gap-4 bg-black p-8 text-neutral-200 rounded-sm border-2 border-teal-900 font-thin shadow-stone-900 shadow-md">
+            <div className="space-y-6 text-left">
+              <h3 className="text-lg font-medium">Map Legend</h3>
+              {/* Plot objects */}
+              <div>
+                <div className="grid grid-flow-col max-w-5xl mx-auto grid-rows-9 sm:grid-rows-5 md:grid-rows-5 lg:grid-rows-3 xl:grid-rows-2 gap-x-6 gap-y-3">
+                  <div className="flex items-center gap-3">
+                    <span className="w-4 h-4 rounded-full bg-orange-500" />
+                    <span>Moon position</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="w-4 h-4 rounded-full bg-yellow-400" />
+                    <span>Sun position</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="w-6 h-[6px] rounded-full bg-green-500" />
+                    <span>Ecliptic*</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="w-6 h-[6px] rounded-full bg-blue-500" />
+                    <span>Milky Way plane</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="w-6 h-[6px] rounded-full bg-white" />
+                    <span>Horizon</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="w-6 h-[6px] rounded-full bg-red-500" />
+                    <span>70° from zenith (airmass 2.9)</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="w-6 h-[6px] rounded-full bg-gray-500" />
+                    <span>LSST footprint boundaries</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="w-6 h-[6px] rounded-full bg-black border border-stone-500" />
+                    <span>LSST footprint boundaries</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-4 aspect-square shrink-0">
+                      <span
+                        className={`absolute inset-0 bg-fuchsia-500 ${VISIT_SHAPE}`}
+                      />
+                      <span
+                        className={`absolute inset-[1px] bg-black ${VISIT_SHAPE_INNER}`}
+                      />
+                    </div>
+                    <span>Most recent visits</span>
+                  </div>
+                </div>
+
+                <p className="mt-4 text-sm">
+                  * More details about the movements of the sun and moon along
+                  the ecliptic can be found in the night summaries (link at page
+                  bottom).
+                </p>
+              </div>
+
+              {/* Band colours */}
+              <div className="flex flex-row h-10 w-fit px-4 mx-auto justify-between items-center gap-4 border border-white rounded-md text-white font-thin">
+                <div>Bands:</div>
+                <div className="flex items-center gap-2">
+                  <span className={`w-4 h-4 bg-band-u ${VISIT_SHAPE}`} />
+                  <span>u</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`w-4 h-4 bg-band-g ${VISIT_SHAPE}`} />
+                  <span>g</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`w-4 h-4 bg-band-r ${VISIT_SHAPE}`} />
+                  <span>r</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`w-4 h-4 bg-band-i ${VISIT_SHAPE}`} />
+                  <span>i</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`w-4 h-4 bg-band-z ${VISIT_SHAPE}`} />
+                  <span>z</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`w-4 h-4 bg-band-y ${VISIT_SHAPE}`} />
+                  <span>y</span>
+                </div>
+              </div>
+            </div>
+          </Card>
         </div>
+
         {/* Interactive Visit Maps */}
         {visitMapsLoading ? (
-          <Skeleton className="w-full h-200 bg-stone-700 rounded-md" />
+          <Skeleton className="w-full h-100 bg-stone-700 rounded-md" />
         ) : (
           <div className="flex flex-col w-full p-4 space-y-4 items-center text-neutral-700">
             {interactiveMap ? (
@@ -271,45 +313,49 @@ function VisitMaps() {
         )}
 
         {/* Link to nightsum reports */}
-        <div className="my-4 text-white font-thin text-center">
-          <h1 className="flex flex-row gap-2 text-white text-3xl uppercase justify-center pb-4">
-            <span className="tracking-[2px] font-extralight">Survey</span>
-            <span className="font-extrabold"> Progress</span>
-          </h1>
-          {availableDayobs.length === 0 ? (
-            <p>No available dayobs for survey progress links.</p>
-          ) : (
-            <>
-              <p>
-                For survey progress, visit the Scheduler-oriented night
-                summaries:{" "}
-                {availableDayobs.map((dayobs, idx) => {
-                  const { url, label } = getNightSummaryLink(dayobs);
-                  return (
-                    <span key={dayobs}>
-                      <a
-                        href={url}
-                        className="underline text-blue-300 hover:text-blue-400"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {label}
-                      </a>
-                      {idx < availableDayobs.length - 1 && ", "}
-                    </span>
-                  );
-                })}
-                .
-              </p>
-              <p className="pt-2">
-                <span className="font-medium">Note: </span>If you see a 404
-                error, the summary might not have been created for that day.
-              </p>
-            </>
-          )}
+        <div className="flex flex-col gap-2">
+          <PageHeader
+            title="Survey Progress Reports"
+            description="Scheduler-oriented night summaries."
+          />
+          <Card className="grid gap-4 bg-black p-8 text-neutral-200 rounded-sm border-2 border-teal-900 font-thin shadow-stone-900 shadow-md">
+            <div className="font-thin text-left">
+              {availableDayobs.length === 0 ? (
+                <p>No available dayobs for survey progress links.</p>
+              ) : (
+                <>
+                  <p>
+                    For survey progress, visit the Scheduler-oriented night
+                    summaries:{" "}
+                    {availableDayobs.map((dayobs, idx) => {
+                      const { url, label } = getNightSummaryLink(dayobs);
+                      return (
+                        <span key={dayobs}>
+                          <a
+                            href={url}
+                            className="underline font-normal text-blue-500 hover:text-blue-400"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {label}
+                          </a>
+                          {idx < availableDayobs.length - 1 && ", "}
+                        </span>
+                      );
+                    })}
+                    .
+                  </p>
+                  <p className="pt-2">
+                    <span className="font-medium">Note: </span>If you see a 404
+                    error, the summary might not have been created for that day.
+                  </p>
+                </>
+              )}
+            </div>
+          </Card>
         </div>
-        <Toaster expand={true} richColors closeButton />
       </div>
+      <Toaster expand={true} richColors closeButton />
     </>
   );
 }
