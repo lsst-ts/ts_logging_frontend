@@ -310,22 +310,28 @@ function ContextFeed() {
     [contextFeedTableData, selectedTimeRange],
   );
 
+  const timelineSeriesData = useMemo(() => {
+    return Object.values(CATEGORY_INDEX_INFO)
+      .filter((info) => info.displayIndex != null)
+      .sort((a, b) => a.displayIndex - b.displayIndex)
+      .map((info, _idx, arr) => ({
+        index: arr.length - info.displayIndex + 1,
+        label: info.label,
+        timestamps: contextFeedTableData
+          .filter((d) => d.displayIndex === info.displayIndex)
+          .map((d) => d.event_time_millis),
+        color: info.color,
+      }));
+  }, [contextFeedTableData]);
+
   const timelineData = useMemo(() => {
     const activeLabels =
       columnFilters.find((f) => f.id === "event_type")?.value ?? [];
-    return Object.values(CATEGORY_INDEX_INFO)
-      .filter((info) => info.displayIndex != null)
-      .map((info, _idx, arr) => {
-        return {
-          index: arr.length - info.displayIndex + 1,
-          timestamps: contextFeedTableData
-            .filter((d) => d.displayIndex === info.displayIndex)
-            .map((d) => d.event_time_millis),
-          color: info.color,
-          isActive: activeLabels.includes(info.label),
-        };
-      });
-  }, [contextFeedTableData, columnFilters]);
+    return timelineSeriesData.map((series) => ({
+      ...series,
+      isActive: activeLabels.includes(series.label),
+    }));
+  }, [timelineSeriesData, columnFilters]);
 
   return (
     <>
@@ -375,11 +381,6 @@ function ContextFeed() {
                     <span className="font-bold">Drag</span> to select a time
                     range (table updates automatically).
                   </li>
-                  <li>
-                    <span className="font-bold">Shift + Drag</span> to extend
-                    selection.
-                  </li>
-
                   <li>
                     <span className="font-bold">Double-Click</span> to reset.
                   </li>
@@ -439,7 +440,6 @@ function ContextFeed() {
                         data={timelineData}
                         twilightValues={twilightValues}
                         showTwilight={true}
-                        height={timelineData.length * 20 + 70}
                         fullTimeRange={fullTimeRange}
                         selectedTimeRange={selectedTimeRange}
                         setSelectedTimeRange={setSelectedTimeRange}

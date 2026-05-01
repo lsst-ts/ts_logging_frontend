@@ -389,7 +389,7 @@ function DataLog() {
                   <TimelineChart
                     data={[
                       {
-                        index: 0.5,
+                        index: 1,
                         timestamps: dataLogTableData.map(
                           (d) => d.obs_start_millis,
                         ),
