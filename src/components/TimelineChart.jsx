@@ -199,6 +199,7 @@ function TimelineChart({
         elements.push({
           type: "line",
           silent: true,
+          z: 0,
           shape: {
             x1: gridLeft,
             y1: gridBottom,
@@ -220,6 +221,7 @@ function TimelineChart({
           elements.push({
             type: "line",
             silent: true,
+            z: 0,
             shape: {
               x1: pixelX,
               y1: 0,
@@ -239,6 +241,7 @@ function TimelineChart({
           elements.push({
             type: "text",
             silent: true,
+            z: 0,
             x: pixelX,
             y:
               gridBottom +
@@ -276,6 +279,7 @@ function TimelineChart({
               elements.push({
                 type: "group",
                 silent: true,
+                z: 0,
                 x: pixelX,
                 y: moonY,
                 children: [
@@ -423,6 +427,7 @@ function TimelineChart({
       },
       animation: false,
       silent: true,
+      z: 3,
     }));
 
     // Moon-up areas — dedicated host series
@@ -459,6 +464,7 @@ function TimelineChart({
         showTwilight && twilightValues.length
           ? {
               silent: true,
+              z: 0,
               symbol: ["none", "none"],
               lineStyle: {
                 color: TIMELINE_COLORS.TWILIGHT_LINE,
@@ -538,6 +544,7 @@ function TimelineChart({
           animation: false,
           markLine: {
             silent: true,
+            z: 0,
             symbol: ["none", "none"],
             lineStyle: {
               color: TIMELINE_COLORS.GRID_LINE,
