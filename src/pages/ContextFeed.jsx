@@ -402,7 +402,7 @@ function ContextFeed() {
               ) : (
                 <div className="flex flex-row">
                   {/* Event Type Checkboxes */}
-                  <div className="mt-2 flex flex-col gap-1 w-45">
+                  <div className="mt-3 flex flex-col gap-1 w-45">
                     {Object.entries(CATEGORY_INDEX_INFO)
                       .filter(([, info]) => info.displayIndex != null) // exclude AUTOLOG
                       .sort(

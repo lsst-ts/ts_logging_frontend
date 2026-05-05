@@ -69,8 +69,7 @@ export const TIMELINE_COLORS = {
 
   // Selection
   SELECTION_STROKE: "hotPink",
-  SELECTION_FILL_OPACITY: 0.2,
-  DEFAULT_SELECTION_FILL: "pink",
+  DEFAULT_SELECTION_FILL: "rgba(136, 136, 136, 0.2)",
 };
 
 /**
