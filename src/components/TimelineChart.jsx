@@ -511,6 +511,9 @@ function TimelineChart({
         data: categoryIds,
         inverse: true,
         show: false,
+        boundaryGap: false,
+        min: -1,
+        max: categoryIds.length,
       },
       brush: {
         toolbox: [],
