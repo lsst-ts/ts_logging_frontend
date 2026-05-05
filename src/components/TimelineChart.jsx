@@ -31,7 +31,6 @@ import {
  * @param {Array<[number, number]>} [props.moonIntervals=[]] - Moon-up intervals
  * @param {boolean} [props.showMoonIllumination=false] - Whether to show moon illumination labels
  * @param {Array<{dayobs: string, illum: string}>} [props.illumValues=[]] - Moon illumination values
- * @param {string} [props.selectionFill='pink'] - Fill color for selection rectangles
  * @param {Function} [props.onMouseDown] - Optional callback for mouseDown event
  * @param {Function} [props.onMouseMove] - Optional callback for mouseMove event
  * @param {Function} [props.onMouseUp] - Optional callback for mouseUp event
@@ -48,7 +47,6 @@ function TimelineChart({
   moonIntervals = [],
   showMoonIllumination = false,
   illumValues = [],
-  selectionFill = "pink",
 }) {
   const containerRef = useRef(null);
   const instanceRef = useRef(null);
@@ -527,9 +525,9 @@ function TimelineChart({
         brushType: "lineX",
         brushStyle: {
           borderColor: TIMELINE_COLORS.SELECTION_STROKE,
-          color: selectionFill,
-          opacity: TIMELINE_COLORS.SELECTION_FILL_OPACITY,
-          borderWidth: 4,
+          color: TIMELINE_COLORS.DEFAULT_SELECTION_FILL,
+          borderWidth: 1,
+          opacity: 1,
         },
         inBrush: {},
         outOfBrush: {},
@@ -606,7 +604,6 @@ function TimelineChart({
     moonIntervals,
     showMoonIllumination,
     illumValues,
-    selectionFill,
     updateGraphicElements,
   ]);
 
