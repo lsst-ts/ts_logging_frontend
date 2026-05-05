@@ -194,6 +194,21 @@ function TimelineChart({
 
       const elements = [];
 
+      // White baseline across the bottom of the grid in multi-series mode
+      if (data?.length > 1) {
+        elements.push({
+          type: "line",
+          silent: true,
+          shape: {
+            x1: gridLeft,
+            y1: gridBottom,
+            x2: gridRight,
+            y2: gridBottom,
+          },
+          style: { stroke: "white", lineWidth: 1, opacity: 1 },
+        });
+      }
+
       for (const tickMs of hourlyTicks) {
         const dt = millisToDateTime(tickMs);
         const hourUTC = dt.hour;
@@ -297,6 +312,7 @@ function TimelineChart({
       instance.setOption({ graphic: elements });
     },
     [
+      data,
       fullTimeRange,
       showMoonIllumination,
       illumValues,
@@ -397,6 +413,8 @@ function TimelineChart({
         TIMELINE_MARKER.DEFAULT_WIDTH,
         TIMELINE_MARKER.DEFAULT_HEIGHT,
       ],
+      large: true,
+      largeThreshold: 1,
       itemStyle: {
         color: entry.color,
         opacity: entry.isActive
