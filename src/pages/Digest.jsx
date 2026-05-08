@@ -28,6 +28,8 @@ import {
   getBlockSourceLabel,
 } from "@/utils/utils";
 import { getDayobsStartUTC } from "@/utils/timeUtils";
+import { useNotifications } from "@/hooks/useNotifications";
+import { NotificationBannerStack } from "@/components/NotificationBannerStack";
 import DialogMetricsCard from "@/components/dialog-metrics-card";
 import JiraTicketsTable from "@/components/jira-tickets-table";
 import { useSearch } from "@tanstack/react-router";
@@ -76,6 +78,13 @@ export default function Digest() {
 
   const [blockLookup, setBlockLookup] = useState({});
 
+  const {
+    processedNotifications,
+    addNotification,
+    removeNotification,
+    clearNotifications,
+  } = useNotifications();
+
   // Fetch all data except Zephyr data,
   // which needs exposure data.
   useEffect(() => {
@@ -108,6 +117,8 @@ export default function Digest() {
 
     setVisitMapLoading(true);
     setInteractiveMap(null);
+    clearNotifications();
+    toast.dismiss();
 
     fetchExposures(startDayobs, queryEndDayobs, instrument, abortController)
       .then(
@@ -127,16 +138,24 @@ export default function Digest() {
           setExposuresLoading(false);
           setOpenDomeTimes(openDomeTimes);
           if (exposuresNo === 0) {
-            toast.warning("No exposures found for the selected date range.");
+            addNotification({
+              type: "noData",
+              source: "exposures",
+              title: "No exposure entries found in ConsDB",
+              description:
+                "Parts of the dashboard that depend on exposure data will appear empty. Try a different date range.",
+            });
           }
         },
       )
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          const msg = err?.message;
-          toast.error("Error fetching exposures!", {
-            description: msg,
-            duration: Infinity,
+          console.error("Error fetching exposures:", err);
+          addNotification({
+            type: "error",
+            source: "exposures",
+            title: "Exposure data unavailable",
+            description: "An error occurred while fetching exposures.",
           });
         }
       })
@@ -151,16 +170,19 @@ export default function Digest() {
         setExpectedOnSkyExpCount(expectedSumExposures);
         if (expectedSumExposures === 0) {
           toast.warning(
-            "No expected exposures found for the selected date range.",
+            "Expected number of exposures is zero for the selected date range.",
           );
         }
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          const msg = err?.message;
-          toast.error("Error fetching expected exposures!", {
-            description: msg,
-            duration: Infinity,
+          console.error("Error fetching expected exposures:", err);
+          addNotification({
+            type: "error",
+            source: "expected-exposures",
+            title: "Error fetching expected exposures",
+            description:
+              "An error occurred while fetching number of expected exposures.",
           });
           // Display on card
           setExpectedOnSkyExpCount("-");
@@ -178,10 +200,12 @@ export default function Digest() {
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          const msg = err?.message;
-          toast.error("Error fetching almanac!", {
-            description: msg,
-            duration: Infinity,
+          console.error("Error fetching almanac:", err);
+          addNotification({
+            type: "error",
+            source: "almanac",
+            title: "Error fetching almanac",
+            description: "An error occurred while fetching almanac.",
           });
         }
       })
@@ -195,16 +219,15 @@ export default function Digest() {
       .then(([weather, fault]) => {
         setWeatherLoss(weather);
         setFaultLoss(fault);
-        if (weather === 0 && fault === 0) {
-          toast.warning("No time loss reported in the Narrative Log.");
-        }
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          const msg = err?.message;
-          toast.error("Error fetching narrative log!", {
-            description: msg,
-            duration: Infinity,
+          console.error("Error fetching narrative log:", err);
+          addNotification({
+            type: "error",
+            source: "narrative-log",
+            title: "Error fetching narrative log",
+            description: "An error occurred while fetching narrative log.",
           });
         }
       })
@@ -229,10 +252,12 @@ export default function Digest() {
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          const msg = err?.message;
-          toast.error("Error fetching night reports!", {
-            description: msg,
-            duration: Infinity,
+          console.error("Error fetching night reports:", err);
+          addNotification({
+            type: "error",
+            source: "night-reports",
+            title: "Error fetching night reports",
+            description: "An error occurred while fetching night reports.",
           });
         }
       })
@@ -245,16 +270,15 @@ export default function Digest() {
     fetchJiraTickets(startDayobs, queryEndDayobs, instrument, abortController)
       .then((issues) => {
         setJiraTickets(issues);
-        if (issues.length === 0) {
-          toast.warning("No Jira tickets reported.");
-        }
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          const msg = err?.message;
-          toast.error("Error fetching Jira!", {
-            description: msg,
-            duration: Infinity,
+          console.error("Error fetching Jira tickets:", err);
+          addNotification({
+            type: "error",
+            source: "jira-tickets",
+            title: "Error fetching Jira tickets",
+            description: "An error occurred while fetching Jira tickets.",
           });
         }
       })
@@ -267,16 +291,18 @@ export default function Digest() {
     fetchExposureFlags(startDayobs, queryEndDayobs, instrument, abortController)
       .then((flags) => {
         setFlags(flags);
-        if (flags.length === 0) {
-          toast.warning("No exposures flagged for the selected date range.");
-        }
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          const msg = err?.message;
-          toast.error("Error fetching exposure flags!", {
-            description: msg,
-            duration: Infinity,
+          console.error(
+            "Error fetching flagged exposures from exposure Log:",
+            err,
+          );
+          addNotification({
+            type: "error",
+            source: "flagged-exposures",
+            title: "Error fetching flagged exposures",
+            description: "An error occurred while fetching flagged exposures.",
           });
         }
       })
@@ -294,9 +320,12 @@ export default function Digest() {
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          toast.error("Error fetching visit maps!", {
-            description: err?.message,
-            duration: Infinity,
+          console.error("Error generating visit maps:", err);
+          addNotification({
+            type: "error",
+            source: "visit-maps",
+            title: "Error generating visit maps",
+            description: "An error occurred while generating visit maps.",
           });
         }
       })
@@ -329,24 +358,34 @@ export default function Digest() {
         // Handle partial errors (one of Zephyr/Jira failing)
         if (blocks.errors) {
           Object.entries(blocks.errors).forEach(([source, message]) => {
-            toast.error(
+            addNotification({
+              type: "error",
+              source: `${getBlockSourceLabel(source)}`,
+              title: "Error fetching BLOCK descriptions",
+              description:
+                "An error occurred while fetching context feed data.",
+            });
+            console.error(
               `Error fetching BLOCK descriptions from ${getBlockSourceLabel(
                 source,
               )}`,
-              {
-                description: message,
-                duration: Infinity,
-              },
+              message,
             );
           });
         }
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          const msg = err?.message;
-          toast.error("Error fetching BLOCK descriptions from Zephyr/Jira", {
-            description: msg,
-            duration: Infinity,
+          console.error(
+            "Error fetching BLOCK descriptions from Zephyr/Jira",
+            err,
+          );
+          addNotification({
+            type: "error",
+            source: "block-lookup",
+            title: "Error fetching BLOCK descriptions",
+            description:
+              "An error occurred while fetching BLOCK descriptions from Zephyr/Jira.",
           });
         }
       });
@@ -385,9 +424,30 @@ export default function Digest() {
   const [timeLoss, timeLossDetails] = calculateTimeLoss(weatherLoss, faultLoss);
   const newTicketsCount = jiraTickets.filter((tix) => tix.isNew).length;
 
+  const allLoaded =
+    !exposuresLoading &&
+    !expectedExposuresLoading &&
+    !almanacLoading &&
+    !narrativeLoading &&
+    !nightreportLoading &&
+    !jiraLoading &&
+    !flagsLoading &&
+    !visitMapLoading;
+
+  // processedNotifications recomputes incrementally as fetches settle.
+  // Withhold banners until all fetches are done to avoid showing
+  // intermediate or contradictory states mid-load.
+  const displayedNotifications = allLoaded ? processedNotifications : [];
+
   return (
     <>
       <div className="flex flex-col w-full p-8 gap-6">
+        {displayedNotifications.length > 0 && (
+          <NotificationBannerStack
+            notifications={displayedNotifications}
+            onDismiss={removeNotification}
+          />
+        )}
         {/* Metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricsCard
