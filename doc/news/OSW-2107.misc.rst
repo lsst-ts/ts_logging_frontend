@@ -1,0 +1,1 @@
+Display filter band colours when Exposure Breakdown is grouped by filter.
