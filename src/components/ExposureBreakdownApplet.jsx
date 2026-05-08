@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/popover";
 import { ChartContainer } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
+import { BAND_COLORS } from "@/components/PLOT_DEFINITIONS";
 import BarChartYAxisTick from "@/components/BarChartYAxisTick";
 
 import InfoIcon from "../assets/InfoIcon.svg";
@@ -216,15 +217,24 @@ function ExposureBreakdownApplet({
 
       chartData.sort(sorters[sortBy]);
 
-      // After sorting, assign bar colors based on vertical
-      // position to display an ordered rainbow of colours.
-      // This is to help stop associations being made
-      // between bars and their colours.
-      chartData = chartData.map((entry, index) => ({
-        ...entry,
-        fill: `hsl(${index * 40}, 70%, 50%)`,
-        fill_flag: "#ffffff",
-      }));
+      // After sorting, assign bar colors.
+      // For grouping by filter, use band colours.
+      // Otherwise, assign an ordered rainbow of colours
+      // based on vertical position to prevent
+      // associations being made between bars and their
+      // colours.
+      chartData = chartData.map((entry, index) => {
+      // The band is the first character of physical_filter.
+      const band = String(entry.groupKey).charAt(0);
+
+      return {
+          ...entry,
+          fill: groupBy == GroupByValues.FILTER
+          ? BAND_COLORS[band] ?? "#888888"
+          : `hsl(${index * 40}, 70%, 50%)`,
+          fill_flag: "#ffffff",
+      }
+      });
 
       return {
         chartData,
