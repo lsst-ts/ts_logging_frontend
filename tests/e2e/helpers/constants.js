@@ -8,3 +8,6 @@ export const PLOTS_URL = `/nightlydigest/plots?startDayobs=${TEST_DAYOBS}&endDay
 export const FULL_START = 1767268800000;
 export const FULL_END = 1767355199000;
 export const FULL_RANGE = FULL_END - FULL_START;
+
+// UTC to TAI conversion offset (37 seconds in milliseconds)
+export const UTC_TO_TAI_MS = 37000;
