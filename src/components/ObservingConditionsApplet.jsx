@@ -52,10 +52,12 @@ import {
 // Constants for gap detection
 const GAP_THRESHOLD = 5 * 60 * 1000;
 
-// Opacity applied to dimmed zero-point bands/dots (EBA hover or legend hover)
+// Opacity applied to dimmed zero-point bands/dots (exposure breakdown applet bar hover or legend hover)
 const DIMMED_OPACITY_ZP = 0.02;
-// Opacity applied to dimmed seeing dots (EBA hover or legend hover)
+// Opacity applied to dimmed seeing dots (exposure breakdown applet bar hover or legend hover)
 const DIMMED_OPACITY_SEEING = 0.06;
+
+const BANDS = ["u", "g", "r", "i", "z", "y"];
 
 const CustomTooltip = ({ active, payload, label, xDomain }) => {
   const dataKeyTitles = {
@@ -452,16 +454,16 @@ function ObservingConditionsApplet({
   }, [selectedMinMillis, selectedMaxMillis, xMin, xMax]);
 
   // opacity for each band based on hovering state.
-  // EBA bar hover takes precedence: dims bands with no matching exposures
-  // within the currently visible x range. Otherwise falls back to legend
-  // hover (hide non-hovered bands).
+  // hoveredExposureIds (exposure breakdown applet bar hover) takes precedence
+  // and dims bands with no matching exposures within the currently visible x range.
+  // Otherwise, falls back to legend hover (dim non-hovered bands).
   const opacity = useMemo(() => {
     if (hoveredExposureIds !== null) {
       const visibleData = chartData.filter(
         (d) => d.obs_start_dt >= xDomain[0] && d.obs_start_dt <= xDomain[1],
       );
       return Object.fromEntries(
-        ["u", "g", "r", "i", "z", "y"].map((band) => [
+        BANDS.map((band) => [
           band,
           visibleData.some(
             (d) =>
@@ -472,20 +474,18 @@ function ObservingConditionsApplet({
         ]),
       );
     }
-    return {
-      u: hoveredBand && hoveredBand !== "u" ? DIMMED_OPACITY_ZP : 1,
-      r: hoveredBand && hoveredBand !== "r" ? DIMMED_OPACITY_ZP : 1,
-      y: hoveredBand && hoveredBand !== "y" ? DIMMED_OPACITY_ZP : 1,
-      i: hoveredBand && hoveredBand !== "i" ? DIMMED_OPACITY_ZP : 1,
-      z: hoveredBand && hoveredBand !== "z" ? DIMMED_OPACITY_ZP : 1,
-      g: hoveredBand && hoveredBand !== "g" ? DIMMED_OPACITY_ZP : 1,
-    };
+    return Object.fromEntries(
+      BANDS.map((band) => [
+        band,
+        hoveredBand && hoveredBand !== band ? DIMMED_OPACITY_ZP : 1,
+      ]),
+    );
   }, [hoveredBand, hoveredExposureIds, chartData, xDomain]);
 
   // Returns the opacity for a single dot.
-  // When an EBA bar is hovered, matching exposures are full opacity and
-  // non-matching are dimmed. Otherwise falls back to band-level opacity
-  // (driven by legend hover).
+  // When an exposure breakdown applet bar is hovered, matching exposures
+  // are full opacity and non-matching are dimmed. Otherwise falls back
+  // to band-level opacity (driven by legend hover).
   const dotOpacity = useCallback(
     (exposureId, bandOpacity) => {
       if (hoveredExposureIds !== null) {
@@ -627,7 +627,8 @@ function ObservingConditionsApplet({
 
   // Like dataWithNightGaps, but additionally nulls out zero_point_median for
   // exposures not in hoveredExposureIds. Used to draw the full-opacity overlay
-  // line that connects only matching dots when an EBA bar is hovered.
+  // line that connects only matching dots when an exposure breakdown applet
+  // bar is hovered.
   const filterByBandAndHover = (data, band) => {
     return dataWithNightGaps(data, band).map((d) => {
       if (d.zero_point_median === null) return d;
@@ -845,9 +846,8 @@ function ObservingConditionsApplet({
                         isAnimationActive={false}
                       />
                       /* line plots for zero point median filtered by band */
-                      {/* Base lines — dimmed when EBA bar hovered, dots hidden
-                          in that case (overlay lines handle matching dots) */}
-                      {["u", "g", "r", "i", "z", "y"].map((band) => (
+                      {/* Base lines — dimmed when an exposure breakdown applet bar is hovered */}
+                      {BANDS.map((band) => (
                         <Line
                           key={`zero_point_median_${band}`}
                           name={`zero_point_median_${band}`}
@@ -866,6 +866,7 @@ function ObservingConditionsApplet({
                               {...restProps}
                               band={band}
                               r={2}
+                              // The dots are also dimmed if an exposure breakdown applet bar is hovered
                               opacity={
                                 hoveredExposureIds !== null
                                   ? DIMMED_OPACITY_ZP
@@ -883,10 +884,9 @@ function ObservingConditionsApplet({
                           isAnimationActive={false}
                         />
                       ))}
-                      {/* Overlay lines — full opacity, only matching dots and
-                          the segments connecting them, rendered on top of base */}
+                      {/* Overlay lines for hovered exposures — full opacity, only matching dots and the segments connecting them, rendered on top of base */}
                       {hoveredExposureIds !== null &&
-                        ["u", "g", "r", "i", "z", "y"].map((band) => (
+                        BANDS.map((band) => (
                           <Line
                             key={`zero_point_median_${band}_overlay`}
                             name={`zero_point_median_${band}_overlay`}

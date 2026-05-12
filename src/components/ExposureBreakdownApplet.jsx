@@ -273,7 +273,7 @@ function ExposureBreakdownApplet({
             </PopoverTrigger>
             <PopoverContent className="bg-black text-white text-sm border-yellow-700 w-[300px]">
               This applet displays a breakdown of exposures taken during the
-              night, grouped by a selected field.
+              specified dayobs range, grouped by a selected field.
               <br />
               <br />
               The chart can be configured to show either the{" "}
@@ -289,7 +289,7 @@ function ExposureBreakdownApplet({
               <ul className="list-disc pl-4 mt-1 space-y-1">
                 <li>
                   Hover over a bar to view total and flagged values, and
-                  highlight the corresponding observations in the{" "}
+                  highlight the corresponding exposures in the{" "}
                   <strong>Observing Conditions</strong> chart.
                 </li>
                 <li>
@@ -298,7 +298,8 @@ function ExposureBreakdownApplet({
                   documentation.
                 </li>
                 <li>
-                  Click a bar to open the Data Log, filtered by that group.
+                  Click a bar to open the <strong>Data Log</strong>, filtered by
+                  that group.
                 </li>
                 <li>Scroll to see additional groups if all are not visible.</li>
               </ul>
