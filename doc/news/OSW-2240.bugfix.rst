@@ -1,0 +1,1 @@
+Fix hover state getting stuck in the Exposure Breakdown applet when the mouse is moved quickly off a bar.
