@@ -1,6 +1,6 @@
 // Applet: Display a breakdown of the exposures into type, reason, and program.
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 
 import { useSearch, useRouter } from "@tanstack/react-router";
@@ -74,6 +74,31 @@ function ExposureBreakdownApplet({
   // can scroll without tooltip being clipped.
   const cardRef = useRef(null);
   const scrollRef = useRef(null);
+
+  // Document-level pointermove listener, only active while a bar is hovered.
+  // Clears hover when the mouse moves outside scrollRef bounds. Fixes janky
+  // behaviour with mouse events not propagating
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || !hovered) return;
+
+    const handler = (e) => {
+      const rect = el.getBoundingClientRect();
+      const inside =
+        e.clientX >= rect.left &&
+        e.clientX <= rect.right &&
+        e.clientY >= rect.top &&
+        e.clientY <= rect.bottom;
+      if (!inside) {
+        setTooltipState(null);
+        setHovered(null);
+        onBarLeave?.();
+      }
+    };
+
+    document.addEventListener("pointermove", handler);
+    return () => document.removeEventListener("pointermove", handler);
+  }, [hovered, onBarLeave, exposuresLoading, exposureCount]);
 
   const plotByOptions = [
     { value: PlotByValues.NUMBER, label: "Number" },
@@ -379,11 +404,9 @@ function ExposureBreakdownApplet({
 
                             // Not hovering over a bar?
                             if (!payload?.length || !coordinate) {
-                              if (tooltipState !== null) {
-                                setTooltipState(null);
-                                setHovered(null);
-                                onBarLeave?.();
-                              }
+                              setTooltipState(null);
+                              setHovered(null);
+                              onBarLeave?.();
                               return;
                             }
 
