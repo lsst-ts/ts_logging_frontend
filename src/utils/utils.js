@@ -351,7 +351,7 @@ const getRubinTVUrl = (telescope, dayObs, seqNum) => {
   let baseHost = DEFAULT_EXTERNAL_INSTANCE_URL.replace(/^https?:\/\//, "");
 
   // Production URL
-  if (window.location.host !== "localhost") {
+  if (window.location.hostname !== "localhost") {
     baseUrl = window.location.origin;
     baseHost = window.location.host;
   }
