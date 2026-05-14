@@ -356,11 +356,10 @@ function DataLog() {
                     <span className="font-bold">Drag</span> to select a time
                     range (table updates automatically).
                   </li>
+                  <li>Drag the edges of the selection to resize.</li>
                   <li>
-                    <span className="font-bold">Shift + Drag</span> to extend
-                    selection.
+                    The selected time range can also be dragged to reposition.
                   </li>
-
                   <li>
                     <span className="font-bold">Double-Click</span> to reset.
                   </li>
@@ -389,7 +388,7 @@ function DataLog() {
                   <TimelineChart
                     data={[
                       {
-                        index: 0.5,
+                        index: 1,
                         timestamps: dataLogTableData.map(
                           (d) => d.obs_start_millis,
                         ),
