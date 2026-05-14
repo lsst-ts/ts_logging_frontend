@@ -19,7 +19,11 @@ function parseTimeLostField(timeLost) {
   return "N/A";
 }
 
-function JiraTicketsTable({ tickets, loading = false }) {
+function JiraTicketsTable({
+  tickets,
+  loading = false,
+  strikethroughStatuses = ["Done"],
+}) {
   return (
     <Table className="table-auto w-full">
       <TableHeader>
@@ -66,7 +70,14 @@ function JiraTicketsTable({ tickets, loading = false }) {
           </TableRow>
         ) : (
           tickets.map((ticket) => (
-            <TableRow key={ticket.key}>
+            <TableRow
+              key={ticket.key}
+              className={
+                strikethroughStatuses.includes(ticket.status)
+                  ? "line-through opacity-60"
+                  : ""
+              }
+            >
               <TableCell className="text-right">
                 <a
                   href={ticket.url}

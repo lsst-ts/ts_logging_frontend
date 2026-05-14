@@ -85,7 +85,7 @@ function Plots() {
 
   // Visibility toggles
   const [timelineVisible, setTimelineVisible] = useState(true);
-  const [tipsVisible, setTipsVisible] = useState(true);
+  const [tipsVisible, setTipsVisible] = useState(false);
 
   // Keep track of default and user-added plots
   const [visiblePlots, setVisiblePlots] = useState(

@@ -96,7 +96,7 @@ function ContextFeed() {
 
   // Visibility toggles
   const [timelineVisible, setTimelineVisible] = useState(true);
-  const [tipsVisible, setTipsVisible] = useState(true);
+  const [tipsVisible, setTipsVisible] = useState(false);
 
   // Default event type filters based on telescope
   const defaultEventTypes = filterDefaultEventsByTelescope(telescope);

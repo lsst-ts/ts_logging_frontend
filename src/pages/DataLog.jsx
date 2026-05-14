@@ -80,7 +80,7 @@ function DataLog() {
 
   // Visibility toggles
   const [timelineVisible, setTimelineVisible] = useState(true);
-  const [tipsVisible, setTipsVisible] = useState(true);
+  const [tipsVisible, setTipsVisible] = useState(false);
 
   // Time range state synced with URL
   const { selectedTimeRange, setSelectedTimeRange, fullTimeRange } =

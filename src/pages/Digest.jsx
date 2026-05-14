@@ -1,8 +1,8 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import ExposureBreakdownApplet from "@/components/ExposureBreakdownApplet.jsx";
-import MetricsCard from "@/components/metrics-card.jsx";
+import MetricsCard from "@/components/MetricsCard.jsx";
 import VisitMapApplet from "@/components/VisitMapApplet";
 
 import { EfficiencyChart } from "@/components/ui/RadialChart.jsx";
@@ -75,6 +75,13 @@ export default function Digest() {
   const [visitMapLoading, setVisitMapLoading] = useState(false);
 
   const [blockLookup, setBlockLookup] = useState({});
+
+  const [hoveredExposureIds, setHoveredExposureIds] = useState(null);
+  const onBarHover = useCallback(
+    (ids) => setHoveredExposureIds(new Set(ids)),
+    [],
+  );
+  const onBarLeave = useCallback(() => setHoveredExposureIds(null), []);
 
   // Fetch all data except Zephyr data,
   // which needs exposure data.
@@ -411,7 +418,7 @@ export default function Digest() {
             data={efficiencyText}
             label="Open-shutter (-weather) efficiency"
             tooltip="Efficiency computed as total on-sky exposure time / (time between 12 degree twilights minus time lost to weather). Exposures started outside the twilights are not counted in total time."
-            loading={almanacLoading || exposuresLoading}
+            loading={almanacLoading || exposuresLoading || narrativeLoading}
           />
           <MetricsCard
             icon={TimeLossIcon}
@@ -446,6 +453,7 @@ export default function Digest() {
               fullTimeRange={fullTimeRange}
               selectedTimeRange={selectedTimeRange}
               setSelectedTimeRange={setSelectedTimeRange}
+              hoveredExposureIds={hoveredExposureIds}
             />
             <ExposureBreakdownApplet
               exposureFields={exposureFields}
@@ -455,6 +463,8 @@ export default function Digest() {
               blockLookup={blockLookup}
               exposuresLoading={exposuresLoading}
               flagsLoading={flagsLoading}
+              onBarHover={onBarHover}
+              onBarLeave={onBarLeave}
             />
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
