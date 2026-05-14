@@ -121,17 +121,6 @@ function TimelineChart({
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Escape key reset ────────────────────────────────────────────────────────
-  useEffect(() => {
-    const handler = (e) => {
-      if (e.key !== "Escape") return;
-      instanceRef.current?.dispatchAction({ type: "brush", areas: [] });
-      setSelectedTimeRangeRef.current(fullTimeRangeRef.current);
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, []);
-
   // ── Sync brush from external selectedTimeRange changes ──────────────────────
   useEffect(() => {
     const instance = instanceRef.current;
