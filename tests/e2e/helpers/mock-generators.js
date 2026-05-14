@@ -35,6 +35,7 @@ export function generateDataLogMock(
             day_obs: dayobs,
             seq_num: i,
             obs_start,
+            science_program: "SURVEY",
             physical_filter: "y_10",
             band: "y",
             can_see_sky: true,
