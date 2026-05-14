@@ -9,6 +9,7 @@ import BokehPlot from "@/components/BokehPlot";
 
 import InfoIcon from "../assets/InfoIcon.svg";
 import DownloadIcon from "../assets/DownloadIcon.svg";
+import { VISIT_SHAPE, VISIT_SHAPE_INNER } from "./PLOT_DEFINITIONS";
 
 function VisitMapApplet({ mapData, mapLoading }) {
   return (
@@ -32,64 +33,69 @@ function VisitMapApplet({ mapData, mapLoading }) {
             <PopoverTrigger className="self-end min-w-4">
               <img src={InfoIcon} />
             </PopoverTrigger>
-            <PopoverContent className="bg-black text-white text-sm border-yellow-700">
+            <PopoverContent className="bg-black text-white text-sm border-yellow-700 flex flex-col max-w-5xl mx-auto gap-y-2">
               <p>
-                <strong>Planisphere</strong> is a flat representation of the
-                sky, as seen from a specific location on Earth at a specific
-                time.
+                <strong>Planisphere</strong> is a flat sky map for the observing
+                site and selected time.
               </p>
-              <ul class="list-disc pl-6 space-y-1">
-                <li>
-                  The gray background shows the planned final depth of the LSST
-                  survey.
-                </li>
-                <li>
-                  The{" "}
-                  <span class="text-orange-500 font-normal">orange disk</span>:
-                  the coordinates of the moon.
-                </li>
-                <li>
-                  The{" "}
-                  <span class="text-yellow-400 font-normal">yellow disk</span>:
-                  the coordinates of the sun.
-                </li>
-                <li>
-                  The <span class="text-green-500 font-normal">green line</span>{" "}
-                  (oval): the ecliptic.
-                </li>
-                <li>
-                  The <span class="text-blue-500 font-normal">blue line</span>{" "}
-                  (oval): the plane of the Milky Way.
-                </li>
-                <li>
-                  The <span class="text-white font-normal">white line</span>:
-                  The horizon at the time set by the MJD slider.
-                </li>
-                <li>
-                  The <span class="text-red-500 font-normal">red line</span>: a
-                  zenith distance of 70° (airmass = 2.9) at the time set by the
-                  MJD slider.
-                </li>
-              </ul>
-              <p>
-                Visits from <strong>several nights</strong> are plotted
-                together. As you move the slider:
-              </p>
-              <ul className="list-disc pl-6 space-y-1">
-                <li>
-                  Visits from earlier nights fade out while more recent ones
-                  appear.
-                </li>
-                <li>
-                  A <strong>night label </strong>
-                  indicates the currently active night (between twilights) and
-                  disappears otherwise.
-                </li>
-                <li>
-                  The <strong>Sun and Moon positions</strong> update
-                  dynamically.
-                </li>
-              </ul>
+              <div className="flex flex-col max-w-5xl mx-auto gap-y-1">
+                <div className="flex gap-1 items-center">
+                  <span className="w-3 h-3 rounded-full bg-orange-500" />
+                  <span>Moon position</span>
+                </div>
+                <div className="flex gap-1 items-center">
+                  <span className="w-3 h-3 rounded-full bg-yellow-400" />
+                  <span>Sun position</span>
+                </div>
+                <div className="flex gap-1 items-center">
+                  <span className="w-4 h-[4px] rounded-full bg-green-500" />
+                  <span>Ecliptic</span>
+                </div>
+                <div className="flex gap-1 items-center">
+                  <span className="w-4 h-[4px] rounded-full bg-blue-500" />
+                  <span>Milky Way Plane</span>
+                </div>
+                <div className="flex gap-1 items-center">
+                  <span className="w-4 h-[4px] rounded-full bg-white" />
+                  <span>Horizon</span>
+                </div>
+                <div className="flex gap-1 items-center">
+                  <span className="w-4 h-[4px] rounded-full bg-red-500" />
+                  <span>70° from zenith (airmass 2.9)</span>
+                </div>
+                <div className="flex gap-1 items-center">
+                  <span className="w-4 h-[4px] rounded-full bg-gray-500" />
+                  <span>LSST footprint boundaries</span>
+                </div>
+                <div className="flex gap-1 items-center">
+                  <span className="w-4 h-[4px] rounded-full bg-black border border-stone-500" />
+                  <span>LSST footprint boundaries</span>
+                </div>
+                <div className="flex gap-1 items-center">
+                  <div className="relative w-4 aspect-square shrink-0">
+                    <span
+                      className={`absolute inset-0 bg-fuchsia-500 ${VISIT_SHAPE}`}
+                    />
+                    <span
+                      className={`absolute inset-[1px] bg-black ${VISIT_SHAPE_INNER}`}
+                    />
+                  </div>
+                  <span>Most recent visits</span>
+                </div>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium mt-1">Multi-night Data</h3>
+                <ul className="list-disc list-outside ml-5 mt-2 space-y-1">
+                  <li>
+                    Visits accumulate during each observing night, and are
+                    cleared between nights.
+                  </li>
+                  <li>
+                    <strong>Sun</strong> and <strong>Moon</strong> positions
+                    update dynamically.
+                  </li>
+                </ul>
+              </div>
             </PopoverContent>
           </Popover>
         </div>
