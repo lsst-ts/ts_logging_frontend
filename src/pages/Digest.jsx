@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import ExposureBreakdownApplet from "@/components/ExposureBreakdownApplet.jsx";
