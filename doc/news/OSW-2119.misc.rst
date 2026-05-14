@@ -1,1 +1,0 @@
-Hide tips by default across ND pages.

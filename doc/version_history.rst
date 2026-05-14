@@ -1,3 +1,23 @@
+v0.18.0 (2026-05-14)
+====================
+
+New Features
+------------
+
+- Hovering a bar in the Exposure Breakdown applet now highlights the corresponding observations in the Observing Conditions applet. (`OSW-1004 <https://rubinobs.atlassian.net//browse/OSW-1004>`_)
+- Create playwright framework for frontend tests (`OSW-2066 <https://rubinobs.atlassian.net//browse/OSW-2066>`_)
+- Add E2E tests for the Plots page (`OSW-2067 <https://rubinobs.atlassian.net//browse/OSW-2067>`_)
+
+
+Other Changes and Additions
+---------------------------
+
+- Strikethrough Jira tickets table rows for tickets with status equals to Done. (`OSW-649 <https://rubinobs.atlassian.net//browse/OSW-649>`_)
+- Show static information while loading in MetricsCard component. (`OSW-2071 <https://rubinobs.atlassian.net//browse/OSW-2071>`_)
+- Rename MetricsCard filename. (`OSW-2071 <https://rubinobs.atlassian.net//browse/OSW-2071>`_)
+- Hide tips by default across ND pages. (`OSW-2119 <https://rubinobs.atlassian.net//browse/OSW-2119>`_)
+
+
 v0.17.0 (2026-04-16)
 ====================
 
