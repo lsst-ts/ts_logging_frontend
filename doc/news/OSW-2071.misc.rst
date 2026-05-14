@@ -1,1 +1,0 @@
-Show static information while loading in MetricsCard component.
