@@ -1,1 +1,0 @@
-Align Visit Maps page layout with other pages and improve page UX.

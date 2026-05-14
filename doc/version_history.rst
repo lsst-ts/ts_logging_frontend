@@ -1,3 +1,20 @@
+v0.19.0-alpha.1 (2026-05-14)
+============================
+
+New Features
+------------
+
+- Introduce a new notification banner system to replace the existing toast-based alert system on all pages with a persistent notification banner component. Notification types include "noData" for when no data is found for a given query, and "error" for when errors occur during data fetching. (`OSW-1305 <https://rubinobs.atlassian.net//browse/OSW-1305>`_)
+
+
+Other Changes and Additions
+---------------------------
+
+- Align Visit Maps page layout with other pages and improve page UX. (`OSW-1234 <https://rubinobs.atlassian.net//browse/OSW-1234>`_)
+- Display filter band colours when Exposure Breakdown is grouped by filter. (`OSW-2107 <https://rubinobs.atlassian.net//browse/OSW-2107>`_)
+- Migrate timeline chart to ECharts library. (`OSW-2286 <https://rubinobs.atlassian.net//browse/OSW-2286>`_)
+
+
 v0.18.0 (2026-05-14)
 ====================
 
