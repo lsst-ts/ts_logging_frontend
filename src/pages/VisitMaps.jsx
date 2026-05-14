@@ -1,10 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
 
-import { toast } from "sonner";
 import { useSearch } from "@tanstack/react-router";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import { Toaster } from "@/components/ui/sonner";
 
 import { TELESCOPES } from "@/components/Parameters";
 import PageHeader from "@/components/PageHeader";
@@ -21,6 +19,8 @@ import {
 } from "@/components/ui/popover";
 
 import BokehPlot from "@/components/BokehPlot";
+import { NotificationBannerStack } from "@/components/NotificationBannerStack";
+import { useNotifications } from "@/hooks/useNotifications";
 
 import { fetchVisitMaps } from "@/utils/fetchUtils";
 import { getNightSummaryLink } from "@/utils/utils";
@@ -42,6 +42,13 @@ function VisitMaps() {
   const [interactiveMap, setInteractiveMap] = useState(null);
   const [visitMapsLoading, setVisitMapsLoading] = useState(false);
   const [guideVisible, setGuideVisible] = useState(false);
+
+  const {
+    processedNotifications,
+    addNotification,
+    removeNotification,
+    clearNotifications,
+  } = useNotifications();
 
   function getDayObsBetween(startDayObs, endDayObs) {
     const format = "yyyyLLdd";
@@ -67,16 +74,29 @@ function VisitMaps() {
 
     setVisitMapsLoading(true);
     setInteractiveMap(null);
+    clearNotifications();
 
     fetchVisitMaps(startDayobs, queryEndDayobs, instrument, abortController)
       .then((interactivePlot) => {
+        if (interactivePlot === null) {
+          addNotification({
+            type: "noData",
+            source: "visit-maps",
+            title: "No visit entries found in ConsDB",
+            description:
+              "Visit maps couldn't be generated for the selected date range.",
+          });
+        }
         setInteractiveMap(interactivePlot);
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          toast.error("Error fetching visit maps!", {
-            description: err?.message,
-            duration: Infinity,
+          console.error("Error fetching visit maps:", err);
+          addNotification({
+            type: "error",
+            source: "visit-maps",
+            title: "Error fetching visit maps",
+            description: "An error occurred while fetching visit maps.",
           });
         }
       })
@@ -93,7 +113,13 @@ function VisitMaps() {
 
   return (
     <>
-      <div className="flex flex-col w-full p-8 gap-4">
+      <div className="flex flex-col w-full p-8 gap-6">
+        {processedNotifications?.length > 0 && (
+          <NotificationBannerStack
+            notifications={processedNotifications}
+            onDismiss={removeNotification}
+          />
+        )}
         {/* Page Header, legend and collapsible guide */}
         <div className="flex flex-col gap-2">
           {/* Page title + buttons */}
@@ -355,7 +381,6 @@ function VisitMaps() {
           </Card>
         </div>
       </div>
-      <Toaster expand={true} richColors closeButton />
     </>
   );
 }

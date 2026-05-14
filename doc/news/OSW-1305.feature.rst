@@ -1,0 +1,1 @@
+Introduce a new notification banner system to replace the existing toast-based alert system on all pages with a persistent notification banner component. Notification types include "noData" for when no data is found for a given query, and "error" for when errors occur during data fetching.
