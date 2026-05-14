@@ -8,10 +8,13 @@ import { expect } from "@playwright/test";
  * @param {import('@playwright/test').Page} page
  */
 export async function waitForDataLogLoad(page) {
+  // Wait for all skeleton rows to disappear (signals tableLoading = false).
+  // Avoid checking table-body visibility — it lives inside an overflow-auto
+  // container which Playwright considers "hidden" even when content is present.
   await expect(page.locator("[data-slot='skeleton']")).toHaveCount(0, {
     timeout: 15000,
   });
-  await expect(page.locator("[data-slot='table-body']")).toBeVisible();
+  await expect(page.locator("[data-slot='table-body']")).toBeAttached();
 }
 
 /**
@@ -52,6 +55,9 @@ export async function applyFilter(page, columnHeaderName, values) {
     await page.getByRole("checkbox", { name: val }).click();
   }
   await page.getByRole("button", { name: "Apply" }).click();
+  // The Apply button uses e.stopPropagation(), so the Radix dropdown doesn't
+  // auto-close on click. Press Escape to ensure it's dismissed before continuing.
+  await page.keyboard.press("Escape");
 }
 
 /**

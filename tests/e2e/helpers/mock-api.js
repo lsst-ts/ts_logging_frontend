@@ -22,6 +22,10 @@ const DEFAULT_MOCKS = {
   "jira-tickets": loadFixture("jira-tickets"),
   "static-visit-map": loadFixture("static-visit-map"),
   version: { version: "test" },
+  // Exposure log: empty by default so no flags/comments but no error toast
+  "exposure-entries": { exposure_entries: [] },
+  // Block details: empty lookup so science_program renders as plain text
+  "block-details": { data: {}, errors: null },
 };
 
 /**
