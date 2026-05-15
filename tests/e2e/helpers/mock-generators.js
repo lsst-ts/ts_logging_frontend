@@ -6,8 +6,8 @@
  * @param {number} [options.dayobs=20260101] - Day of observation in YYYYMMDD format. Records will
  *   start at midnight UTC on the following day.
  * @param {object} [options.overrides={}] - Field values to override on every generated record.
- * @param {function} [options.postProcess] - Called with each record after overrides are applied.
- *   Return the (optionally modified) record.
+ * @param {function} [options.postProcess] - Called with (record, i) after overrides are applied,
+ *   where i is the 1-based sequence number. Return the (optionally modified) record.
  * @returns {{ data_log: object[] }}
  */
 export function generateDataLogMock(
@@ -35,6 +35,7 @@ export function generateDataLogMock(
             day_obs: dayobs,
             seq_num: i,
             obs_start,
+            science_program: "SURVEY",
             physical_filter: "y_10",
             band: "y",
             can_see_sky: true,
@@ -48,8 +49,64 @@ export function generateDataLogMock(
           },
           overrides,
         ),
+        i,
       ),
     );
   }
   return { data_log: dl };
+}
+
+/**
+ * Generates mock data-log records with varied band/physical_filter values.
+ * Cycles through ["y", "g", "r", "i", "z"] so each band appears 6 times in 30 records.
+ *
+ * @param {number} count
+ * @param {object} [options] - Same options as generateDataLogMock
+ * @returns {{ data_log: object[] }}
+ */
+export function generateDataLogMockMultiBand(count, options = {}) {
+  const bands = ["y", "g", "r", "i", "z"];
+  return generateDataLogMock(count, {
+    ...options,
+    postProcess: (r, i) => ({
+      ...r,
+      band: bands[i % bands.length],
+      physical_filter: `${bands[i % bands.length]}_10`,
+    }),
+  });
+}
+
+/**
+ * Generates mock data-log records with varied science_program values.
+ * Cycles through ["FM", "BF", "DF", "MINI", "SN"] so each program appears 6 times in 30 records.
+ *
+ * @param {number} count
+ * @param {object} [options] - Same options as generateDataLogMock
+ * @returns {{ data_log: object[] }}
+ */
+export function generateDataLogMockMultiProgram(count, options = {}) {
+  const programs = ["FM", "BF", "DF", "MINI", "SN"];
+  return generateDataLogMock(count, {
+    ...options,
+    postProcess: (r, i) => ({
+      ...r,
+      science_program: programs[i % programs.length],
+    }),
+  });
+}
+
+/**
+ * Generates mock data-log records with varied exposure_flag values.
+ * Cycles through ["", "GOOD", "BAD", "WEATHER"].
+ *
+ * @param {number} count
+ * @param {object} [options] - Same options as generateDataLogMock
+ * @returns {{ data_log: object[] }}
+ */
+export function generateDataLogMockWithFlags(count, options = {}) {
+  const flags = ["", "GOOD", "BAD", "WEATHER"];
+  return generateDataLogMock(count, {
+    ...options,
+    postProcess: (r, i) => ({ ...r, exposure_flag: flags[i % flags.length] }),
+  });
 }

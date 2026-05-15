@@ -42,6 +42,10 @@ const dayobsInt = z.coerce
   .regex(yyyymmddRegex, "Dayobs must be in yyyyMMdd format.")
   .refine(
     (val) => {
+      // Zod runs chained refinements even when a prior refinement failed (status
+      // becomes "dirty" but execution continues). Guard here so that non-numeric
+      // input doesn't reach DateTime.fromObject, which throws on NaN arguments.
+      if (!yyyymmddRegex.test(val)) return false;
       const y = parseInt(val.slice(0, 4));
       const m = parseInt(val.slice(4, 6));
       const d = parseInt(val.slice(6, 8));
@@ -180,11 +184,20 @@ function stripUnknownParams(allowedKeys) {
   };
 }
 
+// Wrap schemas in plain functions to avoid TanStack Router's Standard Schema
+// (~standard) interface. Zod v3.24+ implements ~standard, but when _parseSync()
+// ever throws an "encountered" error it permanently marks the schema instance as
+// async, causing all subsequent validations to return Promises and TanStack Router
+// to throw "Async validation not supported". Using a plain function forces the
+// function path, which calls schema.parse() directly. ZodError.message is already
+// a JSON string of issues, so SearchParamErrorComponent parses it correctly.
+const parseWith = (schema) => (search) => schema.parse(search);
+
 const dashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
   component: Digest,
-  validateSearch: searchParamsSchema,
+  validateSearch: parseWith(searchParamsSchema),
   beforeLoad: stripUnknownParams(GLOBAL_SEARCH_PARAMS),
   errorComponent: SearchParamErrorComponent,
 });
@@ -193,7 +206,7 @@ const dataLogRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/data-log",
   component: DataLog,
-  validateSearch: dataLogSearchSchema,
+  validateSearch: parseWith(dataLogSearchSchema),
   beforeLoad: stripUnknownParams([
     ...GLOBAL_SEARCH_PARAMS,
     ...dataLogUrlParams,
@@ -205,7 +218,7 @@ const contextFeedRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/context-feed",
   component: ContextFeed,
-  validateSearch: contextFeedSearchSchema,
+  validateSearch: parseWith(contextFeedSearchSchema),
   beforeLoad: stripUnknownParams([
     ...GLOBAL_SEARCH_PARAMS,
     ...contextFeedUrlParams,
@@ -217,7 +230,7 @@ const plotsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/plots",
   component: Plots,
-  validateSearch: searchParamsSchema,
+  validateSearch: parseWith(searchParamsSchema),
   beforeLoad: stripUnknownParams(GLOBAL_SEARCH_PARAMS),
   errorComponent: SearchParamErrorComponent,
 });
@@ -226,7 +239,7 @@ const visitmapsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/visit-maps",
   component: VisitMaps,
-  validateSearch: searchParamsSchema,
+  validateSearch: parseWith(searchParamsSchema),
   beforeLoad: stripUnknownParams(GLOBAL_SEARCH_PARAMS),
   errorComponent: SearchParamErrorComponent,
 });

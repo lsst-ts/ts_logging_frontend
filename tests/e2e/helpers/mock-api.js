@@ -14,6 +14,10 @@ const DEFAULT_MOCKS = {
   "data-log": loadFixture("data-log"),
   almanac: loadFixture("almanac"),
   version: { version: "test" },
+  // Exposure log: empty by default so no flags/comments but no error toast
+  "exposure-entries": { exposure_entries: [] },
+  // Block details: empty lookup so science_program renders as plain text
+  "block-details": { data: {}, errors: null },
 };
 
 /**

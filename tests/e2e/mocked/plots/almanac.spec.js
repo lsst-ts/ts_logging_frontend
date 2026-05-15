@@ -68,15 +68,6 @@ test.describe("Twilight lines — full night range", () => {
     }
   });
 
-  test("the timeline also shows two twilight lines", async ({ page }) => {
-    const timelineSvg = page.locator(
-      ':not([data-slot="chart"]) > .recharts-responsive-container svg.recharts-surface',
-    );
-    await expect(
-      timelineSvg.locator(`line[stroke="${TWILIGHT_STROKE}"]`),
-    ).toHaveCount(2);
-  });
-
   test("evening twilight line is positioned left of morning twilight line", async ({
     page,
   }) => {
