@@ -1,4 +1,18 @@
 import { forwardRef, useImperativeHandle } from "react";
+
+// Helper to find the column with highlightKey metadata
+function findHighlightKey(columns) {
+  for (const col of columns) {
+    if (col.columns) {
+      // Handle column groups
+      const found = findHighlightKey(col.columns);
+      if (found) return found;
+    } else if (col.meta?.highlightKey) {
+      return col.accessorKey;
+    }
+  }
+  return null;
+}
 import {
   useReactTable,
   getCoreRowModel,
@@ -35,6 +49,8 @@ import DataTableToolbar from "./DataTableToolbar";
  * @param {Function} props.onReset - Custom reset handler
  * @param {Object} props.filterFns - Custom filter functions
  * @param {React.Ref} ref - Ref for imperative methods (setCollapseAll, setGrouping)
+ * @param {string|null} props.highlighted - The highlight key value (or null for none)
+ * @param {Function} props.onHighlightChange - Callback when a row is clicked to highlight
  */
 const DataTable = forwardRef(function DataTable(
   {
@@ -50,6 +66,8 @@ const DataTable = forwardRef(function DataTable(
     onReset,
     filterFns = {},
     tableMeta = {},
+    highlighted = null,
+    onHighlightChange,
   },
   ref,
 ) {
@@ -151,6 +169,9 @@ const DataTable = forwardRef(function DataTable(
               table={table}
               columns={columns}
               isLoading={isLoading}
+              highlighted={highlighted}
+              onHighlightChange={onHighlightChange}
+              highlightKey={findHighlightKey(columns)}
             />
           </Table>
         </div>
