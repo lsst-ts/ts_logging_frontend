@@ -15,8 +15,17 @@ import {
  * @param {Array} props.data - Data Log row data
  * @param {boolean} props.dataLogLoading - Whether data is loading
  * @param {Object} props.blockLookup - BLOCK data map
+ * @param {string|null} props.highlighted - The highlight key value (or null for none)
+ * @param {Function} props.onHighlightChange - Callback when a row is clicked to highlight
  */
-function DataLogTable({ telescope, data, dataLogLoading, blockLookup }) {
+function DataLogTable({
+  telescope,
+  data,
+  dataLogLoading,
+  blockLookup,
+  highlighted,
+  onHighlightChange,
+}) {
   // Get column filters synced with URL
   const { columnFilters, setColumnFilters, resetFilters } = useUrlSync({
     routePath: "/data-log",
@@ -45,6 +54,8 @@ function DataLogTable({ telescope, data, dataLogLoading, blockLookup }) {
       }}
       onReset={handleReset}
       tableMeta={{ blockLookup }}
+      highlighted={highlighted}
+      onHighlightChange={onHighlightChange}
     />
   );
 }

@@ -81,6 +81,7 @@ const commonColumns = [
     filterType: null,
     meta: {
       tooltip: "Unique identifier for the exposure.",
+      highlightKey: true,
     },
   }),
   columnHelper.accessor("seq_num", {
