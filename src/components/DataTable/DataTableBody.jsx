@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { flexRender } from "@tanstack/react-table";
 
 import { TableBody, TableRow, TableCell } from "@/components/ui/table";
@@ -25,6 +26,25 @@ function DataTableBody({
   onHighlightChange,
   highlightKey,
 }) {
+  const highlightedRowRef = useRef(null);
+  const hasScrolled = useRef(false);
+
+  useEffect(() => {
+    if (
+      hasScrolled.current ||
+      isLoading ||
+      highlighted === null ||
+      !highlightedRowRef.current
+    )
+      return;
+    hasScrolled.current = true;
+    highlightedRowRef.current.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+      container: "nearest",
+    });
+  }, [isLoading, highlighted]);
+
   if (isLoading) {
     return (
       <TableBody>
@@ -67,6 +87,7 @@ function DataTableBody({
         return (
           <TableRow
             key={row.id}
+            ref={isHighlighted ? highlightedRowRef : null}
             onClick={handleClick}
             className={
               isHighlighted
