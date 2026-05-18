@@ -66,11 +66,11 @@ function DataLog() {
 
   // Data and loading flags
   const [consDBdata, setConsDBdata] = useState([]);
-  const [consDBdataLoading, setConsDBdataLoading] = useState(false);
+  const [consDBdataLoading, setConsDBdataLoading] = useState(true);
   const [exposureLogData, setExposureLogData] = useState([]);
-  const [exposureLogDataLoading, setExposureLogDataLoading] = useState(false);
+  const [exposureLogDataLoading, setExposureLogDataLoading] = useState(true);
   const [blockLookup, setBlockLookup] = useState({});
-  const [blockLookupLoading, setBlockLookupLoading] = useState(false);
+  const [blockLookupLoading, setBlockLookupLoading] = useState(true);
 
   // Almanac data for timeline
   const [twilightValues, setTwilightValues] = useState([]);
