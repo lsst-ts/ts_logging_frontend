@@ -13,8 +13,18 @@ import { SKELETON_ROW_COUNT } from "./constants";
  * @param {Object} props.table - TanStack Table instance
  * @param {Array} props.columns - Column definitions (for skeleton column count)
  * @param {boolean} props.isLoading - Whether data is loading
+ * @param {string|null} props.highlighted - The highlight key value to match (or null for none)
+ * @param {Function} props.onHighlightChange - Callback when a row is clicked to highlight
+ * @param {string} props.highlightKey - The column accessor key used for highlighting
  */
-function DataTableBody({ table, columns, isLoading }) {
+function DataTableBody({
+  table,
+  columns,
+  isLoading,
+  highlighted = null,
+  onHighlightChange,
+  highlightKey,
+}) {
   if (isLoading) {
     return (
       <TableBody>
@@ -36,8 +46,34 @@ function DataTableBody({ table, columns, isLoading }) {
       {table.getRowModel().rows.map((row) => {
         const isGroupedRow = row.getIsGrouped();
 
+        // Check if this row matches the highlighted value
+        // Use loose equality (==) to handle number/string comparisons
+        const rowValue = row.getValue(highlightKey);
+        const isHighlighted =
+          !isGroupedRow &&
+          highlighted != null &&
+          highlightKey &&
+          rowValue == highlighted; // eslint-disable-line eqeqeq
+
+        const handleClick = (e) => {
+          e.stopPropagation();
+          if (onHighlightChange && !isGroupedRow && highlightKey) {
+            onHighlightChange(
+              isHighlighted ? null : row.getValue(highlightKey),
+            );
+          }
+        };
+
         return (
-          <TableRow key={row.id}>
+          <TableRow
+            key={row.id}
+            onClick={handleClick}
+            className={
+              isHighlighted
+                ? "bg-yellow-200 hover:bg-yellow-300 text-stone-950"
+                : ""
+            }
+          >
             {isGroupedRow ? (
               <GroupedRowCell row={row} table={table} columns={columns} />
             ) : (
