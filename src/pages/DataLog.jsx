@@ -32,6 +32,7 @@ import {
   prepareMoonIntervals,
 } from "@/utils/timelineUtils";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
+import { useHighlightSync } from "@/components/DataTable";
 
 function DataLog() {
   // Routing and URL params
@@ -93,6 +94,11 @@ function DataLog() {
     removeNotification,
     clearNotifications,
   } = useNotifications();
+  // Highlight state synced with URL
+  const { highlightedValue, setHighlightedValue } = useHighlightSync({
+    routePath: "/data-log",
+    highlightKey: "exposure_id",
+  });
 
   // Calculate moon intervals when moon values or full time range changes
   useEffect(() => {
@@ -483,6 +489,8 @@ function DataLog() {
           data={filteredDataLogTableData}
           dataLogLoading={tableLoading}
           blockLookup={blockLookup}
+          highlighted={highlightedValue}
+          onHighlightChange={setHighlightedValue}
         />
       </div>
     </>
