@@ -22,6 +22,8 @@ import {
  * @param {Function} props.setColumnFilters - Column filter setter
  * @param {Function} props.resetFilters - Reset filters to defaults
  * @param {Object} props.blockLookup - BLOCK data map
+ * @param {string|null} props.highlighted - The highlight key value (or null for none)
+ * @param {Function} props.onHighlightChange - Callback when a row is clicked to highlight
  */
 function ContextFeedTable({
   data,
@@ -30,6 +32,8 @@ function ContextFeedTable({
   setColumnFilters,
   resetFilters,
   blockLookup,
+  highlighted,
+  onHighlightChange,
 }) {
   const tableRef = useRef();
 
@@ -133,6 +137,8 @@ function ContextFeedTable({
         centerContent,
       }}
       onReset={handleReset}
+      highlighted={highlighted}
+      onHighlightChange={onHighlightChange}
     />
   );
 }
