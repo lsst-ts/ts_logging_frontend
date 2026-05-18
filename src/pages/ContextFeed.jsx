@@ -93,13 +93,13 @@ function ContextFeed() {
 
   // Data and loading flags
   const [rubinNightsData, setRubinNightsData] = useState([]);
-  const [rubinNightsDataLoading, setRubinNightsDataLoading] = useState(false);
+  const [rubinNightsDataLoading, setRubinNightsDataLoading] = useState(true);
   const [blockLookup, setBlockLookup] = useState({});
-  const [blockLookupLoading, setBlockLookupLoading] = useState(false);
+  const [blockLookupLoading, setBlockLookupLoading] = useState(true);
 
   // Almanac data for timeline
   const [twilightValues, setTwilightValues] = useState([]);
-  const [almanacLoading, setAlmanacLoading] = useState(false);
+  const [almanacLoading, setAlmanacLoading] = useState(true);
 
   // Visibility toggles
   const [timelineVisible, setTimelineVisible] = useState(true);
