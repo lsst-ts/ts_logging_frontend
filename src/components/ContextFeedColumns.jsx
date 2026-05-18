@@ -138,9 +138,12 @@ function renderDescriptionCell(info) {
   return (
     <div
       className="relative"
-      onClick={() => toggleExpandedRows(rowId, "description")}
+      onClick={(e) => {
+        e.stopPropagation();
+        toggleExpandedRows(rowId, "description");
+      }}
     >
-      <pre className="whitespace-pre-wrap text-xs bg-stone-900 p-2 rounded cursor-pointer">
+      <pre className="whitespace-pre-wrap text-xs text-white bg-stone-900 p-2 rounded cursor-pointer">
         {!expanded ? (
           // Collapsed: intro line of traceback, expandable upon click
           <>Traceback (most recent call last): ...</>
@@ -272,9 +275,12 @@ function renderConfigCell(info) {
   return (
     <div
       className="relative"
-      onClick={() => toggleExpandedRows(rowId, "config")}
+      onClick={(e) => {
+        e.stopPropagation();
+        toggleExpandedRows(rowId, "config");
+      }}
     >
-      <pre className="whitespace-pre-wrap text-xs bg-stone-900 p-2 rounded cursor-pointer">
+      <pre className="whitespace-pre-wrap text-xs text-white bg-stone-900 p-2 rounded cursor-pointer">
         {!expanded ? (
           // Collapsed: first line of YAML, expandable upon click
           // "..." appended if more lines
