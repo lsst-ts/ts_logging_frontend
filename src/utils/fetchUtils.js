@@ -161,6 +161,65 @@ const fetchNarrativeLog = async (start, end, instrument, abortController) => {
 };
 
 /**
+ * Fetches Observatory Status data for a specified date range.
+ *
+ * @async
+ * @function fetchObsStatusFromRubinNights
+ *
+ * @param {Object} options - Fetch configuration options.
+ * @param {string} options.start - Start date of the observation range (format: YYYYMMDD).
+ * @param {string} options.end - End date of the observation range (format: YYYYMMDD).
+ * @param {boolean} [options.includeEntries=true] - Whether to include raw Observatory Status event records.
+ * @param {boolean} [options.includeIntervals=false] - Whether to include computed Observatory Status intervals.
+ * @param {string[]} [options.metrics] - List of metrics to request. If omitted, the API returns no metrics.
+ * @param {AbortController} options.abortController - AbortController used to cancel the request.
+ *
+ * @returns {Promise<Object>} A promise resolving to an object containing:
+ * @returns {Object[]} [returns.entries] Raw Observatory Status event records.
+ * @returns {Object[]} [returns.intervals] Computed Observatory Status intervals and related metadata.
+ * @returns {Object.<string, number>} [returns.totals] Computed metric totals in hours.
+ *
+ * @throws {Error} Throws if the request fails and was not aborted.
+ */
+const fetchObsStatusFromRubinNights = async ({
+  start,
+  end,
+  includeEntries = true,
+  includeIntervals = false,
+  metrics,
+  abortController,
+}) => {
+  // Construct API url containing multiple (unique) requested metrics.
+  const params = new URLSearchParams({
+    dayObsStart: start,
+    dayObsEnd: end,
+    includeEntries: includeEntries,
+    includeIntervals: includeIntervals,
+  });
+
+  // If any metrics have been requested, add to query.
+  if (metrics?.length) {
+    const uniqueMetrics = [...new Set(metrics)];
+    uniqueMetrics.forEach((metric) => params.append("metric", metric));
+  }
+
+  const url = `${backendLocation}/obs-status?${params.toString()}`;
+
+  try {
+    const data = await fetchData(url, abortController);
+    return data;
+  } catch (err) {
+    if (err.name !== "AbortError") {
+      console.error(
+        "Error fetching Observatory Status API from Rubin Nights:",
+        err,
+      );
+    }
+    throw err;
+  }
+};
+
+/**
  * Fetches the nightreport data for a specified date range.
  *
  * @async
@@ -476,6 +535,7 @@ export {
   fetchExpectedExposures,
   fetchAlmanac,
   fetchNarrativeLog,
+  fetchObsStatusFromRubinNights,
   fetchNightreport,
   fetchExposureFlags,
   fetchJiraTickets,
