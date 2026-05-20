@@ -42,14 +42,12 @@ function renderNameCell(info) {
   // If available, display BLOCK names as Zephyr/Jira links
   if (block) {
     return (
-      // Wrap in a dark background for visibility
-      // when row is highlighted.
-      <div className="bg-stone-800 p-1 rounded">
+      <div className="p-1 rounded">
         <a
           href={block.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-sky-500 underline hover:text-sky-400"
+          className="text-sky-500 underline hover:text-sky-300"
         >
           {formatCellValue(value)}
         </a>
@@ -93,14 +91,12 @@ function renderDescriptionCell(info) {
         const lines = linkHtml.split(/<br\s*\/?>/i);
 
         return (
-          // Wrap in a dark background for visibility
-          // when row is highlighted.
-          <div className="bg-stone-800 p-2 rounded">
+          <div className="p-2 rounded">
             <a
               href={href}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sky-500 underline hover:text-sky-400"
+              className="text-sky-500 underline hover:text-sky-300"
             >
               {/* Iterate over the link text lines */}
               {lines.map((line, idx) => (
