@@ -17,7 +17,8 @@ export default function TimeLossCard({
   calculatedFaultLoading = false,
   onClick = false,
 }) {
-  const loading = narrativeLogloading && obsStatusLoading && calculatedFaultLoading;
+  const loading =
+    narrativeLogloading && obsStatusLoading && calculatedFaultLoading;
   const isClickable = onClick && !loading;
   const heading = "Time Loss";
 
@@ -39,13 +40,25 @@ export default function TimeLossCard({
         {/* Data */}
         <div className="grid grid-cols-[auto_1fr] items-center gap-x-4 text-md">
           <div>Obs. Status:</div>
-          {obsStatusLoading ? <Skeleton className="h-3 w-10 bg-teal-700" /> : obsStatusData.toFixed(2)}
+          {obsStatusLoading ? (
+            <Skeleton className="h-3 w-10 bg-teal-700" />
+          ) : (
+            obsStatusData.toFixed(2)
+          )}
 
           <div>Narrative Log:</div>
-          {narrativeLogloading ? <Skeleton className="h-3 w-10 bg-teal-700" /> : narrativeLogData.toFixed(2)}
+          {narrativeLogloading ? (
+            <Skeleton className="h-3 w-10 bg-teal-700" />
+          ) : (
+            narrativeLogData.toFixed(2)
+          )}
 
           <div>Calculated:</div>
-          {calculatedFaultLoading ? <Skeleton className="h-3 w-10 bg-teal-700" /> : calculatedData}
+          {calculatedFaultLoading ? (
+            <Skeleton className="h-3 w-10 bg-teal-700" />
+          ) : (
+            calculatedData
+          )}
         </div>
         {/* Info Icon */}
         <Popover>
@@ -59,12 +72,14 @@ export default function TimeLossCard({
           </PopoverTrigger>
           <PopoverContent className="bg-black text-white text-sm border-yellow-700 w-100">
             <p>
-              Observing hours lost to faults as recorded in the Narrative Log and Observatory Status, and calculated from exposures.
+              Observing hours lost to faults as recorded in the Narrative Log
+              and Observatory Status, and calculated from exposures.
               <br />
               <br />
               <strong>Observatory Status Fault Loss</strong>
               <br />
-              Sum of all observing time with an active <code>FAULT</code> status, except during <code>DOWNTIME</code>.
+              Sum of all observing time with an active <code>FAULT</code>{" "}
+              status, except during <code>DOWNTIME</code>.
               <br />
               <br />
               <strong>Narrative Log Fault Loss</strong>
@@ -74,10 +89,14 @@ export default function TimeLossCard({
               <br />
               <strong>Calculated Fault Loss</strong>
               <br />
-              Total available observing time – exposure time – overhead time* – MIN( time lost to weather, dome closed time ).
+              Total available observing time – exposure time – overhead time* –
+              MIN( time lost to weather, dome closed time ).
               <br />
               <br />
-              <em>*overhead time = readout time when not slewing + any setting time after slewing.</em>
+              <em>
+                *overhead time = readout time when not slewing + any setting
+                time after slewing.
+              </em>
             </p>
           </PopoverContent>
         </Popover>
