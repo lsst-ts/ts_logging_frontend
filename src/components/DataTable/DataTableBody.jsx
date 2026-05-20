@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { flexRender } from "@tanstack/react-table";
 
 import { TableBody, TableRow, TableCell } from "@/components/ui/table";
+
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { SKELETON_ROW_COUNT } from "./constants";
@@ -73,7 +74,7 @@ function DataTableBody({
           !isGroupedRow &&
           highlighted != null &&
           highlightKey &&
-          rowValue == highlighted; // eslint-disable-line eqeqeq
+          rowValue == highlighted;
 
         const handleClick = (e) => {
           e.stopPropagation();
@@ -89,9 +90,10 @@ function DataTableBody({
             key={row.id}
             ref={isHighlighted ? highlightedRowRef : null}
             onClick={handleClick}
+            data-selected={isHighlighted ? "true" : undefined}
             className={
               isHighlighted
-                ? "bg-yellow-200 hover:bg-yellow-300 text-stone-950"
+                ? "bg-black/40 shadow-[inset_4px_0_0_0_white] border-t-2 border-b-2 border-white"
                 : ""
             }
           >
