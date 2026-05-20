@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useMemo, useCallback } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
   getDayobsStartUTC,
@@ -35,10 +35,24 @@ import {
  * setSelectedTimeRange([newStart, newEnd]);
  */
 export function useTimeRangeFromURL(routePath) {
-  // Get all search params from the URL
-  const { startDayobs, endDayobs, startTime, endTime } = useSearch({
+  // Get only the search params we need using select to prevent unnecessary re-renders
+  const { startDayobs, endDayobs } = useSearch({
     from: routePath,
+    select: (search) => ({
+      startDayobs: search.startDayobs,
+      endDayobs: search.endDayobs,
+    }),
   });
+
+  const { startTime, endTime } = useSearch({
+    from: routePath,
+    select: (search) => ({
+      startTime: search.startTime,
+      endTime: search.endTime,
+    }),
+  });
+
+  const navigate = useNavigate({ from: routePath });
 
   // Calculate the full valid time range based on dayobs parameters
   const fullTimeRange = useMemo(
@@ -49,60 +63,44 @@ export function useTimeRangeFromURL(routePath) {
     [startDayobs, endDayobs],
   );
 
-  // Initialize state from URL params, validating against fullTimeRange
-  const [selectedTimeRange, setSelectedTimeRangeInternal] = useState(() => {
+  // Derive selectedTimeRange directly from URL params
+  const selectedTimeRange = useMemo(() => {
     const startMillis = Number(startTime);
     const endMillis = Number(endTime);
     return getValidTimeRange(startMillis, endMillis, fullTimeRange);
-  });
-
-  const navigate = useNavigate({ from: routePath });
-  const searchParams = useSearch({ from: routePath });
-
-  // Sync URL time params → state when URL changes externally
-  useEffect(() => {
-    const startMillis = Number(startTime);
-    const endMillis = Number(endTime);
-    const newRange = getValidTimeRange(startMillis, endMillis, fullTimeRange);
-
-    if (
-      newRange[0].toMillis() !== selectedTimeRange[0].toMillis() ||
-      newRange[1].toMillis() !== selectedTimeRange[1].toMillis()
-    ) {
-      setSelectedTimeRangeInternal(newRange);
-    }
-  }, [startTime, endTime, fullTimeRange, selectedTimeRange]);
+  }, [startTime, endTime, fullTimeRange]);
 
   // Wrapped setter that updates both state and URL
-  const setSelectedTimeRange = (newRange) => {
-    if (
-      !newRange[0] ||
-      !newRange[1] ||
-      Number.isNaN(newRange[0].toMillis()) ||
-      Number.isNaN(newRange[1].toMillis())
-    ) {
-      console.warn(
-        "setSelectedTimeRange called with invalid values: ",
-        newRange,
-      );
-      return;
-    }
+  const setSelectedTimeRange = useCallback(
+    (newRange) => {
+      if (
+        !newRange[0] ||
+        !newRange[1] ||
+        Number.isNaN(newRange[0].toMillis()) ||
+        Number.isNaN(newRange[1].toMillis())
+      ) {
+        console.warn(
+          "setSelectedTimeRange called with invalid values: ",
+          newRange,
+        );
+        return;
+      }
 
-    setSelectedTimeRangeInternal(newRange);
+      const newStart = newRange[0].toMillis();
+      const newEnd = newRange[1].toMillis();
 
-    const newStart = newRange[0].toMillis();
-    const newEnd = newRange[1].toMillis();
-
-    navigate({
-      to: routePath,
-      search: {
-        ...searchParams,
-        startTime: newStart,
-        endTime: newEnd,
-      },
-      replace: true,
-    });
-  };
+      navigate({
+        to: routePath,
+        search: (prev) => ({
+          ...prev,
+          startTime: newStart,
+          endTime: newEnd,
+        }),
+        replace: true,
+      });
+    },
+    [navigate, routePath],
+  );
 
   return { selectedTimeRange, setSelectedTimeRange, fullTimeRange };
 }
