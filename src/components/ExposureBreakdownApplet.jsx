@@ -229,16 +229,17 @@ function ExposureBreakdownApplet({
       // associations being made between bars and their
       // colours.
       chartData = chartData.map((entry, index) => {
-      // The band is the first character of physical_filter.
-      const band = String(entry.groupKey).charAt(0);
+        // The band is the first character of physical_filter.
+        const band = String(entry.groupKey).charAt(0);
 
-      return {
+        return {
           ...entry,
-          fill: groupBy == GroupByValues.FILTER
-          ? BAND_COLORS[band] ?? "#888888"
-          : `hsl(${index * 40}, 70%, 50%)`,
+          fill:
+            groupBy == GroupByValues.FILTER
+              ? BAND_COLORS[band] ?? "#888888"
+              : `hsl(${index * 40}, 70%, 50%)`,
           fill_flag: "#ffffff",
-      }
+        };
       });
 
       return {
