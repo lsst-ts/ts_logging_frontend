@@ -178,6 +178,7 @@ const fetchNarrativeLog = async (start, end, instrument, abortController) => {
  * @returns {Object[]} [returns.entries] Raw Observatory Status event records.
  * @returns {Object[]} [returns.intervals] Computed Observatory Status intervals and related metadata.
  * @returns {Object.<string, number>} [returns.totals] Computed metric totals in hours.
+ * @returns {Object.<string, Any>} [returns.availability] Data availability for observation range.
  *
  * @throws {Error} Throws if the request fails and was not aborted.
  */
