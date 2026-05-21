@@ -58,8 +58,10 @@ export default function Digest() {
   const [sumOnSkyExpTime, setSumOnSkyExpTime] = useState(0.0);
   const [flags, setFlags] = useState([]);
   const [reports, setReports] = useState([]);
-  // const [obsStatusDurations, setObsStatusDurations] = useState([]);
+  // TODO: OSW-2118 - Update the Time Accounting applet
+  // const [obsStatusIntervals, setObsStatusIntervals] = useState([]);
   const [obsStatusFaultLoss, setObsStatusFaultLoss] = useState(0.0);
+  const [obsStatusAvailability, setObsStatusAvailability] = useState({});
 
   const [exposuresLoading, setExposuresLoading] = useState(false);
   const [expectedExposuresLoading, setExpectedExposuresLoading] =
@@ -68,6 +70,7 @@ export default function Digest() {
   const [narrativeLoading, setNarrativeLoading] = useState(false);
   const [nightreportLoading, setNightreportLoading] = useState(false);
   const [obsStatusLoading, setObsStatusLoading] = useState(false);
+  // TODO: OSW-2330 - Add computed fault to Time Loss card
   // const [calculatedFaultLoading, setCalculatedFaultLoading] = useState(false);
 
   const [jiraTickets, setJiraTickets] = useState([]);
@@ -127,8 +130,10 @@ export default function Digest() {
     setOnSkyExpCount(0);
     setExpectedOnSkyExpCount(0);
     setFlags([]);
-    // setObsStatusDurations([]);
+    // TODO: OSW-2118 - Update the Time Accounting applet
+    // setObsStatusIntervals([]);
     setObsStatusFaultLoss(0.0);
+    setObsStatusAvailability([]);
 
     setStaticVisitMapLoading(true);
     setStaticVisitMaps(null);
@@ -249,9 +254,10 @@ export default function Digest() {
       abortController,
     })
       .then((data) => {
-        console.log("obs_status Digest: ", data);
-        // setObsStatusDurations(data.intervals);
+        // TODO: OSW-2118 - Update the Time Accounting applet
+        // setObsStatusIntervals(data.intervals);
         setObsStatusFaultLoss(data.metrics.fault_loss);
+        setObsStatusAvailability(data.availability);
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
@@ -502,6 +508,7 @@ export default function Digest() {
             icon={TimeLossIcon}
             narrativeLogData={narrativeFaultLoss}
             obsStatusData={obsStatusFaultLoss}
+            obsStatusAvailability={obsStatusAvailability}
             calculatedData={"TBD"}
             narrativeLogloading={narrativeLoading}
             obsStatusLoading={obsStatusLoading}

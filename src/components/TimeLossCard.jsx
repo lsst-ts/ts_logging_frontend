@@ -1,16 +1,26 @@
+import { TriangleAlert } from "lucide-react";
+
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import InfoIcon from "../assets/InfoIcon.svg";
+
+import { formatDayobsStrForDisplay } from "@/utils/timeUtils";
 
 export default function TimeLossCard({
   icon,
   narrativeLogData,
   obsStatusData,
+  obsStatusAvailability,
   calculatedData,
   narrativeLogloading = false,
   obsStatusLoading = false,
@@ -20,7 +30,38 @@ export default function TimeLossCard({
   const loading =
     narrativeLogloading && obsStatusLoading && calculatedFaultLoading;
   const isClickable = onClick && !loading;
+
   const heading = "Time Loss";
+
+  const isFullyAvailable = obsStatusAvailability.status === "full";
+  const isNotAvailable = obsStatusAvailability.status === "none";
+
+  // Tooltip to be shown over obs status data if data
+  // partially or fully unavailable due to user querying
+  // before/around when the data started being recorded.
+  const tooltipText = isNotAvailable ? (
+    <>
+      Observatory Status data is only available from{" "}
+      <strong>
+        {formatDayobsStrForDisplay(
+          String(obsStatusAvailability.available_from),
+        )}
+      </strong>
+      .
+    </>
+  ) : (
+    <>
+      Observatory Status data is only available from{" "}
+      <strong>
+        {formatDayobsStrForDisplay(
+          String(obsStatusAvailability.available_from),
+        )}
+      </strong>
+      .
+      <br />
+      Fault time loss has been computed for the available dayobs.
+    </>
+  );
 
   return (
     // Card
@@ -42,8 +83,26 @@ export default function TimeLossCard({
           <div>Obs. Status:</div>
           {obsStatusLoading ? (
             <Skeleton className="h-3 w-10 bg-teal-700" />
+          ) : // Show data when availabile
+          isFullyAvailable ? (
+            <div>{obsStatusData.toFixed(2)}</div>
           ) : (
-            obsStatusData.toFixed(2)
+            // Show tooltip and warning icon for no/partial data
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1 cursor-help">
+                  <span>
+                    {isNotAvailable ? "NA" : obsStatusData.toFixed(2)}
+                  </span>
+
+                  <TriangleAlert className="h-4 w-4 text-yellow-500" />
+                </div>
+              </TooltipTrigger>
+
+              <TooltipContent>
+                <p>{tooltipText}</p>
+              </TooltipContent>
+            </Tooltip>
           )}
 
           <div>Narrative Log:</div>
