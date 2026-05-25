@@ -85,9 +85,6 @@ export default function Layout({ children }) {
           <SidebarToggle />
           <div className="flex flex-col gap-4 px-8">
             <RetentionBanner />
-            {/* System notices — deferred, see JIRA-XXX
-              Hook placeholder: hooks/useNotifications.js
-              Creation workflow to be decided before implementation */}
           </div>
           {children}
           {/* Main content */}

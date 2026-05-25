@@ -1,13 +1,17 @@
-import { X } from "lucide-react";
+import { CircleAlert, Info, CircleMinus, X } from "lucide-react";
 
 const config = {
   // systemNotice kept for future PR — do not remove
   systemNotice: {
     dismissible: true,
-    icon: "i",
-    container:
-      "bg-indigo-950 border-l-indigo-400 border-t-indigo-900 border-r-indigo-900 border-b-indigo-900",
-    icon_style: "bg-indigo-900 border-indigo-400 text-indigo-300",
+    icon: (
+      <Info
+        size={16}
+        strokeWidth={1.75}
+        className="text-indigo-300 mt-0.5 flex-shrink-0"
+      />
+    ),
+    container: "bg-indigo-950 border-l-indigo-400 border-indigo-900",
     title: "text-indigo-200",
     description: "text-indigo-300",
     meta: "text-indigo-400",
@@ -15,10 +19,14 @@ const config = {
   },
   noData: {
     dismissible: true,
-    icon: "–",
-    container:
-      "bg-stone-900 border-l-slate-400 border-t-slate-700 border-r-slate-700 border-b-slate-700",
-    icon_style: "bg-slate-700 border-slate-400 text-slate-300",
+    icon: (
+      <CircleMinus
+        size={16}
+        strokeWidth={1.75}
+        className="text-slate-400 mt-0.5 flex-shrink-0"
+      />
+    ),
+    container: "bg-stone-900 border-l-slate-400 border-slate-700",
     title: "text-slate-100",
     description: "text-slate-300",
     meta: "text-slate-400",
@@ -26,10 +34,14 @@ const config = {
   },
   error: {
     dismissible: false,
-    icon: "!",
-    container:
-      "bg-red-950/60 border-l-red-500 border-t-red-950 border-r-red-950 border-b-red-950",
-    icon_style: "bg-red-900 border-red-500 text-red-300",
+    icon: (
+      <CircleAlert
+        size={16}
+        strokeWidth={2.25}
+        className="text-red-400 mt-0.5 flex-shrink-0"
+      />
+    ),
+    container: "bg-red-950/60 border-l-red-500 border-red-950",
     title: "text-red-200",
     description: "text-red-300",
     meta: "text-red-400",
@@ -39,9 +51,9 @@ const config = {
 
 export function NotificationBanner({
   type,
-  title,
-  description,
-  meta,
+  title = "",
+  description = "",
+  meta = "",
   onDismiss,
 }) {
   const c = config[type];
@@ -51,11 +63,7 @@ export function NotificationBanner({
     <div
       className={`flex items-start gap-3 px-4 py-3 rounded-lg border-l-[3px] border-t border-r border-b text-sm ${c.container}`}
     >
-      <span
-        className={`mt-0.5 flex-shrink-0 flex items-center justify-center w-[18px] h-[18px] rounded-full border text-[10px] font-semibold ${c.icon_style}`}
-      >
-        {c.icon}
-      </span>
+      {c.icon}
 
       <div className="flex-1 min-w-0">
         <p className={`font-medium ${c.title}`}>{title}</p>

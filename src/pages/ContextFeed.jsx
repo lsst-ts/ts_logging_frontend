@@ -184,18 +184,8 @@ function ContextFeed() {
 
     fetchAlmanac(startDayobs, queryEndDayobs, abortController)
       .then((almanac) => {
-        if (almanac === null) {
-          addNotification({
-            type: "noData",
-            source: "almanac",
-            title: "No almanac data available",
-            description:
-              "Context Feed and timeline will be displayed without accompanying almanac information.",
-          });
-        } else {
-          const { twilightValues } = prepareAlmanacData(almanac);
-          setTwilightValues(twilightValues);
-        }
+        const { twilightValues } = prepareAlmanacData(almanac);
+        setTwilightValues(twilightValues);
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
@@ -203,8 +193,6 @@ function ContextFeed() {
           addNotification({
             type: "error",
             source: "almanac",
-            title: "Error fetching almanac",
-            description: "An error occurred while fetching almanac.",
           });
         }
       })
@@ -219,10 +207,10 @@ function ContextFeed() {
         if (data.length === 0) {
           addNotification({
             type: "noData",
-            source: "context-feed",
+            source: "scriptqueue",
             title: "No Context Feed entries found",
             description:
-              "The table and the timeline will be empty, but you can still view the almanac data (if available).",
+              "The table and the timeline will be empty for the selected date range.",
           });
         }
 
@@ -231,16 +219,14 @@ function ContextFeed() {
       .catch((err) => {
         // If the error is not caused by the fetch being aborted
         // then notify the error.
-        console.error(
-          "Error fetching Context Feed data from Rubin Nights",
-          err,
-        );
         if (!abortController.signal.aborted) {
+          console.error(
+            "Error fetching Context Feed data from Rubin Nights",
+            err,
+          );
           addNotification({
             type: "error",
             source: "context-feed",
-            title: "Error fetching Context Feed data",
-            description: "An error occurred while fetching context feed data.",
           });
         }
       })
@@ -286,10 +272,7 @@ function ContextFeed() {
           Object.entries(blocks.errors).forEach(([source, message]) => {
             addNotification({
               type: "error",
-              source: `${getBlockSourceLabel(source)}`,
-              title: "Error fetching BLOCK descriptions",
-              description:
-                "An error occurred while fetching context feed data.",
+              source: `${getBlockSourceLabel(source)}-blocks`,
             });
             console.error(
               `Error fetching BLOCK descriptions from ${getBlockSourceLabel(
@@ -309,10 +292,11 @@ function ContextFeed() {
           );
           addNotification({
             type: "error",
-            source: "block-lookup",
-            title: "Error fetching BLOCK descriptions",
-            description:
-              "An error occurred while fetching BLOCK descriptions from Zephyr/Jira.",
+            source: "jira-blocks",
+          });
+          addNotification({
+            type: "error",
+            source: "zephyr-blocks",
           });
         }
       })
@@ -368,7 +352,7 @@ function ContextFeed() {
 
   return (
     <>
-      <div className="flex flex-col w-full h-screen px-8 pb-8 gap-4">
+      <div className="flex flex-col w-full h-screen p-8 gap-4">
         {displayedNotifications.length > 0 && (
           <NotificationBannerStack
             notifications={displayedNotifications}
@@ -545,7 +529,6 @@ function ContextFeed() {
           blockLookup={blockLookup}
         />
       </div>
-      {/* Error / warning / info message pop-ups */}
     </>
   );
 }

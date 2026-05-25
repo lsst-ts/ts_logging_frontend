@@ -67,8 +67,8 @@ function VisitMaps() {
         if (interactivePlot === null) {
           addNotification({
             type: "noData",
-            source: "visit-maps",
-            title: "No visit entries found in ConsDB",
+            source: "consdb",
+            title: "No exposures found in ConsDB",
             description:
               "Visit maps couldn't be generated for the selected date range.",
           });
@@ -81,8 +81,6 @@ function VisitMaps() {
           addNotification({
             type: "error",
             source: "visit-maps",
-            title: "Error fetching visit maps",
-            description: "An error occurred while fetching visit maps.",
           });
         }
       })
@@ -99,7 +97,7 @@ function VisitMaps() {
 
   return (
     <>
-      <div className="flex flex-col w-full p-8 gap-6">
+      <div className="flex flex-col w-full p-8 gap-4">
         {processedNotifications?.length > 0 && (
           <NotificationBannerStack
             notifications={processedNotifications}

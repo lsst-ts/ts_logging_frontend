@@ -8,12 +8,8 @@ export function NotificationBannerStack({ notifications, onDismiss }) {
       {items.map((banner) => (
         <NotificationBanner
           key={banner.id || banner.source}
-          type={banner.type}
-          source={banner.source}
-          title={banner.title}
-          description={banner.description}
-          meta={banner.meta}
           onDismiss={onDismiss ? () => onDismiss(banner.id) : undefined}
+          {...banner}
         />
       ))}
     </div>

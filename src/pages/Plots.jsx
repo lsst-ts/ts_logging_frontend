@@ -198,10 +198,10 @@ function Plots() {
         if (dataLog.length === 0) {
           addNotification({
             type: "noData",
-            source: "plots",
-            title: "No exposure entries found in ConsDB",
+            source: "consdb",
+            title: "No exposures found in ConsDB",
             description:
-              "Plots will not be displayed. Try a different date range.",
+              "Plots will not be displayed for the selected date range.",
           });
         } else {
           prepareExposureData(dataLog);
@@ -209,11 +209,10 @@ function Plots() {
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
+          console.error("Error fetching exposures from ConsDB:", err);
           addNotification({
             type: "error",
-            source: "data-log",
-            title: "Error fetching data log",
-            description: err?.message || "Unknown error",
+            source: "exposures",
           });
         }
       })
@@ -225,30 +224,18 @@ function Plots() {
 
     fetchAlmanac(startDayobs, queryEndDayobs, abortController)
       .then((almanac) => {
-        if (almanac === null) {
-          addNotification({
-            type: "noData",
-            source: "almanac",
-            title: "No almanac data available",
-            description:
-              "Plots will be displayed without accompanying almanac information.",
-          });
-        } else {
-          const { twilightValues, illumValues, moonValues } =
-            prepareAlmanacData(almanac);
-          setTwilightValues(twilightValues);
-          setIllumValues(illumValues);
-          setMoonValues(moonValues);
-        }
+        const { twilightValues, illumValues, moonValues } =
+          prepareAlmanacData(almanac);
+        setTwilightValues(twilightValues);
+        setIllumValues(illumValues);
+        setMoonValues(moonValues);
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
+          console.error("Error fetching almanac data:", err);
           addNotification({
             type: "error",
             source: "almanac",
-            title: "Error fetching almanac",
-            description:
-              err?.message || "An error occurred while fetching almanac.",
           });
         }
       })
@@ -328,7 +315,7 @@ function Plots() {
 
   return (
     <>
-      <div className="flex flex-col h-screen w-full p-8 gap-6">
+      <div className="flex flex-col w-full p-8 gap-4">
         {displayedNotifications.length > 0 && (
           <NotificationBannerStack
             notifications={displayedNotifications}

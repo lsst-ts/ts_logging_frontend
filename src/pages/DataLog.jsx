@@ -1,6 +1,4 @@
 import { useState, useEffect, useMemo } from "react";
-import { Toaster } from "@/components/ui/sonner";
-import { toast } from "sonner";
 import { useSearch } from "@tanstack/react-router";
 
 import { Skeleton } from "@/components/ui/skeleton";
@@ -122,34 +120,21 @@ function DataLog() {
     setIllumValues([]);
     setMoonValues([]);
     clearNotifications();
-    toast.dismiss();
 
     fetchAlmanac(startDayobs, queryEndDayobs, abortController)
       .then((almanac) => {
-        // when does this happen? if the date range is in the future and almanac data is not yet available?
-        // should we show a different message for that case?
-        // should we differentiate between no data vs error fetching data for almanac?
-        if (almanac === null) {
-          toast.warning(
-            "No almanac data available. Timeline will be displayed without accompanying almanac information.",
-          );
-        } else {
-          const { twilightValues, illumValues, moonValues } =
-            prepareAlmanacData(almanac);
-          setTwilightValues(twilightValues);
-          setIllumValues(illumValues);
-          setMoonValues(moonValues);
-        }
+        const { twilightValues, illumValues, moonValues } =
+          prepareAlmanacData(almanac);
+        setTwilightValues(twilightValues);
+        setIllumValues(illumValues);
+        setMoonValues(moonValues);
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          console.error("Error fetching almanac:", err);
+          console.error("Error fetching almanac data:", err);
           addNotification({
             type: "error",
             source: "almanac",
-            title: "Almanac data unavailable",
-            description:
-              "An error occurred while fetching almanac. Timeline will be displayed without accompanying almanac information.",
           });
         }
       })
@@ -182,10 +167,10 @@ function DataLog() {
         if (dataLog.length === 0) {
           addNotification({
             type: "noData",
-            source: "data-log",
-            title: "No exposure entries found in ConsDB",
+            source: "consdb",
+            title: "No exposures found in ConsDB",
             description:
-              "Table and timeline will appear empty. Try a different date range.",
+              "Table and timeline will appear empty for the selected date range.",
           });
         }
 
@@ -197,9 +182,7 @@ function DataLog() {
           console.error("Error fetching data log entries:", err);
           addNotification({
             type: "error",
-            source: "data-log",
-            title: "Data log data unavailable",
-            description: "Error fetching exposure log or data log",
+            source: "exposures",
           });
         }
       })
@@ -235,10 +218,7 @@ function DataLog() {
           console.error("Error fetching exposure log entries:", err);
           addNotification({
             type: "error",
-            source: "exposure-log",
-            title: "Exposure log data unavailable",
-            description:
-              "Error fetching exposure log data. Flags and comments will be missing from the table.",
+            source: "exposure-flags",
           });
         }
       })
@@ -281,10 +261,7 @@ function DataLog() {
           Object.entries(blocks.errors).forEach(([source, message]) => {
             addNotification({
               type: "error",
-              source: `${getBlockSourceLabel(source)}`,
-              title: "Error fetching BLOCK descriptions",
-              description:
-                "An error occurred while fetching context feed data.",
+              source: `${getBlockSourceLabel(source)}-blocks`,
             });
             console.error(
               `Error fetching BLOCK descriptions from ${getBlockSourceLabel(
@@ -304,10 +281,11 @@ function DataLog() {
           );
           addNotification({
             type: "error",
-            source: "block-lookup",
-            title: "Error fetching BLOCK descriptions",
-            description:
-              "An error occurred while fetching BLOCK descriptions from Zephyr/Jira.",
+            source: "jira-blocks",
+          });
+          addNotification({
+            type: "error",
+            source: "zephyr-blocks",
           });
         }
       })
@@ -351,7 +329,7 @@ function DataLog() {
 
   return (
     <>
-      <div className="flex flex-col h-screen w-full p-8 gap-6">
+      <div className="flex flex-col h-screen w-full p-8 gap-4">
         {displayedNotifications.length > 0 && (
           <NotificationBannerStack
             notifications={displayedNotifications}
@@ -503,7 +481,6 @@ function DataLog() {
           blockLookup={blockLookup}
         />
       </div>
-      <Toaster expand={true} richColors closeButton />
     </>
   );
 }

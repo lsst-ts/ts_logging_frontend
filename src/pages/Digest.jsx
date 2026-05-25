@@ -1,6 +1,4 @@
 import { useState, useEffect, useMemo } from "react";
-import { Toaster } from "@/components/ui/sonner";
-import { toast } from "sonner";
 import ExposureBreakdownApplet from "@/components/ExposureBreakdownApplet.jsx";
 import MetricsCard from "@/components/MetricsCard.jsx";
 import VisitMapApplet from "@/components/VisitMapApplet";
@@ -125,7 +123,6 @@ export default function Digest() {
     setVisitMapLoading(true);
     setInteractiveMap(null);
     clearNotifications();
-    toast.dismiss();
 
     fetchExposures(startDayobs, queryEndDayobs, instrument, abortController)
       .then(
@@ -147,10 +144,10 @@ export default function Digest() {
           if (exposuresNo === 0) {
             addNotification({
               type: "noData",
-              source: "exposures",
-              title: "No exposure entries found in ConsDB",
+              source: "consdb",
+              title: "No exposures found in ConsDB",
               description:
-                "Parts of the dashboard that depend on exposure data will appear empty. Try a different date range.",
+                "Parts of the dashboard that depend on exposure data will appear empty for the selected date range.",
             });
           }
         },
@@ -161,8 +158,6 @@ export default function Digest() {
           addNotification({
             type: "error",
             source: "exposures",
-            title: "Exposure data unavailable",
-            description: "An error occurred while fetching exposures.",
           });
         }
       })
@@ -175,11 +170,6 @@ export default function Digest() {
     fetchExpectedExposures(startDayobs, endDayobs, abortController)
       .then((expectedSumExposures) => {
         setExpectedOnSkyExpCount(expectedSumExposures);
-        if (expectedSumExposures === 0) {
-          toast.warning(
-            "Expected number of exposures is zero for the selected date range.",
-          );
-        }
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
@@ -187,9 +177,6 @@ export default function Digest() {
           addNotification({
             type: "error",
             source: "expected-exposures",
-            title: "Error fetching expected exposures",
-            description:
-              "An error occurred while fetching number of expected exposures.",
           });
           // Display on card
           setExpectedOnSkyExpCount("-");
@@ -207,12 +194,10 @@ export default function Digest() {
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          console.error("Error fetching almanac:", err);
+          console.error("Error fetching almanac data:", err);
           addNotification({
             type: "error",
             source: "almanac",
-            title: "Error fetching almanac",
-            description: "An error occurred while fetching almanac.",
           });
         }
       })
@@ -232,9 +217,7 @@ export default function Digest() {
           console.error("Error fetching narrative log:", err);
           addNotification({
             type: "error",
-            source: "narrative-log",
-            title: "Error fetching narrative log",
-            description: "An error occurred while fetching narrative log.",
+            source: "time-loss",
           });
         }
       })
@@ -253,9 +236,6 @@ export default function Digest() {
           auxtel_summary: telescope === "AuxTel" ? report.auxtel_summary : null,
         }));
         setReports(parsedReports);
-        if (reports.length === 0) {
-          toast.warning("No night reports found for the selected date range.");
-        }
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
@@ -263,8 +243,6 @@ export default function Digest() {
           addNotification({
             type: "error",
             source: "night-reports",
-            title: "Error fetching night reports",
-            description: "An error occurred while fetching night reports.",
           });
         }
       })
@@ -284,8 +262,6 @@ export default function Digest() {
           addNotification({
             type: "error",
             source: "jira-tickets",
-            title: "Error fetching Jira tickets",
-            description: "An error occurred while fetching Jira tickets.",
           });
         }
       })
@@ -307,9 +283,7 @@ export default function Digest() {
           );
           addNotification({
             type: "error",
-            source: "flagged-exposures",
-            title: "Error fetching flagged exposures",
-            description: "An error occurred while fetching flagged exposures.",
+            source: "exposure-flags",
           });
         }
       })
@@ -331,8 +305,6 @@ export default function Digest() {
           addNotification({
             type: "error",
             source: "visit-maps",
-            title: "Error generating visit maps",
-            description: "An error occurred while generating visit maps.",
           });
         }
       })
@@ -365,19 +337,16 @@ export default function Digest() {
         // Handle partial errors (one of Zephyr/Jira failing)
         if (blocks.errors) {
           Object.entries(blocks.errors).forEach(([source, message]) => {
-            addNotification({
-              type: "error",
-              source: `${getBlockSourceLabel(source)}`,
-              title: "Error fetching BLOCK descriptions",
-              description:
-                "An error occurred while fetching context feed data.",
-            });
             console.error(
               `Error fetching BLOCK descriptions from ${getBlockSourceLabel(
                 source,
               )}`,
               message,
             );
+            addNotification({
+              type: "error",
+              source: `${getBlockSourceLabel(source)}-blocks`,
+            });
           });
         }
       })
@@ -389,10 +358,11 @@ export default function Digest() {
           );
           addNotification({
             type: "error",
-            source: "block-lookup",
-            title: "Error fetching BLOCK descriptions",
-            description:
-              "An error occurred while fetching BLOCK descriptions from Zephyr/Jira.",
+            source: "jira-blocks",
+          });
+          addNotification({
+            type: "error",
+            source: "zephyr-blocks",
           });
         }
       });
@@ -546,7 +516,6 @@ export default function Digest() {
           </div>
         </div>
       </div>
-      <Toaster expand={true} richColors closeButton />
     </>
   );
 }
