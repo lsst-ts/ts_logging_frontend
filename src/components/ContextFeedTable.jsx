@@ -22,8 +22,8 @@ import {
  * @param {Function} props.setColumnFilters - Column filter setter
  * @param {Function} props.resetFilters - Reset filters to defaults
  * @param {Object} props.blockLookup - BLOCK data map
- * @param {string|null} props.highlighted - The highlight key value (or null for none)
- * @param {Function} props.onHighlightChange - Callback when a row is clicked to highlight
+ * @param {string|null} props.selected - The selected key value (or null for none)
+ * @param {Function} props.onSelectionChange - Callback when a row is clicked to select
  */
 function ContextFeedTable({
   data,
@@ -32,8 +32,8 @@ function ContextFeedTable({
   setColumnFilters,
   resetFilters,
   blockLookup,
-  highlighted,
-  onHighlightChange,
+  selected,
+  onSelectionChange,
 }) {
   const tableRef = useRef();
 
@@ -137,8 +137,8 @@ function ContextFeedTable({
         centerContent,
       }}
       onReset={handleReset}
-      highlighted={highlighted}
-      onHighlightChange={onHighlightChange}
+      selected={selected}
+      onSelectionChange={onSelectionChange}
     />
   );
 }
