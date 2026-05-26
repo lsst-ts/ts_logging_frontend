@@ -422,7 +422,7 @@ export const contextFeedColumns = [
     filterType: "number-range",
     meta: {
       tooltip: "Time (UTC) associated with event.",
-      highlightKey: true,
+      selectedKey: true,
     },
   }),
   columnHelper.accessor("event_time_tai", {

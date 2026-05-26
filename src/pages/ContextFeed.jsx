@@ -33,7 +33,7 @@ import {
 import { mergeContextFeedSources, getBlockSourceLabel } from "@/utils/utils";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
 import { prepareAlmanacData } from "@/utils/timelineUtils";
-import { useUrlSync, useHighlightSync } from "@/components/DataTable";
+import { useUrlSync, useSelectionSync } from "@/components/DataTable";
 
 // This filters out the non-selected telescope's exposures, queues and
 // narrative logs from the default display.
@@ -85,10 +85,10 @@ function ContextFeed() {
   const { selectedTimeRange, setSelectedTimeRange, fullTimeRange } =
     useTimeRangeFromURL("/context-feed");
 
-  // Highlight state synced with URL
-  const { highlightedValue, setHighlightedValue } = useHighlightSync({
+  // Selection state synced with URL
+  const { selectedValue, setSelectedValue } = useSelectionSync({
     routePath: "/context-feed",
-    highlightKey: "time",
+    selectedKey: "time",
   });
 
   // Data and loading flags
@@ -544,8 +544,8 @@ function ContextFeed() {
           setColumnFilters={setColumnFilters}
           resetFilters={resetFilters}
           blockLookup={blockLookup}
-          highlighted={highlightedValue}
-          onHighlightChange={setHighlightedValue}
+          selected={selectedValue}
+          onSelectionChange={setSelectedValue}
         />
       </div>
     </>
