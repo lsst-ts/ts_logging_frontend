@@ -139,7 +139,7 @@ function renderDescriptionCell(info) {
         toggleExpandedRows(rowId, "description");
       }}
     >
-      <pre className="whitespace-pre-wrap text-xs text-white bg-stone-900 p-2 rounded cursor-pointer">
+      <pre className="whitespace-pre-wrap text-xs text-white bg-stone-900 p-2 rounded cursor-pointer border border-transparent [tr[data-selected=true]_&]:border-stone-800">
         {!expanded ? (
           // Collapsed: intro line of traceback, expandable upon click
           <>Traceback (most recent call last): ...</>
@@ -276,7 +276,7 @@ function renderConfigCell(info) {
         toggleExpandedRows(rowId, "config");
       }}
     >
-      <pre className="whitespace-pre-wrap text-xs text-white bg-stone-900 p-2 rounded cursor-pointer">
+      <pre className="whitespace-pre-wrap text-xs text-white bg-stone-900 p-2 rounded cursor-pointer border border-transparent [tr[data-selected=true]_&]:border-stone-800">
         {!expanded ? (
           // Collapsed: first line of YAML, expandable upon click
           // "..." appended if more lines
