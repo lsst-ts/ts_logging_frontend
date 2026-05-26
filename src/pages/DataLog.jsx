@@ -32,7 +32,7 @@ import {
   prepareMoonIntervals,
 } from "@/utils/timelineUtils";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
-import { useHighlightSync } from "@/components/DataTable";
+import { useSelectionSync } from "@/components/DataTable";
 
 function DataLog() {
   // Routing and URL params
@@ -94,10 +94,10 @@ function DataLog() {
     removeNotification,
     clearNotifications,
   } = useNotifications();
-  // Highlight state synced with URL
-  const { highlightedValue, setHighlightedValue } = useHighlightSync({
+  // Selection state synced with URL
+  const { selectedValue, setSelectedValue } = useSelectionSync({
     routePath: "/data-log",
-    highlightKey: "exposure_id",
+    selectedKey: "exposure_id",
   });
 
   // Calculate moon intervals when moon values or full time range changes
@@ -489,8 +489,8 @@ function DataLog() {
           data={filteredDataLogTableData}
           dataLogLoading={tableLoading}
           blockLookup={blockLookup}
-          highlighted={highlightedValue}
-          onHighlightChange={setHighlightedValue}
+          selected={selectedValue}
+          onSelectionChange={setSelectedValue}
         />
       </div>
     </>
