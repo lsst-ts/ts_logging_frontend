@@ -54,12 +54,12 @@ test.describe("Plots page — empty data", () => {
     await waitForPlotsLoad(page);
   });
 
-  test("shows a warning toast when there are no records", async ({ page }) => {
-    await expect(
-      page.getByText(
-        "No data log records found in ConsDB for the selected date range.",
-      ),
-    ).toBeVisible({ timeout: 10000 });
+  test("shows a no data notification banner when there are no records", async ({
+    page,
+  }) => {
+    await expect(page.getByText("No exposures found in ConsDB")).toBeVisible({
+      timeout: 10000,
+    });
   });
 
   test("renders no data-point dots", async ({ page }) => {
@@ -90,7 +90,7 @@ test.describe("Plots page — single record", () => {
 // ---------------------------------------------------------------------------
 
 test.describe("Plots page — API errors", () => {
-  test("a data-log 500 shows an error toast", async ({ page }) => {
+  test("a data-log 500 shows an error banner", async ({ page }) => {
     await setupApiMocks(page);
     // Override data-log after setupApiMocks — Playwright evaluates routes LIFO
     // so this handler takes precedence over the one registered inside setupApiMocks.
@@ -100,12 +100,19 @@ test.describe("Plots page — API errors", () => {
     await page.goto(PLOTS_URL);
     await waitForPlotsLoad(page);
 
-    await expect(page.getByText("Error fetching data log!")).toBeVisible({
+    await expect(
+      page.getByText("One or more data sources are unavailable."),
+    ).toBeVisible({
+      timeout: 10000,
+    });
+    await expect(
+      page.getByText("exposures failed to load. Data may be incomplete"),
+    ).toBeVisible({
       timeout: 10000,
     });
   });
 
-  test("an almanac 500 shows an error toast and data plots still render", async ({
+  test("an almanac 500 shows an error banner and data plots still render", async ({
     page,
   }) => {
     await setupApiMocks(page);
@@ -116,7 +123,14 @@ test.describe("Plots page — API errors", () => {
     await page.goto(PLOTS_URL);
     await waitForPlotsLoad(page);
 
-    await expect(page.getByText("Error fetching almanac!")).toBeVisible({
+    await expect(
+      page.getByText("One or more data sources are unavailable."),
+    ).toBeVisible({
+      timeout: 10000,
+    });
+    await expect(
+      page.getByText("almanac failed to load. Data may be incomplete"),
+    ).toBeVisible({
       timeout: 10000,
     });
     // Data dots should still be present despite the almanac failure

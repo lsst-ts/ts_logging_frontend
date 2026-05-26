@@ -1,6 +1,4 @@
 import { useState, useEffect, useMemo } from "react";
-import { Toaster } from "@/components/ui/sonner";
-import { toast } from "sonner";
 import { useSearch } from "@tanstack/react-router";
 
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,8 +23,10 @@ import {
   fetchAlmanac,
   fetchBlockDetails,
 } from "@/utils/fetchUtils";
-import { getDayobsStartUTC } from "@/utils/timeUtils";
 import { mergeAllDataLogSources, getBlockSourceLabel } from "@/utils/utils";
+import { getDayobsStartUTC } from "@/utils/timeUtils";
+import { useNotifications } from "@/hooks/useNotifications";
+import { NotificationBannerStack } from "@/components/NotificationBannerStack";
 import {
   prepareAlmanacData,
   prepareMoonIntervals,
@@ -86,6 +86,14 @@ function DataLog() {
   const { selectedTimeRange, setSelectedTimeRange, fullTimeRange } =
     useTimeRangeFromURL("/data-log");
 
+  // Notification banners
+  const {
+    processedNotifications,
+    addNotification,
+    removeNotification,
+    clearNotifications,
+  } = useNotifications();
+
   // Calculate moon intervals when moon values or full time range changes
   useEffect(() => {
     const [xMinMillis, xMaxMillis] = fullTimeRange;
@@ -111,26 +119,22 @@ function DataLog() {
     setTwilightValues([]);
     setIllumValues([]);
     setMoonValues([]);
+    clearNotifications();
 
     fetchAlmanac(startDayobs, queryEndDayobs, abortController)
       .then((almanac) => {
-        if (almanac === null) {
-          toast.warning(
-            "No almanac data available. Timeline will be displayed without accompanying almanac information.",
-          );
-        } else {
-          const { twilightValues, illumValues, moonValues } =
-            prepareAlmanacData(almanac);
-          setTwilightValues(twilightValues);
-          setIllumValues(illumValues);
-          setMoonValues(moonValues);
-        }
+        const { twilightValues, illumValues, moonValues } =
+          prepareAlmanacData(almanac);
+        setTwilightValues(twilightValues);
+        setIllumValues(illumValues);
+        setMoonValues(moonValues);
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          toast.error("Error fetching almanac!", {
-            description: err?.message,
-            duration: Infinity,
+          console.error("Error fetching almanac data:", err);
+          addNotification({
+            type: "error",
+            source: "almanac",
           });
         }
       })
@@ -161,9 +165,13 @@ function DataLog() {
       .then((consDBData) => {
         const dataLog = consDBData.data_log ?? [];
         if (dataLog.length === 0) {
-          toast.warning(
-            "No data log records found in ConsDB for the selected date range.",
-          );
+          addNotification({
+            type: "noData",
+            source: "consdb",
+            title: "No exposures found in ConsDB",
+            description:
+              "Table and timeline will appear empty for the selected date range.",
+          });
         }
 
         setConsDBdata(dataLog);
@@ -171,10 +179,10 @@ function DataLog() {
       .catch((err) => {
         if (!abortController.signal.aborted) {
           setConsDBdata([]);
-          const msg = err?.message || "Unknown error";
-          toast.error("Error fetching data from ConsDB!", {
-            description: msg,
-            duration: Infinity,
+          console.error("Error fetching data log entries:", err);
+          addNotification({
+            type: "error",
+            source: "exposures",
           });
         }
       })
@@ -207,10 +215,10 @@ function DataLog() {
       .catch((err) => {
         if (!abortController.signal.aborted) {
           setExposureLogData([]);
-          const msg = err?.message || "Unknown error";
-          toast.error("Error fetching exposure log data!", {
-            description: msg,
-            duration: Infinity,
+          console.error("Error fetching exposure log entries:", err);
+          addNotification({
+            type: "error",
+            source: "exposure-flags",
           });
         }
       })
@@ -251,14 +259,15 @@ function DataLog() {
         // Handle partial errors (one of Zephyr/Jira failing)
         if (blocks.errors) {
           Object.entries(blocks.errors).forEach(([source, message]) => {
-            toast.error(
+            addNotification({
+              type: "error",
+              source: `${source}-blocks`,
+            });
+            console.error(
               `Error fetching BLOCK descriptions from ${getBlockSourceLabel(
                 source,
               )}`,
-              {
-                description: message,
-                duration: Infinity,
-              },
+              message,
             );
           });
         }
@@ -266,10 +275,17 @@ function DataLog() {
       .catch((err) => {
         if (!abortController.signal.aborted) {
           setBlockLookup({});
-          const msg = err?.message;
-          toast.error("Error fetching BLOCK lookups from Zephyr/Jira", {
-            description: msg,
-            duration: Infinity,
+          console.error(
+            "Error fetching BLOCK descriptions from Zephyr/Jira",
+            err,
+          );
+          addNotification({
+            type: "error",
+            source: "jira-blocks",
+          });
+          addNotification({
+            type: "error",
+            source: "zephyr-blocks",
           });
         }
       })
@@ -308,9 +324,22 @@ function DataLog() {
     });
   }, [dataLogTableData, selectedTimeRange]);
 
+  const displayedNotifications =
+    tableLoading || almanacLoading
+      ? processedNotifications.filter(
+          (notification) => notification.type !== "error",
+        )
+      : processedNotifications;
+
   return (
     <>
       <div className="flex flex-col h-screen w-full p-8 gap-4">
+        {displayedNotifications.length > 0 && (
+          <NotificationBannerStack
+            notifications={displayedNotifications}
+            onDismiss={removeNotification}
+          />
+        )}
         {/* Page Header, Timeline & Tips Banners */}
         <div className="flex flex-col gap-2">
           {/* Page title + buttons */}
@@ -456,7 +485,6 @@ function DataLog() {
           blockLookup={blockLookup}
         />
       </div>
-      <Toaster expand={true} richColors closeButton />
     </>
   );
 }

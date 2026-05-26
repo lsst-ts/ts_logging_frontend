@@ -1,8 +1,9 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 
-import { toast } from "sonner";
-import { Toaster } from "@/components/ui/sonner";
 import { useSearch } from "@tanstack/react-router";
+
+import { NotificationBannerStack } from "@/components/NotificationBannerStack";
+import { useNotifications } from "@/hooks/useNotifications";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -98,6 +99,13 @@ function ContextFeed() {
   const [timelineVisible, setTimelineVisible] = useState(true);
   const [tipsVisible, setTipsVisible] = useState(false);
 
+  const {
+    processedNotifications,
+    addNotification,
+    removeNotification,
+    clearNotifications,
+  } = useNotifications();
+
   // Default event type filters based on telescope
   const defaultEventTypes = filterDefaultEventsByTelescope(telescope);
 
@@ -172,23 +180,19 @@ function ContextFeed() {
 
     setRubinNightsDataLoading(true);
     setAlmanacLoading(true);
+    clearNotifications();
 
     fetchAlmanac(startDayobs, queryEndDayobs, abortController)
       .then((almanac) => {
-        if (almanac === null) {
-          toast.warning(
-            "No almanac data available. Context Feed will be displayed without accompanying almanac information.",
-          );
-        } else {
-          const { twilightValues } = prepareAlmanacData(almanac);
-          setTwilightValues(twilightValues);
-        }
+        const { twilightValues } = prepareAlmanacData(almanac);
+        setTwilightValues(twilightValues);
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          toast.error("Error fetching almanac!", {
-            description: err?.message,
-            duration: Infinity,
+          console.error("Error fetching almanac data:", err);
+          addNotification({
+            type: "error",
+            source: "almanac",
           });
         }
       })
@@ -201,19 +205,28 @@ function ContextFeed() {
     fetchContextFeedFromRubinNights(startDayobs, endDayobs, abortController)
       .then(([data]) => {
         if (data.length === 0) {
-          toast.warning("No Context Feed entries found in the date range.");
+          addNotification({
+            type: "noData",
+            source: "context-feed",
+            title: "No Context Feed entries found",
+            description:
+              "The table and the timeline will be empty for the selected date range.",
+          });
         }
 
         setRubinNightsData(data);
       })
       .catch((err) => {
         // If the error is not caused by the fetch being aborted
-        // then toast the error message.
+        // then notify the error.
         if (!abortController.signal.aborted) {
-          const msg = err?.message;
-          toast.error("Error fetching Context Feed data from Rubin-nights!", {
-            description: msg,
-            duration: Infinity,
+          console.error(
+            "Error fetching Context Feed data from Rubin Nights",
+            err,
+          );
+          addNotification({
+            type: "error",
+            source: "context-feed",
           });
         }
       })
@@ -257,14 +270,15 @@ function ContextFeed() {
         // Handle partial errors (one of Zephyr/Jira failing)
         if (blocks.errors) {
           Object.entries(blocks.errors).forEach(([source, message]) => {
-            toast.error(
+            addNotification({
+              type: "error",
+              source: `${source}-blocks`,
+            });
+            console.error(
               `Error fetching BLOCK descriptions from ${getBlockSourceLabel(
                 source,
               )}`,
-              {
-                description: message,
-                duration: Infinity,
-              },
+              message,
             );
           });
         }
@@ -272,10 +286,17 @@ function ContextFeed() {
       .catch((err) => {
         if (!abortController.signal.aborted) {
           setBlockLookup({});
-          const msg = err?.message;
-          toast.error("Error fetching BLOCK descriptions from Zephyr/Jira", {
-            description: msg,
-            duration: Infinity,
+          console.error(
+            "Error fetching BLOCK descriptions from Zephyr/Jira",
+            err,
+          );
+          addNotification({
+            type: "error",
+            source: "jira-blocks",
+          });
+          addNotification({
+            type: "error",
+            source: "zephyr-blocks",
           });
         }
       })
@@ -310,6 +331,12 @@ function ContextFeed() {
     [contextFeedTableData, selectedTimeRange],
   );
 
+  const displayedNotifications = tableLoading
+    ? processedNotifications.filter(
+        (notification) => notification.type !== "error",
+      )
+    : processedNotifications;
+
   const timelineData = useMemo(() => {
     const activeLabels =
       columnFilters.find((f) => f.id === "event_type")?.value ?? [];
@@ -330,6 +357,12 @@ function ContextFeed() {
   return (
     <>
       <div className="flex flex-col w-full h-screen p-8 gap-4">
+        {displayedNotifications.length > 0 && (
+          <NotificationBannerStack
+            notifications={displayedNotifications}
+            onDismiss={removeNotification}
+          />
+        )}
         {/* Page Header, Timeline & Tips Banners */}
         <div className="flex flex-col gap-2">
           {/* Page title + buttons */}
@@ -500,8 +533,6 @@ function ContextFeed() {
           blockLookup={blockLookup}
         />
       </div>
-      {/* Error / warning / info message pop-ups */}
-      <Toaster expand={true} richColors closeButton />
     </>
   );
 }

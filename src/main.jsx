@@ -4,11 +4,14 @@ import "./index.css";
 import { RouterProvider } from "@tanstack/react-router";
 import router from "./routes";
 import { HostConfigProvider } from "./contexts/HostConfigContext.jsx";
+import { NotificationProvider } from "./contexts/NotificationContext.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <HostConfigProvider>
-      <RouterProvider router={router} />
+      <NotificationProvider>
+        <RouterProvider router={router} />
+      </NotificationProvider>
     </HostConfigProvider>
   </StrictMode>,
 );

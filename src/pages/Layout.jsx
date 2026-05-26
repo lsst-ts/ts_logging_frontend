@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DateTime } from "luxon";
 import { Outlet, useRouter, useSearch } from "@tanstack/react-router";
 
@@ -8,7 +8,8 @@ import { AppSidebar } from "@/components/AppSidebar.jsx";
 import { TELESCOPES } from "@/components/Parameters";
 import { getKeyByValue } from "@/utils/utils";
 import { dayObsIntToDateTime } from "@/utils/timeUtils";
-import RetentionBanner from "@/components/RetentionBanner";
+import { useHostConfig } from "@/contexts/HostConfigContext";
+import { useNotifications } from "@/hooks/useNotifications";
 
 export default function Layout({ children }) {
   const router = useRouter();
@@ -69,6 +70,23 @@ export default function Layout({ children }) {
     setQuery("telescope", getKeyByValue(TELESCOPES, inst));
   };
 
+  const { host, getAvailableDayObsRange, retentionDays } = useHostConfig();
+  const { addNotification } = useNotifications();
+  const dayObsRange = getAvailableDayObsRange();
+
+  useEffect(() => {
+    if (!retentionDays) return;
+
+    addNotification({
+      type: "systemNotice",
+      source: "retention-policy",
+      title: `${host} data is only retained for ${retentionDays} days`,
+      description: `Currently available dayobs data: ${dayObsRange.min} - ${dayObsRange.max}.`,
+      meta: `${DateTime.utc().toFormat("yyyy-MM-dd HH:mm")} UTC`,
+      dismissible: false,
+    });
+  }, [addNotification, dayObsRange.min, dayObsRange.max, host, retentionDays]);
+
   return (
     <>
       <SidebarProvider>
@@ -80,10 +98,9 @@ export default function Layout({ children }) {
           instrument={instrument}
           onInstrumentChange={handleInstrumentChange}
         />
-        <main className="flex-1 bg-stone-800 overflow-x-hidden">
+        <main className="flex flex-col flex-1 bg-stone-800 overflow-x-hidden">
           {/* Show/Hide Sidebar toggle */}
           <SidebarToggle />
-          <RetentionBanner />
           {children}
           {/* Main content */}
           <Outlet />
