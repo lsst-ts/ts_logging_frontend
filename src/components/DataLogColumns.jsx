@@ -79,7 +79,7 @@ const commonColumns = [
     filterType: null,
     meta: {
       tooltip: "Unique identifier for the exposure.",
-      highlightKey: true,
+      selectedKey: true,
     },
   }),
   columnHelper.accessor("seq_num", {
