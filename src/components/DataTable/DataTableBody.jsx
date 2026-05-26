@@ -15,36 +15,36 @@ import { SKELETON_ROW_COUNT } from "./constants";
  * @param {Object} props.table - TanStack Table instance
  * @param {Array} props.columns - Column definitions (for skeleton column count)
  * @param {boolean} props.isLoading - Whether data is loading
- * @param {string|null} props.highlighted - The highlight key value to match (or null for none)
- * @param {Function} props.onHighlightChange - Callback when a row is clicked to highlight
- * @param {string} props.highlightKey - The column accessor key used for highlighting
+ * @param {string|null} props.selected - The selected key value to match (or null for none)
+ * @param {Function} props.onSelectionChange - Callback when a row is clicked to select
+ * @param {string} props.selectedKey - The column accessor key used for selection
  */
 function DataTableBody({
   table,
   columns,
   isLoading,
-  highlighted = null,
-  onHighlightChange,
-  highlightKey,
+  selected = null,
+  onSelectionChange,
+  selectedKey,
 }) {
-  const highlightedRowRef = useRef(null);
+  const selectedRowRef = useRef(null);
   const hasScrolled = useRef(false);
 
   useEffect(() => {
     if (
       hasScrolled.current ||
       isLoading ||
-      highlighted === null ||
-      !highlightedRowRef.current
+      selected === null ||
+      !selectedRowRef.current
     )
       return;
     hasScrolled.current = true;
-    highlightedRowRef.current.scrollIntoView({
+    selectedRowRef.current.scrollIntoView({
       behavior: "smooth",
       block: "center",
       container: "nearest",
     });
-  }, [isLoading, highlighted]);
+  }, [isLoading, selected]);
 
   if (isLoading) {
     return (
@@ -67,32 +67,30 @@ function DataTableBody({
       {table.getRowModel().rows.map((row) => {
         const isGroupedRow = row.getIsGrouped();
 
-        // Check if this row matches the highlighted value
+        // Check if this row matches the selected value
         // Use loose equality (==) to handle number/string comparisons
-        const rowValue = row.getValue(highlightKey);
-        const isHighlighted =
+        const rowValue = row.getValue(selectedKey);
+        const isSelected =
           !isGroupedRow &&
-          highlighted != null &&
-          highlightKey &&
-          rowValue == highlighted;
+          selected != null &&
+          selectedKey &&
+          rowValue == selected;
 
         const handleClick = (e) => {
           e.stopPropagation();
-          if (onHighlightChange && !isGroupedRow && highlightKey) {
-            onHighlightChange(
-              isHighlighted ? null : row.getValue(highlightKey),
-            );
+          if (onSelectionChange && !isGroupedRow && selectedKey) {
+            onSelectionChange(isSelected ? null : row.getValue(selectedKey));
           }
         };
 
         return (
           <TableRow
             key={row.id}
-            ref={isHighlighted ? highlightedRowRef : null}
+            ref={isSelected ? selectedRowRef : null}
             onClick={handleClick}
-            data-selected={isHighlighted ? "true" : undefined}
+            data-selected={isSelected ? "true" : undefined}
             className={
-              isHighlighted
+              isSelected
                 ? "bg-black/40 shadow-[inset_4px_0_0_0_white] border-t-2 border-b-2 border-white"
                 : ""
             }
