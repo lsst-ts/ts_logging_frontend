@@ -117,7 +117,7 @@ function VisitMaps() {
             onDismiss={removeNotification}
           />
         )}
-       
+
         {/* Page Header, legend and collapsible guide */}
         <div className="flex flex-col gap-2">
           {/* Page title + buttons */}
@@ -141,7 +141,7 @@ function VisitMaps() {
                   onClick={() => setGuideVisible((prev) => !prev)}
                   className="bg-amber-400 text-teal-900 font-sm h-6 rounded-md px-2 shadow-[3px_3px_3px_0px_#0d9488] cursor-pointer hover:bg-amber-300 hover:shadow-[4px_4px_8px_0px_#0d9488] transition-all duration-200"
                 >
-                  {guideVisible ? "Hide Guide" : "Show Guide"}
+                  {guideVisible ? "Hide Tips" : "Show Tips"}
                 </Button>
               </>
             }
@@ -149,7 +149,7 @@ function VisitMaps() {
 
           {/* Map Guide */}
           {guideVisible && (
-            <TipsCard title="Guide">
+            <TipsCard title="Tips">
               <div className="flex flex-col gap-6 text-left">
                 {/* Maps */}
                 <div>
@@ -379,7 +379,6 @@ function VisitMaps() {
           </Card>
         </div>
       </div>
-      <Toaster expand={true} richColors closeButton />
     </>
   );
 }
