@@ -618,6 +618,7 @@ const createNotification = ({
   description,
   meta,
   timestamp,
+  dismissible,
 }) => {
   const time = timestamp ?? DateTime.utc().toFormat("yyyy-MM-dd HH:mm");
   const defaultMeta = `${time} UTC`;
@@ -630,6 +631,7 @@ const createNotification = ({
     description,
     meta: meta ?? defaultMeta,
     timestamp: time,
+    dismissible,
   };
 };
 
