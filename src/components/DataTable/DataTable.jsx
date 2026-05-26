@@ -1,13 +1,13 @@
 import { forwardRef, useImperativeHandle } from "react";
 
-// Helper to find the column with highlightKey metadata
-function findHighlightKey(columns) {
+// Helper to find the column with selectedKey metadata
+function findSelectedKey(columns) {
   for (const col of columns) {
     if (col.columns) {
       // Handle column groups
-      const found = findHighlightKey(col.columns);
+      const found = findSelectedKey(col.columns);
       if (found) return found;
-    } else if (col.meta?.highlightKey) {
+    } else if (col.meta?.selectedKey) {
       return col.accessorKey;
     }
   }
@@ -49,8 +49,8 @@ import DataTableToolbar from "./DataTableToolbar";
  * @param {Function} props.onReset - Custom reset handler
  * @param {Object} props.filterFns - Custom filter functions
  * @param {React.Ref} ref - Ref for imperative methods (setCollapseAll, setGrouping)
- * @param {string|null} props.highlighted - The highlight key value (or null for none)
- * @param {Function} props.onHighlightChange - Callback when a row is clicked to highlight
+ * @param {string|null} props.selected - The selected key value (or null for none)
+ * @param {Function} props.onSelectionChange - Callback when a row is clicked to select
  */
 const DataTable = forwardRef(function DataTable(
   {
@@ -66,8 +66,8 @@ const DataTable = forwardRef(function DataTable(
     onReset,
     filterFns = {},
     tableMeta = {},
-    highlighted = null,
-    onHighlightChange,
+    selected = null,
+    onSelectionChange,
   },
   ref,
 ) {
@@ -169,9 +169,9 @@ const DataTable = forwardRef(function DataTable(
               table={table}
               columns={columns}
               isLoading={isLoading}
-              highlighted={highlighted}
-              onHighlightChange={onHighlightChange}
-              highlightKey={findHighlightKey(columns)}
+              selected={selected}
+              onSelectionChange={onSelectionChange}
+              selectedKey={findSelectedKey(columns)}
             />
           </Table>
         </div>

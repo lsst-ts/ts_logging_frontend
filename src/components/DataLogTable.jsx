@@ -15,16 +15,16 @@ import {
  * @param {Array} props.data - Data Log row data
  * @param {boolean} props.dataLogLoading - Whether data is loading
  * @param {Object} props.blockLookup - BLOCK data map
- * @param {string|null} props.highlighted - The highlight key value (or null for none)
- * @param {Function} props.onHighlightChange - Callback when a row is clicked to highlight
+ * @param {string|null} props.selected - The selected key value (or null for none)
+ * @param {Function} props.onSelectionChange - Callback when a row is clicked to select
  */
 function DataLogTable({
   telescope,
   data,
   dataLogLoading,
   blockLookup,
-  highlighted,
-  onHighlightChange,
+  selected,
+  onSelectionChange,
 }) {
   // Get column filters synced with URL
   const { columnFilters, setColumnFilters, resetFilters } = useUrlSync({
@@ -54,8 +54,8 @@ function DataLogTable({
       }}
       onReset={handleReset}
       tableMeta={{ blockLookup }}
-      highlighted={highlighted}
-      onHighlightChange={onHighlightChange}
+      selected={selected}
+      onSelectionChange={onSelectionChange}
     />
   );
 }
