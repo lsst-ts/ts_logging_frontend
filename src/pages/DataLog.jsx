@@ -325,7 +325,11 @@ function DataLog() {
   }, [dataLogTableData, selectedTimeRange]);
 
   const displayedNotifications =
-    tableLoading || almanacLoading ? [] : processedNotifications;
+    tableLoading || almanacLoading
+      ? processedNotifications.filter(
+          (notification) => notification.type !== "error",
+        )
+      : processedNotifications;
 
   return (
     <>

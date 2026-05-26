@@ -643,7 +643,6 @@ const createNotification = ({
 const mergeErrorNotifications = (notifications) => {
   const errorNotifications = notifications.filter((n) => n.type === "error");
   const rest = notifications.filter((n) => n.type !== "error");
-  // console.log("Merging notifications:", { errorNotifications, rest });
   if (errorNotifications.length === 0) return notifications;
 
   const failedSources = errorNotifications.map((n) => n.source);

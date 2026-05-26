@@ -412,9 +412,13 @@ export default function Digest() {
     !visitMapLoading;
 
   // processedNotifications recomputes incrementally as fetches settle.
-  // Withhold banners until all fetches are done to avoid showing
-  // intermediate or contradictory states mid-load.
-  const displayedNotifications = allLoaded ? processedNotifications : [];
+  // Show system notices and no-data banners immediately, but delay
+  // error banners until all fetches are complete.
+  const displayedNotifications = allLoaded
+    ? processedNotifications
+    : processedNotifications.filter(
+        (notification) => notification.type !== "error",
+      );
 
   return (
     <>

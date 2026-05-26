@@ -295,7 +295,11 @@ function Plots() {
   ]);
 
   const loading = dataLogLoading || almanacLoading;
-  const displayedNotifications = loading ? [] : processedNotifications;
+  const displayedNotifications = loading
+    ? processedNotifications.filter(
+        (notification) => notification.type !== "error",
+      )
+    : processedNotifications;
 
   // Temporary display message for AuxTel queries
   if (telescope === "AuxTel") {

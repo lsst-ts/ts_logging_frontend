@@ -55,8 +55,10 @@ export function NotificationBanner({
   description = "",
   meta = "",
   onDismiss,
+  dismissible,
 }) {
   const c = config[type];
+  const isDismissible = dismissible ?? c.dismissible;
   if (!c) return null;
 
   return (
@@ -75,7 +77,7 @@ export function NotificationBanner({
         )}
       </div>
 
-      {c.dismissible && onDismiss && (
+      {isDismissible && onDismiss && (
         <button
           onClick={onDismiss}
           aria-label="Dismiss"

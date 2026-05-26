@@ -331,7 +331,11 @@ function ContextFeed() {
     [contextFeedTableData, selectedTimeRange],
   );
 
-  const displayedNotifications = tableLoading ? [] : processedNotifications;
+  const displayedNotifications = tableLoading
+    ? processedNotifications.filter(
+        (notification) => notification.type !== "error",
+      )
+    : processedNotifications;
 
   const timelineData = useMemo(() => {
     const activeLabels =
