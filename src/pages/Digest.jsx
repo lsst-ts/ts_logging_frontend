@@ -345,7 +345,7 @@ export default function Digest() {
             );
             addNotification({
               type: "error",
-              source: `${getBlockSourceLabel(source)}-blocks`,
+              source: `${source}-blocks`,
             });
           });
         }

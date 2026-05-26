@@ -207,7 +207,7 @@ function ContextFeed() {
         if (data.length === 0) {
           addNotification({
             type: "noData",
-            source: "scriptqueue",
+            source: "context-feed",
             title: "No Context Feed entries found",
             description:
               "The table and the timeline will be empty for the selected date range.",
@@ -272,7 +272,7 @@ function ContextFeed() {
           Object.entries(blocks.errors).forEach(([source, message]) => {
             addNotification({
               type: "error",
-              source: `${getBlockSourceLabel(source)}-blocks`,
+              source: `${source}-blocks`,
             });
             console.error(
               `Error fetching BLOCK descriptions from ${getBlockSourceLabel(

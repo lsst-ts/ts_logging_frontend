@@ -261,7 +261,7 @@ function DataLog() {
           Object.entries(blocks.errors).forEach(([source, message]) => {
             addNotification({
               type: "error",
-              source: `${getBlockSourceLabel(source)}-blocks`,
+              source: `${source}-blocks`,
             });
             console.error(
               `Error fetching BLOCK descriptions from ${getBlockSourceLabel(
