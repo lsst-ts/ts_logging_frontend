@@ -207,6 +207,15 @@ export const BAND_COLORS = {
   y: "#fdc900",
 };
 
+export const BAND_COLORS_TAILWIND = {
+  u: "bg-band-u",
+  g: "bg-band-g",
+  r: "bg-band-r",
+  i: "bg-band-i",
+  z: "bg-band-z",
+  y: "bg-band-y",
+};
+
 // Plot styling constants
 export const PLOT_COLORS = {
   gridStroke: "#555",
@@ -240,3 +249,9 @@ export const DAYOBS_AXIS_TICK_STYLE = {
   fill: "grey",
   style: { userSelect: "none" },
 };
+
+// Visit polygons for Visit Map legend
+export const VISIT_SHAPE =
+  "[clip-path:polygon(20%_0%,80%_0%,80%_20%,100%_20%,100%_80%,80%_80%,80%_100%,20%_100%,20%_80%,0%_80%,0%_20%,20%_20%)]";
+export const VISIT_SHAPE_INNER =
+  "[clip-path:polygon(25%_0%,75%_0%,75%_25%,100%_25%,100%_75%,75%_75%,75%_100%,25%_100%,25%_75%,0%_75%,0%_25%,25%_25%)]";
