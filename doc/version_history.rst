@@ -1,3 +1,19 @@
+v0.19.1-alpha.1 (2026-05-28)
+============================
+
+Bug Fixes
+---------
+
+- Fix hover state getting stuck in the Exposure Breakdown applet when the mouse is moved quickly off a bar. (`OSW-2240 <https://rubinobs.atlassian.net//browse/OSW-2240>`_)
+
+
+Other Changes and Additions
+---------------------------
+
+- Make rows in table focusable / linkable (`OSW-1321 <https://rubinobs.atlassian.net//browse/OSW-1321>`_)
+- Migrate timeline chart to ECharts library. (`OSW-2286 <https://rubinobs.atlassian.net//browse/OSW-2286>`_)
+
+
 v0.19.0 (2026-05-28)
 ====================
 
