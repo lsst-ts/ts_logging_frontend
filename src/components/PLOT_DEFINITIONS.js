@@ -207,6 +207,15 @@ export const BAND_COLORS = {
   y: "#fdc900",
 };
 
+export const BAND_COLORS_TAILWIND = {
+  u: "bg-band-u",
+  g: "bg-band-g",
+  r: "bg-band-r",
+  i: "bg-band-i",
+  z: "bg-band-z",
+  y: "bg-band-y",
+};
+
 // Plot styling constants
 export const PLOT_COLORS = {
   gridStroke: "#555",

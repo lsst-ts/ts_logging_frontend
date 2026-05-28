@@ -25,6 +25,7 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { fetchVisitMaps } from "@/utils/fetchUtils";
 import { getNightSummaryLink } from "@/utils/utils";
 import { getDayobsStartUTC } from "@/utils/timeUtils";
+import { BAND_COLORS_TAILWIND } from "@/components/PLOT_DEFINITIONS";
 
 function VisitMaps() {
   // Routing and URL params
@@ -41,13 +42,14 @@ function VisitMaps() {
 
   const [interactiveMap, setInteractiveMap] = useState(null);
   const [visitMapsLoading, setVisitMapsLoading] = useState(false);
+  const [tipsVisible, setTipsVisible] = useState(false);
+
   const {
     processedNotifications,
     addNotification,
     removeNotification,
     clearNotifications,
   } = useNotifications();
-  const [guideVisible, setGuideVisible] = useState(false);
 
   function getDayObsBetween(startDayObs, endDayObs) {
     const format = "yyyyLLdd";
@@ -118,7 +120,7 @@ function VisitMaps() {
           />
         )}
 
-        {/* Page Header, legend and collapsible guide */}
+        {/* Page Header, legend and collapsible tips */}
         <div className="flex flex-col gap-2">
           {/* Page title + buttons */}
           <PageHeader
@@ -136,19 +138,19 @@ function VisitMaps() {
                     the table to a .csv file.
                   </PopoverContent>
                 </Popover>
-                {/* Button to toggle guide visibility */}
+                {/* Button to toggle tips visibility */}
                 <Button
-                  onClick={() => setGuideVisible((prev) => !prev)}
+                  onClick={() => setTipsVisible((prev) => !prev)}
                   className="bg-amber-400 text-teal-900 font-sm h-6 rounded-md px-2 shadow-[3px_3px_3px_0px_#0d9488] cursor-pointer hover:bg-amber-300 hover:shadow-[4px_4px_8px_0px_#0d9488] transition-all duration-200"
                 >
-                  {guideVisible ? "Hide Tips" : "Show Tips"}
+                  {tipsVisible ? "Hide Tips" : "Show Tips"}
                 </Button>
               </>
             }
           />
 
-          {/* Map Guide */}
-          {guideVisible && (
+          {/* Map tips */}
+          {tipsVisible && (
             <TipsCard title="Tips">
               <div className="flex flex-col gap-6 text-left">
                 {/* Maps */}
@@ -292,30 +294,16 @@ function VisitMaps() {
               {/* Band colours */}
               <div className="flex flex-row h-10 w-fit px-4 mx-auto justify-between items-center gap-4 border border-white rounded-md text-white font-thin">
                 <div>Bands:</div>
-                <div className="flex items-center gap-2">
-                  <span className={`w-4 h-4 bg-band-u ${VISIT_SHAPE}`} />
-                  <span>u</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`w-4 h-4 bg-band-g ${VISIT_SHAPE}`} />
-                  <span>g</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`w-4 h-4 bg-band-r ${VISIT_SHAPE}`} />
-                  <span>r</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`w-4 h-4 bg-band-i ${VISIT_SHAPE}`} />
-                  <span>i</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`w-4 h-4 bg-band-z ${VISIT_SHAPE}`} />
-                  <span>z</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`w-4 h-4 bg-band-y ${VISIT_SHAPE}`} />
-                  <span>y</span>
-                </div>
+                {Object.keys(BAND_COLORS_TAILWIND).map((band) => {
+                  return (
+                    <div key={band} className="flex items-center gap-2">
+                      <span
+                        className={`w-4 h-4 ${BAND_COLORS_TAILWIND[band]} ${VISIT_SHAPE}`}
+                      />
+                      <span>{band}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </Card>
