@@ -78,6 +78,10 @@ function DataTableBody({
 
         const handleClick = (e) => {
           e.stopPropagation();
+          // Don't select/deselect row if user is dragging to select text
+          if (window.getSelection()?.toString().length > 0) {
+            return;
+          }
           if (onSelectionChange && !isGroupedRow && selectedKey) {
             onSelectionChange(isSelected ? null : row.getValue(selectedKey));
           }
