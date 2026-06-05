@@ -257,10 +257,10 @@ export default function Digest() {
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          const msg = err?.message;
-          toast.error("Error fetching Observatory Status data!", {
-            description: msg,
-            duration: Infinity,
+          console.error("Error fetching observatory status:", err);
+          addNotification({
+            type: "error",
+            source: "observatory-status",
           });
         }
       })
