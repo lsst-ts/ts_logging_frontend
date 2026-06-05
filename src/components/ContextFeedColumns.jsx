@@ -42,14 +42,12 @@ function renderNameCell(info) {
   // If available, display BLOCK names as Zephyr/Jira links
   if (block) {
     return (
-      // Wrap in a dark background for visibility
-      // when row is highlighted.
-      <div className="bg-stone-800 p-1 rounded">
+      <div className="p-1 rounded">
         <a
           href={block.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-sky-500 underline hover:text-sky-400"
+          className="text-sky-500 underline hover:text-sky-300"
         >
           {formatCellValue(value)}
         </a>
@@ -93,14 +91,12 @@ function renderDescriptionCell(info) {
         const lines = linkHtml.split(/<br\s*\/?>/i);
 
         return (
-          // Wrap in a dark background for visibility
-          // when row is highlighted.
-          <div className="bg-stone-800 p-2 rounded">
+          <div className="p-2 rounded">
             <a
               href={href}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sky-500 underline hover:text-sky-400"
+              className="text-sky-500 underline hover:text-sky-300"
             >
               {/* Iterate over the link text lines */}
               {lines.map((line, idx) => (
@@ -136,11 +132,16 @@ function renderDescriptionCell(info) {
   };
 
   return (
-    <div
-      className="relative"
-      onClick={() => toggleExpandedRows(rowId, "description")}
-    >
-      <pre className="whitespace-pre-wrap text-xs bg-stone-900 p-2 rounded cursor-pointer">
+    <div className="relative">
+      <pre
+        className="whitespace-pre-wrap text-xs text-white bg-stone-900 p-2 rounded cursor-pointer border border-transparent [tr[data-selected=true]_&]:border-stone-800"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (window.getSelection().toString().length === 0) {
+            toggleExpandedRows(rowId, "description");
+          }
+        }}
+      >
         {!expanded ? (
           // Collapsed: intro line of traceback, expandable upon click
           <>Traceback (most recent call last): ...</>
@@ -192,7 +193,7 @@ function renderDescriptionCell(info) {
               {/* Display the traceback with copy button in top-right */}
               <div className="relative">
                 {/* Traceback */}
-                <pre className="whitespace-pre-wrap text-xs text-stone-100 bg-stone-900 p-4 rounded cursor-pointer overflow-y-auto max-h-[80vh]">
+                <pre className="whitespace-pre-wrap text-xs text-stone-100 bg-stone-900 p-4 rounded overflow-y-auto max-h-[80vh]">
                   {displayDescr}
                 </pre>
                 {/* Copy button */}
@@ -270,11 +271,16 @@ function renderConfigCell(info) {
 
   // Return collapsed/expanded cell
   return (
-    <div
-      className="relative"
-      onClick={() => toggleExpandedRows(rowId, "config")}
-    >
-      <pre className="whitespace-pre-wrap text-xs bg-stone-900 p-2 rounded cursor-pointer">
+    <div className="relative">
+      <pre
+        className="whitespace-pre-wrap text-xs text-white bg-stone-900 p-2 rounded cursor-pointer border border-transparent [tr[data-selected=true]_&]:border-stone-800"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (window.getSelection().toString().length === 0) {
+            toggleExpandedRows(rowId, "config");
+          }
+        }}
+      >
         {!expanded ? (
           // Collapsed: first line of YAML, expandable upon click
           // "..." appended if more lines
@@ -420,6 +426,7 @@ export const contextFeedColumns = [
     filterType: "number-range",
     meta: {
       tooltip: "Time (UTC) associated with event.",
+      selectedKey: true,
     },
   }),
   columnHelper.accessor("event_time_tai", {
