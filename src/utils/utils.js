@@ -79,29 +79,6 @@ const calculateEfficiency = (
 };
 
 /**
- * Calculates the total time loss and provides a breakdown of the loss due to weather and faults.
- *
- * @param {number} weatherLoss - The amount of time lost due to weather (in hours).
- * @param {number} faultLoss - The amount of time lost due to faults (in hours).
- * @returns {[string, string]} A tuple where the first element is the total time loss as a string (e.g., "5 seconds"),
- * and the second element is a string detailing the percentage breakdown of weather and fault losses.
- */
-const calculateTimeLoss = (weatherLoss, faultLoss) => {
-  let loss = weatherLoss + faultLoss;
-  let timeLoss = "0 hrs";
-  let timeLossDetails = "(- weather; - fault)";
-
-  if (loss > 0) {
-    let weatherPercent = Math.round((weatherLoss / loss) * 100);
-    let faultPercent = Math.round((faultLoss / loss) * 100);
-    timeLoss = `${loss.toFixed(2)} hrs`;
-    timeLossDetails = `(${weatherPercent}% weather; ${faultPercent}% fault)`;
-  }
-
-  return [timeLoss, timeLossDetails];
-};
-
-/**
  * Formats a given JavaScript Date object into a string format 'yyyyLLdd' using luxon.
  *
  * @param {Date|null|undefined} date - The date to format. If null or undefined, returns an empty string.
@@ -602,7 +579,6 @@ const getBlockSourceLabel = (source) =>
 
 export {
   calculateEfficiency,
-  calculateTimeLoss,
   getDayobsStr,
   getDisplayDateRange,
   getKeyByValue,
