@@ -18,8 +18,8 @@ import {
   fetchNightreport,
   fetchExposureFlags,
   fetchJiraTickets,
-  fetchVisitMaps,
   fetchBlockDetails,
+  fetchStaticVisitMap,
 } from "@/utils/fetchUtils";
 import {
   calculateEfficiency,
@@ -37,6 +37,7 @@ import ObservingConditionsApplet from "@/components/ObservingConditionsApplet";
 import NightSummary from "@/components/NightSummary.jsx";
 import TimeAccountingApplet from "@/components/TimeAccountingApplet";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
+import VisitMapStaticApplet from "@/components/VisitMapStaticApplet.jsx";
 
 export default function Digest() {
   const { startDayobs, endDayobs, telescope } = useSearch({
@@ -79,9 +80,6 @@ export default function Digest() {
   const [almanacInfo, setAlmanacInfo] = useState([]);
   const [openDomeTimes, setOpenDomeTimes] = useState([]);
 
-  const [interactiveMap, setInteractiveMap] = useState(null);
-  const [visitMapLoading, setVisitMapLoading] = useState(false);
-
   const [blockLookup, setBlockLookup] = useState({});
 
   const [hoveredExposureIds, setHoveredExposureIds] = useState(null);
@@ -90,6 +88,9 @@ export default function Digest() {
     [],
   );
   const onBarLeave = useCallback(() => setHoveredExposureIds(null), []);
+
+  const [staticVisitMaps, setStaticVisitMaps] = useState(null);
+  const [staticVisitMapLoading, setStaticVisitMapLoading] = useState(false);
 
   const {
     processedNotifications,
@@ -133,8 +134,9 @@ export default function Digest() {
     setObsStatusFaultLoss(0.0);
     setObsStatusAvailability([]);
 
-    setVisitMapLoading(true);
-    setInteractiveMap(null);
+    setStaticVisitMapLoading(true);
+    setStaticVisitMaps(null);
+
     clearNotifications();
 
     fetchExposures(startDayobs, queryEndDayobs, instrument, abortController)
@@ -337,24 +339,27 @@ export default function Digest() {
         }
       });
 
-    fetchVisitMaps(startDayobs, queryEndDayobs, instrument, abortController, {
-      appletMode: true,
-    })
-      .then((interactivePlot) => {
-        setInteractiveMap(interactivePlot);
+    fetchStaticVisitMap(
+      startDayobs,
+      queryEndDayobs,
+      instrument,
+      abortController,
+    )
+      .then((staticMapData) => {
+        setStaticVisitMaps(staticMapData);
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          console.error("Error generating visit maps:", err);
+          console.error("Error generating static map:", err);
           addNotification({
             type: "error",
-            source: "visit-maps",
+            source: "static-map",
           });
         }
       })
       .finally(() => {
         if (!abortController.signal.aborted) {
-          setVisitMapLoading(false);
+          setStaticVisitMapLoading(false);
         }
       });
 
@@ -452,7 +457,7 @@ export default function Digest() {
     !nightreportLoading &&
     !jiraLoading &&
     !flagsLoading &&
-    !visitMapLoading;
+    !staticVisitMapLoading;
 
   // processedNotifications recomputes incrementally as fetches settle.
   // Show system notices and no-data banners immediately, but delay
@@ -558,9 +563,9 @@ export default function Digest() {
               almanac={almanacInfo}
               weatherLossHours={narrativeWeatherLoss}
             />
-            <VisitMapApplet
-              mapData={interactiveMap}
-              mapLoading={visitMapLoading}
+            <VisitMapStaticApplet
+              mapData={staticVisitMaps?.staticMapUrl}
+              mapLoading={staticVisitMapLoading}
             />
           </div>
         </div>

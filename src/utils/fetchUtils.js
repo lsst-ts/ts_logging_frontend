@@ -496,6 +496,44 @@ const fetchBlockDetails = async (keys, abortController) => {
   }
 };
 
+/**
+ * Converts an image payload to a data URL.
+ * The image payload is expected to have a `mime_type` and `data` property, where `data` is a base64-encoded string.
+ * @param {*} imagePayload
+ * @returns {string|null} A data URL string if the image payload is valid, or null if the payload is falsy.
+ */
+const toDataUrl = (imagePayload) =>
+  imagePayload
+    ? `data:${imagePayload.mime_type};base64,${imagePayload.data}`
+    : null;
+
+/**
+ * Fetches a static visit map for a given date range and instrument.
+ *
+ * @async
+ * @function fetchStaticVisitMap
+ * @param {string} start - The start date of the observation range (format: YYYY-MM-DD).
+ * @param {string} end - The end date of the observation range (format: YYYY-MM-DD).
+ * @param {string} instrument - The instrument to filter exposure entries.
+ * @param {AbortController} abortController - The AbortController used to cancel the request if needed.
+ * @returns {Promise<Object>} A promise that resolves to an object containing the static map URL.
+ * @throws {Error} Throws an error if the fetch fails or returns invalid data and the request was not aborted.
+ */
+const fetchStaticVisitMap = async (start, end, instrument, abortController) => {
+  const url = `${backendLocation}/static-visit-map?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
+  try {
+    const data = await fetchData(url, abortController);
+    return {
+      staticMapUrl: toDataUrl(data.static_map),
+    };
+  } catch (err) {
+    if (err.name !== "AbortError") {
+      console.error("Error fetching static visit map:", err);
+    }
+    throw err;
+  }
+};
+
 export {
   fetchExposures,
   fetchExpectedExposures,
@@ -511,4 +549,5 @@ export {
   fetchBackendVersion,
   fetchVisitMaps,
   fetchBlockDetails,
+  fetchStaticVisitMap,
 };
