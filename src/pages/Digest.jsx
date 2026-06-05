@@ -244,8 +244,9 @@ export default function Digest() {
     fetchObsStatusFromRubinNights({
       start: startDayobs,
       end: endDayobs,
-      includeEntries: false,
+      includeEntries: true,
       includeIntervals: true,
+      nightOnlyMetrics: true,
       metrics: ["fault_loss"],
       abortController,
     })
