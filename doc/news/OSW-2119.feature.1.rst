@@ -1,1 +1,0 @@
-Replace Time Loss card with multisource card showing fault loss from Observatory Status and Narrative Log data, as well as computed from exposures.
