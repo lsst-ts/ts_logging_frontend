@@ -171,6 +171,7 @@ const fetchNarrativeLog = async (start, end, instrument, abortController) => {
  * @param {string} options.end - End date of the observation range (format: YYYYMMDD).
  * @param {boolean} [options.includeEntries=true] - Whether to include raw Observatory Status event records.
  * @param {boolean} [options.includeIntervals=false] - Whether to include computed Observatory Status intervals.
+ * @param {boolean} [options.nightOnlyMetrics=true] - Whether to include daytime data in metrics.
  * @param {string[]} [options.metrics] - List of metrics to request. If omitted, the API returns no metrics.
  * @param {AbortController} options.abortController - AbortController used to cancel the request.
  *
@@ -187,6 +188,7 @@ const fetchObsStatusFromRubinNights = async ({
   end,
   includeEntries = true,
   includeIntervals = false,
+  nightOnlyMetrics = true,
   metrics,
   abortController,
 }) => {
@@ -196,6 +198,7 @@ const fetchObsStatusFromRubinNights = async ({
     dayObsEnd: end,
     includeEntries: includeEntries,
     includeIntervals: includeIntervals,
+    nightOnlyMetrics: nightOnlyMetrics,
   });
 
   // If any metrics have been requested, add to query.
