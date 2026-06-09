@@ -42,8 +42,8 @@ export const generateHourlyTicks = (
  * moon illumination values, and moon rise/set events.
  *
  * @param {Array} almanac - Array of almanac objects, each containing:
- *   - twilight_evening: UTC datetime string for evening twilight
- *   - twilight_morning: UTC datetime string for morning twilight
+ *   - twilight_evening_12deg: UTC datetime string for evening nautical twilight (12°)
+ *   - twilight_morning_12deg: UTC datetime string for morning nautical twilight (12°)
  *   - moon_illumination: Moon illumination percentage
  *   - moon_rise_time: UTC datetime string for moon rise
  *   - moon_set_time: UTC datetime string for moon set
@@ -57,8 +57,8 @@ export const generateHourlyTicks = (
 export const prepareAlmanacData = (almanac) => {
   const twilightValues = almanac
     .map((dayobsAlm) => [
-      utcDateTimeStrToTAIMillis(dayobsAlm.twilight_evening),
-      utcDateTimeStrToTAIMillis(dayobsAlm.twilight_morning),
+      utcDateTimeStrToTAIMillis(dayobsAlm.twilight_evening_12deg),
+      utcDateTimeStrToTAIMillis(dayobsAlm.twilight_morning_12deg),
     ])
     .flat();
 
