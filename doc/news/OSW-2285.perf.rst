@@ -1,0 +1,1 @@
+Reduced unnecessary re-renders on the Data Log and Context Feed pages.
