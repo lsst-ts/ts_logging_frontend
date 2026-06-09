@@ -385,9 +385,13 @@ function DataLog() {
                     <span className="font-bold">Drag</span> to select a time
                     range (table updates automatically).
                   </li>
-                  <li>Drag the edges of the selection to resize.</li>
                   <li>
-                    The selected time range can also be dragged to reposition.
+                    <span className="font-bold">Drag</span> the selection to
+                    reposition
+                  </li>
+                  <li>
+                    <span className="font-bold">Drag</span> the edges of the
+                    selection to resize
                   </li>
                   <li>
                     <span className="font-bold">Double-Click</span> to reset.
@@ -413,7 +417,10 @@ function DataLog() {
               {tableLoading || almanacLoading ? (
                 <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
               ) : (
-                <ContextMenuWrapper menuItems={contextMenuItems}>
+                <ContextMenuWrapper
+                  menuItems={contextMenuItems}
+                  style={{ minWidth: 0 }}
+                >
                   <TimelineChart
                     data={[
                       {

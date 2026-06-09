@@ -648,7 +648,9 @@ function TimelineChart({
       ref={containerRef}
       style={{
         width: "100%",
+        minWidth: 0,
         height: computedHeight,
+        overflow: "hidden",
         userSelect: "none",
       }}
     />
