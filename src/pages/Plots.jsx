@@ -361,8 +361,12 @@ function Plots() {
                   (plots update automatically).
                 </li>
                 <li>
-                  <span className="font-bold">Shift + Drag</span> to extend
-                  selection.
+                  <span className="font-bold">Drag</span> the selection to
+                  reposition
+                </li>
+                <li>
+                  <span className="font-bold">Drag</span> the edges of the
+                  selection to resize
                 </li>
                 <li>
                   <span className="font-bold">Double-Click</span> to reset.
@@ -387,11 +391,14 @@ function Plots() {
               {loading ? (
                 <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
               ) : (
-                <ContextMenuWrapper menuItems={contextMenuItems}>
+                <ContextMenuWrapper
+                  menuItems={contextMenuItems}
+                  style={{ minWidth: 0 }}
+                >
                   <TimelineChart
                     data={[
                       {
-                        index: 0.5,
+                        index: 1,
                         timestamps: dataLogEntries.map(
                           (d) => d.obs_start_millis,
                         ),

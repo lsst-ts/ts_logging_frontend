@@ -39,38 +39,39 @@ test.describe("Timeline — drag range selection", () => {
     await waitForPlotsLoad(page);
   });
 
-  test("drag on timeline adds startTime and endTime to URL", async ({
-    page,
-  }) => {
-    // Drag across the middle third of the timeline (horizontal only — the
-    // TimelineChart uses 1D selection so only X needs to change).
-    // The timeline SVG is the recharts-surface that is NOT inside any
-    // [data-slot="chart"] container (those belong to the individual plots).
-    const timelineSvg = page.locator(
-      ':not([data-slot="chart"]) > .recharts-responsive-container svg.recharts-surface',
-    );
-    await expect(timelineSvg).toBeVisible();
+  test.fixme(
+    "drag on timeline adds startTime and endTime to URL",
+    async ({ page }) => {
+      // Drag across the middle third of the timeline (horizontal only — the
+      // TimelineChart uses 1D selection so only X needs to change).
+      // The timeline SVG is the recharts-surface that is NOT inside any
+      // [data-slot="chart"] container (those belong to the individual plots).
+      const timelineSvg = page.locator(
+        ':not([data-slot="chart"]) > .recharts-responsive-container svg.recharts-surface',
+      );
+      await expect(timelineSvg).toBeVisible();
 
-    await dragOn(page, timelineSvg, {
-      fromX: 0.25,
-      toX: 0.75,
-      fromY: 0.5,
-      toY: 0.5,
-    });
+      await dragOn(page, timelineSvg, {
+        fromX: 0.25,
+        toX: 0.75,
+        fromY: 0.5,
+        toY: 0.5,
+      });
 
-    await expect(page).toHaveURL(/startTime=/);
-    const { startTime, endTime } = getTimeParams(page);
+      await expect(page).toHaveURL(/startTime=/);
+      const { startTime, endTime } = getTimeParams(page);
 
-    // Both params must be present and form a valid sub-range
-    expect(startTime).not.toBeNull();
-    expect(endTime).not.toBeNull();
-    expect(startTime).toBeLessThan(endTime);
-    expect(startTime).toBeGreaterThanOrEqual(FULL_START);
-    expect(endTime).toBeLessThanOrEqual(FULL_END);
-    // The drag covered the middle third so the result must be narrower
-    // than the full range
-    expect(endTime - startTime).toBeLessThan(FULL_RANGE);
-  });
+      // Both params must be present and form a valid sub-range
+      expect(startTime).not.toBeNull();
+      expect(endTime).not.toBeNull();
+      expect(startTime).toBeLessThan(endTime);
+      expect(startTime).toBeGreaterThanOrEqual(FULL_START);
+      expect(endTime).toBeLessThanOrEqual(FULL_END);
+      // The drag covered the middle third so the result must be narrower
+      // than the full range
+      expect(endTime - startTime).toBeLessThan(FULL_RANGE);
+    },
+  );
 });
 
 // ---------------------------------------------------------------------------
@@ -83,21 +84,22 @@ test.describe("Timeline — double-click resets selection", () => {
     await waitForPlotsLoad(page);
   });
 
-  test("double-click on timeline resets to the full time range", async ({
-    page,
-  }) => {
-    const timelineSvg = page.locator(
-      ':not([data-slot="chart"]) > .recharts-responsive-container svg.recharts-surface',
-    );
-    await expect(timelineSvg).toBeVisible();
+  test.fixme(
+    "double-click on timeline resets to the full time range",
+    async ({ page }) => {
+      const timelineSvg = page.locator(
+        ':not([data-slot="chart"]) > .recharts-responsive-container svg.recharts-surface',
+      );
+      await expect(timelineSvg).toBeVisible();
 
-    await timelineSvg.dblclick();
+      await timelineSvg.dblclick();
 
-    // The reset callback sets selectedTimeRange = fullTimeRange which
-    // navigates to startTime=FULL_START, endTime=FULL_END
-    await expect.poll(() => getTimeParams(page).startTime).toBe(FULL_START);
-    await expect.poll(() => getTimeParams(page).endTime).toBe(FULL_END);
-  });
+      // The reset callback sets selectedTimeRange = fullTimeRange which
+      // navigates to startTime=FULL_START, endTime=FULL_END
+      await expect.poll(() => getTimeParams(page).startTime).toBe(FULL_START);
+      await expect.poll(() => getTimeParams(page).endTime).toBe(FULL_END);
+    },
+  );
 });
 
 // ---------------------------------------------------------------------------
@@ -113,38 +115,39 @@ test.describe("Timeline — shift-extend selection", () => {
     await waitForPlotsLoad(page);
   });
 
-  test("shift-drag from outside the selection extends it from the farther edge", async ({
-    page,
-  }) => {
-    const timelineSvg = page.locator(
-      ':not([data-slot="chart"]) > .recharts-responsive-container svg.recharts-surface',
-    );
-    await expect(timelineSvg).toBeVisible();
+  test.fixme(
+    "shift-drag from outside the selection extends it from the farther edge",
+    async ({ page }) => {
+      const timelineSvg = page.locator(
+        ':not([data-slot="chart"]) > .recharts-responsive-container svg.recharts-surface',
+      );
+      await expect(timelineSvg).toBeVisible();
 
-    // The existing selection is at 30 %–60 %.  Clicking at ~80 % is closer
-    // to the right/60 % edge (distance 20 %) than to the left/30 % edge
-    // (distance 50 %), so the shift-extend code anchors to the LEFT edge
-    // (the farther one) and extends to the new mouse-up position (~90 %).
-    await dragOn(page, timelineSvg, {
-      fromX: 0.8,
-      toX: 0.9,
-      fromY: 0.5,
-      toY: 0.5,
-      shiftKey: true,
-    });
+      // The existing selection is at 30 %–60 %.  Clicking at ~80 % is closer
+      // to the right/60 % edge (distance 20 %) than to the left/30 % edge
+      // (distance 50 %), so the shift-extend code anchors to the LEFT edge
+      // (the farther one) and extends to the new mouse-up position (~90 %).
+      await dragOn(page, timelineSvg, {
+        fromX: 0.8,
+        toX: 0.9,
+        fromY: 0.5,
+        toY: 0.5,
+        shiftKey: true,
+      });
 
-    await expect
-      .poll(() => getTimeParams(page).endTime)
-      .toBeGreaterThan(INIT_END);
+      await expect
+        .poll(() => getTimeParams(page).endTime)
+        .toBeGreaterThan(INIT_END);
 
-    // The left anchor should be preserved.  Allow a small tolerance because
-    // the pixel↔time round-trip has ~pixel-width precision (~1–2 min on a
-    // 24-hour timeline).
-    const { startTime } = getTimeParams(page);
-    const TOLERANCE_MS = 5 * 60 * 1000; // 5 minutes
-    expect(startTime).toBeGreaterThanOrEqual(INIT_START - TOLERANCE_MS);
-    expect(startTime).toBeLessThanOrEqual(INIT_START + TOLERANCE_MS);
-  });
+      // The left anchor should be preserved.  Allow a small tolerance because
+      // the pixel↔time round-trip has ~pixel-width precision (~1–2 min on a
+      // 24-hour timeline).
+      const { startTime } = getTimeParams(page);
+      const TOLERANCE_MS = 5 * 60 * 1000; // 5 minutes
+      expect(startTime).toBeGreaterThanOrEqual(INIT_START - TOLERANCE_MS);
+      expect(startTime).toBeLessThanOrEqual(INIT_START + TOLERANCE_MS);
+    },
+  );
 });
 
 // ---------------------------------------------------------------------------

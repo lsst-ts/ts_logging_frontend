@@ -9,12 +9,13 @@
  * Chart dimension constants
  */
 export const TIMELINE_DIMENSIONS = {
-  // Default height for timeline chart
-  DEFAULT_HEIGHT: 110,
+  // Height per data series row, plus base added on top (breathing room, margins)
+  SERIES_ROW_HEIGHT: 20,
+  BASE_HEIGHT: 50,
 
   // Label and axis spacing
   PLOT_LABEL_HEIGHT: 20,
-  DIST_BELOW_X_AXIS: 10,
+  DIST_BELOW_X_AXIS: 16,
   DIST_FROM_X_AXIS: 85,
 
   // Text styling
@@ -22,7 +23,7 @@ export const TIMELINE_DIMENSIONS = {
 
   // Moon rendering
   MOON_RADIUS: 6,
-  X_OFFSET: 4,
+  X_OFFSET: 6,
 };
 
 /**
@@ -32,7 +33,7 @@ export const TIMELINE_MARGINS = {
   top: 0, // Will be overridden if moon illumination is shown
   right: 30,
   left: 30,
-  bottom: 0,
+  bottom: 30,
 };
 
 /**
@@ -44,6 +45,7 @@ export const TIMELINE_COLORS = {
   GRID_OPACITY: 0.1,
   DAYOBS_BORDER: "grey",
   DAYOBS_LABEL: "grey",
+  DAYOBS_LABEL_DIM: "#666",
 
   // Single series styling
   SINGLE_SERIES_LINE: "white",
@@ -67,8 +69,7 @@ export const TIMELINE_COLORS = {
 
   // Selection
   SELECTION_STROKE: "hotPink",
-  SELECTION_FILL_OPACITY: 0.2,
-  DEFAULT_SELECTION_FILL: "pink",
+  DEFAULT_SELECTION_FILL: "rgba(136, 136, 136, 0.2)",
 };
 
 /**
@@ -94,15 +95,6 @@ export const TIMELINE_OPACITY = {
  */
 export const TIMELINE_INTERVALS = {
   HOURLY_TICK_INTERVAL: 1, // hours
-};
-
-/**
- * Y-axis domain configuration
- */
-export const TIMELINE_Y_DOMAIN = {
-  SINGLE_SERIES_PADDING: 0.5,
-  MULTI_SERIES_MIN: 0,
-  MULTI_SERIES_MIN_MAX: 12,
 };
 
 /**
