@@ -13,6 +13,7 @@ import {
   SERIES_ORDER,
   STATUS_COLORS,
   STATUS_TIMELINE_DIMENSIONS,
+  STATUS_TIMELINE_MARGINS,
 } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
 import {
   TIMELINE_MARGINS,
@@ -20,10 +21,6 @@ import {
   TIMELINE_INTERVALS,
 } from "@/constants/TIMELINE_DEFINITIONS";
 import { useEChartsTimeline } from "@/hooks/useEChartsTimeline";
-
-// Must match the width of the checkbox/label div rendered alongside TimelineChart
-// in ContextFeed (w-45 = 180px) so that both chart plot areas align horizontally.
-const LABEL_DIV_WIDTH = 180;
 
 /**
  * Observatory status timeline component.
@@ -140,14 +137,24 @@ function ObservatoryStatusTimeline({
         formatter: (params) => {
           if (params.seriesId !== "markers") return undefined;
           const { time, note, hasNote } = params.data;
-          return hasNote ? `${time}<br/>${note}` : time;
+          if (!hasNote) return time;
+          // Escape HTML to prevent XSS while displaying raw text
+          const escapedNote = note
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+          return `${time}<br/>${escapedNote}`;
         },
       },
       grid: {
-        top: TIMELINE_MARGINS.top,
-        right: TIMELINE_MARGINS.right,
-        left: TIMELINE_MARGINS.left,
-        bottom: TIMELINE_MARGINS.bottom + TIMELINE_DIMENSIONS.PLOT_LABEL_HEIGHT,
+        top: STATUS_TIMELINE_MARGINS.top,
+        right: STATUS_TIMELINE_MARGINS.right,
+        left: STATUS_TIMELINE_MARGINS.left,
+        bottom:
+          STATUS_TIMELINE_MARGINS.bottom +
+          TIMELINE_DIMENSIONS.PLOT_LABEL_HEIGHT,
         containLabel: false,
       },
       xAxis: {
@@ -283,43 +290,10 @@ function ObservatoryStatusTimeline({
   }, [updateGraphicElements, instanceRef]);
 
   return (
-    <div style={{ display: "flex", flexDirection: "row", width: "100%" }}>
-      {/* State labels — width must match the checkbox div in ContextFeed (w-45)
-          so that both chart plot areas start at the same horizontal position. */}
-      <div
-        style={{
-          width: LABEL_DIV_WIDTH,
-          flexShrink: 0,
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-around",
-          paddingTop: TIMELINE_MARGINS.top,
-          paddingBottom:
-            TIMELINE_MARGINS.bottom + TIMELINE_DIMENSIONS.PLOT_LABEL_HEIGHT,
-          userSelect: "none",
-        }}
-      >
-        {SERIES_ORDER.map((stateName) => (
-          <div
-            key={stateName}
-            style={{
-              height: STATUS_TIMELINE_DIMENSIONS.SERIES_ROW_HEIGHT,
-              display: "flex",
-              alignItems: "center",
-              fontSize: STATUS_TIMELINE_DIMENSIONS.AXIS_LABEL_TEXT_SIZE,
-              color: STATUS_COLORS[stateName],
-            }}
-          >
-            {stateName}
-          </div>
-        ))}
-      </div>
-      {/* ECharts container */}
-      <div
-        ref={containerRef}
-        style={{ flex: 1, height: computedHeight, userSelect: "none" }}
-      />
-    </div>
+    <div
+      ref={containerRef}
+      style={{ width: "100%", height: computedHeight, userSelect: "none" }}
+    />
   );
 }
 
