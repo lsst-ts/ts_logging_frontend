@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/popover";
 
 import TimelineChart from "@/components/TimelineChart";
+import ObservatoryStatusTimeline from "@/components/ObservatoryStatusTimeline";
 import ContextFeedTable from "@/components/ContextFeedTable.jsx";
 import { CATEGORY_INDEX_INFO } from "@/components/context-feed-definitions.js";
 import { contextFeedColumns } from "@/components/ContextFeedColumns";
@@ -29,6 +30,7 @@ import {
   fetchAlmanac,
   fetchContextFeedFromRubinNights,
   fetchBlockDetails,
+  fetchObsStatus,
 } from "@/utils/fetchUtils";
 import { mergeContextFeedSources, getBlockSourceLabel } from "@/utils/utils";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
@@ -94,6 +96,10 @@ function ContextFeed() {
   // Almanac data for timeline
   const [twilightValues, setTwilightValues] = useState([]);
   const [almanacLoading, setAlmanacLoading] = useState(false);
+
+  // Observatory status data
+  const [obsStatusEntries, setObsStatusEntries] = useState([]);
+  const [obsStatusLoading, setObsStatusLoading] = useState(false);
 
   // Visibility toggles
   const [timelineVisible, setTimelineVisible] = useState(true);
@@ -180,6 +186,7 @@ function ContextFeed() {
 
     setRubinNightsDataLoading(true);
     setAlmanacLoading(true);
+    setObsStatusLoading(true);
     clearNotifications();
 
     fetchAlmanac(startDayobs, queryEndDayobs, abortController)
@@ -233,6 +240,25 @@ function ContextFeed() {
       .finally(() => {
         if (!abortController.signal.aborted) {
           setRubinNightsDataLoading(false);
+        }
+      });
+
+    fetchObsStatus(startDayobs, endDayobs, abortController)
+      .then((data) => {
+        setObsStatusEntries(data.entries ?? []);
+      })
+      .catch((err) => {
+        if (!abortController.signal.aborted) {
+          console.error("Error fetching observatory status:", err);
+          addNotification({
+            type: "error",
+            source: "obs-status",
+          });
+        }
+      })
+      .finally(() => {
+        if (!abortController.signal.aborted) {
+          setObsStatusLoading(false);
         }
       });
 
@@ -428,10 +454,30 @@ function ContextFeed() {
                     <span className="font-bold">Right-Click</span> for more
                     options (keeps selection).
                   </li>
-                  <li>Blue lines are twilights. All event times are UTC.</li>
+                  <li>
+                    Blue lines are 12° twilights. Dashed white lines are 0°
+                    twilights. All event times are UTC.
+                  </li>
                 </ul>
               </div>
             </TipsCard>
+          )}
+
+          {/* Observatory Status Timeline */}
+          {timelineVisible && (
+            <Card className="grid gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 font-thin shadow-stone-900 shadow-md">
+              {obsStatusLoading ? (
+                <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
+              ) : (
+                <ObservatoryStatusTimeline
+                  entries={obsStatusEntries}
+                  twilightValues={twilightValues}
+                  fullTimeRange={fullTimeRange}
+                  selectedTimeRange={selectedTimeRange}
+                  setSelectedTimeRange={setSelectedTimeRange}
+                />
+              )}
+            </Card>
           )}
 
           {/* Timeline */}
