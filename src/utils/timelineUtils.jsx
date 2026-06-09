@@ -44,13 +44,16 @@ export const generateHourlyTicks = (
  * @param {Array} almanac - Array of almanac objects, each containing:
  *   - twilight_evening_12deg: UTC datetime string for evening nautical twilight (12°)
  *   - twilight_morning_12deg: UTC datetime string for morning nautical twilight (12°)
+ *   - twilight_evening_0deg: UTC datetime string for evening civil twilight (0°)
+ *   - twilight_morning_0deg: UTC datetime string for morning civil twilight (0°)
  *   - moon_illumination: Moon illumination percentage
  *   - moon_rise_time: UTC datetime string for moon rise
  *   - moon_set_time: UTC datetime string for moon set
  *   - dayobs: Day observation number in yyyyMMdd format
  *
  * @returns {Object} Object containing:
- *   - twilightValues: Array of twilight timestamps in TAI milliseconds
+ *   - twilightValues: Array of 12° twilight timestamps in TAI milliseconds
+ *   - twilight0DegValues: Array of 0° twilight timestamps in TAI milliseconds
  *   - illumValues: Array of {dayobs, illum} objects for moon illumination
  *   - moonValues: Array of {time, type} objects for moon rise/set events
  */
@@ -59,6 +62,13 @@ export const prepareAlmanacData = (almanac) => {
     .map((dayobsAlm) => [
       utcDateTimeStrToTAIMillis(dayobsAlm.twilight_evening_12deg),
       utcDateTimeStrToTAIMillis(dayobsAlm.twilight_morning_12deg),
+    ])
+    .flat();
+
+  const twilight0DegValues = almanac
+    .map((dayobsAlm) => [
+      utcDateTimeStrToTAIMillis(dayobsAlm.twilight_evening_0deg),
+      utcDateTimeStrToTAIMillis(dayobsAlm.twilight_morning_0deg),
     ])
     .flat();
 
@@ -80,7 +90,7 @@ export const prepareAlmanacData = (almanac) => {
     },
   ]);
 
-  return { twilightValues, illumValues, moonValues };
+  return { twilightValues, twilight0DegValues, illumValues, moonValues };
 };
 
 /**
@@ -284,14 +294,19 @@ export const buildGridLinesSeries = (hourlyTicks) => ({
  * @param {"solid"|"dashed"} lineType - Line style
  * @param {number} xMinMillis - Chart x-axis minimum
  * @param {number} xMaxMillis - Chart x-axis maximum
+ * @param {string} [color] - Optional line color (defaults to TWILIGHT_LINE)
+ * @param {number} [width] - Optional line width (defaults to TWILIGHT_STROKE_WIDTH)
+ * @param {number[]} [lineDash] - Optional dash pattern [dash, gap] for dashed lines
  * @returns {Object} ECharts series config
  */
 export const buildTwilightSeries = (
   id,
   values,
-  lineType,
+  type,
   xMinMillis,
   xMaxMillis,
+  color = TIMELINE_COLORS.TWILIGHT_LINE,
+  width = TIMELINE_COLORS.TWILIGHT_STROKE_WIDTH,
 ) => ({
   type: "scatter",
   id,
@@ -304,9 +319,9 @@ export const buildTwilightSeries = (
         z: 0,
         symbol: ["none", "none"],
         lineStyle: {
-          color: TIMELINE_COLORS.TWILIGHT_LINE,
-          width: TIMELINE_COLORS.TWILIGHT_STROKE_WIDTH,
-          type: lineType,
+          color,
+          width,
+          type,
         },
         data: values
           .filter((twi) => xMinMillis <= twi && twi <= xMaxMillis)

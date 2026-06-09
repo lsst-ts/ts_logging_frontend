@@ -182,13 +182,15 @@ function ObservatoryStatusTimeline({
           xMinMillis,
           xMaxMillis,
         ),
-        // 0° twilight — dashed blue line
+        // 0° twilight — dashed white line (thinner, longer dashes)
         buildTwilightSeries(
           "twilight-0deg",
           twilight0DegValues,
-          "dashed",
+          [6, 6],
           xMinMillis,
           xMaxMillis,
+          "white",
+          1,
         ),
         // Status interval bars — custom series renders one rect per interval
         {
