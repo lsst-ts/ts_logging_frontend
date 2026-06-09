@@ -23,13 +23,13 @@ export const OBSERVATORY_STATES = {
  * Human-readable labels for each state
  */
 export const STATUS_LABELS = {
-  UNKNOWN: "UNKNOWN",
-  DAYTIME: "DAYTIME",
-  OPERATIONAL: "OPERATIONAL",
-  FAULT: "FAULT",
-  WEATHER: "WEATHER",
-  DOWNTIME: "DOWNTIME",
-  IDLE: "IDLE",
+  UNKNOWN: "Unknown",
+  DAYTIME: "Daytime",
+  OPERATIONAL: "Operational",
+  FAULT: "Fault",
+  WEATHER: "Weather",
+  DOWNTIME: "Downtime",
+  IDLE: "Idle",
 };
 
 /**
@@ -66,8 +66,8 @@ export const STATUS_TIMELINE_DIMENSIONS = {
 
   // Bar/marker styling
   BAR_HEIGHT: 12,
-  MARKER_SIZE: 6,
-  MARKER_SIZE_WITH_NOTE: 8,
+  MARKER_SIZE: 14,
+  MARKER_SIZE_WITH_NOTE: 16,
 };
 
 /**
@@ -76,8 +76,8 @@ export const STATUS_TIMELINE_DIMENSIONS = {
 export const STATUS_TIMELINE_MARGINS = {
   top: 10,
   right: 30,
-  left: 100, // Space for state labels on the left
-  bottom: 40, // Space for dayobs labels and twilight labels
+  left: 30,
+  bottom: 30, // Space for dayobs labels and twilight labels
 };
 
 /**

@@ -46,7 +46,13 @@ export function transformStatusToSeries(entries, endTime) {
       const bitValue = OBSERVATORY_STATES[stateName];
       const isActive = entry.status & bitValue;
 
-      if (isActive) {
+      // UNKNOWN is special: it's active when NO bits are set (status === 0)
+      const isUnknownState = stateName === "UNKNOWN";
+      const stateIsActuallyActive = isUnknownState
+        ? entry.status === 0
+        : isActive;
+
+      if (stateIsActuallyActive) {
         // State is active
         if (!activeIntervals[stateName]) {
           // Just became active - record the start
@@ -55,8 +61,22 @@ export function transformStatusToSeries(entries, endTime) {
             note: entry.note || "",
             time: entry.time,
           };
+        } else if (entry.note) {
+          // Already active, but this entry has a note - close the old interval
+          // and start a new one (no visual gap, end ms = next start ms)
+          series[stateName].push({
+            start: activeIntervals[stateName].start,
+            end: currentTime,
+            note: activeIntervals[stateName].note,
+            time: activeIntervals[stateName].time,
+          });
+          activeIntervals[stateName] = {
+            start: currentTime,
+            note: entry.note,
+            time: entry.time,
+          };
         }
-        // If already active, continue tracking (don't update start)
+        // If already active with no new note, continue tracking
       } else {
         // State is not active
         if (activeIntervals[stateName]) {
