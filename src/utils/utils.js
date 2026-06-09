@@ -449,8 +449,8 @@ const getDayobsAlmanac = (dayobs, almanacInfo) => {
  * @param {Array<Object>} almanacInfo - Array of almanac records.
  *   Each record should contain:
  *     - {string} dayobs: the observing date key
- *     - {string} twilight_evening_12deg: ISO date string of evening twilight
- *     - {string} twilight_morning_12deg: ISO date string of next morning twilight
+ *     - {string} twilight_evening_12deg: ISO date string of evening nautical twilight (12°)
+ *     - {string} twilight_morning_12deg: ISO date string of next morning nautical twilight (12°)
  *
  * @returns {number} Total exposure time (seconds) for all exposures that start
  *   between their corresponding evening and morning twilights.
