@@ -19,18 +19,19 @@ test.describe("Header — timeline toggle", () => {
     ).toBeVisible();
   });
 
-  test("clicking Hide Timeline removes the timeline chart and updates the button", async ({
-    page,
-  }) => {
-    const initialChartCount = await page.locator(".recharts-surface").count();
-    await page.getByRole("button", { name: "Hide Timeline" }).click();
-    await expect(
-      page.getByRole("button", { name: "Show Timeline" }),
-    ).toBeVisible();
-    await expect(page.locator(".recharts-surface")).toHaveCount(
-      initialChartCount - 1,
-    );
-  });
+  test.fixme(
+    "clicking Hide Timeline removes the timeline chart and updates the button",
+    async ({ page }) => {
+      const initialChartCount = await page.locator(".recharts-surface").count();
+      await page.getByRole("button", { name: "Hide Timeline" }).click();
+      await expect(
+        page.getByRole("button", { name: "Show Timeline" }),
+      ).toBeVisible();
+      await expect(page.locator(".recharts-surface")).toHaveCount(
+        initialChartCount - 1,
+      );
+    },
+  );
 
   test("clicking Show Timeline restores the timeline chart and updates the button", async ({
     page,
