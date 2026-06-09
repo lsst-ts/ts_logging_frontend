@@ -19,6 +19,8 @@ import TimelineChart from "@/components/TimelineChart";
 import ObservatoryStatusTimeline from "@/components/ObservatoryStatusTimeline";
 import ContextFeedTable from "@/components/ContextFeedTable.jsx";
 import { CATEGORY_INDEX_INFO } from "@/components/context-feed-definitions.js";
+import { SERIES_ORDER } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
+import { getStatusLabel } from "@/utils/observatoryStatusUtils";
 import { contextFeedColumns } from "@/components/ContextFeedColumns";
 import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
 import PageHeader from "@/components/PageHeader";
@@ -475,13 +477,39 @@ function ContextFeed() {
               {obsStatusLoading ? (
                 <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
               ) : (
-                <ObservatoryStatusTimeline
-                  entries={obsStatusEntries}
-                  twilightValues={twilightValues}
-                  fullTimeRange={fullTimeRange}
-                  selectedTimeRange={selectedTimeRange}
-                  setSelectedTimeRange={setSelectedTimeRange}
-                />
+                <div className="flex flex-row">
+                  {/* State Labels */}
+                  <div
+                    className="flex flex-col w-45"
+                    style={{
+                      paddingTop: "10px",
+                      paddingBottom: "50px",
+                    }}
+                  >
+                    {SERIES_ORDER.map((stateName) => (
+                      <div
+                        key={stateName}
+                        className="flex items-center"
+                        style={{
+                          height: "20px",
+                        }}
+                      >
+                        <span className="text-xs text-stone-200">
+                          {getStatusLabel(stateName)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex-1">
+                    <ObservatoryStatusTimeline
+                      entries={obsStatusEntries}
+                      twilightValues={twilightValues}
+                      fullTimeRange={fullTimeRange}
+                      selectedTimeRange={selectedTimeRange}
+                      setSelectedTimeRange={setSelectedTimeRange}
+                    />
+                  </div>
+                </div>
               )}
             </Card>
           )}
