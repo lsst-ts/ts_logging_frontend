@@ -103,7 +103,8 @@ function ContextFeed() {
 
   // Almanac data for timeline
   const [twilightValues, setTwilightValues] = useState([]);
-  const [almanacLoading, setAlmanacLoading] = useState(true);
+  const [twilight0DegValues, setTwilight0DegValues] = useState([]);
+  const [almanacLoading, setAlmanacLoading] = useState(false);
 
   // Observatory status data
   const [obsStatusEntries, setObsStatusEntries] = useState([]);
@@ -199,8 +200,10 @@ function ContextFeed() {
 
     fetchAlmanac(startDayobs, queryEndDayobs, abortController)
       .then((almanac) => {
-        const { twilightValues } = prepareAlmanacData(almanac);
+        const { twilightValues, twilight0DegValues } =
+          prepareAlmanacData(almanac);
         setTwilightValues(twilightValues);
+        setTwilight0DegValues(twilight0DegValues);
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
@@ -504,6 +507,7 @@ function ContextFeed() {
                     <ObservatoryStatusTimeline
                       entries={obsStatusEntries}
                       twilightValues={twilightValues}
+                      twilight0DegValues={twilight0DegValues}
                       fullTimeRange={fullTimeRange}
                       selectedTimeRange={selectedTimeRange}
                       setSelectedTimeRange={setSelectedTimeRange}
