@@ -433,6 +433,31 @@ const fetchBlockDetails = async (keys, abortController) => {
   }
 };
 
+/**
+ * Fetches observatory status data for a specified date range.
+ *
+ * @async
+ * @function fetchObsStatus
+ * @param {string} start - The start date for the observation range (format: YYYYMMDD).
+ * @param {string} end - The end date for the observation range (format: YYYYMMDD).
+ * @param {AbortController} abortController - The AbortController used to cancel the request if needed.
+ * @returns {Promise<Object>} A promise that resolves to an object with:
+ *   - entries: Array of { time, status, note, statusLabels, time_ms }
+ * @throws {Error} Throws an error if fetching fails for reasons other than an abort.
+ */
+const fetchObsStatus = async (start, end, abortController) => {
+  const url = `${backendLocation}/obs-status?dayObsStart=${start}&dayObsEnd=${end}`;
+  try {
+    const data = await fetchData(url, abortController);
+    return data;
+  } catch (err) {
+    if (err.name !== "AbortError") {
+      console.error("Error fetching observatory status:", err);
+    }
+    throw err;
+  }
+};
+
 export {
   fetchExposures,
   fetchExpectedExposures,
@@ -447,4 +472,5 @@ export {
   fetchBackendVersion,
   fetchVisitMaps,
   fetchBlockDetails,
+  fetchObsStatus,
 };
