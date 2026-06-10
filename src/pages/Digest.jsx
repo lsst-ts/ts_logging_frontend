@@ -83,6 +83,7 @@ export default function Digest() {
 
   const [staticVisitMaps, setStaticVisitMaps] = useState(null);
   const [staticVisitMapLoading, setStaticVisitMapLoading] = useState(false);
+  const [staticVisitMapError, setStaticVisitMapError] = useState(false);
 
   const {
     processedNotifications,
@@ -123,6 +124,7 @@ export default function Digest() {
 
     setStaticVisitMapLoading(true);
     setStaticVisitMaps(null);
+    setStaticVisitMapError(false);
 
     clearNotifications();
 
@@ -311,6 +313,7 @@ export default function Digest() {
             type: "error",
             source: "static-map",
           });
+          setStaticVisitMapError(true);
         }
       })
       .finally(() => {
@@ -521,6 +524,7 @@ export default function Digest() {
             <VisitMapStaticApplet
               mapData={staticVisitMaps?.staticMapUrl}
               mapLoading={staticVisitMapLoading}
+              error={staticVisitMapError}
             />
           </div>
         </div>

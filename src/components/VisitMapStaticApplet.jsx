@@ -9,7 +9,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import InfoIcon from "../assets/InfoIcon.svg";
 import DownloadIcon from "../assets/DownloadIcon.svg";
 
-export default function VisitMapStaticApplet({ mapData, mapLoading }) {
+export default function VisitMapStaticApplet({
+  mapData,
+  mapLoading,
+  error = false,
+}) {
   return (
     <Card className="border-none p-0 bg-stone-800 gap-2">
       <CardHeader className="grid-cols-3 bg-teal-900 p-4 rounded-sm align-center gap-0">
@@ -49,12 +53,16 @@ export default function VisitMapStaticApplet({ mapData, mapLoading }) {
           </Popover>
         </div>
       </CardHeader>
-      <CardContent className="bg-black p-4 text-neutral-700 rounded-sm border-2 border-teal-900 h-80 font-thin">
+      <CardContent className="bg-black p-4 text-stone-400 font-normal rounded-sm border-2 border-teal-900 h-80">
         {mapLoading ? (
           <Skeleton className="w-full h-full bg-stone-900 rounded-md" />
+        ) : error ? (
+          <div className="flex h-full w-full items-center justify-center p-1.5 sm:p-2">
+            Error generating visit map
+          </div>
         ) : !mapData ? (
           <div className="flex h-full w-full items-center justify-center p-1.5 sm:p-2">
-            No visit map data available
+            No science visits available
           </div>
         ) : (
           <div className="flex h-full w-full items-center justify-center p-1.5 sm:p-2">
