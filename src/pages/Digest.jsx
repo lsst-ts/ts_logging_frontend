@@ -208,7 +208,6 @@ export default function Digest() {
     fetchAlmanac(startDayobs, queryEndDayobs, abortController)
       .then((almanac) => {
         setAlmanacInfo(almanac);
-        console.log("almanacInfo: ", almanac);
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
