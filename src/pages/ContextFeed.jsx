@@ -485,8 +485,8 @@ function ContextFeed() {
                   <div
                     className="flex flex-col w-45"
                     style={{
-                      paddingTop: "10px",
-                      paddingBottom: "50px",
+                      paddingTop: "20px",
+                      paddingBottom: "20px",
                     }}
                   >
                     {SERIES_ORDER.map((stateName) => (
