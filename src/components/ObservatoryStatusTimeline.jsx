@@ -12,6 +12,7 @@ import { transformStatusToSeries } from "@/utils/observatoryStatusUtils";
 import {
   SERIES_ORDER,
   STATUS_COLORS,
+  STATUS_BAR_COLORS,
   STATUS_TIMELINE_DIMENSIONS,
   STATUS_TIMELINE_MARGINS,
 } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
@@ -105,7 +106,7 @@ function ObservatoryStatusTimeline({
       for (const interval of series[stateName]) {
         barData.push({
           value: [interval.start, interval.end, catIdx],
-          itemStyle: { color: STATUS_COLORS[stateName] },
+          itemStyle: { color: STATUS_BAR_COLORS[stateName] },
           stateName,
           note: interval.note,
           time: interval.time,
@@ -271,6 +272,7 @@ function ObservatoryStatusTimeline({
           itemStyle: {
             color: (params) =>
               STATUS_COLORS[params.data.stateName] ?? STATUS_COLORS.UNKNOWN,
+            opacity: 1,
             borderColor: "white",
             borderWidth: 1,
           },
