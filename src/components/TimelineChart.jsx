@@ -6,7 +6,7 @@ import {
   buildBrushConfig,
   buildGridLinesSeries,
   buildTwilightSeries,
-  buildDayobsGraphicElements,
+  buildTimelineGraphicElements,
 } from "@/utils/timelineUtils";
 import {
   TIMELINE_DIMENSIONS,
@@ -62,30 +62,15 @@ function TimelineChart({
   // Defined before the option useEffect so it can be in its dependency array.
   const updateGraphicElements = useCallback(
     (instance) => {
-      const result = buildDayobsGraphicElements(instance, containerRef, {
+      const result = buildTimelineGraphicElements(instance, containerRef, {
         fullTimeRange,
         computedHeight,
         showTwilight,
+        showBaseline: data?.length > 1,
       });
       if (!result) return;
 
-      const { elements, fontFamily, gridLeft, gridRight, gridBottom } = result;
-
-      // White baseline across the bottom of the grid in multi-series mode
-      if (data?.length > 1) {
-        elements.push({
-          type: "line",
-          silent: true,
-          z: 0,
-          shape: {
-            x1: gridLeft,
-            y1: gridBottom,
-            x2: gridRight,
-            y2: gridBottom,
-          },
-          style: { stroke: "white", lineWidth: 1, opacity: 1 },
-        });
-      }
+      const { elements, fontFamily } = result;
 
       // ── Chile midnight: moon illumination symbol ─────────────────────────
       if (showMoonIllumination) {
