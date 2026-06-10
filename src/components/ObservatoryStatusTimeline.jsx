@@ -316,7 +316,13 @@ function ObservatoryStatusTimeline({
   return (
     <div
       ref={containerRef}
-      style={{ width: "100%", height: computedHeight, userSelect: "none" }}
+      style={{
+        width: "100%",
+        minWidth: 0,
+        height: computedHeight,
+        overflow: "hidden",
+        userSelect: "none",
+      }}
     />
   );
 }
