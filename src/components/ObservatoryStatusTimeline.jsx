@@ -6,7 +6,7 @@ import {
   buildBrushConfig,
   buildGridLinesSeries,
   buildTwilightSeries,
-  buildDayobsGraphicElements,
+  buildTimelineGraphicElements,
 } from "@/utils/timelineUtils";
 import { transformStatusToSeries } from "@/utils/observatoryStatusUtils";
 import {
@@ -52,17 +52,19 @@ function ObservatoryStatusTimeline({
     STATUS_TIMELINE_DIMENSIONS.BASE_HEIGHT +
     TIMELINE_DIMENSIONS.PLOT_LABEL_HEIGHT; // space for twilight labels below x-axis
 
-  // ── Graphic elements (dayobs labels and border lines) ───────────────────────
+  // ── Graphic elements (dayobs labels, border lines, baseline) ────────────────
   // These are positioned in pixel space, so must be computed after render.
   // Defined before the option useEffect so it can be in its dependency array.
   const updateGraphicElements = useCallback(
     (instance) => {
       // showTwilight=true because we always show twilight on this chart,
       // which dims and shifts down the dayobs date labels.
-      const result = buildDayobsGraphicElements(instance, containerRef, {
+      // showBaseline=true to add white baseline at bottom of grid
+      const result = buildTimelineGraphicElements(instance, containerRef, {
         fullTimeRange,
         computedHeight,
         showTwilight: true,
+        showBaseline: true,
       });
       if (!result) return;
 
@@ -169,7 +171,9 @@ function ObservatoryStatusTimeline({
         data: SERIES_ORDER,
         inverse: true, // category[0] at top, matching the label div render order
         show: false,
-        boundaryGap: true,
+        boundaryGap: false,
+        min: -1,
+        max: SERIES_ORDER.length,
       },
       brush: buildBrushConfig(),
       series: [
@@ -192,6 +196,24 @@ function ObservatoryStatusTimeline({
           "white",
           1,
         ),
+        // Background row lines — one thin line per series at 20% opacity
+        ...SERIES_ORDER.map((stateName, idx) => ({
+          type: "line",
+          z: 1,
+          id: `row-line-${stateName}`,
+          data: [
+            [xMinMillis, idx],
+            [xMaxMillis, idx],
+          ],
+          lineStyle: {
+            color: STATUS_COLORS[stateName],
+            width: 1,
+            opacity: 0.2,
+          },
+          symbol: "none",
+          animation: false,
+          silent: true,
+        })),
         // Status interval bars — custom series renders one rect per interval
         {
           type: "custom",
