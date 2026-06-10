@@ -474,7 +474,7 @@ function ContextFeed() {
               {obsStatusLoading ? (
                 <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
               ) : (
-                <div className="flex flex-row">
+                <div className="flex flex-row min-w-0">
                   {/* State Labels */}
                   <div
                     className="flex flex-col w-45"
@@ -497,7 +497,7 @@ function ContextFeed() {
                       </div>
                     ))}
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <ObservatoryStatusTimeline
                       entries={obsStatusEntries}
                       twilightValues={twilightValues}
