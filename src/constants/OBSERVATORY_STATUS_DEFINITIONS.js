@@ -47,6 +47,20 @@ export const STATUS_COLORS = {
 };
 
 /**
+ * Bar colors at 40% intensity (blended with black background)
+ * These are solid colors that appear as if the STATUS_COLORS are at 40% opacity
+ */
+export const STATUS_BAR_COLORS = {
+  UNKNOWN: "#30393E",
+  DAYTIME: "#0E4F26",
+  OPERATIONAL: "#0E4F26",
+  FAULT: "#592200",
+  WEATHER: "#1D535C",
+  DOWNTIME: "#605B00",
+  IDLE: "#30393E",
+};
+
+/**
  * Chart dimension constants
  */
 export const STATUS_TIMELINE_DIMENSIONS = {
