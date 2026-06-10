@@ -54,7 +54,7 @@ export const STATUS_TIMELINE_DIMENSIONS = {
   SERIES_ROW_HEIGHT: 20,
 
   // Base height for labels and margins
-  BASE_HEIGHT: 50,
+  BASE_HEIGHT: 60,
 
   // Label and axis spacing
   PLOT_LABEL_HEIGHT: 20,
