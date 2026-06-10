@@ -9,6 +9,7 @@ import {
   buildTimelineGraphicElements,
 } from "@/utils/timelineUtils";
 import { transformStatusToSeries } from "@/utils/observatoryStatusUtils";
+import { formatTimestamp } from "@/utils/timeUtils";
 import {
   SERIES_ORDER,
   STATUS_COLORS,
@@ -118,6 +119,9 @@ function ObservatoryStatusTimeline({
           hasNote: !!interval.note,
           note: interval.note,
           time: interval.time,
+          time_ms: interval.start,
+          duration: interval.duration,
+          stateChange: interval.stateChange,
         });
       }
     }
@@ -134,21 +138,51 @@ function ObservatoryStatusTimeline({
       toolbox: { show: false },
       tooltip: {
         trigger: "item",
-        backgroundColor: "rgba(0,0,0,0.75)",
+        backgroundColor: "rgba(0,0,0,1)",
         borderColor: "#555",
         textStyle: { color: "#fff", fontSize: 12 },
+        confine: true,
         formatter: (params) => {
           if (params.seriesId !== "markers") return undefined;
-          const { time, note, hasNote } = params.data;
-          if (!hasNote) return time;
+          const { time_ms, duration, stateChange, note } = params.data;
+
+          // Format time using the standard formatter
+          const timeFormatted = formatTimestamp(time_ms);
+
           // Escape HTML to prevent XSS while displaying raw text
           const escapedNote = note
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-          return `${time}<br/>${escapedNote}`;
+            ? note
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;")
+            : "";
+
+          // Build two-column tooltip HTML with Tailwind classes
+          return `
+            <div class="font-mono text-stone-100 max-w-[300px]">
+              <table class="border-collapse">
+                <tr>
+                  <td class="font-semibold pr-3 whitespace-nowrap text-stone-100 ">Time:</td>
+                  <td class="text-stone-100 whitespace-nowrap">${timeFormatted}</td>
+                </tr>
+                <tr>
+                  <td class="font-semibold pr-3 whitespace-nowrap text-stone-100 ">Duration:</td>
+                  <td class="text-stone-100 whitespace-nowrap">${duration}</td>
+                </tr>
+                <tr>
+                  <td class="font-semibold pr-3 whitespace-nowrap text-stone-100 ">State:</td>
+                  <td class="text-stone-100 whitespace-nowrap">${stateChange}</td>
+                </tr>
+                ${
+                  note
+                    ? `<tr><td class="font-semibold pr-3 whitespace-nowrap pt-2 text-stone-100 ">Note:</td><td class="font-light pt-2 text-stone-300 max-w-[300px] break-words whitespace-normal">${escapedNote}</td></tr>`
+                    : ""
+                }
+              </table>
+            </div>
+          `;
         },
       },
       grid: {
