@@ -5,6 +5,7 @@ import {
   STATUS_COLORS,
   SERIES_ORDER,
 } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
+import { formatDuration } from "@/utils/timeUtils";
 
 /**
  * Transforms raw observatory status entries into series data for rendering.
@@ -22,6 +23,32 @@ import {
  *     ...
  *   }
  */
+/**
+ * Determines the state change description (Old > New format) for a given entry.
+ * Shows all active states before and after the transition, separated by pipes.
+ *
+ * @param {Array} entries - All status entries
+ * @param {number} entryIndex - Index of the current entry
+ * @returns {string} State change description in "State1 | State2 > NewState1 | NewState2" format
+ */
+function getStateChangeDescription(entries, entryIndex) {
+  if (entryIndex > 0) {
+    const prevEntry = entries[entryIndex - 1];
+    const currEntry = entries[entryIndex];
+
+    const beforeStr = statusBitmaskToString(prevEntry.status);
+    const afterStr = statusBitmaskToString(currEntry.status);
+
+    return `${beforeStr} > ${afterStr}`;
+  }
+
+  // First entry - no previous state to compare
+  const currEntry = entries[entryIndex];
+  const afterStr = statusBitmaskToString(currEntry.status);
+
+  return `> ${afterStr}`;
+}
+
 export function transformStatusToSeries(entries, endTime) {
   // Initialize empty arrays for each state
   const series = {};
@@ -60,20 +87,27 @@ export function transformStatusToSeries(entries, endTime) {
             start: currentTime,
             note: entry.note || "",
             time: entry.time,
+            entryIndex: i,
+            stateChange: getStateChangeDescription(entries, i),
           };
         } else if (entry.note) {
           // Already active, but this entry has a note - close the old interval
           // and start a new one (no visual gap, end ms = next start ms)
+          const durationMs = currentTime - activeIntervals[stateName].start;
           series[stateName].push({
             start: activeIntervals[stateName].start,
             end: currentTime,
             note: activeIntervals[stateName].note,
             time: activeIntervals[stateName].time,
+            duration: formatDuration(durationMs),
+            stateChange: activeIntervals[stateName].stateChange,
           });
           activeIntervals[stateName] = {
             start: currentTime,
             note: entry.note,
             time: entry.time,
+            entryIndex: i,
+            stateChange: getStateChangeDescription(entries, i),
           };
         }
         // If already active with no new note, continue tracking
@@ -81,11 +115,14 @@ export function transformStatusToSeries(entries, endTime) {
         // State is not active
         if (activeIntervals[stateName]) {
           // Was active, now inactive - close the interval
+          const durationMs = currentTime - activeIntervals[stateName].start;
           series[stateName].push({
             start: activeIntervals[stateName].start,
             end: currentTime,
             note: activeIntervals[stateName].note,
             time: activeIntervals[stateName].time,
+            duration: formatDuration(durationMs),
+            stateChange: activeIntervals[stateName].stateChange,
           });
           delete activeIntervals[stateName];
         }
@@ -97,11 +134,14 @@ export function transformStatusToSeries(entries, endTime) {
   // Close any intervals that are still active at the end
   for (const stateName of SERIES_ORDER) {
     if (activeIntervals[stateName]) {
+      const durationMs = endTime - activeIntervals[stateName].start;
       series[stateName].push({
         start: activeIntervals[stateName].start,
         end: endTime,
         note: activeIntervals[stateName].note,
         time: activeIntervals[stateName].time,
+        duration: formatDuration(durationMs),
+        stateChange: activeIntervals[stateName].stateChange,
       });
     }
   }
@@ -143,7 +183,7 @@ export function getStateBitValue(stateName) {
  * Parses a status bitmask into an array of active state names.
  *
  * @param {number} status - Bitmask status value
- * @returns {string[]} Array of active state names
+ * @returns {string[]} Array of active state names (UPPERCASE)
  */
 export function parseStatusBitmask(status) {
   const activeStates = [];
@@ -154,6 +194,20 @@ export function parseStatusBitmask(status) {
     }
   }
   return activeStates;
+}
+
+/**
+ * Converts a status bitmask to a human-readable string.
+ *
+ * @param {number} status - Bitmask status value
+ * @returns {string} Human-readable status string (e.g., "Unknown", "Daytime | Operational")
+ */
+export function statusBitmaskToString(status) {
+  const states = parseStatusBitmask(status);
+  if (states.length === 0) {
+    return "Unknown";
+  }
+  return states.map((s) => STATUS_LABELS[s] || s).join(" | ");
 }
 
 /**
