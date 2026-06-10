@@ -138,15 +138,15 @@ export const prepareMoonIntervals = (events, xMinMillis, xMaxMillis) => {
 };
 
 /**
- * Builds the common dayobs graphic elements (border lines and date labels)
+ * Builds the common timeline graphic elements (border lines, date labels, baseline)
  * shared by all timeline charts.
  *
  * Returns null if the chart is not yet laid out (convertToPixel not ready).
  * Otherwise returns an object with:
  *   - elements: Array of ECharts graphic element configs
  *   - containerHeight, fontFamily, gridLeft, gridRight, gridBottom: derived
- *     metrics the caller may use to append extra elements (e.g. baseline,
- *     moon symbols) before calling instance.setOption({ graphic: elements }).
+ *     metrics the caller may use to append extra elements before calling
+ *     instance.setOption({ graphic: elements }).
  *
  * @param {Object} instance - ECharts instance
  * @param {React.RefObject} containerRef - Ref to the chart container div
@@ -154,13 +154,14 @@ export const prepareMoonIntervals = (events, xMinMillis, xMaxMillis) => {
  * @param {[DateTime, DateTime]} options.fullTimeRange
  * @param {number} options.computedHeight - Fallback height if offsetHeight unavailable
  * @param {boolean} [options.showTwilight=false] - Shifts date label down and dims it
+ * @param {boolean} [options.showBaseline=false] - Add white baseline at bottom of grid
  * @returns {{ elements: Array, containerHeight: number, fontFamily: string,
  *             gridLeft: number, gridRight: number, gridBottom: number } | null}
  */
-export const buildDayobsGraphicElements = (
+export const buildTimelineGraphicElements = (
   instance,
   containerRef,
-  { fullTimeRange, computedHeight, showTwilight = false },
+  { fullTimeRange, computedHeight, showTwilight = false, showBaseline = false },
 ) => {
   const xMinMillis = fullTimeRange[0]?.toMillis();
   const xMaxMillis = fullTimeRange[1]?.toMillis();
@@ -227,6 +228,22 @@ export const buildDayobsGraphicElements = (
       });
       continue;
     }
+  }
+
+  // White baseline across the bottom of the grid
+  if (showBaseline) {
+    elements.push({
+      type: "line",
+      silent: true,
+      z: 0,
+      shape: {
+        x1: gridLeft,
+        y1: gridBottom,
+        x2: gridRight,
+        y2: gridBottom,
+      },
+      style: { stroke: "white", lineWidth: 1, opacity: 1 },
+    });
   }
 
   return {
