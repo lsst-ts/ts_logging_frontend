@@ -505,6 +505,7 @@ function ContextFeed() {
                       fullTimeRange={fullTimeRange}
                       selectedTimeRange={selectedTimeRange}
                       setSelectedTimeRange={setSelectedTimeRange}
+                      brushGroup="context-feed"
                     />
                   </div>
                 </div>
@@ -561,6 +562,7 @@ function ContextFeed() {
                         fullTimeRange={fullTimeRange}
                         selectedTimeRange={selectedTimeRange}
                         setSelectedTimeRange={setSelectedTimeRange}
+                        brushGroup="context-feed"
                       />
                     </ContextMenuWrapper>
                   </div>

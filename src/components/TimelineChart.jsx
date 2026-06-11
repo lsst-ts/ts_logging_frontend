@@ -45,6 +45,7 @@ function TimelineChart({
   moonIntervals = [],
   showMoonIllumination = false,
   illumValues = [],
+  brushGroup,
 }) {
   const containerRef = useRef(null);
 
@@ -158,6 +159,7 @@ function TimelineChart({
       selectedTimeRange,
       setSelectedTimeRange,
       onResize: updateGraphicElements,
+      brushGroup,
     },
   );
 

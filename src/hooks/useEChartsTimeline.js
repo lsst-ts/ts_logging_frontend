@@ -2,6 +2,24 @@ import { useCallback, useEffect, useRef } from "react";
 import * as echarts from "echarts";
 import { millisToDateTime } from "@/utils/timeUtils";
 
+// Module-level registry for cross-instance brush sync.
+// Maps groupId -> Set of { instanceRef, isSyncingRef }
+const brushGroups = new Map();
+
+function syncBrushToGroup(groupId, sourceEntry, areas) {
+  const group = brushGroups.get(groupId);
+  if (!group) return;
+  for (const entry of group) {
+    if (entry === sourceEntry || entry.isSyncingRef.current) continue;
+    const inst = entry.instanceRef.current;
+    if (!inst) continue;
+    entry.isSyncingRef.current = true;
+    // Dispatch without $from so BrushView._updateController guard passes
+    inst.dispatchAction({ type: "brush", areas });
+    entry.isSyncingRef.current = false;
+  }
+}
+
 /**
  * Manages an ECharts instance lifecycle and shared brush/selection logic
  * for timeline charts.
@@ -19,9 +37,16 @@ import { millisToDateTime } from "@/utils/timeUtils";
  */
 export function useEChartsTimeline(
   containerRef,
-  { fullTimeRange, selectedTimeRange, setSelectedTimeRange, onResize },
+  {
+    fullTimeRange,
+    selectedTimeRange,
+    setSelectedTimeRange,
+    onResize,
+    brushGroup,
+  },
 ) {
   const instanceRef = useRef(null);
+  const isSyncingRef = useRef(false);
 
   // Keep refs to latest prop values for use inside stable event handlers.
   const fullTimeRangeRef = useRef(fullTimeRange);
@@ -55,6 +80,18 @@ export function useEChartsTimeline(
     });
     observer.observe(el);
 
+    // Register in brush group for cross-instance visual sync
+    const brushGroupEntry = brushGroup ? { instanceRef, isSyncingRef } : null;
+    if (brushGroup) {
+      if (!brushGroups.has(brushGroup)) brushGroups.set(brushGroup, new Set());
+      brushGroups.get(brushGroup).add(brushGroupEntry);
+    }
+
+    instance.on("brush", (params) => {
+      if (isSyncingRef.current || !brushGroup) return;
+      syncBrushToGroup(brushGroup, brushGroupEntry, params.areas);
+    });
+
     instance.on("brushEnd", (params) => {
       const ft = fullTimeRangeRef.current;
       const setter = setSelectedTimeRangeRef.current;
@@ -77,6 +114,9 @@ export function useEChartsTimeline(
     el.addEventListener("dblclick", handleDblClick);
 
     return () => {
+      if (brushGroup && brushGroupEntry) {
+        brushGroups.get(brushGroup)?.delete(brushGroupEntry);
+      }
       el.removeEventListener("dblclick", handleDblClick);
       observer.disconnect();
       instance.dispose();
