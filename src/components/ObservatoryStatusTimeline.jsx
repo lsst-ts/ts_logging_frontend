@@ -46,6 +46,7 @@ function ObservatoryStatusTimeline({
   setSelectedTimeRange,
   twilightValues = [],
   twilight0DegValues = [],
+  brushGroup,
 }) {
   const containerRef = useRef(null);
 
@@ -82,6 +83,7 @@ function ObservatoryStatusTimeline({
       selectedTimeRange,
       setSelectedTimeRange,
       onResize: updateGraphicElements,
+      brushGroup,
     },
   );
 
