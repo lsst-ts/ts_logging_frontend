@@ -407,7 +407,6 @@ function Plots() {
                       },
                     ]}
                     twilightValues={twilightValues}
-                    showTwilight={twilightValues.length > 1}
                     illumValues={illumValues}
                     showMoonIllumination={true}
                     moonIntervals={moonIntervals}
