@@ -1,6 +1,10 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import * as echarts from "echarts";
 import { millisToDateTime } from "@/utils/timeUtils";
+import {
+  TIMELINE_COLORS,
+  TIMELINE_DIMENSIONS,
+} from "@/constants/TIMELINE_DEFINITIONS";
 
 // Module-level registry for cross-instance brush sync.
 // Maps groupId -> Set of { instanceRef, isSyncingRef }
@@ -33,7 +37,7 @@ function syncBrushToGroup(groupId, sourceEntry, areas) {
  * @param {[DateTime, DateTime]} options.selectedTimeRange
  * @param {Function} options.setSelectedTimeRange
  * @param {Function} [options.onResize] - Called with (instance) after resize
- * @returns {{ instanceRef: React.RefObject, syncBrushToSelection: Function }}
+ * @returns {{ instanceRef: React.RefObject, syncBrushToSelection: Function, xAxisOption: Object }}
  */
 export function useEChartsTimeline(
   containerRef,
@@ -178,5 +182,40 @@ export function useEChartsTimeline(
     }
   }, []);
 
-  return { instanceRef, syncBrushToSelection };
+  const xAxisOption = useMemo(() => {
+    const xMinMillis = fullTimeRange[0]?.toMillis();
+    const xMaxMillis = fullTimeRange[1]?.toMillis();
+    return {
+      type: "time",
+      min: xMinMillis,
+      max: xMaxMillis,
+      minInterval: 3600 * 1000,
+      maxInterval: 3600 * 1000,
+      axisLine: { show: false },
+      splitLine: { show: false },
+      axisTick: {
+        show: true,
+        length: TIMELINE_DIMENSIONS.HOURLY_TICK_LENGTH,
+        lineStyle: {
+          color: TIMELINE_COLORS.GRID_LINE,
+          opacity: TIMELINE_COLORS.GRID_OPACITY,
+          width: 1,
+        },
+      },
+      axisLabel: {
+        show: true,
+        hideOverlap: true,
+        margin: 8,
+        formatter: (val) => {
+          const h = new Date(val).getUTCHours();
+          if (h === 12) return "";
+          return `${String(h).padStart(2, "0")}:00`;
+        },
+        color: TIMELINE_COLORS.HOUR_LABEL,
+        fontSize: TIMELINE_DIMENSIONS.HOURLY_TICK_LABEL_FONT_SIZE,
+      },
+    };
+  }, [fullTimeRange]);
+
+  return { instanceRef, syncBrushToSelection, xAxisOption };
 }

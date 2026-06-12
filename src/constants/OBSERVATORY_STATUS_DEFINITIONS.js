@@ -91,7 +91,7 @@ export const STATUS_TIMELINE_MARGINS = {
   top: 20, // Space for twilight labels at top of chart
   right: 30,
   left: 30,
-  bottom: 30, // Space for dayobs labels
+  bottom: 40, // Space for hourly tick labels + date labels
 };
 
 /**
