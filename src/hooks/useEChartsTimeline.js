@@ -209,7 +209,7 @@ export function useEChartsTimeline(
         formatter: (val) => {
           const h = new Date(val).getUTCHours();
           if (h === 12) return "";
-          return `${String(h).padStart(2, "0")}:00`;
+          return `${h}:00`;
         },
         color: TIMELINE_COLORS.HOUR_LABEL,
         fontSize: TIMELINE_DIMENSIONS.HOURLY_TICK_LABEL_FONT_SIZE,
