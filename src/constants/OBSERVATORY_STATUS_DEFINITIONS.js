@@ -37,7 +37,7 @@ export const STATUS_LABELS = {
  * Colors chosen for visual distinction and semantic meaning
  */
 export const STATUS_COLORS = {
-  UNKNOWN: "#788F9B",
+  UNKNOWN: "#0C4A47",
   DAYTIME: "#22C55E",
   OPERATIONAL: "#22C55E",
   FAULT: "#DF5601",
@@ -51,7 +51,7 @@ export const STATUS_COLORS = {
  * These are solid colors that appear as if the STATUS_COLORS are at 40% opacity
  */
 export const STATUS_BAR_COLORS = {
-  UNKNOWN: "#30393E",
+  UNKNOWN: "#051E1C",
   DAYTIME: "#0E4F26",
   OPERATIONAL: "#0E4F26",
   FAULT: "#592200",
