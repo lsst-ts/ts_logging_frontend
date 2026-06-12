@@ -50,98 +50,96 @@ function getStateChangeDescription(entries, entryIndex) {
 }
 
 export function transformStatusToSeries(entries, endTime) {
-  // Initialize empty arrays for each state
   const series = {};
   for (const stateName of SERIES_ORDER) {
     series[stateName] = [];
   }
 
-  if (!entries || entries.length === 0) {
-    return series;
-  }
+  if (!entries || entries.length === 0) return series;
 
-  // Track the start time and metadata for each currently active state
   const activeIntervals = {};
 
-  // Process each entry
+  const isStateActive = (status, stateName) =>
+    stateName === "UNKNOWN"
+      ? status === 0
+      : !!(status & OBSERVATORY_STATES[stateName]);
+
+  const closeInterval = (stateName, endMs) => {
+    const interval = activeIntervals[stateName];
+    if (!interval) return;
+    series[stateName].push({
+      start: interval.start,
+      end: endMs,
+      note: interval.note,
+      time: interval.time,
+      duration: formatDuration(endMs - interval.start),
+      stateChange: interval.stateChange,
+    });
+    delete activeIntervals[stateName];
+  };
+
+  const openInterval = (stateName, entry, i) => {
+    activeIntervals[stateName] = {
+      start: entry.time_ms,
+      note: entry.note || "",
+      time: entry.time,
+      stateChange: getStateChangeDescription(entries, i),
+    };
+  };
+
   for (let i = 0; i < entries.length; i++) {
     const entry = entries[i];
-    const currentTime = entry.time_ms;
+    const T = entry.time_ms;
+    const prevStatus = i > 0 ? entries[i - 1].status : null;
+    const currStatus = entry.status;
 
-    // For each state, check if it's active in this entry's status
-    for (const stateName of SERIES_ORDER) {
-      const bitValue = OBSERVATORY_STATES[stateName];
-      const isActive = entry.status & bitValue;
-
-      // UNKNOWN is special: it's active when NO bits are set (status === 0)
-      const isUnknownState = stateName === "UNKNOWN";
-      const stateIsActuallyActive = isUnknownState
-        ? entry.status === 0
-        : isActive;
-
-      if (stateIsActuallyActive) {
-        // State is active
-        if (!activeIntervals[stateName]) {
-          // Just became active - record the start
-          activeIntervals[stateName] = {
-            start: currentTime,
-            note: entry.note || "",
-            time: entry.time,
-            entryIndex: i,
-            stateChange: getStateChangeDescription(entries, i),
-          };
-        } else if (entry.note) {
-          // Already active, but this entry has a note - close the old interval
-          // and start a new one (no visual gap, end ms = next start ms)
-          const durationMs = currentTime - activeIntervals[stateName].start;
-          series[stateName].push({
-            start: activeIntervals[stateName].start,
-            end: currentTime,
-            note: activeIntervals[stateName].note,
-            time: activeIntervals[stateName].time,
-            duration: formatDuration(durationMs),
-            stateChange: activeIntervals[stateName].stateChange,
-          });
-          activeIntervals[stateName] = {
-            start: currentTime,
-            note: entry.note,
-            time: entry.time,
-            entryIndex: i,
-            stateChange: getStateChangeDescription(entries, i),
-          };
+    if (prevStatus === null) {
+      // First entry: open intervals for all initially active states
+      for (const stateName of SERIES_ORDER) {
+        if (isStateActive(currStatus, stateName)) {
+          openInterval(stateName, entry, i);
         }
-        // If already active with no new note, continue tracking
-      } else {
-        // State is not active
-        if (activeIntervals[stateName]) {
-          // Was active, now inactive - close the interval
-          const durationMs = currentTime - activeIntervals[stateName].start;
-          series[stateName].push({
-            start: activeIntervals[stateName].start,
-            end: currentTime,
-            note: activeIntervals[stateName].note,
-            time: activeIntervals[stateName].time,
-            duration: formatDuration(durationMs),
-            stateChange: activeIntervals[stateName].stateChange,
-          });
-          delete activeIntervals[stateName];
-        }
-        // If wasn't active, stay inactive
       }
+      continue;
+    }
+
+    // Determine the nature of this transition
+    const anyEnded = SERIES_ORDER.some(
+      (s) => isStateActive(prevStatus, s) && !isStateActive(currStatus, s),
+    );
+    const statusUnchanged = prevStatus === currStatus;
+
+    for (const stateName of SERIES_ORDER) {
+      const wasActive = isStateActive(prevStatus, stateName);
+      const nowActive = isStateActive(currStatus, stateName);
+
+      if (wasActive && !nowActive) {
+        // State ended: close interval, no new marker here
+        closeInterval(stateName, T);
+      } else if (!wasActive && nowActive) {
+        // State newly active: open interval (marker at start)
+        openInterval(stateName, entry, i);
+      } else if (wasActive && nowActive && (anyEnded || statusUnchanged)) {
+        // State continues, but something else ended or status is identical:
+        // split the interval to place a marker at this transition point
+        closeInterval(stateName, T);
+        openInterval(stateName, entry, i);
+      }
+      // else: state continues with nothing significant — keep interval as-is
     }
   }
 
-  // Close any intervals that are still active at the end
+  // Close any still-open intervals at the end of the visible range
   for (const stateName of SERIES_ORDER) {
     if (activeIntervals[stateName]) {
-      const durationMs = endTime - activeIntervals[stateName].start;
+      const interval = activeIntervals[stateName];
       series[stateName].push({
-        start: activeIntervals[stateName].start,
+        start: interval.start,
         end: endTime,
-        note: activeIntervals[stateName].note,
-        time: activeIntervals[stateName].time,
-        duration: formatDuration(durationMs),
-        stateChange: activeIntervals[stateName].stateChange,
+        note: interval.note,
+        time: interval.time,
+        duration: formatDuration(endTime - interval.start),
+        stateChange: interval.stateChange,
       });
     }
   }
