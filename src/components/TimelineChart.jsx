@@ -235,16 +235,6 @@ function TimelineChart({
       );
     }
 
-    console.debug(
-      "[TimelineChart] series counts:",
-      data.map((entry, i) => ({
-        id: `data-${i}`,
-        label: entry.label ?? entry.color,
-        count: entry.timestamps.length,
-        isActive: entry.isActive,
-      })),
-    );
-
     // Data point scatter series: one per entry
     const scatterSeries = data.map((entry, i) => ({
       type: "scatter",

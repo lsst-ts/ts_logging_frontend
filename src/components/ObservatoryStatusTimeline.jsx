@@ -49,6 +49,8 @@ function ObservatoryStatusTimeline({
   brushGroup,
 }) {
   const containerRef = useRef(null);
+  const markerDataRef = useRef([]);
+  const markerSeriesIdxRef = useRef(-1);
 
   const computedHeight =
     SERIES_ORDER.length * STATUS_TIMELINE_DIMENSIONS.SERIES_ROW_HEIGHT +
@@ -86,6 +88,80 @@ function ObservatoryStatusTimeline({
       brushGroup,
     },
   );
+
+  // ── Tooltip hit detection (brush intercepts ECharts mouse events) ──────────
+  // The brush overlay captures all pointer events, so ECharts' own hover
+  // never fires over a brush selection. We listen natively, find the nearest
+  // marker by pixel distance, and dispatch showTip with a concrete
+  // seriesIndex+dataIndex (bypasses internal hit testing entirely).
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    let activeDataIndex = -1;
+
+    const handleMouseMove = (e) => {
+      const instance = instanceRef.current;
+      const seriesIdx = markerSeriesIdxRef.current;
+      if (!instance || seriesIdx === -1) return;
+
+      const rect = container.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      const data = markerDataRef.current;
+      let closestIdx = -1;
+      let closestDist = Infinity;
+      let closestPixel = null;
+
+      for (let i = 0; i < data.length; i++) {
+        const pixel = instance.convertToPixel(
+          { seriesIndex: seriesIdx },
+          data[i].value,
+        );
+        if (!pixel) continue;
+        const dx = pixel[0] - mouseX;
+        const dy = pixel[1] - mouseY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const radius =
+          (data[i].hasNote
+            ? STATUS_TIMELINE_DIMENSIONS.MARKER_SIZE_WITH_NOTE
+            : STATUS_TIMELINE_DIMENSIONS.MARKER_SIZE) / 2;
+        if (dist < radius && dist < closestDist) {
+          closestDist = dist;
+          closestIdx = i;
+          closestPixel = pixel;
+        }
+      }
+
+      if (closestIdx === activeDataIndex) return;
+      activeDataIndex = closestIdx;
+
+      if (closestIdx !== -1) {
+        instance.dispatchAction({
+          type: "showTip",
+          seriesIndex: seriesIdx,
+          dataIndex: closestIdx,
+          x: closestPixel[0],
+          y: closestPixel[1],
+        });
+      } else {
+        instance.dispatchAction({ type: "hideTip" });
+      }
+    };
+
+    const handleMouseLeave = () => {
+      activeDataIndex = -1;
+      instanceRef.current?.dispatchAction({ type: "hideTip" });
+    };
+
+    container.addEventListener("mousemove", handleMouseMove);
+    container.addEventListener("mouseleave", handleMouseLeave);
+    return () => {
+      container.removeEventListener("mousemove", handleMouseMove);
+      container.removeEventListener("mouseleave", handleMouseLeave);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Build and apply the ECharts option ─────────────────────────────────────
   useEffect(() => {
@@ -135,15 +211,31 @@ function ObservatoryStatusTimeline({
       TIMELINE_INTERVALS.HOURLY_TICK_INTERVAL,
     );
 
+    markerDataRef.current = markerData;
+
     const option = {
       animation: false,
       toolbox: { show: false },
       tooltip: {
         trigger: "item",
+        triggerOn: "none",
         backgroundColor: "rgba(0,0,0,1)",
         borderColor: "#555",
         textStyle: { color: "#fff", fontSize: 12 },
-        confine: true,
+        // Replicates ECharts' native tooltip positioning, which is lost when
+        // the tooltip is triggered programmatically via dispatchAction.
+        // Positions the tooltip to the right of the marker with a 10px gap,
+        // flipping to the left if it would overflow the chart. Vertically
+        // centered on the marker, clamped to stay within the chart bounds.
+        position: (point, _params, _dom, _rect, size) => {
+          const [x, y] = point;
+          const [cw, ch] = size.contentSize;
+          const [vw, vh] = size.viewSize;
+          const offset = 16;
+          const tx = x + offset + cw <= vw ? x + offset : x - offset - cw;
+          const ty = Math.max(0, Math.min(y - ch / 2, vh - ch));
+          return [tx, ty];
+        },
         formatter: (params) => {
           if (params.seriesId !== "markers") return undefined;
           const { time_ms, duration, stateChange, note } = params.data;
@@ -318,6 +410,7 @@ function ObservatoryStatusTimeline({
       ],
     };
 
+    markerSeriesIdxRef.current = option.series.length - 1;
     instance.setOption(option, { notMerge: false });
 
     // Activate brush mode permanently — without this the brush is inert
