@@ -140,7 +140,7 @@ function TimelineChart({
     [data, fullTimeRange, showMoonIllumination, illumValues, computedHeight],
   );
 
-  const { instanceRef, syncBrushToSelection } = useEChartsTimeline(
+  const { instanceRef, syncBrushToSelection, xAxisOption } = useEChartsTimeline(
     containerRef,
     {
       fullTimeRange,
@@ -279,13 +279,7 @@ function TimelineChart({
         bottom: TIMELINE_MARGINS.bottom,
         containLabel: false,
       },
-      xAxis: {
-        type: "value",
-        min: xMinMillis,
-        max: xMaxMillis,
-        show: false,
-        splitLine: { show: false },
-      },
+      xAxis: xAxisOption,
       yAxis: {
         type: "category",
         data: categoryIds,
@@ -331,6 +325,7 @@ function TimelineChart({
   }, [
     data,
     fullTimeRange,
+    xAxisOption,
     twilightValues,
     showMoonArea,
     moonIntervals,
