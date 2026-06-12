@@ -11,7 +11,7 @@
 export const TIMELINE_DIMENSIONS = {
   // Height per data series row, plus base added on top (breathing room, margins)
   SERIES_ROW_HEIGHT: 20,
-  BASE_HEIGHT: 50,
+  BASE_HEIGHT: 70,
 
   // Label and axis spacing
   PLOT_LABEL_HEIGHT: 20,
@@ -30,7 +30,7 @@ export const TIMELINE_DIMENSIONS = {
  * Chart margin configuration
  */
 export const TIMELINE_MARGINS = {
-  top: 0, // Will be overridden if moon illumination is shown
+  top: 20, // Space for labels (moon illumination, twilight) at top of chart
   right: 30,
   left: 30,
   bottom: 30,
@@ -45,7 +45,6 @@ export const TIMELINE_COLORS = {
   GRID_OPACITY: 0.1,
   DAYOBS_BORDER: "grey",
   DAYOBS_LABEL: "grey",
-  DAYOBS_LABEL_DIM: "#666",
 
   // Single series styling
   SINGLE_SERIES_LINE: "white",
