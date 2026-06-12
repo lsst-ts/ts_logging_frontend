@@ -153,7 +153,6 @@ export const prepareMoonIntervals = (events, xMinMillis, xMaxMillis) => {
  * @param {Object} options
  * @param {[DateTime, DateTime]} options.fullTimeRange
  * @param {number} options.computedHeight - Fallback height if offsetHeight unavailable
- * @param {boolean} [options.showTwilight=false] - Shifts date label down and dims it
  * @param {boolean} [options.showBaseline=false] - Add white baseline at bottom of grid
  * @returns {{ elements: Array, containerHeight: number, fontFamily: string,
  *             gridLeft: number, gridRight: number, gridBottom: number } | null}
@@ -161,7 +160,7 @@ export const prepareMoonIntervals = (events, xMinMillis, xMaxMillis) => {
 export const buildTimelineGraphicElements = (
   instance,
   containerRef,
-  { fullTimeRange, computedHeight, showTwilight = false, showBaseline = false },
+  { fullTimeRange, computedHeight, showBaseline = false },
 ) => {
   const xMinMillis = fullTimeRange[0]?.toMillis();
   const xMaxMillis = fullTimeRange[1]?.toMillis();
@@ -173,10 +172,7 @@ export const buildTimelineGraphicElements = (
 
   const containerHeight = containerRef.current?.offsetHeight ?? computedHeight;
   const fontFamily = getComputedStyle(containerRef.current).fontFamily;
-  const bottomMargin =
-    TIMELINE_MARGINS.bottom +
-    (showTwilight ? TIMELINE_DIMENSIONS.PLOT_LABEL_HEIGHT : 0);
-  const gridBottom = containerHeight - bottomMargin;
+  const gridBottom = containerHeight - TIMELINE_MARGINS.bottom;
 
   const hourlyTicks = generateHourlyTicks(
     xMinMillis,
@@ -211,16 +207,11 @@ export const buildTimelineGraphicElements = (
         silent: true,
         z: 0,
         x: pixelX,
-        y:
-          gridBottom +
-          TIMELINE_DIMENSIONS.DIST_BELOW_X_AXIS +
-          (showTwilight ? TIMELINE_DIMENSIONS.PLOT_LABEL_HEIGHT : 0),
+        y: gridBottom + TIMELINE_DIMENSIONS.DIST_BELOW_X_AXIS,
         style: {
           text: dayobsAtMidnight(dt, "yyyy-LL-dd"),
           textAlign: "center",
-          fill: showTwilight
-            ? TIMELINE_COLORS.DAYOBS_LABEL_DIM
-            : TIMELINE_COLORS.DAYOBS_LABEL,
+          fill: TIMELINE_COLORS.DAYOBS_LABEL,
           fontSize: TIMELINE_DIMENSIONS.LABEL_TEXT_SIZE,
           fontFamily,
           userSelect: "none",
@@ -325,7 +316,6 @@ export const buildTwilightSeries = (
   color = TIMELINE_COLORS.TWILIGHT_LINE,
   width = TIMELINE_COLORS.TWILIGHT_STROKE_WIDTH,
   labelText = null,
-  labelPosition = "end",
 ) => ({
   type: "scatter",
   id,
@@ -349,12 +339,9 @@ export const buildTwilightSeries = (
             label: {
               show: true,
               formatter: labelText ?? millisToHHmm(twi),
-              position: labelPosition,
+              position: "start",
               distance: 10,
-              offset:
-                labelPosition === "start"
-                  ? [0, TIMELINE_TEXT_STYLES.LABEL_FONT_SIZE / 2]
-                  : [0, 0],
+              offset: [0, TIMELINE_TEXT_STYLES.LABEL_FONT_SIZE / 2],
               rotate: 0,
               color: TIMELINE_COLORS.TWILIGHT_LABEL,
               fontSize: TIMELINE_TEXT_STYLES.LABEL_FONT_SIZE,
