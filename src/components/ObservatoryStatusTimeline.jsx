@@ -2,9 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 import * as echarts from "echarts";
 
 import {
-  generateHourlyTicks,
   buildBrushConfig,
-  buildGridLinesSeries,
   buildTwilightSeries,
   buildTimelineGraphicElements,
 } from "@/utils/timelineUtils";
@@ -20,7 +18,6 @@ import {
 import {
   TIMELINE_MARGINS,
   TIMELINE_DIMENSIONS,
-  TIMELINE_INTERVALS,
 } from "@/constants/TIMELINE_DEFINITIONS";
 import { useEChartsTimeline } from "@/hooks/useEChartsTimeline";
 
@@ -206,13 +203,6 @@ function ObservatoryStatusTimeline({
       }
     }
 
-    // Hourly ticks for grid lines
-    const hourlyTicks = generateHourlyTicks(
-      xMinMillis,
-      xMaxMillis + 60000,
-      TIMELINE_INTERVALS.HOURLY_TICK_INTERVAL,
-    );
-
     markerDataRef.current = markerData;
 
     const option = {
@@ -306,7 +296,27 @@ function ObservatoryStatusTimeline({
       },
       brush: buildBrushConfig(),
       series: [
-        buildGridLinesSeries(hourlyTicks),
+        // State-change vertical lines — more visible than hourly grid lines
+        {
+          type: "scatter",
+          id: "state-change-lines",
+          data: [],
+          silent: true,
+          animation: false,
+          markLine: {
+            silent: true,
+            z: 1,
+            symbol: ["none", "none"],
+            lineStyle: {
+              color: "white",
+              opacity: 0.3,
+              width: 1,
+              type: "solid",
+            },
+            label: { show: false },
+            data: entries.map((e) => ({ xAxis: e.time_ms })),
+          },
+        },
         // 12° twilight — solid blue line, label at top
         buildTwilightSeries(
           "twilight-12deg",
