@@ -485,7 +485,7 @@ function ContextFeed() {
                   <div
                     className="flex flex-col w-45"
                     style={{
-                      paddingTop: "20px",
+                      paddingTop: "30px",
                       paddingBottom: "20px",
                     }}
                   >
