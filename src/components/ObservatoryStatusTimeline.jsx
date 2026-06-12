@@ -61,13 +61,9 @@ function ObservatoryStatusTimeline({
   // Defined before the option useEffect so it can be in its dependency array.
   const updateGraphicElements = useCallback(
     (instance) => {
-      // showTwilight=false: twilight labels are now at the top of the chart,
-      // so no extra bottom space or label shift is needed.
-      // showBaseline=true to add white baseline at bottom of grid
       const result = buildTimelineGraphicElements(instance, containerRef, {
         fullTimeRange,
         computedHeight,
-        showTwilight: false,
         showBaseline: true,
       });
       if (!result) return;
@@ -327,7 +323,6 @@ function ObservatoryStatusTimeline({
           undefined,
           undefined,
           "12°",
-          "start",
         ),
         // 0° twilight — dashed white line (thinner, longer dashes), label at top
         buildTwilightSeries(
@@ -339,7 +334,6 @@ function ObservatoryStatusTimeline({
           "white",
           1,
           "0°",
-          "start",
         ),
         // Background row lines — one thin line per series at 20% opacity
         ...SERIES_ORDER.map((stateName, idx) => ({

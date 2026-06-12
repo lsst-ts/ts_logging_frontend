@@ -27,8 +27,7 @@ import { useEChartsTimeline } from "@/hooks/useEChartsTimeline";
  * @param {[DateTime, DateTime]} props.fullTimeRange - Full time range for the chart
  * @param {[DateTime, DateTime]} props.selectedTimeRange - Currently selected time range
  * @param {Function} props.setSelectedTimeRange - Function to update selected time range
- * @param {boolean} [props.showTwilight=false] - Whether to show twilight lines
- * @param {number[]} [props.twilightValues=[]] - Twilight times in milliseconds
+ * @param {number[]} [props.twilightValues=[]] - Twilight times in milliseconds (shown when non-empty)
  * @param {boolean} [props.showMoonArea=false] - Whether to show moon-up areas
  * @param {Array<[number, number]>} [props.moonIntervals=[]] - Moon-up intervals
  * @param {boolean} [props.showMoonIllumination=false] - Whether to show moon illumination labels
@@ -39,7 +38,6 @@ function TimelineChart({
   fullTimeRange,
   selectedTimeRange,
   setSelectedTimeRange,
-  showTwilight = false,
   twilightValues = [],
   showMoonArea = false,
   moonIntervals = [],
@@ -54,9 +52,7 @@ function TimelineChart({
 
   const computedHeight =
     data.length * TIMELINE_DIMENSIONS.SERIES_ROW_HEIGHT +
-    TIMELINE_DIMENSIONS.BASE_HEIGHT +
-    (showMoonIllumination ? TIMELINE_DIMENSIONS.PLOT_LABEL_HEIGHT : 0) +
-    (showTwilight ? TIMELINE_DIMENSIONS.PLOT_LABEL_HEIGHT : 0);
+    TIMELINE_DIMENSIONS.BASE_HEIGHT;
 
   // ── Graphic elements (dayobs labels, borders, moon symbols) ─────────────────
   // These are positioned in pixel space, so must be computed after render.
@@ -66,7 +62,6 @@ function TimelineChart({
       const result = buildTimelineGraphicElements(instance, containerRef, {
         fullTimeRange,
         computedHeight,
-        showTwilight,
         showBaseline: data?.length > 1,
       });
       if (!result) return;
@@ -142,14 +137,7 @@ function TimelineChart({
 
       instance.setOption({ graphic: elements });
     },
-    [
-      data,
-      fullTimeRange,
-      showMoonIllumination,
-      illumValues,
-      computedHeight,
-      showTwilight,
-    ],
+    [data, fullTimeRange, showMoonIllumination, illumValues, computedHeight],
   );
 
   const { instanceRef, syncBrushToSelection } = useEChartsTimeline(
@@ -285,14 +273,10 @@ function TimelineChart({
       animation: false,
       toolbox: { show: false },
       grid: {
-        top:
-          TIMELINE_MARGINS.top +
-          (showMoonIllumination ? TIMELINE_DIMENSIONS.PLOT_LABEL_HEIGHT : 0),
+        top: TIMELINE_MARGINS.top,
         right: TIMELINE_MARGINS.right,
         left: TIMELINE_MARGINS.left,
-        bottom:
-          TIMELINE_MARGINS.bottom +
-          (showTwilight ? TIMELINE_DIMENSIONS.PLOT_LABEL_HEIGHT : 0),
+        bottom: TIMELINE_MARGINS.bottom,
         containLabel: false,
       },
       xAxis: {
@@ -317,7 +301,7 @@ function TimelineChart({
         moonSeries,
         buildTwilightSeries(
           "twilight-lines",
-          showTwilight ? twilightValues : [],
+          twilightValues,
           "solid",
           xMinMillis,
           xMaxMillis,
@@ -347,7 +331,6 @@ function TimelineChart({
   }, [
     data,
     fullTimeRange,
-    showTwilight,
     twilightValues,
     showMoonArea,
     moonIntervals,
