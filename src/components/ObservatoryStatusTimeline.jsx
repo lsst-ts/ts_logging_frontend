@@ -73,7 +73,7 @@ function ObservatoryStatusTimeline({
     [fullTimeRange, computedHeight],
   );
 
-  const { instanceRef, syncBrushToSelection } = useEChartsTimeline(
+  const { instanceRef, syncBrushToSelection, xAxisOption } = useEChartsTimeline(
     containerRef,
     {
       fullTimeRange,
@@ -274,13 +274,7 @@ function ObservatoryStatusTimeline({
         bottom: STATUS_TIMELINE_MARGINS.bottom,
         containLabel: false,
       },
-      xAxis: {
-        type: "value",
-        min: xMinMillis,
-        max: xMaxMillis,
-        show: false,
-        splitLine: { show: false },
-      },
+      xAxis: xAxisOption,
       yAxis: {
         type: "category",
         data: SERIES_ORDER,
@@ -441,6 +435,7 @@ function ObservatoryStatusTimeline({
   }, [
     entries,
     fullTimeRange,
+    xAxisOption,
     twilightValues,
     twilight0DegValues,
     updateGraphicElements,
