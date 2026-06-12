@@ -88,10 +88,10 @@ export const STATUS_TIMELINE_DIMENSIONS = {
  * Chart margin configuration
  */
 export const STATUS_TIMELINE_MARGINS = {
-  top: 10,
+  top: 20, // Space for twilight labels at top of chart
   right: 30,
   left: 30,
-  bottom: 30, // Space for dayobs labels and twilight labels
+  bottom: 30, // Space for dayobs labels
 };
 
 /**

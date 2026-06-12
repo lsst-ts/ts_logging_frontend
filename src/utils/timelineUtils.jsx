@@ -324,6 +324,8 @@ export const buildTwilightSeries = (
   xMaxMillis,
   color = TIMELINE_COLORS.TWILIGHT_LINE,
   width = TIMELINE_COLORS.TWILIGHT_STROKE_WIDTH,
+  labelText = null,
+  labelPosition = "end",
 ) => ({
   type: "scatter",
   id,
@@ -346,9 +348,13 @@ export const buildTwilightSeries = (
             xAxis: twi,
             label: {
               show: true,
-              formatter: millisToHHmm(twi),
-              position: "end",
+              formatter: labelText ?? millisToHHmm(twi),
+              position: labelPosition,
               distance: 10,
+              offset:
+                labelPosition === "start"
+                  ? [0, TIMELINE_TEXT_STYLES.LABEL_FONT_SIZE / 2]
+                  : [0, 0],
               rotate: 0,
               color: TIMELINE_COLORS.TWILIGHT_LABEL,
               fontSize: TIMELINE_TEXT_STYLES.LABEL_FONT_SIZE,
