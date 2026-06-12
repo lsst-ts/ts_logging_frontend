@@ -52,23 +52,25 @@ function ObservatoryStatusTimeline({
   const markerDataRef = useRef([]);
   const markerSeriesIdxRef = useRef(-1);
 
+  // Grid data area = (N series + 1 buffer unit for min:-1) × row height,
+  // plus top and bottom margins.
   const computedHeight =
-    SERIES_ORDER.length * STATUS_TIMELINE_DIMENSIONS.SERIES_ROW_HEIGHT +
-    STATUS_TIMELINE_DIMENSIONS.BASE_HEIGHT +
-    TIMELINE_DIMENSIONS.PLOT_LABEL_HEIGHT; // space for twilight labels below x-axis
+    (SERIES_ORDER.length + 1) * STATUS_TIMELINE_DIMENSIONS.SERIES_ROW_HEIGHT +
+    STATUS_TIMELINE_MARGINS.top +
+    STATUS_TIMELINE_MARGINS.bottom;
 
   // ── Graphic elements (dayobs labels, border lines, baseline) ────────────────
   // These are positioned in pixel space, so must be computed after render.
   // Defined before the option useEffect so it can be in its dependency array.
   const updateGraphicElements = useCallback(
     (instance) => {
-      // showTwilight=true because we always show twilight on this chart,
-      // which dims and shifts down the dayobs date labels.
+      // showTwilight=false: twilight labels are now at the top of the chart,
+      // so no extra bottom space or label shift is needed.
       // showBaseline=true to add white baseline at bottom of grid
       const result = buildTimelineGraphicElements(instance, containerRef, {
         fullTimeRange,
         computedHeight,
-        showTwilight: true,
+        showTwilight: false,
         showBaseline: true,
       });
       if (!result) return;
@@ -283,9 +285,7 @@ function ObservatoryStatusTimeline({
         top: STATUS_TIMELINE_MARGINS.top,
         right: STATUS_TIMELINE_MARGINS.right,
         left: STATUS_TIMELINE_MARGINS.left,
-        bottom:
-          STATUS_TIMELINE_MARGINS.bottom +
-          TIMELINE_DIMENSIONS.PLOT_LABEL_HEIGHT,
+        bottom: STATUS_TIMELINE_MARGINS.bottom,
         containLabel: false,
       },
       xAxis: {
@@ -307,15 +307,19 @@ function ObservatoryStatusTimeline({
       brush: buildBrushConfig(),
       series: [
         buildGridLinesSeries(hourlyTicks),
-        // 12° twilight — solid blue line
+        // 12° twilight — solid blue line, label at top
         buildTwilightSeries(
           "twilight-12deg",
           twilightValues,
           "solid",
           xMinMillis,
           xMaxMillis,
+          undefined,
+          undefined,
+          "12°",
+          "start",
         ),
-        // 0° twilight — dashed white line (thinner, longer dashes)
+        // 0° twilight — dashed white line (thinner, longer dashes), label at top
         buildTwilightSeries(
           "twilight-0deg",
           twilight0DegValues,
@@ -324,6 +328,8 @@ function ObservatoryStatusTimeline({
           xMaxMillis,
           "white",
           1,
+          "0°",
+          "start",
         ),
         // Background row lines — one thin line per series at 20% opacity
         ...SERIES_ORDER.map((stateName, idx) => ({
