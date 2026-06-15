@@ -31,7 +31,7 @@ export default function TimeLossCard({
     narrativeLogloading && obsStatusLoading && calculatedFaultLoading;
   const isClickable = onClick && !loading;
 
-  const heading = "Time Loss";
+  const heading = "Fault Loss";
 
   const isFullyAvailable = obsStatusAvailability.status === "full";
   const isNotAvailable = obsStatusAvailability.status === "none";
@@ -149,12 +149,16 @@ export default function TimeLossCard({
               <strong>Calculated Fault Loss</strong>
               <br />
               Total available observing time – exposure time – overhead time* –
-              MIN( time lost to weather, dome closed time ).
+              MIN( time lost to weather**, dome closed time ).
               <br />
               <br />
               <em>
                 *overhead time = readout time when not slewing + any setting
                 time after slewing.
+              </em>
+              <br />
+              <em>
+                **weather loss is derived from Observatory Status data.
               </em>
             </p>
           </PopoverContent>

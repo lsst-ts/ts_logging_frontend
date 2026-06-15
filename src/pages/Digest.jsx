@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import ExposureBreakdownApplet from "@/components/ExposureBreakdownApplet.jsx";
 import MetricsCard from "@/components/MetricsCard.jsx";
 import TimeLossCard from "@/components/TimeLossCard.jsx";
-import VisitMapApplet from "@/components/VisitMapApplet";
 
 import { EfficiencyChart } from "@/components/ui/RadialChart.jsx";
 import ShutterIcon from "../assets/ShutterIcon.svg";
@@ -61,6 +60,7 @@ export default function Digest() {
   // TODO: OSW-2118 - Update the Time Accounting applet
   // const [obsStatusIntervals, setObsStatusIntervals] = useState([]);
   const [obsStatusFaultLoss, setObsStatusFaultLoss] = useState(0.0);
+  const [obsStatusWeatherLoss, setObsStatusWeatherLoss] = useState(0.0);
   const [obsStatusAvailability, setObsStatusAvailability] = useState({});
 
   const [exposuresLoading, setExposuresLoading] = useState(false);
@@ -133,6 +133,7 @@ export default function Digest() {
     // TODO: OSW-2118 - Update the Time Accounting applet
     // setObsStatusIntervals([]);
     setObsStatusFaultLoss(0.0);
+    setObsStatusWeatherLoss(0.0);
     setObsStatusAvailability([]);
 
     setStaticVisitMapLoading(true);
@@ -250,13 +251,14 @@ export default function Digest() {
       includeEntries: true,
       includeIntervals: true,
       nightOnlyMetrics: true,
-      metrics: ["fault_loss"],
+      metrics: ["fault_loss", "weather"],
       abortController,
     })
       .then((data) => {
         // TODO: OSW-2118 - Update the Time Accounting applet
         // setObsStatusIntervals(data.intervals);
         setObsStatusFaultLoss(data.metrics.fault_loss);
+        setObsStatusWeatherLoss(data.metrics.weather);
         setObsStatusAvailability(data.availability);
       })
       .catch((err) => {
@@ -443,7 +445,7 @@ export default function Digest() {
         nightHours,
         sumOnSkyExpTime,
         totalExpTimeBetweenTwilights,
-        narrativeWeatherLoss,
+        obsStatusWeatherLoss,
       );
     }
   }
@@ -455,6 +457,7 @@ export default function Digest() {
     !exposuresLoading &&
     !expectedExposuresLoading &&
     !almanacLoading &&
+    !obsStatusLoading &&
     !narrativeLoading &&
     !nightreportLoading &&
     !jiraLoading &&
@@ -501,7 +504,7 @@ export default function Digest() {
             icon={<EfficiencyChart value={efficiency} />}
             data={efficiencyText}
             label="Open-shutter (-weather) efficiency"
-            tooltip="Efficiency computed as total on-sky exposure time / (time between 12 degree twilights minus time lost to weather). Exposures started outside the twilights are not counted in total time."
+            tooltip="Efficiency computed as total on-sky exposure time / ( time between 12° twilights - time lost to weather as recorded in Observatory Status ). Exposures started outside the twilights are not counted in total time."
             loading={almanacLoading || exposuresLoading || narrativeLoading}
           />
           <TimeLossCard
