@@ -15,8 +15,8 @@ import {
 // UTC strings are converted internally via UTC + 37 s → TAI ms.
 //
 // Timeline:
-//  night start │ twilight_evening │ moon_rise │ moon_set │ twilight_morning │ night end
-//  12:00 UTC   │ 20:00 UTC        │ 22:00 UTC │ 02:00 UTC│ 04:00 UTC        │ 12:00 UTC
+//  night start │ twilight_evening_12deg │ moon_rise │ moon_set │ twilight_morning_12deg │ night end
+//  12:00 UTC   │ 20:00 UTC              │ 22:00 UTC │ 02:00 UTC│ 04:00 UTC              │ 12:00 UTC
 //
 // TAI equivalents (UTC ms + UTC_TO_TAI_MS):
 const TWILIGHT_EVENING_TAI =
@@ -31,8 +31,8 @@ const ALMANAC_MOCK = {
     {
       dayobs: TEST_DAYOBS_INT,
       night_hours: 8,
-      twilight_evening: "2026-01-01 20:00:00",
-      twilight_morning: "2026-01-02 04:00:00",
+      twilight_evening_12deg: "2026-01-01 20:00:00",
+      twilight_morning_12deg: "2026-01-02 04:00:00",
       moon_rise_time: "2026-01-01 22:00:00",
       moon_set_time: "2026-01-02 02:00:00",
       moon_illumination: "50%",

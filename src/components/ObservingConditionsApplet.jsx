@@ -377,8 +377,12 @@ function ObservingConditionsApplet({
       // fallback to empty array if almanacInfo is undefined
       (almanacInfo ?? [])
         .map((dayobsAlm) => {
-          const eve = utcDateTimeStrToTAIMillis(dayobsAlm.twilight_evening);
-          const mor = utcDateTimeStrToTAIMillis(dayobsAlm.twilight_morning);
+          const eve = utcDateTimeStrToTAIMillis(
+            dayobsAlm.twilight_evening_12deg,
+          );
+          const mor = utcDateTimeStrToTAIMillis(
+            dayobsAlm.twilight_morning_12deg,
+          );
           return [eve, mor];
         })
         .flat(),
