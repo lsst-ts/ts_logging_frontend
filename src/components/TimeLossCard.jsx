@@ -157,9 +157,7 @@ export default function TimeLossCard({
                 time after slewing.
               </em>
               <br />
-              <em>
-                **weather loss is derived from Observatory Status data.
-              </em>
+              <em>**weather loss is derived from Observatory Status data.</em>
             </p>
           </PopoverContent>
         </Popover>
