@@ -2,10 +2,8 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import ExposureBreakdownApplet from "@/components/ExposureBreakdownApplet.jsx";
 import MetricsCard from "@/components/MetricsCard.jsx";
 import TimeLossCard from "@/components/TimeLossCard.jsx";
-
 import { EfficiencyChart } from "@/components/ui/RadialChart.jsx";
 import ShutterIcon from "../assets/ShutterIcon.svg";
-import TimeLossIcon from "../assets/TimeLossIcon.svg";
 import JiraIconWhite from "../assets/JiraIconWhite.svg";
 import JiraIconBlue from "../assets/JiraIconBlue.svg";
 import {
@@ -38,6 +36,11 @@ import TimeAccountingApplet from "@/components/TimeAccountingApplet";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
 import VisitMapStaticApplet from "@/components/VisitMapStaticApplet.jsx";
 
+const EMPTY_OBS_STATUS_AVAILABILITY = {
+  status: "none",
+  available_from: null,
+};
+
 export default function Digest() {
   const { startDayobs, endDayobs, telescope } = useSearch({
     from: "__root__",
@@ -61,7 +64,9 @@ export default function Digest() {
   // const [obsStatusIntervals, setObsStatusIntervals] = useState([]);
   const [obsStatusFaultLoss, setObsStatusFaultLoss] = useState(0.0);
   const [obsStatusWeatherLoss, setObsStatusWeatherLoss] = useState(0.0);
-  const [obsStatusAvailability, setObsStatusAvailability] = useState({});
+  const [obsStatusAvailability, setObsStatusAvailability] = useState(
+    EMPTY_OBS_STATUS_AVAILABILITY,
+  );
 
   const [exposuresLoading, setExposuresLoading] = useState(false);
   const [expectedExposuresLoading, setExpectedExposuresLoading] =
@@ -134,7 +139,7 @@ export default function Digest() {
     // setObsStatusIntervals([]);
     setObsStatusFaultLoss(0.0);
     setObsStatusWeatherLoss(0.0);
-    setObsStatusAvailability([]);
+    setObsStatusAvailability(EMPTY_OBS_STATUS_AVAILABILITY);
 
     setStaticVisitMapLoading(true);
     setStaticVisitMaps(null);
@@ -255,11 +260,26 @@ export default function Digest() {
       abortController,
     })
       .then((data) => {
+        const metrics = data?.metrics ?? {};
+        const availability = data?.availability ?? {};
+
         // TODO: OSW-2118 - Update the Time Accounting applet
         // setObsStatusIntervals(data.intervals);
-        setObsStatusFaultLoss(data.metrics.fault_loss);
-        setObsStatusWeatherLoss(data.metrics.weather);
-        setObsStatusAvailability(data.availability);
+        setObsStatusFaultLoss(
+          typeof metrics.fault_loss === "number" ? metrics.fault_loss : 0.0,
+        );
+        setObsStatusWeatherLoss(
+          typeof metrics.weather === "number" ? metrics.weather : 0.0,
+        );
+        setObsStatusAvailability({
+          status:
+            typeof availability.status === "string"
+              ? availability.status
+              : EMPTY_OBS_STATUS_AVAILABILITY.status,
+          available_from:
+            availability.available_from ??
+            EMPTY_OBS_STATUS_AVAILABILITY.available_from,
+        });
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
@@ -508,7 +528,6 @@ export default function Digest() {
             loading={almanacLoading || exposuresLoading || narrativeLoading}
           />
           <TimeLossCard
-            icon={TimeLossIcon}
             narrativeLogData={narrativeFaultLoss}
             obsStatusData={obsStatusFaultLoss}
             obsStatusAvailability={obsStatusAvailability}

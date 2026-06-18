@@ -13,11 +13,11 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 
 import InfoIcon from "../assets/InfoIcon.svg";
+import TimeLossIcon from "../assets/TimeLossIcon.svg";
 
 import { formatDayobsStrForDisplay } from "@/utils/timeUtils";
 
 export default function TimeLossCard({
-  icon,
   narrativeLogData,
   obsStatusData,
   obsStatusAvailability,
@@ -33,8 +33,17 @@ export default function TimeLossCard({
 
   const heading = "Fault Loss";
 
-  const isFullyAvailable = obsStatusAvailability.status === "full";
-  const isNotAvailable = obsStatusAvailability.status === "none";
+  const availability = obsStatusAvailability ?? {};
+  const availabilityStatus = availability.status ?? "none";
+  const availableFrom = availability.available_from
+    ? formatDayobsStrForDisplay(String(availability.available_from))
+    : null;
+
+  const formatHours = (value) =>
+    typeof value === "number" ? value.toFixed(2) : "NA";
+
+  const isFullyAvailable = availabilityStatus === "full";
+  const isNotAvailable = availabilityStatus === "none";
 
   // Tooltip to be shown over obs status data if data
   // partially or fully unavailable due to user querying
@@ -42,21 +51,12 @@ export default function TimeLossCard({
   const tooltipText = isNotAvailable ? (
     <>
       Observatory Status data is only available from{" "}
-      <strong>
-        {formatDayobsStrForDisplay(
-          String(obsStatusAvailability.available_from),
-        )}
-      </strong>
-      .
+      <strong>{availableFrom ?? "the supported date range"}</strong>.
     </>
   ) : (
     <>
       Observatory Status data is only available from{" "}
-      <strong>
-        {formatDayobsStrForDisplay(
-          String(obsStatusAvailability.available_from),
-        )}
-      </strong>
+      <strong>{availableFrom ?? "the supported date range"}</strong>
       .
       <br />
       Fault time loss has been computed for the available dayobs.
@@ -74,7 +74,7 @@ export default function TimeLossCard({
       {/* Heading & Icon */}
       <div className="flex flex-row justify-between h-12">
         <div className="text-2xl">{heading}</div>
-        <img src={icon} alt={heading} />
+        <img src={TimeLossIcon} alt={heading} />
       </div>
       {/* Data & Info Icon */}
       <div className="flex flex-row justify-between">
@@ -85,14 +85,14 @@ export default function TimeLossCard({
             <Skeleton className="h-3 w-10 bg-teal-700" />
           ) : // Show data when availabile
           isFullyAvailable ? (
-            <div>{obsStatusData.toFixed(2)}</div>
+            <div>{formatHours(obsStatusData)}</div>
           ) : (
             // Show tooltip and warning icon for no/partial data
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="flex items-center gap-1 cursor-help">
                   <span>
-                    {isNotAvailable ? "NA" : obsStatusData.toFixed(2)}
+                    {isNotAvailable ? "NA" : formatHours(obsStatusData)}
                   </span>
 
                   <TriangleAlert className="h-4 w-4 text-yellow-500" />
@@ -109,7 +109,7 @@ export default function TimeLossCard({
           {narrativeLogloading ? (
             <Skeleton className="h-3 w-10 bg-teal-700" />
           ) : (
-            narrativeLogData.toFixed(2)
+            formatHours(narrativeLogData)
           )}
 
           <div>Calculated:</div>
