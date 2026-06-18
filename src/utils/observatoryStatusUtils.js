@@ -254,31 +254,31 @@ function buildOpenDomeSeries(nights) {
     // Get reused sunset/sunrise times.
     const { sunsetMs, sunriseMs, intervals } = night;
 
+    // Dome did not open.
+    if (!intervals || intervals.length === 0) continue;
+
     // Loop through each open-dome interval.
     intervals.forEach((interval, index) => {
       const openMs = isoToUTC(interval.open_time).toMillis();
-      const closeMs = isoToUTC(interval.close_time).toMillis();
+      // If current night, there is no close time.
+      const closeMs = interval.close_time
+        ? isoToUTC(interval.close_time).toMillis()
+        : null;
 
       // Clip open times at sunset.
-      const startMs =
-        index === 0
-          ? Math.max(openMs, sunsetMs)
-          : openMs;
+      const startMs = index === 0 ? Math.max(openMs, sunsetMs) : openMs;
 
       // Start of interval.
       // (This also drags the previous cumulative value
       // across any closed-dome gap.)
       series.push([startMs, cumulativeHours]);
 
-      // For a current night, we might not have a closed time.
-      const isCurrentlyOpen = !interval.close_time;
+      // If dome currently open, set a point at the current time.
+      const isCurrentlyOpen = closeMs === null;
 
-      // Derive open_hours at current time.
+      // TODO: (OSW-2444) Should Date.now() specify UTC?
       if (isCurrentlyOpen) {
-        series.push([
-          Date.now(),
-          cumulativeHours + interval.open_hours,
-        ]);
+        series.push([Date.now(), cumulativeHours + interval.open_hours]);
 
         return;
       }
@@ -319,20 +319,18 @@ function buildNightHoursSeries(nights) {
   return series;
 }
 
+// TODO: (OSW-2444) handle current night.
 function buildCumulativeStateSeries(intervals, nights) {
-
   // Build one output series per state.
   const stateNames = Object.keys(OBSERVATORY_STATES).filter(
     (state) => state !== "DAYTIME",
   );
 
-  const series = Object.fromEntries(
-    stateNames.map((state) => [state, []]),
-  );
+  const series = Object.fromEntries(stateNames.map((state) => [state, []]));
 
   // Process each night independently.
   for (const night of nights.values()) {
-    const { sunsetMs, sunriseMs } = night;
+    const { dayObs, sunsetMs, sunriseMs } = night;
 
     // Running cumulative total for each state for this night.
     // Each state resets to zero at sunset.
@@ -343,8 +341,7 @@ function buildCumulativeStateSeries(intervals, nights) {
     // Find intervals that overlap this night.
     const nightIntervals = intervals.filter(
       (interval) =>
-        interval.end_time_ms > sunsetMs &&
-        interval.start_time_ms < sunriseMs
+        interval.end_time_ms > sunsetMs && interval.start_time_ms < sunriseMs,
     );
 
     // Track whether each state was active in the previous interval.
@@ -360,15 +357,9 @@ function buildCumulativeStateSeries(intervals, nights) {
     // Walk intervals in chronological order.
     for (const interval of nightIntervals) {
       // Clip interval at the night boundaries.
-      const startMs = Math.max(
-        interval.start_time_ms,
-        sunsetMs
-      );
+      const startMs = Math.max(interval.start_time_ms, sunsetMs);
 
-      const endMs = Math.min(
-        interval.end_time_ms,
-        sunriseMs
-      );
+      const endMs = Math.min(interval.end_time_ms, sunriseMs);
 
       // Ignore intervals entirely outside the night.
       if (endMs <= startMs) {
@@ -376,9 +367,7 @@ function buildCumulativeStateSeries(intervals, nights) {
       }
 
       // Recalculate duration after clipping.
-      // TODO: (OSW-2444) store in ms until the end?
-      const durationHours =
-        (endMs - startMs) / (1000 * 60 * 60);
+      const durationHours = (endMs - startMs) / (1000 * 60 * 60);
 
       // Check every state independently.
       for (const state of stateNames) {
@@ -389,9 +378,7 @@ function buildCumulativeStateSeries(intervals, nights) {
         if (state === "UNKNOWN") {
           isActive = interval.start_state === 0;
         } else {
-          isActive =
-            (interval.start_state &
-              OBSERVATORY_STATES[state]) !== 0;
+          isActive = (interval.start_state & OBSERVATORY_STATES[state]) !== 0;
         }
 
         // Track inactive status.
@@ -405,83 +392,122 @@ function buildCumulativeStateSeries(intervals, nights) {
         // previous flat section and the start of the
         // accumulation slope.
         if (!wasActive[state]) {
-          series[state].push([
-            startMs,
-            cumulative[state],
-          ]);
+          series[state].push([startMs, cumulative[state]]);
         }
 
         // Accumulate time spent in this interval.
         cumulative[state] += durationHours;
 
         // End of active interval.
-        series[state].push([
-          endMs,
-          cumulative[state],
-        ]);
+        series[state].push([endMs, cumulative[state]]);
 
         wasActive[state] = true;
       }
     }
 
+    // Handle current night edge cases ---
+    // 1. If current night is ongoing, extend final states to
+    // the current time.
+    // 2. If we're still in the current dayobs but it is after
+    // the sunrise, and no events have been recorded since,
+    // extend states to sunrise.
+    const lastEventMs = intervals[intervals.length - 1].end_time_ms;
+
+    // TODO: (OSW-2444) Should Date.now() specify UTC?
+    const nowMs = Date.now();
+    // TODO: (OSW-2444) Convert to timeUtil.
+    const currentDayObs = Number(
+      DateTime.now().setZone("UTC").minus({ hours: 12 }).toFormat("yyyyLLdd"),
+    );
+
+    const isCurrentDayObs = currentDayObs === dayObs;
+
+    if (isCurrentDayObs) {
+      // If an event has been recorded since sunrise,
+      // treat like a completed night.
+      if (lastEventMs > sunriseMs) {
+        return series;
+      }
+
+      const isDuringCurrentNight = sunsetMs <= nowMs && nowMs < sunriseMs;
+
+      // Set cutoff time dependent on whether during the night.
+      const cutOffMs = isDuringCurrentNight ? nowMs : sunriseMs;
+      const extraHours = (cutOffMs - lastEventMs) / (1000 * 60 * 60);
+
+      for (const state of stateNames) {
+        const value = cumulative[state] + (wasActive[state] ? extraHours : 0);
+
+        series[state].push([cutOffMs, value]);
+
+        // Break line.
+        series[state].push([cutOffMs, NaN]);
+      }
+
+      return series;
+    }
+
     // Extend every state to sunrise.
     for (const state of stateNames) {
-      series[state].push([
-        sunriseMs,
-        cumulative[state],
-      ]);
+      series[state].push([sunriseMs, cumulative[state]]);
 
       // Break line before next night.
-      series[state].push([
-        sunriseMs,
-        NaN,
-      ]);
+      series[state].push([sunriseMs, NaN]);
     }
   }
 
   return series;
 }
 
-function buildDayObsMap(openDomeTimes) {
+function buildDayObsMap(almanacInfo, openDomeTimes = []) {
   const nights = new Map();
 
+  // Create all nights from almanac data.
+  for (const night of almanacInfo) {
+    // TODO: (OSW-2471) Remove once almanac dayobs values are corrected.
+    const correctedDayObs = Number(
+      DateTime.fromFormat(String(night.dayobs), "yyyyLLdd")
+        .minus({ days: 1 })
+        .toFormat("yyyyLLdd"),
+    );
+
+    nights.set(correctedDayObs, {
+      dayObs: correctedDayObs,
+      sunsetMs: Date.parse(`${night.twilight_evening_12deg}Z`),
+      sunriseMs: Date.parse(`${night.twilight_morning_12deg}Z`),
+      nightHours: night.night_hours,
+      intervals: [],
+    });
+  }
+
+  // Add dome-open intervals.
   for (const interval of openDomeTimes) {
-    // Filter out any intervals empty of dome data.
-    if (!interval.open_time) {
-      break;
+    const night = nights.get(interval.day_obs);
+
+    // Ignore intervals outside the queried almanac range
+    if (!night) {
+      continue;
     }
 
-    const dayObs = interval.day_obs;
-
-    if (!nights.has(dayObs)) {
-      nights.set(dayObs, {
-        dayObs,
-        sunsetMs: Date.parse(`${interval.sunset12}Z`),
-        sunriseMs: Date.parse(`${interval.sunrise12}Z`),
-        nightHours: interval.night_hours,
-        intervals: [],
-      });
+    // Only include entries with dome data.
+    // A current night will have open but not close time.
+    if (interval.open_time) {
+      night.intervals.push(interval);
     }
-
-    nights.get(dayObs).intervals.push(interval);
   }
 
   return nights;
 }
 
-// TODO: (OSW-2444) this needs to use query start/end dayobs
-// for dayobs builder so we don't rely too heavily on open-dome
-// times. Also, this currently will filter out days fully closed!
 export function buildCumulativePlotModel(
+  almanacInfo,
   intervals,
   openDomeTimes,
   availability,
 ) {
-  if (!openDomeTimes || openDomeTimes.length === 0) return {};
-  if (!intervals || intervals.length === 0) return {};
+  if (!almanacInfo || almanacInfo.length === 0) return {};
 
-  const nights = buildDayObsMap(openDomeTimes);
-  // console.log("nights: ", nights);
+  const nights = buildDayObsMap(almanacInfo, openDomeTimes);
 
   return {
     breaks: buildDayBreaks(nights),
