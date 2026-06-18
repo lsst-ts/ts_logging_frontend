@@ -104,7 +104,7 @@ function ObservatoryStatusApplet({
 
   // console.log("instanceRef: ", instanceRef);
   // console.log("syncBrushToSelection: ", syncBrushToSelection);
-  console.log("xAxisOption: ", xAxisOption);
+  // console.log("xAxisOption: ", xAxisOption);
 
   // ── Tooltip hit detection (brush intercepts ECharts mouse events) ──────────
   // The brush overlay captures all pointer events, so ECharts' own hover
@@ -183,19 +183,13 @@ function ObservatoryStatusApplet({
 
   // ── Build and apply the ECharts option ─────────────────────────────────────
   useEffect(() => {
-    // console.log("instanceRef", instanceRef.current);
     const instance = instanceRef.current;
     if (!instance) return;
 
     const xMinMillis = fullTimeRange[0]?.toMillis();
     const xMaxMillis = fullTimeRange[1]?.toMillis();
     if (!xMinMillis || !xMaxMillis) return;
-
-    // console.log("fullTimeRange", fullTimeRange);
-    // console.log("xMinMillis", xMinMillis);
-    // console.log("xMaxMillis", xMaxMillis);
   
-    // console.log("before model");
     const {
       breaks,
       nightHours,
@@ -209,7 +203,6 @@ function ObservatoryStatusApplet({
       openDomeTimes_static,
       availability,
     )
-    // console.log("after model");
 
     // console.log("openDomeSeries: ", openDomeSeries);
     // console.log("stateSeries: ", stateSeries);
@@ -233,7 +226,6 @@ function ObservatoryStatusApplet({
       }
     };
 
-    // console.log("before option");
     const option = {
       animation: false,
       // toolbox: { show: false },
@@ -415,7 +407,6 @@ function ObservatoryStatusApplet({
         },
       ],
     };
-    // console.log("after option");
 
     markerSeriesIdxRef.current = option.series.length - 1;
     instance.setOption(option, { notMerge: false });
