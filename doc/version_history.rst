@@ -1,3 +1,31 @@
+v0.20.0 (2026-06-18)
+====================
+
+New Features
+------------
+
+- Replace the interactive visit map applet with a static one that shows the number of visits per area of the sky for a given date range and instrument. (`OSW-1475 <https://rubinobs.atlassian.net//browse/OSW-1475>`_)
+- Replace Time Loss card with multisource card showing fault loss from Observatory Status and Narrative Log data, as well as computed from exposures. (`OSW-2119 <https://rubinobs.atlassian.net//browse/OSW-2119>`_)
+
+
+Bug Fixes
+---------
+
+- Fix hover state getting stuck in the Exposure Breakdown applet when the mouse is moved quickly off a bar. (`OSW-2240 <https://rubinobs.atlassian.net//browse/OSW-2240>`_)
+
+
+Performance Enhancement
+-----------------------
+
+- Reduced unnecessary re-renders on the Data Log and Context Feed pages. (`OSW-2285 <https://rubinobs.atlassian.net//browse/OSW-2285>`_)
+
+
+Other Changes and Additions
+---------------------------
+
+- Migrate timeline chart to ECharts library. (`OSW-2286 <https://rubinobs.atlassian.net//browse/OSW-2286>`_)
+
+
 v0.19.0 (2026-05-28)
 ====================
 
