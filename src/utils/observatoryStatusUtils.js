@@ -477,7 +477,7 @@ export function buildCumulativePlotModel(
   if (!intervals || intervals.length === 0) return {};
 
   const nights = buildDayObsMap(openDomeTimes);
-  console.log("nights: ", nights);
+  // console.log("nights: ", nights);
 
   return {
     breaks: buildDayBreaks(nights),

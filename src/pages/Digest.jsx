@@ -33,6 +33,8 @@ import { TELESCOPES } from "@/components/Parameters";
 import ObservingConditionsApplet from "@/components/ObservingConditionsApplet";
 import NightSummary from "@/components/NightSummary.jsx";
 import TimeAccountingApplet from "@/components/TimeAccountingApplet";
+import ObservatoryStatusApplet from "@/components/ObservatoryStatusApplet";
+// import ObservatoryStatusApplet_only from "@/components/ObservatoryStatusApplet_only";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
 import VisitMapStaticApplet from "@/components/VisitMapStaticApplet.jsx";
 
@@ -60,8 +62,7 @@ export default function Digest() {
   const [sumOnSkyExpTime, setSumOnSkyExpTime] = useState(0.0);
   const [flags, setFlags] = useState([]);
   const [reports, setReports] = useState([]);
-  // TODO: OSW-2118 - Update the Time Accounting applet
-  // const [obsStatusIntervals, setObsStatusIntervals] = useState([]);
+  const [obsStatusIntervals, setObsStatusIntervals] = useState([]);
   const [obsStatusFaultLoss, setObsStatusFaultLoss] = useState(0.0);
   const [obsStatusWeatherLoss, setObsStatusWeatherLoss] = useState(0.0);
   const [obsStatusAvailability, setObsStatusAvailability] = useState(
@@ -135,8 +136,7 @@ export default function Digest() {
     setOnSkyExpCount(0);
     setExpectedOnSkyExpCount(0);
     setFlags([]);
-    // TODO: OSW-2118 - Update the Time Accounting applet
-    // setObsStatusIntervals([]);
+    setObsStatusIntervals([]);
     setObsStatusFaultLoss(0.0);
     setObsStatusWeatherLoss(0.0);
     setObsStatusAvailability(EMPTY_OBS_STATUS_AVAILABILITY);
@@ -263,8 +263,7 @@ export default function Digest() {
         const metrics = data?.metrics ?? {};
         const availability = data?.availability ?? {};
 
-        // TODO: OSW-2118 - Update the Time Accounting applet
-        // setObsStatusIntervals(data.intervals);
+        setObsStatusIntervals(data.intervals);
         setObsStatusFaultLoss(
           typeof metrics.fault_loss === "number" ? metrics.fault_loss : 0.0,
         );
@@ -496,14 +495,14 @@ export default function Digest() {
   return (
     <>
       <div className="flex flex-col w-full p-8 gap-6">
-        {displayedNotifications.length > 0 && (
+        {/* {displayedNotifications.length > 0 && (
           <NotificationBannerStack
             notifications={displayedNotifications}
             onDismiss={removeNotification}
           />
-        )}
+        )} */}
         {/* Metrics */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricsCard
             icon={ShutterIcon}
             data={onSkyExpCount}
@@ -549,10 +548,10 @@ export default function Digest() {
               <JiraTicketsTable loading={jiraLoading} tickets={jiraTickets} />
             }
           ></DialogMetricsCard>
-        </div>
+        </div> */}
         {/* Applets */}
         <div className="flex flex-col gap-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <ObservingConditionsApplet
               exposuresLoading={exposuresLoading}
               exposureFields={exposureFields}
@@ -574,24 +573,37 @@ export default function Digest() {
               onBarHover={onBarHover}
               onBarLeave={onBarLeave}
             />
-          </div>
+          </div> */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <NightSummary
+            {/* <NightSummary
               reports={reports}
               nightreportLoading={nightreportLoading}
-            />
-            <TimeAccountingApplet
-              exposures={exposureFields}
-              loading={almanacLoading || exposuresLoading}
+            /> */}
+            {/* <ObservatoryStatusApplet_only
+              intervals={obsStatusIntervals}
+              availability={obsStatusAvailability}
               openDomeTimes={openDomeTimes}
-              almanac={almanacInfo}
-              weatherLossHours={narrativeWeatherLoss}
+              fullTimeRange={fullTimeRange}
+              selectedTimeRange={selectedTimeRange}
+              setSelectedTimeRange={setSelectedTimeRange}
+              loading={obsStatusLoading || exposuresLoading}
+              // loading={false}
+            /> */}
+            <ObservatoryStatusApplet
+              intervals={obsStatusIntervals}
+              availability={obsStatusAvailability}
+              openDomeTimes={openDomeTimes}
+              fullTimeRange={fullTimeRange}
+              selectedTimeRange={selectedTimeRange}
+              setSelectedTimeRange={setSelectedTimeRange}
+              // loading={obsStatusLoading || exposuresLoading}
+              loading={false}
             />
-            <VisitMapStaticApplet
+            {/* <VisitMapStaticApplet
               mapData={staticVisitMaps?.staticMapUrl}
               mapLoading={staticVisitMapLoading}
               error={staticVisitMapError}
-            />
+            /> */}
           </div>
         </div>
       </div>
