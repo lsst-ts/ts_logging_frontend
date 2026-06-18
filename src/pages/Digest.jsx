@@ -32,9 +32,7 @@ import { useSearch } from "@tanstack/react-router";
 import { TELESCOPES } from "@/components/Parameters";
 import ObservingConditionsApplet from "@/components/ObservingConditionsApplet";
 import NightSummary from "@/components/NightSummary.jsx";
-import TimeAccountingApplet from "@/components/TimeAccountingApplet";
 import ObservatoryStatusApplet from "@/components/ObservatoryStatusApplet";
-// import ObservatoryStatusApplet_only from "@/components/ObservatoryStatusApplet_only";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
 import VisitMapStaticApplet from "@/components/VisitMapStaticApplet.jsx";
 
@@ -69,13 +67,14 @@ export default function Digest() {
     EMPTY_OBS_STATUS_AVAILABILITY,
   );
 
-  const [exposuresLoading, setExposuresLoading] = useState(false);
+  // TODO: (OSW-2444) Why do these need to be false for the obs applet to work?
+  const [exposuresLoading, setExposuresLoading] = useState(true);
   const [expectedExposuresLoading, setExpectedExposuresLoading] =
     useState(false);
-  const [almanacLoading, setAlmanacLoading] = useState(false);
+  const [almanacLoading, setAlmanacLoading] = useState(true);
   const [narrativeLoading, setNarrativeLoading] = useState(false);
   const [nightreportLoading, setNightreportLoading] = useState(false);
-  const [obsStatusLoading, setObsStatusLoading] = useState(false);
+  const [obsStatusLoading, setObsStatusLoading] = useState(true);
   // TODO: OSW-2330 - Add computed fault to Time Loss card
   // const [calculatedFaultLoading, setCalculatedFaultLoading] = useState(false);
 
@@ -495,14 +494,14 @@ export default function Digest() {
   return (
     <>
       <div className="flex flex-col w-full p-8 gap-6">
-        {/* {displayedNotifications.length > 0 && (
+        {displayedNotifications.length > 0 && (
           <NotificationBannerStack
             notifications={displayedNotifications}
             onDismiss={removeNotification}
           />
-        )} */}
+        )}
         {/* Metrics */}
-        {/* <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricsCard
             icon={ShutterIcon}
             data={onSkyExpCount}
@@ -548,10 +547,10 @@ export default function Digest() {
               <JiraTicketsTable loading={jiraLoading} tickets={jiraTickets} />
             }
           ></DialogMetricsCard>
-        </div> */}
+        </div>
         {/* Applets */}
         <div className="flex flex-col gap-4">
-          {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <ObservingConditionsApplet
               exposuresLoading={exposuresLoading}
               exposureFields={exposureFields}
@@ -573,37 +572,27 @@ export default function Digest() {
               onBarHover={onBarHover}
               onBarLeave={onBarLeave}
             />
-          </div> */}
+          </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {/* <NightSummary
+            <NightSummary
               reports={reports}
               nightreportLoading={nightreportLoading}
-            /> */}
-            {/* <ObservatoryStatusApplet_only
-              intervals={obsStatusIntervals}
-              availability={obsStatusAvailability}
-              openDomeTimes={openDomeTimes}
-              fullTimeRange={fullTimeRange}
-              selectedTimeRange={selectedTimeRange}
-              setSelectedTimeRange={setSelectedTimeRange}
-              loading={obsStatusLoading || exposuresLoading}
-              // loading={false}
-            /> */}
-            <ObservatoryStatusApplet
-              intervals={obsStatusIntervals}
-              availability={obsStatusAvailability}
-              openDomeTimes={openDomeTimes}
-              fullTimeRange={fullTimeRange}
-              selectedTimeRange={selectedTimeRange}
-              setSelectedTimeRange={setSelectedTimeRange}
-              // loading={obsStatusLoading || exposuresLoading}
-              loading={false}
             />
-            {/* <VisitMapStaticApplet
+            <ObservatoryStatusApplet
+              almanacInfo={almanacInfo}
+              intervals={obsStatusIntervals}
+              availability={obsStatusAvailability}
+              openDomeTimes={openDomeTimes}
+              fullTimeRange={fullTimeRange}
+              selectedTimeRange={selectedTimeRange}
+              setSelectedTimeRange={setSelectedTimeRange}
+              loading={obsStatusLoading || exposuresLoading || almanacLoading}
+            />
+            <VisitMapStaticApplet
               mapData={staticVisitMaps?.staticMapUrl}
               mapLoading={staticVisitMapLoading}
               error={staticVisitMapError}
-            /> */}
+            />
           </div>
         </div>
       </div>
