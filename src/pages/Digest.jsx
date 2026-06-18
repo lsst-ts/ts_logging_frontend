@@ -1,11 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import ExposureBreakdownApplet from "@/components/ExposureBreakdownApplet.jsx";
 import MetricsCard from "@/components/MetricsCard.jsx";
-import VisitMapApplet from "@/components/VisitMapApplet";
-
+import TimeLossCard from "@/components/TimeLossCard.jsx";
 import { EfficiencyChart } from "@/components/ui/RadialChart.jsx";
 import ShutterIcon from "../assets/ShutterIcon.svg";
-import TimeLossIcon from "../assets/TimeLossIcon.svg";
 import JiraIconWhite from "../assets/JiraIconWhite.svg";
 import JiraIconBlue from "../assets/JiraIconBlue.svg";
 import {
@@ -13,6 +11,7 @@ import {
   fetchExpectedExposures,
   fetchAlmanac,
   fetchNarrativeLog,
+  fetchObsStatusFromRubinNights,
   fetchNightreport,
   fetchExposureFlags,
   fetchJiraTickets,
@@ -21,7 +20,6 @@ import {
 } from "@/utils/fetchUtils";
 import {
   calculateEfficiency,
-  calculateTimeLoss,
   calculateSumExpTimeBetweenTwilights,
   getBlockSourceLabel,
 } from "@/utils/utils";
@@ -38,6 +36,11 @@ import TimeAccountingApplet from "@/components/TimeAccountingApplet";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
 import VisitMapStaticApplet from "@/components/VisitMapStaticApplet.jsx";
 
+const EMPTY_OBS_STATUS_AVAILABILITY = {
+  status: "none",
+  available_from: null,
+};
+
 export default function Digest() {
   const { startDayobs, endDayobs, telescope } = useSearch({
     from: "__root__",
@@ -47,8 +50,8 @@ export default function Digest() {
   const { selectedTimeRange, setSelectedTimeRange, fullTimeRange } =
     useTimeRangeFromURL("/");
 
-  const [weatherLoss, setWeatherLoss] = useState(0.0);
-  const [faultLoss, setFaultLoss] = useState(0.0);
+  const [narrativeWeatherLoss, setNarrativeWeatherLoss] = useState(0.0);
+  const [narrativeFaultLoss, setNarrativeFaultLoss] = useState(0.0);
   const [exposureFields, setExposureFields] = useState([]);
   const [exposureCount, setExposureCount] = useState(0);
   const [sumExpTime, setSumExpTime] = useState(0.0);
@@ -57,6 +60,13 @@ export default function Digest() {
   const [sumOnSkyExpTime, setSumOnSkyExpTime] = useState(0.0);
   const [flags, setFlags] = useState([]);
   const [reports, setReports] = useState([]);
+  // TODO: OSW-2118 - Update the Time Accounting applet
+  // const [obsStatusIntervals, setObsStatusIntervals] = useState([]);
+  const [obsStatusFaultLoss, setObsStatusFaultLoss] = useState(0.0);
+  const [obsStatusWeatherLoss, setObsStatusWeatherLoss] = useState(0.0);
+  const [obsStatusAvailability, setObsStatusAvailability] = useState(
+    EMPTY_OBS_STATUS_AVAILABILITY,
+  );
 
   const [exposuresLoading, setExposuresLoading] = useState(false);
   const [expectedExposuresLoading, setExpectedExposuresLoading] =
@@ -64,6 +74,9 @@ export default function Digest() {
   const [almanacLoading, setAlmanacLoading] = useState(false);
   const [narrativeLoading, setNarrativeLoading] = useState(false);
   const [nightreportLoading, setNightreportLoading] = useState(false);
+  const [obsStatusLoading, setObsStatusLoading] = useState(false);
+  // TODO: OSW-2330 - Add computed fault to Time Loss card
+  // const [calculatedFaultLoading, setCalculatedFaultLoading] = useState(false);
 
   const [jiraTickets, setJiraTickets] = useState([]);
   const [jiraLoading, setJiraLoading] = useState(false);
@@ -109,18 +122,24 @@ export default function Digest() {
     setNightreportLoading(true);
     setJiraLoading(true);
     setFlagsLoading(true);
+    setObsStatusLoading(true);
     setExposureFields([]);
     setAlmanacInfo([]);
     setSumOnSkyExpTime(0.0);
     setSumExpTime(0);
     setJiraTickets([]);
-    setWeatherLoss(0.0);
-    setFaultLoss(0.0);
+    setNarrativeWeatherLoss(0.0);
+    setNarrativeFaultLoss(0.0);
     setExposureCount(0);
     setReports([]);
     setOnSkyExpCount(0);
     setExpectedOnSkyExpCount(0);
     setFlags([]);
+    // TODO: OSW-2118 - Update the Time Accounting applet
+    // setObsStatusIntervals([]);
+    setObsStatusFaultLoss(0.0);
+    setObsStatusWeatherLoss(0.0);
+    setObsStatusAvailability(EMPTY_OBS_STATUS_AVAILABILITY);
 
     setStaticVisitMapLoading(true);
     setStaticVisitMaps(null);
@@ -213,8 +232,8 @@ export default function Digest() {
 
     fetchNarrativeLog(startDayobs, queryEndDayobs, instrument, abortController)
       .then(([weather, fault]) => {
-        setWeatherLoss(weather);
-        setFaultLoss(fault);
+        setNarrativeWeatherLoss(weather);
+        setNarrativeFaultLoss(fault);
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
@@ -228,6 +247,52 @@ export default function Digest() {
       .finally(() => {
         if (!abortController.signal.aborted) {
           setNarrativeLoading(false);
+        }
+      });
+
+    fetchObsStatusFromRubinNights({
+      start: startDayobs,
+      end: endDayobs,
+      includeEntries: true,
+      includeIntervals: true,
+      nightOnlyMetrics: true,
+      metrics: ["fault_loss", "weather"],
+      abortController,
+    })
+      .then((data) => {
+        const metrics = data?.metrics ?? {};
+        const availability = data?.availability ?? {};
+
+        // TODO: OSW-2118 - Update the Time Accounting applet
+        // setObsStatusIntervals(data.intervals);
+        setObsStatusFaultLoss(
+          typeof metrics.fault_loss === "number" ? metrics.fault_loss : 0.0,
+        );
+        setObsStatusWeatherLoss(
+          typeof metrics.weather === "number" ? metrics.weather : 0.0,
+        );
+        setObsStatusAvailability({
+          status:
+            typeof availability.status === "string"
+              ? availability.status
+              : EMPTY_OBS_STATUS_AVAILABILITY.status,
+          available_from:
+            availability.available_from ??
+            EMPTY_OBS_STATUS_AVAILABILITY.available_from,
+        });
+      })
+      .catch((err) => {
+        if (!abortController.signal.aborted) {
+          console.error("Error fetching observatory status:", err);
+          addNotification({
+            type: "error",
+            source: "observatory-status",
+          });
+        }
+      })
+      .finally(() => {
+        if (!abortController.signal.aborted) {
+          setObsStatusLoading(false);
         }
       });
 
@@ -400,19 +465,19 @@ export default function Digest() {
         nightHours,
         sumOnSkyExpTime,
         totalExpTimeBetweenTwilights,
-        weatherLoss,
+        obsStatusWeatherLoss,
       );
     }
   }
 
   const efficiencyText = efficiency >= 0 ? `${efficiency} %` : "N/A";
-  const [timeLoss, timeLossDetails] = calculateTimeLoss(weatherLoss, faultLoss);
   const newTicketsCount = jiraTickets.filter((tix) => tix.isNew).length;
 
   const allLoaded =
     !exposuresLoading &&
     !expectedExposuresLoading &&
     !almanacLoading &&
+    !obsStatusLoading &&
     !narrativeLoading &&
     !nightreportLoading &&
     !jiraLoading &&
@@ -459,16 +524,17 @@ export default function Digest() {
             icon={<EfficiencyChart value={efficiency} />}
             data={efficiencyText}
             label="Open-shutter (-weather) efficiency"
-            tooltip="Efficiency computed as total on-sky exposure time / (time between 12 degree twilights minus time lost to weather). Exposures started outside the twilights are not counted in total time."
+            tooltip="Efficiency computed as total on-sky exposure time / ( time between 12° twilights - time lost to weather as recorded in Observatory Status ). Exposures started outside the twilights are not counted in total time."
             loading={almanacLoading || exposuresLoading || narrativeLoading}
           />
-          <MetricsCard
-            icon={TimeLossIcon}
-            data={timeLoss}
-            label="Time loss (Narrative Log)"
-            metadata={timeLossDetails}
-            tooltip="Time loss as reported in the Narrative Log."
-            loading={narrativeLoading}
+          <TimeLossCard
+            narrativeLogData={narrativeFaultLoss}
+            obsStatusData={obsStatusFaultLoss}
+            obsStatusAvailability={obsStatusAvailability}
+            calculatedData={"TBD"}
+            narrativeLogloading={narrativeLoading}
+            obsStatusLoading={obsStatusLoading}
+            calculatedFaultLoading={false}
           />
           <DialogMetricsCard
             icons={[JiraIconWhite, JiraIconBlue]}
@@ -519,7 +585,7 @@ export default function Digest() {
               loading={almanacLoading || exposuresLoading}
               openDomeTimes={openDomeTimes}
               almanac={almanacInfo}
-              weatherLossHours={weatherLoss}
+              weatherLossHours={narrativeWeatherLoss}
             />
             <VisitMapStaticApplet
               mapData={staticVisitMaps?.staticMapUrl}

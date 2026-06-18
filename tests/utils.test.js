@@ -3,7 +3,6 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import {
   calculateEfficiency,
   calculateSumExpTimeBetweenTwilights,
-  calculateTimeLoss,
   getDayobsStr,
   getDisplayDateRange,
   getKeyByValue,
@@ -30,14 +29,14 @@ import { GLOBAL_SEARCH_PARAMS } from "@/routes";
 const sampleAlmanacInfo = [
   {
     dayobs: "20240602", // will match exposure day_obs "20240601"
-    twilight_evening: "2024-06-01 18:00:00",
-    twilight_morning: "2024-06-02 06:00:00",
+    twilight_evening_12deg: "2024-06-01 18:00:00",
+    twilight_morning_12deg: "2024-06-02 06:00:00",
     night_hours: 12,
   },
   {
     dayobs: "20240603", // will match exposure day_obs "20240602"
-    twilight_evening: "2024-06-02 18:00:00",
-    twilight_morning: "2024-06-03 06:00:00",
+    twilight_evening_12deg: "2024-06-02 18:00:00",
+    twilight_morning_12deg: "2024-06-03 06:00:00",
     night_hours: 12,
   },
 ];
@@ -206,21 +205,6 @@ describe("utils", () => {
       expect(calculateEfficiency(11, 300, 280, 0)).toBe(
         Math.round((100 * 280) / 3600 / 11),
       );
-    });
-  });
-
-  describe("calculateTimeLoss", () => {
-    it("returns defaults when no loss", () => {
-      expect(calculateTimeLoss(0, 0)).toEqual([
-        "0 hrs",
-        "(- weather; - fault)",
-      ]);
-    });
-
-    it("returns total loss and breakdown", () => {
-      const [loss, breakdown] = calculateTimeLoss(2, 2);
-      expect(loss).toBe("4.00 hrs");
-      expect(breakdown).toBe("(50% weather; 50% fault)");
     });
   });
 

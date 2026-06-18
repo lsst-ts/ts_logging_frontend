@@ -87,12 +87,12 @@ function TimeAccountingApplet({
 
       // convert twilight times to TAI
       const twilightEvening = DateTime.fromFormat(
-        night.twilight_evening,
+        night.twilight_evening_12deg,
         "yyyy-MM-dd HH:mm:ss",
         { zone: "utc" },
       ).plus({ seconds: TAI_OFFSET_SECONDS });
       const twilightMorning = DateTime.fromFormat(
-        night.twilight_morning,
+        night.twilight_morning_12deg,
         "yyyy-MM-dd HH:mm:ss",
         { zone: "utc" },
       ).plus({ seconds: TAI_OFFSET_SECONDS });
