@@ -22,6 +22,8 @@ import {
   calculateEfficiency,
   calculateSumExpTimeBetweenTwilights,
   getBlockSourceLabel,
+  computeCalculatedFault,
+  isDictionaryEmpty,
 } from "@/utils/utils";
 import { getDayobsStartUTC } from "@/utils/timeUtils";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -50,7 +52,7 @@ export default function Digest() {
   const { selectedTimeRange, setSelectedTimeRange, fullTimeRange } =
     useTimeRangeFromURL("/");
 
-  const [narrativeWeatherLoss, setNarrativeWeatherLoss] = useState(0.0);
+  // const [narrativeWeatherLoss, setNarrativeWeatherLoss] = useState(0.0);
   const [narrativeFaultLoss, setNarrativeFaultLoss] = useState(0.0);
   const [exposureFields, setExposureFields] = useState([]);
   const [exposureCount, setExposureCount] = useState(0);
@@ -75,8 +77,10 @@ export default function Digest() {
   const [narrativeLoading, setNarrativeLoading] = useState(false);
   const [nightreportLoading, setNightreportLoading] = useState(false);
   const [obsStatusLoading, setObsStatusLoading] = useState(false);
-  // TODO: OSW-2330 - Add computed fault to Time Loss card
-  // const [calculatedFaultLoading, setCalculatedFaultLoading] = useState(false);
+  const [dayObsOpenDomeHours, setDayObsOpenDomeHours] = useState({});
+  const [onSkyTimeAccounting, setOnSkyTimeAccounting] = useState({});
+  const [openDomeError, setOpenDomeError] = useState(null);
+  const [timeAccountingError, setTimeAccountingError] = useState(null);
 
   const [jiraTickets, setJiraTickets] = useState([]);
   const [jiraLoading, setJiraLoading] = useState(false);
@@ -128,7 +132,7 @@ export default function Digest() {
     setSumOnSkyExpTime(0.0);
     setSumExpTime(0);
     setJiraTickets([]);
-    setNarrativeWeatherLoss(0.0);
+    // setNarrativeWeatherLoss(0.0);
     setNarrativeFaultLoss(0.0);
     setExposureCount(0);
     setReports([]);
@@ -145,6 +149,11 @@ export default function Digest() {
     setStaticVisitMaps(null);
     setStaticVisitMapError(false);
 
+    setDayObsOpenDomeHours({});
+    setOnSkyTimeAccounting({});
+    setOpenDomeError(null);
+    setTimeAccountingError(null);
+
     clearNotifications();
 
     fetchExposures(startDayobs, queryEndDayobs, instrument, abortController)
@@ -155,7 +164,11 @@ export default function Digest() {
           exposureTime,
           onSkyExpNo,
           totalOnSkyExpTime,
-          openDomeTimes,
+          domeTimes,
+          openDomeHours,
+          domeError,
+          nightOnSkyTimeAccounting,
+          accountingError,
         ]) => {
           setExposureFields(exposureFields);
           setExposureCount(exposuresNo);
@@ -163,7 +176,12 @@ export default function Digest() {
           setOnSkyExpCount(onSkyExpNo);
           setSumOnSkyExpTime(totalOnSkyExpTime);
           setExposuresLoading(false);
-          setOpenDomeTimes(openDomeTimes);
+          setOpenDomeTimes(domeTimes);
+          setDayObsOpenDomeHours(openDomeHours);
+          setOnSkyTimeAccounting(nightOnSkyTimeAccounting);
+          setOpenDomeError(domeError);
+          setTimeAccountingError(accountingError);
+          console.log(openDomeTimes);
           if (exposuresNo === 0) {
             addNotification({
               type: "noData",
@@ -171,6 +189,18 @@ export default function Digest() {
               title: "No exposures found in ConsDB",
               description:
                 "Parts of the dashboard that depend on exposure data will appear empty for the selected date range.",
+            });
+          }
+          if (domeError) {
+            addNotification({
+              type: "error",
+              source: "dome-times",
+            });
+          }
+          if (accountingError) {
+            addNotification({
+              type: "error",
+              source: "time-accounting",
             });
           }
         },
@@ -231,9 +261,9 @@ export default function Digest() {
       });
 
     fetchNarrativeLog(startDayobs, queryEndDayobs, instrument, abortController)
-      .then(([weather, fault]) => {
-        setNarrativeWeatherLoss(weather);
-        setNarrativeFaultLoss(fault);
+      .then((data) => {
+        // setNarrativeWeatherLoss(weather);
+        setNarrativeFaultLoss(data.time_lost_to_faults);
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
@@ -473,6 +503,59 @@ export default function Digest() {
   const efficiencyText = efficiency >= 0 ? `${efficiency} %` : "N/A";
   const newTicketsCount = jiraTickets.filter((tix) => tix.isNew).length;
 
+  const faultLoading = useMemo(
+    () => obsStatusLoading || exposuresLoading,
+    [obsStatusLoading, exposuresLoading],
+  );
+
+  const { calculatedFault, domeNightHours, closedDomeHours } = useMemo(() => {
+    console.log(onSkyTimeAccounting);
+    if (
+      !dayObsOpenDomeHours ||
+      !onSkyTimeAccounting ||
+      isDictionaryEmpty(dayObsOpenDomeHours) ||
+      isDictionaryEmpty(onSkyTimeAccounting)
+    )
+      return {
+        calculatedFault: 0.0,
+        domeNightHours: 0.0,
+        closedDomeHours: 0.0,
+      };
+    const domeTotals = Object.values(dayObsOpenDomeHours).reduce(
+      (sum, hours) => {
+        const nightHours = hours.night_hours ?? 0.0;
+        const openHours = hours.open_hours ?? 0.0;
+        return {
+          nightHours: sum.nightHours + nightHours,
+          openHours: sum.openHours + openHours,
+          closedHours: sum.closedHours + (nightHours - openHours),
+        };
+      },
+      {
+        nightHours: 0.0,
+        openHours: 0.0,
+        closedHours: 0.0,
+      },
+    );
+    const faultLoss = computeCalculatedFault(
+      onSkyTimeAccounting,
+      sumOnSkyExpTime,
+      domeTotals.nightHours,
+      domeTotals.closedHours,
+      obsStatusWeatherLoss,
+    );
+    return {
+      calculatedFault: faultLoss,
+      domeNightHours: domeTotals.nightHours,
+      closedDomeHours: domeTotals.closedHours,
+    };
+  }, [
+    onSkyTimeAccounting,
+    sumOnSkyExpTime,
+    dayObsOpenDomeHours,
+    obsStatusWeatherLoss,
+  ]);
+
   const allLoaded =
     !exposuresLoading &&
     !expectedExposuresLoading &&
@@ -531,10 +614,10 @@ export default function Digest() {
             narrativeLogData={narrativeFaultLoss}
             obsStatusData={obsStatusFaultLoss}
             obsStatusAvailability={obsStatusAvailability}
-            calculatedData={"TBD"}
+            calculatedData={calculatedFault}
             narrativeLogloading={narrativeLoading}
             obsStatusLoading={obsStatusLoading}
-            calculatedFaultLoading={false}
+            calculatedFaultLoading={faultLoading}
           />
           <DialogMetricsCard
             icons={[JiraIconWhite, JiraIconBlue]}
@@ -581,11 +664,14 @@ export default function Digest() {
               nightreportLoading={nightreportLoading}
             />
             <TimeAccountingApplet
-              exposures={exposureFields}
-              loading={almanacLoading || exposuresLoading}
-              openDomeTimes={openDomeTimes}
-              almanac={almanacInfo}
-              weatherLossHours={narrativeWeatherLoss}
+              loading={faultLoading}
+              onSkyTimeAccounting={onSkyTimeAccounting}
+              sumOnSkyExpTime={sumOnSkyExpTime}
+              nightHours={domeNightHours}
+              closedDomeHours={closedDomeHours}
+              calculatedFaultHours={calculatedFault}
+              openDomeError={openDomeError}
+              timeAccountingError={timeAccountingError}
             />
             <VisitMapStaticApplet
               mapData={staticVisitMaps?.staticMapUrl}

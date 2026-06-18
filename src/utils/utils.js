@@ -577,6 +577,40 @@ const getBlockSourceLabel = (source) =>
     jira: "Jira",
   })[source] || source;
 
+const isDictionaryEmpty = (obj) => {
+  return obj && Object.keys(obj).length === 0 && obj.constructor === Object;
+};
+
+const computeCalculatedFault = (
+  onSkyTimeAccounting,
+  onSkyExpTime,
+  // openDomeHours,
+  nightHours,
+  closedDomeHours,
+  weatherLossHours,
+) => {
+  const expTimeHours = onSkyExpTime / 3600;
+
+  // console.log(`openDomeHours: ${openDomeHours}`);
+  console.log(`nightHours: ${nightHours}`);
+  // console.log(`openHours: ${domeTotals.openHours}`);
+  console.log(`closedHours: ${closedDomeHours}`);
+  console.log(`expTimeHours: ${expTimeHours}`);
+  console.log(`timeAccounting: ${onSkyTimeAccounting}`);
+  console.log(`weatherLoss: ${weatherLossHours}`);
+
+  const faultTimeHours =
+    nightHours -
+    expTimeHours -
+    onSkyTimeAccounting.sum_overhead_without_filter_change -
+    onSkyTimeAccounting.sum_overhead_with_filter_change -
+    Math.min(closedDomeHours, weatherLossHours ?? 0);
+
+  console.log(`faultTimeHours: ${faultTimeHours.toFixed(2)}`);
+
+  return faultTimeHours;
+};
+
 export {
   calculateEfficiency,
   getDayobsStr,
@@ -598,4 +632,6 @@ export {
   parseBackendVersion,
   getZephyrUrl,
   getBlockSourceLabel,
+  computeCalculatedFault,
+  isDictionaryEmpty,
 };

@@ -116,7 +116,7 @@ export default function TimeLossCard({
           {calculatedFaultLoading ? (
             <Skeleton className="h-3 w-10 bg-teal-700" />
           ) : (
-            calculatedData
+            calculatedData.toFixed(2)
           )}
         </div>
         {/* Info Icon */}
