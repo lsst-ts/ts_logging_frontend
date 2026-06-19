@@ -1,3 +1,14 @@
+v0.21.0-alpha.1 (2026-06-19)
+============================
+
+New Features
+------------
+
+- Adds the ability to click to select a single row, and also syncs the selected row state with the URL, allowing it to be shared and for links to specific rows to be generated. (`OSW-1321 <https://rubinobs.atlassian.net//browse/OSW-1321>`_)
+- Add Observatory Status timeline to the Context Feed. (`OSW-2117 <https://rubinobs.atlassian.net//browse/OSW-2117>`_)
+- Add calculated fault to Time Loss card and refactor Time Accounting applet. (`OSW-2330 <https://rubinobs.atlassian.net//browse/OSW-2330>`_)
+
+
 v0.20.0 (2026-06-18)
 ====================
 
