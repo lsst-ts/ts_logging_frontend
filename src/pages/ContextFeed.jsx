@@ -16,8 +16,11 @@ import {
 } from "@/components/ui/popover";
 
 import TimelineChart from "@/components/TimelineChart";
+import ObservatoryStatusTimeline from "@/components/ObservatoryStatusTimeline";
 import ContextFeedTable from "@/components/ContextFeedTable.jsx";
 import { CATEGORY_INDEX_INFO } from "@/components/context-feed-definitions.js";
+import { SERIES_ORDER } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
+import { getStatusLabel } from "@/utils/observatoryStatusUtils";
 import { contextFeedColumns } from "@/components/ContextFeedColumns";
 import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
 import PageHeader from "@/components/PageHeader";
@@ -29,6 +32,7 @@ import {
   fetchAlmanac,
   fetchContextFeedFromRubinNights,
   fetchBlockDetails,
+  fetchObsStatus,
 } from "@/utils/fetchUtils";
 import { mergeContextFeedSources, getBlockSourceLabel } from "@/utils/utils";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
@@ -99,7 +103,12 @@ function ContextFeed() {
 
   // Almanac data for timeline
   const [twilightValues, setTwilightValues] = useState([]);
+  const [twilight0DegValues, setTwilight0DegValues] = useState([]);
   const [almanacLoading, setAlmanacLoading] = useState(true);
+
+  // Observatory status data
+  const [obsStatusEntries, setObsStatusEntries] = useState([]);
+  const [obsStatusLoading, setObsStatusLoading] = useState(false);
 
   // Visibility toggles
   const [timelineVisible, setTimelineVisible] = useState(true);
@@ -186,12 +195,15 @@ function ContextFeed() {
 
     setRubinNightsDataLoading(true);
     setAlmanacLoading(true);
+    setObsStatusLoading(true);
     clearNotifications();
 
     fetchAlmanac(startDayobs, queryEndDayobs, abortController)
       .then((almanac) => {
-        const { twilightValues } = prepareAlmanacData(almanac);
+        const { twilightValues, twilight0DegValues } =
+          prepareAlmanacData(almanac);
         setTwilightValues(twilightValues);
+        setTwilight0DegValues(twilight0DegValues);
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
@@ -239,6 +251,25 @@ function ContextFeed() {
       .finally(() => {
         if (!abortController.signal.aborted) {
           setRubinNightsDataLoading(false);
+        }
+      });
+
+    fetchObsStatus(startDayobs, endDayobs, abortController)
+      .then((data) => {
+        setObsStatusEntries(data.entries ?? []);
+      })
+      .catch((err) => {
+        if (!abortController.signal.aborted) {
+          console.error("Error fetching observatory status:", err);
+          addNotification({
+            type: "error",
+            source: "obs-status",
+          });
+        }
+      })
+      .finally(() => {
+        if (!abortController.signal.aborted) {
+          setObsStatusLoading(false);
         }
       });
 
@@ -434,10 +465,58 @@ function ContextFeed() {
                     <span className="font-bold">Right-Click</span> for more
                     options (keeps selection).
                   </li>
-                  <li>Blue lines are twilights. All event times are UTC.</li>
+                  <li>
+                    Blue lines are 12° twilights. Dashed white lines are 0°
+                    twilights. All event times are UTC.
+                  </li>
                 </ul>
               </div>
             </TipsCard>
+          )}
+
+          {/* Observatory Status Timeline */}
+          {timelineVisible && (
+            <Card className="grid gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 font-thin shadow-stone-900 shadow-md">
+              {obsStatusLoading ? (
+                <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
+              ) : (
+                <div className="flex flex-row min-w-0">
+                  {/* State Labels */}
+                  <div
+                    className="flex flex-col w-45"
+                    style={{
+                      paddingTop: "30px",
+                      paddingBottom: "20px",
+                    }}
+                  >
+                    {SERIES_ORDER.map((stateName) => (
+                      <div
+                        key={stateName}
+                        className="flex items-center"
+                        style={{
+                          height: "20px",
+                        }}
+                      >
+                        <span className="text-xs text-stone-200">
+                          {getStatusLabel(stateName)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <ObservatoryStatusTimeline
+                      entries={obsStatusEntries}
+                      twilightValues={twilightValues}
+                      twilight0DegValues={twilight0DegValues}
+                      fullTimeRange={fullTimeRange}
+                      selectedTimeRange={selectedTimeRange}
+                      setSelectedTimeRange={setSelectedTimeRange}
+                      brushGroup="context-feed"
+                    />
+                  </div>
+                </div>
+              )}
+            </Card>
           )}
 
           {/* Timeline */}
@@ -448,7 +527,7 @@ function ContextFeed() {
               ) : (
                 <div className="flex flex-row min-w-0">
                   {/* Event Type Checkboxes */}
-                  <div className="mt-3 flex flex-col gap-1 w-45">
+                  <div className="mt-8 flex flex-col gap-1 w-45">
                     {Object.entries(CATEGORY_INDEX_INFO)
                       .filter(([, info]) => info.displayIndex != null) // exclude AUTOLOG
                       .sort(
@@ -485,10 +564,10 @@ function ContextFeed() {
                       <TimelineChart
                         data={timelineData}
                         twilightValues={twilightValues}
-                        showTwilight={true}
                         fullTimeRange={fullTimeRange}
                         selectedTimeRange={selectedTimeRange}
                         setSelectedTimeRange={setSelectedTimeRange}
+                        brushGroup="context-feed"
                       />
                     </ContextMenuWrapper>
                   </div>

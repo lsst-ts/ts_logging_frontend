@@ -11,11 +11,11 @@
 export const TIMELINE_DIMENSIONS = {
   // Height per data series row, plus base added on top (breathing room, margins)
   SERIES_ROW_HEIGHT: 20,
-  BASE_HEIGHT: 50,
+  BASE_HEIGHT: 80, // +10 to compensate for increased bottom margin
 
   // Label and axis spacing
   PLOT_LABEL_HEIGHT: 20,
-  DIST_BELOW_X_AXIS: 16,
+  DIST_BELOW_X_AXIS: 26, // +10 vs old value to keep date labels at same screen position after bottom margin increase
   DIST_FROM_X_AXIS: 85,
 
   // Text styling
@@ -24,16 +24,20 @@ export const TIMELINE_DIMENSIONS = {
   // Moon rendering
   MOON_RADIUS: 6,
   X_OFFSET: 6,
+
+  // Hourly x-axis tick marks
+  HOURLY_TICK_LENGTH: 8,
+  HOURLY_TICK_LABEL_FONT_SIZE: 9,
 };
 
 /**
  * Chart margin configuration
  */
 export const TIMELINE_MARGINS = {
-  top: 0, // Will be overridden if moon illumination is shown
+  top: 20, // Space for labels (moon illumination, twilight) at top of chart
   right: 30,
   left: 30,
-  bottom: 30,
+  bottom: 40, // Space for hourly tick labels + date labels
 };
 
 /**
@@ -43,9 +47,9 @@ export const TIMELINE_COLORS = {
   // Grid and reference lines
   GRID_LINE: "white",
   GRID_OPACITY: 0.1,
+  HOUR_LABEL: "rgba(255, 255, 255, 0.4)",
   DAYOBS_BORDER: "grey",
   DAYOBS_LABEL: "grey",
-  DAYOBS_LABEL_DIM: "#666",
 
   // Single series styling
   SINGLE_SERIES_LINE: "white",
