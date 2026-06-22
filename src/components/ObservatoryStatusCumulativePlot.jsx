@@ -62,8 +62,6 @@ function ObservatoryStatusCumulativePlot({
     [fullTimeRange, computedHeight],
   );
 
-  // console.log("updateGraphicElements: ", updateGraphicElements);
-
   const { instanceRef, syncBrushToSelection, xAxisOption } = useEChartsTimeline(
     containerRef,
     {
@@ -173,12 +171,10 @@ function ObservatoryStatusCumulativePlot({
       availability,
     )
 
-    console.log("breaks: ", breaks);
-
     // Modify CF option to suit applet.
     // Swap fullTimeRange out for sunset-sunrise.
-    xAxisOption.min = nightHours[0][0];
-    xAxisOption.max = nightHours[nightHours.length - 1][0];
+    xAxisOption.min = nightHours?.[0][0];
+    xAxisOption.max = nightHours?.[nightHours?.length - 1][0] ?? xAxisOption.max;
     // Add day breaks to show only nights.
     xAxisOption.breaks = breaks;
     xAxisOption.breakArea = {
@@ -213,17 +209,17 @@ function ObservatoryStatusCumulativePlot({
         trigger: "axis",
         confine: true,
       },
-      // legend: {
-      //   bottom: -10,
-      //   textStyle: {
-      //     color: "#ffffff",
-      //   },
-      // },
+      legend: {
+        bottom: 20,
+        textStyle: {
+          color: "#ffffff",
+        },
+      },
       grid: {
         top: 40,
         right: STATUS_TIMELINE_MARGINS.right,
         left: STATUS_TIMELINE_MARGINS.left,
-        bottom: STATUS_TIMELINE_MARGINS.bottom,
+        bottom: 80,
         containLabel: false,
       },
       xAxis: xAxisOption,
@@ -283,7 +279,7 @@ function ObservatoryStatusCumulativePlot({
             // TODO: (OSW-2444) define map
             opacity: 0.3,
           },
-          data: stateSeries["OPERATIONAL"],
+          data: stateSeries?.["OPERATIONAL"],
         },
         {
           name: "Weather",
@@ -297,7 +293,7 @@ function ObservatoryStatusCumulativePlot({
             color: STATUS_COLORS["WEATHER"],
             opacity: 0.3,
           },
-          data: stateSeries["WEATHER"],
+          data: stateSeries?.["WEATHER"],
         },
         {
           name: "Fault",
@@ -311,7 +307,7 @@ function ObservatoryStatusCumulativePlot({
             color: STATUS_COLORS["FAULT"],
             opacity: 0.3,
           },
-          data: stateSeries["FAULT"],
+          data: stateSeries?.["FAULT"],
         },
         {
           name: "Idle",
@@ -325,7 +321,7 @@ function ObservatoryStatusCumulativePlot({
             color: STATUS_COLORS["IDLE"],
             opacity: 0.5,
           },
-          data: stateSeries["IDLE"],
+          data: stateSeries?.["IDLE"],
         },
         {
           name: "Downtime",
@@ -339,7 +335,7 @@ function ObservatoryStatusCumulativePlot({
             color: STATUS_COLORS["DOWNTIME"],
             opacity: 0.4,
           },
-          data: stateSeries["DOWNTIME"],
+          data: stateSeries?.["DOWNTIME"],
         },
         {
           name: "Unknown",
@@ -353,7 +349,7 @@ function ObservatoryStatusCumulativePlot({
             color: STATUS_COLORS["UNKNOWN"],
             opacity: 0.5,
           },
-          data: stateSeries["UNKNOWN"],
+          data: stateSeries?.["UNKNOWN"],
         },
         {
           name: "Open Dome",
