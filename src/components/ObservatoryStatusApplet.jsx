@@ -6,10 +6,10 @@ import {
 } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 
+import ObservatoryStatusCumulativePlot from "@/components/ObservatoryStatusCumulativePlot";
+
 import DownloadIcon from "../assets/DownloadIcon.svg";
 import InfoIcon from "../assets/InfoIcon.svg";
-
-import ObservatoryStatusCumulativePlot from "@/components/ObservatoryStatusCumulativePlot";
 
 /**
  * Observatory status applet (WIP)
@@ -44,8 +44,21 @@ function ObservatoryStatusApplet({
             <PopoverTrigger className="self-end min-w-4">
               <img src={InfoIcon} />
             </PopoverTrigger>
-            <PopoverContent className="bg-black text-white text-sm border-yellow-700 w-[300px]">
+            <PopoverContent className="bg-black text-white text-sm border-yellow-700 w-[350px]">
               {/* TODO */}
+              <p>
+                The observatory's status and dome activity during the observing night.
+                <br/>
+                <br/>
+                Time is accumulated between twilights, <code>[-12°, -12°]</code>, with
+                positive slopes representing an active status.
+                Markers represent state change events as recorded in the <code>EFD</code>'s{" "}
+                <code>Scheduler.logevent_observatoryStatus</code> topic,
+                with diamonds showing the events with accompanying notes.
+                <br/>
+                <br/>
+                Hover over markers to see the details of the state change.
+              </p>
             </PopoverContent>
           </Popover>
         </div>

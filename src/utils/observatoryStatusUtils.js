@@ -222,8 +222,6 @@ export function formatTimeForTooltip(timeStr) {
 }
 
 function buildDayBreaks(nights) {
-  // console.log("buildDayBreaks called.");
-
   const DAY_BREAK_GAP = "2%";
   const dayBreaks = [];
 
@@ -354,7 +352,6 @@ function buildCumulativeStateSeries(intervals, nights) {
     for (const interval of nightIntervals) {
       // Clip interval at the night boundaries.
       const startMs = Math.max(interval.start_time_ms, sunsetMs);
-
       const endMs = Math.min(interval.end_time_ms, sunriseMs);
 
       // Ignore intervals entirely outside the night.
@@ -407,7 +404,10 @@ function buildCumulativeStateSeries(intervals, nights) {
     // 2. If we're still in the current dayobs but it is after
     // the sunrise, and no events have been recorded since,
     // extend states to sunrise.
-    const lastEventMs = intervals[intervals.length - 1].end_time_ms;
+
+    // When was the most recent event?
+    const lastInterval = intervals[intervals.length - 1];
+    const lastEventMs = lastInterval.end_time_ms;
 
     // TODO: (OSW-2444) Should Date.now() specify UTC?
     const nowMs = Date.now();
@@ -425,6 +425,11 @@ function buildCumulativeStateSeries(intervals, nights) {
         return series;
       }
 
+      // Collect the last recorded active states here.
+      const lastActive = Object.fromEntries(
+        stateNames.map((state) => [state, false]),
+      );
+
       const isDuringCurrentNight = sunsetMs <= nowMs && nowMs < sunriseMs;
 
       // Set cutoff time dependent on whether during the night.
@@ -432,23 +437,29 @@ function buildCumulativeStateSeries(intervals, nights) {
       const extraHours = (cutOffMs - lastEventMs) / (1000 * 60 * 60);
 
       for (const state of stateNames) {
-        const value = cumulative[state] + (wasActive[state] ? extraHours : 0);
+        // Handle UNKNOWN as a special case.
+        if (state === "UNKNOWN") {
+          lastActive[state] = lastInterval.end_state === 0;
+        } else {
+          lastActive[state] = (lastInterval.end_state & OBSERVATORY_STATES[state]) !== 0;
+        }
 
+        // If the state is current active, add extra hours to the cumulative total
+        // to account for the time since the last recorded event.
+        const value = cumulative[state] + (lastActive[state] ? extraHours : 0);
         series[state].push([cutOffMs, value]);
 
         // Break line.
         series[state].push([cutOffMs, NaN]);
       }
+    } else {
+      // Extend every state to sunrise.
+      for (const state of stateNames) {
+        series[state].push([sunriseMs, cumulative[state]]);
 
-      return series;
-    }
-
-    // Extend every state to sunrise.
-    for (const state of stateNames) {
-      series[state].push([sunriseMs, cumulative[state]]);
-
-      // Break line before next night.
-      series[state].push([sunriseMs, NaN]);
+        // Break line before next night.
+        series[state].push([sunriseMs, NaN]);
+      }
     }
   }
 
