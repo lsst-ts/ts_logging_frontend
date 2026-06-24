@@ -584,29 +584,25 @@ const isDictionaryEmpty = (obj) => {
 const computeCalculatedFault = (
   onSkyTimeAccounting,
   onSkyExpTime,
-  // openDomeHours,
-  nightHours,
-  closedDomeHours,
+  elapsedNightHours,
   weatherLossHours,
 ) => {
   const expTimeHours = onSkyExpTime / 3600;
 
-  // console.log(`openDomeHours: ${openDomeHours}`);
-  console.log(`nightHours: ${nightHours}`);
+  console.log(`elapsedNightHours: ${elapsedNightHours}`);
   // console.log(`openHours: ${domeTotals.openHours}`);
-  console.log(`closedHours: ${closedDomeHours}`);
+  // console.log(`closedHours: ${closedDomeHours}`);
   console.log(`expTimeHours: ${expTimeHours}`);
   console.log(`timeAccounting: ${onSkyTimeAccounting}`);
   console.log(`weatherLoss: ${weatherLossHours}`);
 
   const faultTimeHours =
-    nightHours -
+    elapsedNightHours -
     expTimeHours -
     onSkyTimeAccounting.sum_overhead_without_filter_change -
     onSkyTimeAccounting.sum_overhead_with_filter_change -
-    Math.min(closedDomeHours, weatherLossHours ?? 0);
-
-  console.log(`faultTimeHours: ${faultTimeHours.toFixed(2)}`);
+    (weatherLossHours ?? 0);
+  // Math.min(closedDomeHours, weatherLossHours ?? 0);
 
   return faultTimeHours;
 };

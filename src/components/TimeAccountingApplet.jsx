@@ -88,6 +88,7 @@ function TimeAccountingApplet({
   // TODO: Test with current night with a past closed session and current open session
   // TODO: Test with a night with multiple open sessions
   // TODO: Test with a night with only non-science exposures 20260215
+  // TODO: Test with a night with only non-science exposures and the dome was open 20260615
   // TODO: Test with a night in the future
   // TODO: check error in night 20260614
   const chartData = [
@@ -101,7 +102,7 @@ function TimeAccountingApplet({
       name: "Overhead",
       value: onSkyTimeAccounting?.sum_overhead_without_filter_change ?? 0.0,
       color: COLOR_OVERHEAD,
-      label: "Calculated overhead (readout, same filter)",
+      label: "Calculated overhead (slew and settle time, same filter)",
     },
     {
       name: "Gaps (Filter)",
@@ -113,7 +114,7 @@ function TimeAccountingApplet({
       name: "Overhead (Filter)",
       value: onSkyTimeAccounting?.sum_overhead_with_filter_change ?? 0.0,
       color: COLOR_OVERHEAD_FILTER_CHANGE,
-      label: "Calculated overhead (readout and filter change)",
+      label: "Calculated overhead (slew, settle and filter change time)",
     },
     {
       name: "Fault (calculated)",
@@ -181,19 +182,19 @@ function TimeAccountingApplet({
                     filter change
                   </li>
                   <li>
-                    <strong>Overhead:</strong> Calculated readout time when not
-                    slewing + any setting time after slewing
+                    <strong>Overhead:</strong> Estimated slew and settle time,
+                    plus up to 2 minutes of additional overhead per visit.
                   </li>
                   <li>
-                    <strong>Overhead (Filter):</strong> Calculated readout time
-                    when not slewing + filter change time + any setting time
-                    after slewing
+                    <strong>Overhead (Filter):</strong> Estimated slew, settle
+                    and filter change time plus up to 2 minutes of additional
+                    overhead per visit.
                   </li>
                   <li>
-                    <strong>Calculated Fault:</strong> Calculated fault time{" "}
+                    <strong>Calculated Fault:</strong> Calculated fault loss{" "}
                     <br />
-                    (Observable time - exposure time - overhead time - min(time
-                    loss to weather, dome closed time)) exposures
+                    (Observable time - exposure time - overhead time - time loss
+                    to weather)
                   </li>
                   <li>
                     <strong>Closed Dome:</strong> Time where the dome was closed

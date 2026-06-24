@@ -156,6 +156,7 @@ export default function Digest() {
 
     clearNotifications();
 
+    // TODO: simplify the list returned from the fetch
     fetchExposures(startDayobs, queryEndDayobs, instrument, abortController)
       .then(
         ([
@@ -508,53 +509,59 @@ export default function Digest() {
     [obsStatusLoading, exposuresLoading],
   );
 
-  const { calculatedFault, domeNightHours, closedDomeHours } = useMemo(() => {
-    console.log(onSkyTimeAccounting);
-    if (
-      !dayObsOpenDomeHours ||
-      !onSkyTimeAccounting ||
-      isDictionaryEmpty(dayObsOpenDomeHours) ||
-      isDictionaryEmpty(onSkyTimeAccounting)
-    )
-      return {
-        calculatedFault: 0.0,
-        domeNightHours: 0.0,
-        closedDomeHours: 0.0,
-      };
-    const domeTotals = Object.values(dayObsOpenDomeHours).reduce(
-      (sum, hours) => {
-        const nightHours = hours.night_hours ?? 0.0;
-        const openHours = hours.open_hours ?? 0.0;
+  const { calculatedFault, domeElapsedNightHours, closedDomeHours } =
+    useMemo(() => {
+      console.log(onSkyTimeAccounting);
+      if (
+        !dayObsOpenDomeHours ||
+        !onSkyTimeAccounting ||
+        isDictionaryEmpty(dayObsOpenDomeHours) ||
+        isDictionaryEmpty(onSkyTimeAccounting)
+      )
         return {
-          nightHours: sum.nightHours + nightHours,
-          openHours: sum.openHours + openHours,
-          closedHours: sum.closedHours + (nightHours - openHours),
+          calculatedFault: 0.0,
+          domeElapsedNightHours: 0.0,
+          closedDomeHours: 0.0,
         };
-      },
-      {
-        nightHours: 0.0,
-        openHours: 0.0,
-        closedHours: 0.0,
-      },
-    );
-    const faultLoss = computeCalculatedFault(
+      const domeTotals = Object.values(dayObsOpenDomeHours).reduce(
+        (sum, hours) => {
+          // TODO: remove unneeded totals
+          const nightHours = hours.night_hours ?? 0.0;
+          const openHours = hours.open_hours ?? 0.0;
+          const closedHours = hours.closed_hours ?? 0.0;
+          const elapsedHours = hours.elapsed_night_hours ?? 0.0;
+
+          return {
+            nightHours: sum.nightHours + nightHours,
+            openHours: sum.openHours + openHours,
+            closedHours: sum.closedHours + closedHours,
+            elapsedHours: sum.elapsedHours + elapsedHours,
+          };
+        },
+        {
+          nightHours: 0.0,
+          openHours: 0.0,
+          closedHours: 0.0,
+          elapsedHours: 0.0,
+        },
+      );
+      const faultLoss = computeCalculatedFault(
+        onSkyTimeAccounting,
+        sumOnSkyExpTime,
+        domeTotals.elapsedHours,
+        obsStatusWeatherLoss,
+      );
+      return {
+        calculatedFault: faultLoss,
+        domeElapsedNightHours: domeTotals.elapsedNightHours,
+        closedDomeHours: domeTotals.closedHours,
+      };
+    }, [
       onSkyTimeAccounting,
       sumOnSkyExpTime,
-      domeTotals.nightHours,
-      domeTotals.closedHours,
+      dayObsOpenDomeHours,
       obsStatusWeatherLoss,
-    );
-    return {
-      calculatedFault: faultLoss,
-      domeNightHours: domeTotals.nightHours,
-      closedDomeHours: domeTotals.closedHours,
-    };
-  }, [
-    onSkyTimeAccounting,
-    sumOnSkyExpTime,
-    dayObsOpenDomeHours,
-    obsStatusWeatherLoss,
-  ]);
+    ]);
 
   const allLoaded =
     !exposuresLoading &&
@@ -667,7 +674,7 @@ export default function Digest() {
               loading={faultLoading}
               onSkyTimeAccounting={onSkyTimeAccounting}
               sumOnSkyExpTime={sumOnSkyExpTime}
-              nightHours={domeNightHours}
+              nightHours={domeElapsedNightHours}
               closedDomeHours={closedDomeHours}
               calculatedFaultHours={calculatedFault}
               openDomeError={openDomeError}

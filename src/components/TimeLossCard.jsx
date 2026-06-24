@@ -149,12 +149,12 @@ export default function TimeLossCard({
               <strong>Calculated Fault Loss</strong>
               <br />
               Total available observing time – exposure time – overhead time* –
-              MIN( time lost to weather**, dome closed time ).
+              time lost to weather**.
               <br />
               <br />
               <em>
-                *overhead time = readout time when not slewing + any setting
-                time after slewing.
+                *overhead time = expected slew and settle time, including a
+                potential additional overhead of up to 2 minutes per visit.
               </em>
               <br />
               <em>**weather loss is derived from Observatory Status data.</em>
