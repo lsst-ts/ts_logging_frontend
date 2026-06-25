@@ -451,7 +451,7 @@ function ContextFeed() {
                   onClick={() => setTimelineVisible((prev) => !prev)}
                   className="bg-stone-300 text-teal-900 font-sm h-6 rounded-md px-2 shadow-[3px_3px_3px_0px_#0d9488] cursor-pointer hover:bg-stone-200 hover:shadow-[4px_4px_8px_0px_#0d9488] transition-all duration-200"
                 >
-                  {timelineVisible ? "Hide Timeline" : "Show Timeline"}
+                  {timelineVisible ? "Hide Timelines" : "Show Timelines"}
                 </Button>
                 {/* Button to toggle tips visibility */}
                 <Button
