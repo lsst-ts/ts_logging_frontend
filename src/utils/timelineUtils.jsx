@@ -3,6 +3,7 @@ import {
   millisToHHmm,
   dayobsAtMidnight,
   utcDateTimeStrToTAIMillis,
+  utcDateTimeStrToMillis,
   almanacDayobsForPlot,
 } from "@/utils/timeUtils";
 import {
@@ -57,18 +58,20 @@ export const generateHourlyTicks = (
  *   - illumValues: Array of {dayobs, illum} objects for moon illumination
  *   - moonValues: Array of {time, type} objects for moon rise/set events
  */
-export const prepareAlmanacData = (almanac) => {
+export const prepareAlmanacData = (almanac, { utc = false } = {}) => {
+  const toMillis = utc ? utcDateTimeStrToMillis : utcDateTimeStrToTAIMillis;
+
   const twilightValues = almanac
     .map((dayobsAlm) => [
-      utcDateTimeStrToTAIMillis(dayobsAlm.twilight_evening_12deg),
-      utcDateTimeStrToTAIMillis(dayobsAlm.twilight_morning_12deg),
+      toMillis(dayobsAlm.twilight_evening_12deg),
+      toMillis(dayobsAlm.twilight_morning_12deg),
     ])
     .flat();
 
   const twilight0DegValues = almanac
     .map((dayobsAlm) => [
-      utcDateTimeStrToTAIMillis(dayobsAlm.twilight_evening_0deg),
-      utcDateTimeStrToTAIMillis(dayobsAlm.twilight_morning_0deg),
+      toMillis(dayobsAlm.twilight_evening_0deg),
+      toMillis(dayobsAlm.twilight_morning_0deg),
     ])
     .flat();
 
@@ -81,11 +84,11 @@ export const prepareAlmanacData = (almanac) => {
 
   const moonValues = almanac.flatMap((dayobsAlm) => [
     {
-      time: utcDateTimeStrToTAIMillis(dayobsAlm.moon_rise_time),
+      time: toMillis(dayobsAlm.moon_rise_time),
       type: "rise",
     },
     {
-      time: utcDateTimeStrToTAIMillis(dayobsAlm.moon_set_time),
+      time: toMillis(dayobsAlm.moon_set_time),
       type: "set",
     },
   ]);
