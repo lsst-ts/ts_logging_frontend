@@ -36,7 +36,7 @@ import {
   fetchAlmanac,
   fetchContextFeedFromRubinNights,
   fetchBlockDetails,
-  fetchObsStatus,
+  fetchObsStatusFromRubinNights,
 } from "@/utils/fetchUtils";
 import { mergeContextFeedSources, getBlockSourceLabel } from "@/utils/utils";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
@@ -252,7 +252,11 @@ function ContextFeed() {
         }
       });
 
-    fetchObsStatus(startDayobs, endDayobs, abortController)
+    fetchObsStatusFromRubinNights({
+      start: startDayobs,
+      end: endDayobs,
+      abortController,
+    })
       .then((data) => {
         setObsStatusEntries(data.entries ?? []);
       })
