@@ -27,7 +27,7 @@ export const TIMELINE_DIMENSIONS = {
 
   // Hourly x-axis tick marks
   HOURLY_TICK_LENGTH: 8,
-  HOURLY_TICK_LABEL_FONT_SIZE: 9,
+  HOURLY_TICK_LABEL_FONT_SIZE: 12,
 };
 
 /**
