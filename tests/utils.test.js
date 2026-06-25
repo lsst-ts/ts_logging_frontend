@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import {
   calculateEfficiency,
   calculateSumExpTimeBetweenTwilights,
+  computeCalculatedFault,
   getDayobsStr,
   getDisplayDateRange,
   getKeyByValue,
@@ -205,6 +206,51 @@ describe("utils", () => {
       expect(calculateEfficiency(11, 300, 280, 0)).toBe(
         Math.round((100 * 280) / 3600 / 11),
       );
+    });
+  });
+
+  describe("computeCalculatedFault", () => {
+    const timeAccounting = {
+      sum_overhead_with_filter_change: 0.25,
+      sum_overhead_without_filter_change: 0.5,
+      sum_visit_gap_with_filter_change: 0.0,
+      sum_visit_gap_without_filter_change: 0.0,
+    };
+
+    it("computes fault hours from elapsed time, exposure, overhead and weather", () => {
+      const result = computeCalculatedFault(timeAccounting, 2 * 3600, 5, 1);
+
+      expect(result).toBe(1.25);
+    });
+
+    it("normalizes tiny negative values to zero", () => {
+      const result = computeCalculatedFault(
+        {
+          ...timeAccounting,
+          sum_overhead_with_filter_change: 0.5,
+          sum_overhead_without_filter_change: 0.5,
+        },
+        2 * 3600,
+        3,
+        0.0001,
+      );
+
+      expect(result).toBe(0);
+    });
+
+    it("preserves larger negative values", () => {
+      const result = computeCalculatedFault(
+        {
+          ...timeAccounting,
+          sum_overhead_with_filter_change: 1,
+          sum_overhead_without_filter_change: 1,
+        },
+        2 * 3600,
+        3,
+        0.5,
+      );
+
+      expect(result).toBe(-1.5);
     });
   });
 

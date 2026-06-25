@@ -11,7 +11,6 @@ import WarningIcon from "../assets/WarningIcon";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import { Cell, Bar, BarChart, XAxis, YAxis } from "recharts";
-import { DateTime } from "luxon";
 
 /**
  * Time accounting logic for night analysis.
@@ -27,30 +26,32 @@ function TimeAccountingApplet({
   loading,
   onSkyTimeAccounting,
   sumOnSkyExpTime,
-  nightHours,
+  elapsedTwilightHours,
   closedDomeHours,
   calculatedFaultHours,
   faultDataUnavailable,
   faultErrorMessage,
+  domeError,
 }) {
   // console.log(`openDomeError: ${openDomeError}`);
   // console.log(`timeAccountingError: ${timeAccountingError}`);
   // const timeAccountingUnavailable = Boolean(timeAccountingError);
-  // const domeUnavailable = Boolean(openDomeError);
+  const domeUnavailable = Boolean(domeError);
   // Fault is derived from overhead (time accounting) AND weather/dome-closed
   // loss (dome data), so it's unreliable if either upstream source failed.
   // const faultUnavailable = timeAccountingUnavailable || domeUnavailable;
 
   const [expPercent, nonExpPercent] = useMemo(() => {
-    if (!nightHours || nightHours === 0) {
+    if (!elapsedTwilightHours || elapsedTwilightHours === 0) {
       return [0, 0];
     }
     const expHours = sumOnSkyExpTime / 3600;
-    // calculate percentage of on-sky exposure time of night hours between 12 deg twilights
-    const expPercentage = Math.round((expHours / nightHours) * 100);
+    // Calculate the percentage of on-sky exposure time relative to the
+    // completed 12-degree twilight hours in the selected range.
+    const expPercentage = Math.round((expHours / elapsedTwilightHours) * 100);
     const nonExpPercentage = 100 - expPercentage;
     return [expPercentage, nonExpPercentage];
-  }, [sumOnSkyExpTime, nightHours]);
+  }, [elapsedTwilightHours, sumOnSkyExpTime]);
 
   // One hue (teal), varying only in lightness, for the four bars that are
   // sub-components of the same two metrics (gap time, overhead time) split
@@ -91,6 +92,7 @@ function TimeAccountingApplet({
   // TODO: Test with a night with only non-science exposures and the dome was open 20260615
   // TODO: Test with a night in the future
   // TODO: check error in night 20260614
+
   const chartData = [
     {
       name: "Gaps",
@@ -118,15 +120,19 @@ function TimeAccountingApplet({
     },
     {
       name: "Fault (calculated)",
-      value: Math.max(calculatedFaultHours, 0),
+      value: Math.max(calculatedFaultHours ?? 0, 0),
       color: COLOR_FAULT,
       label: "Calculated fault time",
+      unavailable: faultDataUnavailable,
+      unavailableMessage: faultErrorMessage,
     },
     {
       name: "Closed Dome",
-      value: Math.max(closedDomeHours, 0),
+      value: Math.max(closedDomeHours ?? 0, 0),
       color: COLOR_CLOSED_DOME,
       label: "Closed dome during the night",
+      unavailable: domeUnavailable,
+      unavailableMessage: domeError,
     },
     {
       // dummy bar to adjust the bar labels position
@@ -160,8 +166,8 @@ function TimeAccountingApplet({
               <p>Breakdown of observable time during selected dayobs range.</p>
 
               <p>
-                <strong>Observable Time:</strong> Time between nautical
-                twilights
+                <strong>Observable Time:</strong> Completed time between
+                nautical twilights
               </p>
 
               <p>
@@ -216,9 +222,15 @@ function TimeAccountingApplet({
         ) : (
           <div className="h-full w-full flex-grow min-w-0 grid grid-cols-3 grid-rows-6">
             {faultDataUnavailable && (
-              <div className="col-span-3 flex mr-1 text-yellow-400 font-normal text-sm mb-2">
+              <div className="col-span-3 flex mr-1 text-yellow-400 font-normal text-sm mb-0">
                 <WarningIcon />
-                <span> {faultErrorMessage} </span>
+                <span> {faultErrorMessage}</span>
+              </div>
+            )}
+            {domeUnavailable && (
+              <div className="col-span-3 flex mr-1 text-yellow-400 font-normal text-sm mb-1">
+                <WarningIcon />
+                <span> Dome data unavailable.</span>
               </div>
             )}
             <div className="col-span-1 flex flex-col items-center row-span-5">
@@ -292,7 +304,6 @@ function TimeAccountingApplet({
                         radius={[4, 4, 0, 0]}
                       />
                     ))}
-                    /
                   </Bar>
                   <ChartTooltip
                     cursor={false}
@@ -305,15 +316,22 @@ function TimeAccountingApplet({
                         payload[0].payload.label === ""
                       )
                         return null;
+                      const entry = payload[0].payload;
+                      const displayHours = entry.unavailable
+                        ? "NA"
+                        : payload[0].value.toFixed(2);
                       return (
                         <div className="bg-white text-xs p-2 border border-white rounded text-black font-light mb-1">
-                          <div className="font-semibold">{`${payload[0].payload.label}`}</div>
+                          <div className="font-semibold">{`${entry.label}`}</div>
                           <div>
                             Hours:{" "}
-                            <span className="font-semibold">{`${payload[0].value.toFixed(
-                              2,
-                            )}`}</span>
+                            <span className="font-semibold">
+                              {displayHours}
+                            </span>
                           </div>
+                          {entry.unavailableMessage && (
+                            <div>{entry.unavailableMessage}</div>
+                          )}
                         </div>
                       );
                     }}

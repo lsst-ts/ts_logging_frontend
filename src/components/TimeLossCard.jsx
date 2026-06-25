@@ -30,7 +30,7 @@ export default function TimeLossCard({
   onClick = false,
 }) {
   const loading =
-    narrativeLogloading && obsStatusLoading && calculatedFaultLoading;
+    narrativeLogloading || obsStatusLoading || calculatedFaultLoading;
   const isClickable = onClick && !loading;
 
   const heading = "Fault Loss";

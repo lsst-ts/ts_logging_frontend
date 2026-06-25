@@ -596,6 +596,8 @@ const computeCalculatedFault = (
   console.log(`timeAccounting: ${onSkyTimeAccounting}`);
   console.log(`weatherLoss: ${weatherLossHours}`);
 
+  const EPSILON_HOURS = 1 / 3600; // 1 second
+
   const faultTimeHours =
     elapsedNightHours -
     expTimeHours -
@@ -604,6 +606,9 @@ const computeCalculatedFault = (
     (weatherLossHours ?? 0);
   // Math.min(closedDomeHours, weatherLossHours ?? 0);
 
+  if (faultTimeHours < 0 && Math.abs(faultTimeHours) < EPSILON_HOURS) {
+    return 0;
+  }
   return faultTimeHours;
 };
 

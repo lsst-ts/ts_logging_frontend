@@ -477,6 +477,15 @@ export default function Digest() {
     [almanacInfo],
   );
 
+  const elapsedTwilightHours = useMemo(
+    () =>
+      almanacInfo?.reduce(
+        (acc, day) => acc + (day.elapsed_twilight_hours ?? 0),
+        0,
+      ) ?? 0,
+    [almanacInfo],
+  );
+
   const totalExpTimeBetweenTwilights = useMemo(
     () => calculateSumExpTimeBetweenTwilights(exposureFields, almanacInfo),
     [exposureFields, almanacInfo],
@@ -503,45 +512,39 @@ export default function Digest() {
 
   const efficiencyText = efficiency >= 0 ? `${efficiency} %` : "N/A";
   const newTicketsCount = jiraTickets.filter((tix) => tix.isNew).length;
+  const almanacUnavailable = !almanacLoading && !almanacInfo?.length;
 
   const faultLoading = useMemo(
-    () => obsStatusLoading || exposuresLoading,
-    [obsStatusLoading, exposuresLoading],
+    () => almanacLoading || obsStatusLoading || exposuresLoading,
+    [almanacLoading, obsStatusLoading, exposuresLoading],
   );
 
-  const { domeTotals, domeUnavailable } = useMemo(() => {
+  const domeTotals = useMemo(() => {
     if (openDomeError) {
-      return {
-        domeTotals: null,
-        domeUnavailable: true,
-      };
+      return null;
     }
 
     if (!dayObsOpenDomeHours || isDictionaryEmpty(dayObsOpenDomeHours)) {
       return {
-        domeTotals: {
-          nightHours: 0.0,
-          openHours: 0.0,
-          closedHours: 0.0,
-          elapsedHours: 0.0,
-        },
-        domeUnavailable: false,
+        nightHours: 0.0,
+        openHours: 0.0,
+        closedHours: 0.0,
       };
     }
 
-    const totals = Object.values(dayObsOpenDomeHours).reduce(
+    return Object.values(dayObsOpenDomeHours).reduce(
       (sum, hours) => ({
         nightHours: sum.nightHours + (hours.night_hours ?? 0.0),
         openHours: sum.openHours + (hours.open_hours ?? 0.0),
         closedHours: sum.closedHours + (hours.closed_hours ?? 0.0),
-        elapsedHours: sum.elapsedHours + (hours.elapsed_night_hours ?? 0.0),
       }),
-      { nightHours: 0.0, openHours: 0.0, closedHours: 0.0, elapsedHours: 0.0 },
+      { nightHours: 0.0, openHours: 0.0, closedHours: 0.0 },
     );
-
-    return { domeTotals: totals, domeUnavailable: false };
   }, [dayObsOpenDomeHours, openDomeError]);
 
+  // TODO: check negative calculated fault of -0.0 on 20260615
+  // weather loss is slightly > elapsed night hours (using almanac)
+  // I don't think it was the case using twilight times from rubin-nights
   const { calculatedFault, faultUnavailable, faultUnavailableReason } =
     useMemo(() => {
       const unavailable = (reason) => ({
@@ -550,24 +553,18 @@ export default function Digest() {
         faultUnavailableReason: reason,
       });
 
-      if (domeUnavailable && timeAccountingError) {
+      if (almanacUnavailable && timeAccountingError) {
         return unavailable(
-          "Fault time requires dome and time accounting data; both are currently unavailable.",
+          "Fault unavailable: no almanac or time accounting data.",
         );
       }
-      if (domeUnavailable) {
-        return unavailable(`Fault time requires dome data: ${openDomeError}`);
+      if (almanacUnavailable) {
+        return unavailable("Fault unavailable: no almanac data.");
       }
       if (timeAccountingError) {
-        return unavailable(
-          `Fault time requires time accounting data: ${timeAccountingError}`,
-        );
+        return unavailable("Fault unavailable: no time accounting data.");
       }
-      if (
-        !onSkyTimeAccounting ||
-        isDictionaryEmpty(onSkyTimeAccounting) ||
-        !domeTotals
-      ) {
+      if (!onSkyTimeAccounting || isDictionaryEmpty(onSkyTimeAccounting)) {
         return {
           calculatedFault: 0.0,
           faultUnavailable: false,
@@ -578,19 +575,19 @@ export default function Digest() {
       return {
         calculatedFault: computeCalculatedFault(
           onSkyTimeAccounting,
-          sumOnSkyExpTime,
-          domeTotals.elapsedHours,
+          totalExpTimeBetweenTwilights,
+          elapsedTwilightHours,
           obsStatusWeatherLoss,
         ),
         faultUnavailable: false,
         faultUnavailableReason: null,
       };
     }, [
-      domeUnavailable,
-      openDomeError,
+      almanacUnavailable,
       domeTotals,
+      elapsedTwilightHours,
       onSkyTimeAccounting,
-      sumOnSkyExpTime,
+      totalExpTimeBetweenTwilights,
       obsStatusWeatherLoss,
       timeAccountingError,
     ]);
@@ -707,12 +704,13 @@ export default function Digest() {
             <TimeAccountingApplet
               loading={faultLoading}
               onSkyTimeAccounting={onSkyTimeAccounting}
-              sumOnSkyExpTime={sumOnSkyExpTime}
-              nightHours={domeTotals?.elapsedHours}
+              sumOnSkyExpTime={totalExpTimeBetweenTwilights}
+              elapsedTwilightHours={elapsedTwilightHours}
               closedDomeHours={domeTotals?.closedHours ?? null}
               calculatedFaultHours={calculatedFault}
               faultDataUnavailable={faultUnavailable}
               faultErrorMessage={faultUnavailableReason}
+              domeError={openDomeError}
             />
             <VisitMapStaticApplet
               mapData={staticVisitMaps?.staticMapUrl}
