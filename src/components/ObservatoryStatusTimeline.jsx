@@ -224,7 +224,7 @@ function ObservatoryStatusTimeline({
           const [x, y] = point;
           const [cw, ch] = size.contentSize;
           const [vw, vh] = size.viewSize;
-          const offset = 16;
+          const offset = 28;
           const tx = x + offset + cw <= vw ? x + offset : x - offset - cw;
           const ty = Math.max(0, Math.min(y - ch / 2, vh - ch));
           return [tx, ty];
@@ -248,23 +248,23 @@ function ObservatoryStatusTimeline({
 
           // Build two-column tooltip HTML with Tailwind classes
           return `
-            <div class="font-mono text-stone-100 max-w-[300px]">
+            <div class="font-mono text-stone-100 max-w-[420px]">
               <table class="border-collapse">
                 <tr>
-                  <td class="font-semibold pr-3 whitespace-nowrap text-stone-100 ">Time:</td>
+                  <td class="font-semibold pr-3 whitespace-nowrap text-stone-100">Time:</td>
                   <td class="text-stone-100 whitespace-nowrap">${timeFormatted}</td>
                 </tr>
                 <tr>
-                  <td class="font-semibold pr-3 whitespace-nowrap text-stone-100 ">Duration:</td>
+                  <td class="font-semibold pr-3 whitespace-nowrap text-stone-100">Duration:</td>
                   <td class="text-stone-100 whitespace-nowrap">${duration}</td>
                 </tr>
                 <tr>
-                  <td class="font-semibold pr-3 whitespace-nowrap text-stone-100 ">State:</td>
-                  <td class="text-stone-100 whitespace-nowrap">${stateChange}</td>
+                  <td class="font-semibold pr-3 whitespace-nowrap text-stone-100">State:</td>
+                  <td class="text-stone-100 whitespace-normal break-words">${stateChange}</td>
                 </tr>
                 ${
                   note
-                    ? `<tr><td class="font-semibold pr-3 whitespace-nowrap pt-2 text-stone-100 ">Note:</td><td class="font-light pt-2 text-stone-300 max-w-[300px] break-words whitespace-normal">${escapedNote}</td></tr>`
+                    ? `<tr><td class="font-semibold pr-3 whitespace-nowrap pt-2 text-stone-100">Note:</td><td class="font-light pt-2 text-stone-300 whitespace-normal break-words">${escapedNote}</td></tr>`
                     : ""
                 }
               </table>
