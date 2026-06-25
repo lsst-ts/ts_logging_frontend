@@ -31,7 +31,7 @@ import { formatDuration } from "@/utils/timeUtils";
  * @param {number} entryIndex - Index of the current entry
  * @returns {string} State change description in "State1 | State2 > NewState1 | NewState2" format
  */
-function getStateChangeDescription(entries, entryIndex) {
+export function getStateChangeDescription(entries, entryIndex) {
   if (entryIndex > 0) {
     const prevEntry = entries[entryIndex - 1];
     const currEntry = entries[entryIndex];
