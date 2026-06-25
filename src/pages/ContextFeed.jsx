@@ -204,8 +204,10 @@ function ContextFeed() {
 
     fetchAlmanac(startDayobs, queryEndDayobs, abortController)
       .then((almanac) => {
-        const { twilightValues, twilight0DegValues } =
-          prepareAlmanacData(almanac);
+        const { twilightValues, twilight0DegValues } = prepareAlmanacData(
+          almanac,
+          { utc: true },
+        );
         setTwilightValues(twilightValues);
         setTwilight0DegValues(twilight0DegValues);
       })
