@@ -30,13 +30,13 @@ function TimeAccountingApplet({
   nightHours,
   closedDomeHours,
   calculatedFaultHours,
-  openDomeError,
-  timeAccountingError,
+  faultDataUnavailable,
+  faultErrorMessage,
 }) {
-  console.log(`openDomeError: ${openDomeError}`);
-  console.log(`timeAccountingError: ${timeAccountingError}`);
-  const timeAccountingUnavailable = Boolean(timeAccountingError);
-  const domeUnavailable = Boolean(openDomeError);
+  // console.log(`openDomeError: ${openDomeError}`);
+  // console.log(`timeAccountingError: ${timeAccountingError}`);
+  // const timeAccountingUnavailable = Boolean(timeAccountingError);
+  // const domeUnavailable = Boolean(openDomeError);
   // Fault is derived from overhead (time accounting) AND weather/dome-closed
   // loss (dome data), so it's unreliable if either upstream source failed.
   // const faultUnavailable = timeAccountingUnavailable || domeUnavailable;
@@ -215,10 +215,10 @@ function TimeAccountingApplet({
           </div>
         ) : (
           <div className="h-full w-full flex-grow min-w-0 grid grid-cols-3 grid-rows-6">
-            {(timeAccountingUnavailable || domeUnavailable) && (
+            {faultDataUnavailable && (
               <div className="col-span-3 flex mr-1 text-yellow-400 font-normal text-sm mb-2">
                 <WarningIcon />
-                <span> Some data is unavailable for this range.</span>
+                <span> {faultErrorMessage} </span>
               </div>
             )}
             <div className="col-span-1 flex flex-col items-center row-span-5">

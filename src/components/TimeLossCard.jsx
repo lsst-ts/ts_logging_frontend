@@ -25,6 +25,8 @@ export default function TimeLossCard({
   narrativeLogloading = false,
   obsStatusLoading = false,
   calculatedFaultLoading = false,
+  faultDataUnavailable = false,
+  faultErrorMessage = null,
   onClick = false,
 }) {
   const loading =
@@ -115,8 +117,22 @@ export default function TimeLossCard({
           <div>Calculated:</div>
           {calculatedFaultLoading ? (
             <Skeleton className="h-3 w-10 bg-teal-700" />
+          ) : faultDataUnavailable ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1 cursor-help">
+                  <span>NA</span>
+
+                  <TriangleAlert className="h-4 w-4 text-yellow-500" />
+                </div>
+              </TooltipTrigger>
+
+              <TooltipContent>
+                <p>{faultErrorMessage}</p>
+              </TooltipContent>
+            </Tooltip>
           ) : (
-            calculatedData.toFixed(2)
+            <div>{formatHours(calculatedData)}</div>
           )}
         </div>
         {/* Info Icon */}

@@ -509,58 +509,90 @@ export default function Digest() {
     [obsStatusLoading, exposuresLoading],
   );
 
-  const { calculatedFault, domeElapsedNightHours, closedDomeHours } =
-    useMemo(() => {
-      console.log(onSkyTimeAccounting);
-      if (
-        !dayObsOpenDomeHours ||
-        !onSkyTimeAccounting ||
-        isDictionaryEmpty(dayObsOpenDomeHours) ||
-        isDictionaryEmpty(onSkyTimeAccounting)
-      )
-        return {
-          calculatedFault: 0.0,
-          domeElapsedNightHours: 0.0,
-          closedDomeHours: 0.0,
-        };
-      const domeTotals = Object.values(dayObsOpenDomeHours).reduce(
-        (sum, hours) => {
-          // TODO: remove unneeded totals
-          const nightHours = hours.night_hours ?? 0.0;
-          const openHours = hours.open_hours ?? 0.0;
-          const closedHours = hours.closed_hours ?? 0.0;
-          const elapsedHours = hours.elapsed_night_hours ?? 0.0;
+  const { domeTotals, domeUnavailable } = useMemo(() => {
+    if (openDomeError) {
+      return {
+        domeTotals: null,
+        domeUnavailable: true,
+      };
+    }
 
-          return {
-            nightHours: sum.nightHours + nightHours,
-            openHours: sum.openHours + openHours,
-            closedHours: sum.closedHours + closedHours,
-            elapsedHours: sum.elapsedHours + elapsedHours,
-          };
-        },
-        {
+    if (!dayObsOpenDomeHours || isDictionaryEmpty(dayObsOpenDomeHours)) {
+      return {
+        domeTotals: {
           nightHours: 0.0,
           openHours: 0.0,
           closedHours: 0.0,
           elapsedHours: 0.0,
         },
-      );
-      const faultLoss = computeCalculatedFault(
-        onSkyTimeAccounting,
-        sumOnSkyExpTime,
-        domeTotals.elapsedHours,
-        obsStatusWeatherLoss,
-      );
+        domeUnavailable: false,
+      };
+    }
+
+    const totals = Object.values(dayObsOpenDomeHours).reduce(
+      (sum, hours) => ({
+        nightHours: sum.nightHours + (hours.night_hours ?? 0.0),
+        openHours: sum.openHours + (hours.open_hours ?? 0.0),
+        closedHours: sum.closedHours + (hours.closed_hours ?? 0.0),
+        elapsedHours: sum.elapsedHours + (hours.elapsed_night_hours ?? 0.0),
+      }),
+      { nightHours: 0.0, openHours: 0.0, closedHours: 0.0, elapsedHours: 0.0 },
+    );
+
+    return { domeTotals: totals, domeUnavailable: false };
+  }, [dayObsOpenDomeHours, openDomeError]);
+
+  const { calculatedFault, faultUnavailable, faultUnavailableReason } =
+    useMemo(() => {
+      const unavailable = (reason) => ({
+        calculatedFault: null,
+        faultUnavailable: true,
+        faultUnavailableReason: reason,
+      });
+
+      if (domeUnavailable && timeAccountingError) {
+        return unavailable(
+          "Fault time requires dome and time accounting data; both are currently unavailable.",
+        );
+      }
+      if (domeUnavailable) {
+        return unavailable(`Fault time requires dome data: ${openDomeError}`);
+      }
+      if (timeAccountingError) {
+        return unavailable(
+          `Fault time requires time accounting data: ${timeAccountingError}`,
+        );
+      }
+      if (
+        !onSkyTimeAccounting ||
+        isDictionaryEmpty(onSkyTimeAccounting) ||
+        !domeTotals
+      ) {
+        return {
+          calculatedFault: 0.0,
+          faultUnavailable: false,
+          faultUnavailableReason: null,
+        };
+      }
+
       return {
-        calculatedFault: faultLoss,
-        domeElapsedNightHours: domeTotals.elapsedNightHours,
-        closedDomeHours: domeTotals.closedHours,
+        calculatedFault: computeCalculatedFault(
+          onSkyTimeAccounting,
+          sumOnSkyExpTime,
+          domeTotals.elapsedHours,
+          obsStatusWeatherLoss,
+        ),
+        faultUnavailable: false,
+        faultUnavailableReason: null,
       };
     }, [
+      domeUnavailable,
+      openDomeError,
+      domeTotals,
       onSkyTimeAccounting,
       sumOnSkyExpTime,
-      dayObsOpenDomeHours,
       obsStatusWeatherLoss,
+      timeAccountingError,
     ]);
 
   const allLoaded =
@@ -625,6 +657,8 @@ export default function Digest() {
             narrativeLogloading={narrativeLoading}
             obsStatusLoading={obsStatusLoading}
             calculatedFaultLoading={faultLoading}
+            faultDataUnavailable={faultUnavailable}
+            faultErrorMessage={faultUnavailableReason}
           />
           <DialogMetricsCard
             icons={[JiraIconWhite, JiraIconBlue]}
@@ -674,11 +708,11 @@ export default function Digest() {
               loading={faultLoading}
               onSkyTimeAccounting={onSkyTimeAccounting}
               sumOnSkyExpTime={sumOnSkyExpTime}
-              nightHours={domeElapsedNightHours}
-              closedDomeHours={closedDomeHours}
+              nightHours={domeTotals?.elapsedHours}
+              closedDomeHours={domeTotals?.closedHours ?? null}
               calculatedFaultHours={calculatedFault}
-              openDomeError={openDomeError}
-              timeAccountingError={timeAccountingError}
+              faultDataUnavailable={faultUnavailable}
+              faultErrorMessage={faultUnavailableReason}
             />
             <VisitMapStaticApplet
               mapData={staticVisitMaps?.staticMapUrl}
