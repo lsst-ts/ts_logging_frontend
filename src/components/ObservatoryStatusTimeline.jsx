@@ -167,8 +167,13 @@ function ObservatoryStatusTimeline({
     const xMaxMillis = fullTimeRange[1]?.toMillis();
     if (!xMinMillis || !xMaxMillis) return;
 
-    // Transform status entries into per-state interval arrays
-    const series = transformStatusToSeries(entries, xMaxMillis);
+    // Transform status entries into per-state interval arrays.
+    // Cap the end time at now so bars don't extend into the future
+    // when viewing a night that is still in progress.
+    const series = transformStatusToSeries(
+      entries,
+      Math.min(xMaxMillis, Date.now()),
+    );
 
     // Flatten all intervals into a single data array for the custom bar series,
     // and a parallel array for the start-of-interval markers.
