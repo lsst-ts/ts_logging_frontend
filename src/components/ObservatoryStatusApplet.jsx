@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import ObservatoryStatusCumulativePlot from "@/components/ObservatoryStatusCumulativePlot";
 
-import FullscreenIcon from "../assets/FullscreenIcon.svg";
+import FullScreenIcon from "../assets/FullScreenIcon.svg";
 import DownloadIcon from "../assets/DownloadIcon.svg";
 import InfoIcon from "../assets/InfoIcon.svg";
 
@@ -36,7 +36,7 @@ function ObservatoryStatusApplet({
         <div className="flex flex-row gap-2 justify-end">
           <Dialog>
             <DialogTrigger className="self-end min-w-4">
-              <img src={FullscreenIcon} />
+              <img src={FullScreenIcon} />
             </DialogTrigger>
             <DialogContent className="bg-teal-900/75 p-8 !w-[95vw] !max-w-7xl max-h-screen overflow-y-auto">
               <CardContent className="flex flex-col gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 !h-[50vw] font-thin">
