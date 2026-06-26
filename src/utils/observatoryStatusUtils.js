@@ -317,7 +317,6 @@ function buildNightHoursSeries(nights) {
   return series;
 }
 
-// TODO: (OSW-2444) handle current night.
 function buildCumulativeStateSeries(intervals, nights) {
   // Build one output series per state.
   const stateNames = Object.keys(OBSERVATORY_STATES).filter(
@@ -325,6 +324,8 @@ function buildCumulativeStateSeries(intervals, nights) {
   );
 
   const series = Object.fromEntries(stateNames.map((state) => [state, []]));
+
+  if (!intervals || intervals.length === 0) return {};
 
   // Process each night independently.
   for (const night of nights.values()) {
@@ -349,12 +350,16 @@ function buildCumulativeStateSeries(intervals, nights) {
 
     // Start all state series at zero at sunset.
     for (const state of stateNames) {
-      series[state].push([sunsetMs, 0]);
+      series[state].push({
+        value: [sunsetMs, 0],
+        showMarker: false,
+      });
     }
 
     // Walk intervals in chronological order.
     for (const interval of nightIntervals) {
       // Clip interval at the night boundaries.
+      const clippedAtSunset = interval.start_time_ms < sunsetMs;
       const startMs = Math.max(interval.start_time_ms, sunsetMs);
       const endMs = Math.min(interval.end_time_ms, sunriseMs);
 
@@ -384,19 +389,47 @@ function buildCumulativeStateSeries(intervals, nights) {
           continue;
         }
 
+        // TODO: (OSW-2444) don't show same-state->same-state && no note
+        // State was already active.
+        // Add a data point for a marker.
+        if (wasActive[state]) {
+          series[state].push({
+            value: [startMs, cumulative[state]],
+            showMarker: true,
+            status: interval.start_labels,
+            time_ms: interval.start_time_ms,
+            duration: endMs - startMs,
+            hasNote: !!interval.start_note,
+            note: interval.start_note,
+            clippedAtSunset: clippedAtSunset ? true : false,
+          });
+        }
+
         // State has just become active.
         // Add a data point to anchor the end of the
         // previous flat section and the start of the
         // accumulation slope.
         if (!wasActive[state]) {
-          series[state].push([startMs, cumulative[state]]);
+          series[state].push({
+            value: [startMs, cumulative[state]],
+            showMarker: true,
+            status: interval.start_labels,
+            time_ms: interval.start_time_ms,
+            duration: endMs - startMs,
+            hasNote: !!interval.start_note,
+            note: interval.start_note,
+            clippedAtSunset: clippedAtSunset ? true : false,
+          });
         }
 
         // Accumulate time spent in this interval.
         cumulative[state] += durationHours;
 
         // End of active interval.
-        series[state].push([endMs, cumulative[state]]);
+        series[state].push({
+          value: [endMs, cumulative[state]],
+          showMarker: false,
+        });
 
         wasActive[state] = true;
       }
@@ -445,24 +478,52 @@ function buildCumulativeStateSeries(intervals, nights) {
         if (state === "UNKNOWN") {
           lastActive[state] = lastInterval.end_state === 0;
         } else {
-          lastActive[state] = (lastInterval.end_state & OBSERVATORY_STATES[state]) !== 0;
+          lastActive[state] =
+            (lastInterval.end_state & OBSERVATORY_STATES[state]) !== 0;
         }
 
-        // If the state is current active, add extra hours to the cumulative total
+        // If an event hasn't yet been recorded since sunset,
+        // add a marker at sunset representing the most recent event.
+        if (lastActive[state] && lastEventMs < sunsetMs) {
+          series[state].push({
+            value: [sunsetMs, 0],
+            showMarker: true,
+            status: lastInterval.start_labels,
+            time_ms: lastEventMs,
+            duration: nowMs - sunsetMs,
+            hasNote: !!lastInterval.end_note,
+            note: lastInterval.end_note,
+            clippedAtSunset: true,
+          });
+        }
+
+        // If the state is currently active, add extra hours to the cumulative total
         // to account for the time since the last recorded event.
         const value = cumulative[state] + (lastActive[state] ? extraHours : 0);
-        series[state].push([cutOffMs, value]);
+        series[state].push({
+          value: [cutOffMs, value],
+          showMarker: false,
+        });
 
         // Break line.
-        series[state].push([cutOffMs, NaN]);
+        series[state].push({
+          value: [cutOffMs, NaN],
+          showMarker: false,
+        });
       }
     } else {
       // Extend every state to sunrise.
       for (const state of stateNames) {
-        series[state].push([sunriseMs, cumulative[state]]);
+        series[state].push({
+          value: [sunriseMs, cumulative[state]],
+          showMarker: false,
+        });
 
         // Break line before next night.
-        series[state].push([sunriseMs, NaN]);
+        series[state].push({
+          value: [sunriseMs, NaN],
+          showMarker: false,
+        });
       }
     }
   }
@@ -514,7 +575,7 @@ export function buildCumulativePlotModel(
   almanacInfo,
   intervals,
   openDomeTimes,
-  availability,
+  // availability, // TODO: (OSW-2444) Handle availability
 ) {
   if (!almanacInfo || almanacInfo.length === 0) return {};
 
@@ -523,9 +584,7 @@ export function buildCumulativePlotModel(
   return {
     breaks: buildDayBreaks(nights),
     nightHours: buildNightHoursSeries(nights),
-    stateSeries: buildCumulativeStateSeries(intervals, nights),
-    // TODO: (OSW-2444) Build markers
-    // markerSeries: buildMarkerSeries(intervals, nights),
     openDomeSeries: buildOpenDomeSeries(nights),
+    stateSeries: buildCumulativeStateSeries(intervals, nights),
   };
 }

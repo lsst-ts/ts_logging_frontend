@@ -158,6 +158,7 @@ export const prepareMoonIntervals = (events, xMinMillis, xMaxMillis) => {
  * @param {number} options.computedHeight - Fallback height if offsetHeight unavailable
  * @param {boolean} [options.showBaseline=false] - Add white baseline at bottom of grid
  * @param {boolean} [options.cumulativePlot=false] - Vary outputs slightly as required
+ * @param {boolean} [options.fullScreen=false] - Vary outputs slightly as required
  * @returns {{ elements: Array, containerHeight: number, fontFamily: string,
  *             gridLeft: number, gridRight: number, gridBottom: number } | null}
  */
@@ -169,6 +170,7 @@ export const buildTimelineGraphicElements = (
     computedHeight,
     showBaseline = false,
     cumulativePlot = false,
+    fullScreen = false,
   },
 ) => {
   const xMinMillis = fullTimeRange[0]?.toMillis();
@@ -238,12 +240,12 @@ export const buildTimelineGraphicElements = (
         silent: true,
         z: 0,
         x: pixelX,
-        y: gridBottom + TIMELINE_DIMENSIONS.DIST_BELOW_X_AXIS,
+        y: fullScreen ? 30 : 26,
         style: {
           text: dt.minus({ day: 1 }).toFormat("yyyy-LL-dd"),
           textAlign: "center",
-          fill: TIMELINE_COLORS.DAYOBS_LABEL,
-          fontSize: 12, // TODO: (OSW-2444) should be a const.
+          fill: "#bbbbbb",
+          fontSize: fullScreen ? 14 : 10,
           fontFamily,
           userSelect: "none",
         },
