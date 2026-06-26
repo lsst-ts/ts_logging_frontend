@@ -119,8 +119,12 @@ export function transformStatusToSeries(entries, endTime) {
       } else if (!wasActive && nowActive) {
         // State newly active: open interval (marker at start)
         openInterval(stateName, entry, i);
-      } else if (wasActive && nowActive && (anyEnded || statusUnchanged)) {
-        // State continues, but something else ended or status is identical:
+      } else if (
+        wasActive &&
+        nowActive &&
+        (anyEnded || (statusUnchanged && entry.note))
+      ) {
+        // State continues, but something else changed or status is identical with a note:
         // split the interval to place a marker at this transition point
         closeInterval(stateName, T);
         openInterval(stateName, entry, i);
