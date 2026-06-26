@@ -33,13 +33,7 @@ function TimeAccountingApplet({
   faultErrorMessage,
   domeError,
 }) {
-  // console.log(`openDomeError: ${openDomeError}`);
-  // console.log(`timeAccountingError: ${timeAccountingError}`);
-  // const timeAccountingUnavailable = Boolean(timeAccountingError);
   const domeUnavailable = Boolean(domeError);
-  // Fault is derived from overhead (time accounting) AND weather/dome-closed
-  // loss (dome data), so it's unreliable if either upstream source failed.
-  // const faultUnavailable = timeAccountingUnavailable || domeUnavailable;
 
   const [expPercent, nonExpPercent] = useMemo(() => {
     if (!elapsedTwilightHours || elapsedTwilightHours === 0) {
@@ -55,19 +49,16 @@ function TimeAccountingApplet({
 
   // One hue (teal), varying only in lightness, for the four bars that are
   // sub-components of the same two metrics (gap time, overhead time) split
-  // by filter change -- using distinct hues here would imply a categorical
-  // difference that doesn't exist, and would visually clash with the
-  // dynamically-colored rainbow chart elsewhere on this page.
+  // by filter change
   const COLOR_GAPS = "#5eead4"; // teal-300
   const COLOR_OVERHEAD = "#14b8a6"; // teal-500
   const COLOR_GAPS_FILTER_CHANGE = "#0f766e"; // teal-700
   const COLOR_OVERHEAD_FILTER_CHANGE = "#134e4a"; // teal-900, matches CardHeader
 
   // Fault and Closed Dome come from different upstream sources and are
-  // genuinely distinct categories, so they get their own hues -- chosen to
-  // reuse meaning already established elsewhere rather than adding new ones.
-  const COLOR_FAULT = "#dc2626"; // red-600, matches the "Data unavailable" error text
-  const COLOR_CLOSED_DOME = "#71717a"; // zinc-500, neutral: "no data," not an error
+  // genuinely distinct categories, so they get their own hues
+  const COLOR_FAULT = "#dc2626";
+  const COLOR_CLOSED_DOME = "#71717a";
 
   // redundant: added to stop Recharts from complaining about empty config
   const chartConfig = {
@@ -82,16 +73,6 @@ function TimeAccountingApplet({
     fault: { label: "Fault", color: "hsl(0, 70%, 50%)" },
     domeClose: { label: "dome_close", color: "hsl(80, 70%, 50%)" },
   };
-
-  // TODO: how to diffriantiate null/error values from actual zeros
-  // TODO: Test with past night when the dome didn't open 20260616
-  // TODO: Test with current night with a current open session
-  // TODO: Test with current night with a past closed session and current open session
-  // TODO: Test with a night with multiple open sessions
-  // TODO: Test with a night with only non-science exposures 20260215
-  // TODO: Test with a night with only non-science exposures and the dome was open 20260615
-  // TODO: Test with a night in the future
-  // TODO: check error in night 20260614
 
   const chartData = [
     {
@@ -130,7 +111,7 @@ function TimeAccountingApplet({
       name: "Closed Dome",
       value: Math.max(closedDomeHours ?? 0, 0),
       color: COLOR_CLOSED_DOME,
-      label: "Closed dome during the night",
+      label: "Closed dome so far during the night",
       unavailable: domeUnavailable,
       unavailableMessage: domeError,
     },
@@ -204,8 +185,8 @@ function TimeAccountingApplet({
                   </li>
                   <li>
                     <strong>Closed Dome:</strong> Time where the dome was closed
-                    during the night (from ~50% <code>positionActual</code>{" "}
-                    shutter values)
+                    during the night so far(from ~50%{" "}
+                    <code>positionActual</code> shutter values)
                   </li>
                 </ul>
               </div>

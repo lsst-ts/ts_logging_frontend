@@ -132,7 +132,8 @@ export default function Digest() {
     setSumOnSkyExpTime(0.0);
     setSumExpTime(0);
     setJiraTickets([]);
-    // setNarrativeWeatherLoss(0.0);
+    // TODO: OSW-2430 Replace Narrative log with weatherloss
+    // from obs status in the Time Loss card
     setNarrativeFaultLoss(0.0);
     setExposureCount(0);
     setReports([]);
@@ -156,7 +157,6 @@ export default function Digest() {
 
     clearNotifications();
 
-    // TODO: simplify the list returned from the fetch
     fetchExposures(startDayobs, queryEndDayobs, instrument, abortController)
       .then(
         ([
@@ -182,6 +182,8 @@ export default function Digest() {
           setOnSkyTimeAccounting(nightOnSkyTimeAccounting);
           setOpenDomeError(domeError);
           setTimeAccountingError(accountingError);
+          // placeholder usage of openDomeTimes to pass eslint
+          // for now, it is unused right now
           console.log(openDomeTimes);
           if (exposuresNo === 0) {
             addNotification({
@@ -232,7 +234,6 @@ export default function Digest() {
             type: "error",
             source: "expected-exposures",
           });
-          // Display on card
           setExpectedOnSkyExpCount("-");
         }
       })
@@ -263,7 +264,6 @@ export default function Digest() {
 
     fetchNarrativeLog(startDayobs, queryEndDayobs, instrument, abortController)
       .then((data) => {
-        // setNarrativeWeatherLoss(weather);
         setNarrativeFaultLoss(data.time_lost_to_faults);
       })
       .catch((err) => {
@@ -542,9 +542,6 @@ export default function Digest() {
     );
   }, [dayObsOpenDomeHours, openDomeError]);
 
-  // TODO: check negative calculated fault of -0.0 on 20260615
-  // weather loss is slightly > elapsed night hours (using almanac)
-  // I don't think it was the case using twilight times from rubin-nights
   const { calculatedFault, faultUnavailable, faultUnavailableReason } =
     useMemo(() => {
       const unavailable = (reason) => ({
