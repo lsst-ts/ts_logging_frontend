@@ -3,6 +3,7 @@
     {
       "dayobs": 20260101,
       "night_hours": 8,
+      "elapsed_twilight_hours": 8,
       "twilight_evening_12deg": "2026-01-01 01:00:00",
       "twilight_morning_12deg": "2026-01-01 09:00:00",
       "moon_rise_time": "2026-01-01 04:00:00",

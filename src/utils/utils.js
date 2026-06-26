@@ -395,16 +395,17 @@ const getNightSummaryLink = (dayobs) => {
   return { url, label };
 };
 
-/* Retrieves the almanac information for a given dayobs date, correcting for a known
- * one-day offset between almanac dayobs and exposure dayobs.
+/**
+ * Find the almanac record corresponding to an exposure `day_obs`.
  *
- * The function searches through the provided almanacInfo array, subtracts one day from each
- * almanac dayobs entry to align with the exposure dayobs, and returns the matching almanac record.
+ * The frontend almanac payload is labeled by the morning-twilight dayobs,
+ * which is one day later than the `day_obs` used by exposure records for
+ * the same observing night. This helper subtracts one day from each almanac
+ * record before matching.
  *
- * @param {string} dayobs - The exposure dayobs date string in 'yyyyLLdd' format.
- * @param {Array<Object>} almanacInfo - Array of almanac records, each containing a 'dayobs' property
- * and twilight times in iso format.
- * @returns {Object|null} The matching almanac record for the given dayobs, or null if not found.
+ * @param {string} dayobs - Exposure dayobs in `YYYYMMDD` format.
+ * @param {Object[]} almanacInfo - Almanac records returned by `fetchAlmanac`.
+ * @returns {Object|null} Matching almanac record, or `null` if none matches.
  */
 const getDayobsAlmanac = (dayobs, almanacInfo) => {
   if (almanacInfo?.length) {
@@ -420,9 +421,8 @@ const getDayobsAlmanac = (dayobs, almanacInfo) => {
         )
           .minus({ days: 1 })
           .toFormat("yyyyLLdd");
-      } catch (e) {
+      } catch {
         // i.e. if time isn't the right format
-        console.error(e);
         continue;
       }
       if (actualAlmDayobs === dayobs) return dayObsAlm;
@@ -432,27 +432,25 @@ const getDayobsAlmanac = (dayobs, almanacInfo) => {
 };
 
 /**
- * Calculate the total exposure time that starts between evening and morning twilights.
+ * Calculate total on-sky exposure time between 12-degree twilight bounds.
  *
  * For each `day_obs`, this function looks up its corresponding twilight times
  * from `almanacInfo`. It then sums the exposure times (`exp_time`) of exposures
  * whose start time (`obs_start`) falls between that night's evening twilight
  * and the following morning's twilight.
  *
- *
- * @param {Array<Object>} exposureFields - Array of exposure records.
+ * @param {Object[]} exposureFields - Array of exposure records.
  *   Each record should contain:
  *     - {string} day_obs: the observing date key
  *     - {string} obs_start: ISO date string of exposure start
  *     - {string|number} exp_time: exposure duration in seconds
- *
- * @param {Array<Object>} almanacInfo - Array of almanac records.
+ *     - {boolean} can_see_sky: whether the exposure should count as on-sky
+ * @param {Object[]} almanacInfo - Array of almanac records.
  *   Each record should contain:
  *     - {string} dayobs: the observing date key
- *     - {string} twilight_evening_12deg: ISO date string of evening nautical twilight (12°)
- *     - {string} twilight_morning_12deg: ISO date string of next morning nautical twilight (12°)
- *
- * @returns {number} Total exposure time (seconds) for all exposures that start
+ *     - {string} twilight_evening_12deg: ISO date string of evening twilight
+ *     - {string} twilight_morning_12deg: ISO date string of next morning twilight
+ * @returns {number} Total exposure time, in seconds, for all exposures that start
  *   between their corresponding evening and morning twilights.
  */
 const calculateSumExpTimeBetweenTwilights = (exposureFields, almanacInfo) => {
@@ -577,6 +575,55 @@ const getBlockSourceLabel = (source) =>
     jira: "Jira",
   })[source] || source;
 
+/**
+ * Check whether a plain object has no own enumerable properties.
+ *
+ * @param {Object|null|undefined} obj - Object to test.
+ * @returns {boolean} `true` when `obj` is an empty plain object.
+ */
+const isDictionaryEmpty = (obj) => {
+  return obj && Object.keys(obj).length === 0 && obj.constructor === Object;
+};
+
+/**
+ * Estimate fault time from exposure, overhead, and weather-loss totals.
+ *
+ * The returned value is based on elapsed twilight hours minus on-sky
+ * exposure time, minus modeled overhead time, minus weather loss. Tiny
+ * negative results caused by floating-point rounding are clamped to zero.
+ *
+ * @param {Object} onSkyTimeAccounting - Time-accounting totals from `/exposures`.
+ * @param {number} onSkyExpTime - Total on-sky exposure time in seconds.
+ * @param {number} elapsedNightHours - Elapsed 12-degree twilight hours.
+ * @param {number|null|undefined} weatherLossHours - Weather-loss total in hours.
+ * @returns {number} Estimated fault time in hours.
+ */
+const computeCalculatedFault = (
+  onSkyTimeAccounting,
+  onSkyExpTime,
+  elapsedNightHours,
+  weatherLossHours,
+) => {
+  const expTimeHours = onSkyExpTime / 3600;
+
+  // Ignore tiny negative values caused by floating-point rounding in hour math.
+  const EPSILON_HOURS = 1 / 3600; // 1 second
+  // keeping this log to see weatherLoss value
+  // as it's not displayed in the page anymore
+  console.log(`weatherLossHours: ,${weatherLossHours}`);
+  const faultTimeHours =
+    elapsedNightHours -
+    expTimeHours -
+    onSkyTimeAccounting.sum_overhead_without_filter_change -
+    onSkyTimeAccounting.sum_overhead_with_filter_change -
+    (weatherLossHours ?? 0);
+
+  if (faultTimeHours < 0 && Math.abs(faultTimeHours) < EPSILON_HOURS) {
+    return 0;
+  }
+  return faultTimeHours;
+};
+
 export {
   calculateEfficiency,
   getDayobsStr,
@@ -598,4 +645,6 @@ export {
   parseBackendVersion,
   getZephyrUrl,
   getBlockSourceLabel,
+  computeCalculatedFault,
+  isDictionaryEmpty,
 };

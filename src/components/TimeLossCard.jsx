@@ -25,10 +25,12 @@ export default function TimeLossCard({
   narrativeLogloading = false,
   obsStatusLoading = false,
   calculatedFaultLoading = false,
+  faultDataUnavailable = false,
+  faultErrorMessage = null,
   onClick = false,
 }) {
   const loading =
-    narrativeLogloading && obsStatusLoading && calculatedFaultLoading;
+    narrativeLogloading || obsStatusLoading || calculatedFaultLoading;
   const isClickable = onClick && !loading;
 
   const heading = "Fault Loss";
@@ -115,8 +117,22 @@ export default function TimeLossCard({
           <div>Calculated:</div>
           {calculatedFaultLoading ? (
             <Skeleton className="h-3 w-10 bg-teal-700" />
+          ) : faultDataUnavailable ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1 cursor-help">
+                  <span>NA</span>
+
+                  <TriangleAlert className="h-4 w-4 text-yellow-500" />
+                </div>
+              </TooltipTrigger>
+
+              <TooltipContent>
+                <p>{faultErrorMessage}</p>
+              </TooltipContent>
+            </Tooltip>
           ) : (
-            calculatedData
+            <div>{formatHours(calculatedData)}</div>
           )}
         </div>
         {/* Info Icon */}
@@ -149,12 +165,12 @@ export default function TimeLossCard({
               <strong>Calculated Fault Loss</strong>
               <br />
               Total available observing time – exposure time – overhead time* –
-              MIN( time lost to weather**, dome closed time ).
+              time lost to weather**.
               <br />
               <br />
               <em>
-                *overhead time = readout time when not slewing + any setting
-                time after slewing.
+                *overhead time = expected slew and settle time, including a
+                potential additional overhead of up to 2 minutes per visit.
               </em>
               <br />
               <em>**weather loss is derived from Observatory Status data.</em>
