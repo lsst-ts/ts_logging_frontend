@@ -154,13 +154,21 @@ export const prepareMoonIntervals = (events, xMinMillis, xMaxMillis) => {
  * @param {[DateTime, DateTime]} options.fullTimeRange
  * @param {number} options.computedHeight - Fallback height if offsetHeight unavailable
  * @param {boolean} [options.showBaseline=false] - Add white baseline at bottom of grid
+ * @param {boolean} [options.cumulativePlot=false] - Vary outputs slightly as required
+ * @param {boolean} [options.fullScreen=false] - Vary outputs slightly as required
  * @returns {{ elements: Array, containerHeight: number, fontFamily: string,
  *             gridLeft: number, gridRight: number, gridBottom: number } | null}
  */
 export const buildTimelineGraphicElements = (
   instance,
   containerRef,
-  { fullTimeRange, computedHeight, showBaseline = false },
+  {
+    fullTimeRange,
+    computedHeight,
+    showBaseline = false,
+    cumulativePlot = false,
+    fullScreen = false,
+  },
 ) => {
   const xMinMillis = fullTimeRange[0]?.toMillis();
   const xMaxMillis = fullTimeRange[1]?.toMillis();
@@ -189,7 +197,7 @@ export const buildTimelineGraphicElements = (
     if (pixelX == null) continue;
 
     // UTC midday: dayobs border line
-    if (hourUTC === 12) {
+    if (hourUTC === 12 && !cumulativePlot) {
       elements.push({
         type: "line",
         silent: true,
@@ -201,7 +209,7 @@ export const buildTimelineGraphicElements = (
     }
 
     // UTC midnight: date label
-    if (hourUTC === 0) {
+    if (hourUTC === 0 && !cumulativePlot) {
       elements.push({
         type: "text",
         silent: true,
@@ -213,6 +221,28 @@ export const buildTimelineGraphicElements = (
           textAlign: "center",
           fill: TIMELINE_COLORS.DAYOBS_LABEL,
           fontSize: TIMELINE_DIMENSIONS.LABEL_TEXT_SIZE,
+          fontFamily,
+          userSelect: "none",
+        },
+      });
+      continue;
+    }
+
+    // UTC middle of observing night: date label
+    // TODO: (OSW-2444) Should actually be ( sunrise - sunset ) / 2;
+    // 5 is just approximately the middle of the night.
+    if (hourUTC === 5 && cumulativePlot) {
+      elements.push({
+        type: "text",
+        silent: true,
+        z: 0,
+        x: pixelX,
+        y: fullScreen ? 30 : 26,
+        style: {
+          text: dt.minus({ day: 1 }).toFormat("yyyy-LL-dd"),
+          textAlign: "center",
+          fill: "#bbbbbb",
+          fontSize: fullScreen ? 14 : 10,
           fontFamily,
           userSelect: "none",
         },

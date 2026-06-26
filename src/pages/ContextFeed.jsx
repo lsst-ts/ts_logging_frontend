@@ -200,6 +200,9 @@ function ContextFeed() {
 
     fetchAlmanac(startDayobs, queryEndDayobs, abortController)
       .then((almanac) => {
+        // TODO: (OSW-2444) prepareAlmanacData uses a function that converts
+        // UTC to TAI, which is not appropriate for the CF. This function should
+        // perhaps accept a timezone and conditionally convert.
         const { twilightValues, twilight0DegValues } =
           prepareAlmanacData(almanac);
         setTwilightValues(twilightValues);
