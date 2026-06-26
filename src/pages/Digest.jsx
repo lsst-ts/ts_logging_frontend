@@ -50,7 +50,7 @@ export default function Digest() {
   const { selectedTimeRange, setSelectedTimeRange, fullTimeRange } =
     useTimeRangeFromURL("/");
 
-  const [narrativeWeatherLoss, setNarrativeWeatherLoss] = useState(0.0);
+  const [narrativeWeatherLoss, setNarrativeWeatherLoss] = useState(0.0); // eslint-disable-line no-unused-vars
   const [narrativeFaultLoss, setNarrativeFaultLoss] = useState(0.0);
   const [exposureFields, setExposureFields] = useState([]);
   const [exposureCount, setExposureCount] = useState(0);
@@ -128,7 +128,7 @@ export default function Digest() {
     setSumOnSkyExpTime(0.0);
     setSumExpTime(0);
     setJiraTickets([]);
-    setNarrativeWeatherLoss(0.0);
+    setNarrativeWeatherLoss(0.0); // eslint-disable-line no-unused-vars
     setNarrativeFaultLoss(0.0);
     setExposureCount(0);
     setReports([]);
@@ -231,7 +231,7 @@ export default function Digest() {
 
     fetchNarrativeLog(startDayobs, queryEndDayobs, instrument, abortController)
       .then(([weather, fault]) => {
-        setNarrativeWeatherLoss(weather);
+        setNarrativeWeatherLoss(weather); // eslint-disable-line no-unused-vars
         setNarrativeFaultLoss(fault);
       })
       .catch((err) => {
@@ -259,10 +259,11 @@ export default function Digest() {
       abortController,
     })
       .then((data) => {
+        const intervals = data?.intervals ?? [];
         const metrics = data?.metrics ?? {};
         const availability = data?.availability ?? {};
 
-        setObsStatusIntervals(data.intervals);
+        setObsStatusIntervals(intervals);
         setObsStatusFaultLoss(
           typeof metrics.fault_loss === "number" ? metrics.fault_loss : 0.0,
         );
