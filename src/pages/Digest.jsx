@@ -136,6 +136,7 @@ export default function Digest() {
     setJiraTickets([]);
     // TODO: OSW-2430 Replace Narrative log with weatherloss
     // from obs status in the Time Loss card
+    // setNarrativeWeatherLoss(0.0);
     setNarrativeFaultLoss(0.0);
     setExposureCount(0);
     setReports([]);
@@ -292,10 +293,11 @@ export default function Digest() {
       abortController,
     })
       .then((data) => {
+        const intervals = data?.intervals ?? [];
         const metrics = data?.metrics ?? {};
         const availability = data?.availability ?? {};
 
-        setObsStatusIntervals(data.intervals);
+        setObsStatusIntervals(intervals);
         setObsStatusFaultLoss(
           typeof metrics.fault_loss === "number" ? metrics.fault_loss : 0.0,
         );
