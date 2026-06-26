@@ -1,1 +1,0 @@
-Add Observatory Status timeline to the Context Feed.
