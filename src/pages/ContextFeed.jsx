@@ -6,6 +6,8 @@ import { useSearch } from "@tanstack/react-router";
 import { NotificationBannerStack } from "@/components/NotificationBannerStack";
 import { useNotifications } from "@/hooks/useNotifications";
 
+import { TriangleAlert } from "lucide-react";
+
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
@@ -15,6 +17,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 
 import TimelineChart from "@/components/TimelineChart";
 import ObservatoryStatusTimeline from "@/components/ObservatoryStatusTimeline";
@@ -31,7 +38,10 @@ import PageHeader from "@/components/PageHeader";
 import TipsCard from "@/components/TipsCard";
 import SelectedTimeRangeBar from "@/components/SelectedTimeRangeBar";
 import DownloadIcon from "../assets/DownloadIcon.svg";
-import { getDayobsStartUTC } from "@/utils/timeUtils";
+import {
+  getDayobsStartUTC,
+  formatDayobsStrForDisplay,
+} from "@/utils/timeUtils";
 import {
   fetchAlmanac,
   fetchContextFeedFromRubinNights,
@@ -112,6 +122,7 @@ function ContextFeed() {
 
   // Observatory status data
   const [obsStatusEntries, setObsStatusEntries] = useState([]);
+  const [obsStatusAvailability, setObsStatusAvailability] = useState(null);
   const [obsStatusLoading, setObsStatusLoading] = useState(false);
 
   // Visibility toggles
@@ -267,6 +278,7 @@ function ContextFeed() {
     })
       .then((data) => {
         setObsStatusEntries(data.entries ?? []);
+        setObsStatusAvailability(data.availability ?? null);
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
@@ -408,6 +420,15 @@ function ContextFeed() {
         (notification) => notification.type !== "error",
       )
     : processedNotifications;
+
+  const obsAvailabilityStatus = obsStatusAvailability?.status ?? null;
+  const obsAvailableFrom = obsStatusAvailability?.available_from
+    ? formatDayobsStrForDisplay(String(obsStatusAvailability.available_from))
+    : null;
+  const obsAvailabilityWarningText = `Observatory Status data is only available from ${
+    obsAvailableFrom ?? "the supported date range"
+  }.`;
+
   const timelineSeriesData = useMemo(() => {
     return Object.values(CATEGORY_INDEX_INFO)
       .filter((info) => info.displayIndex != null)
@@ -509,11 +530,31 @@ function ContextFeed() {
             </TipsCard>
           )}
 
+          {/* Partial availability warning above timelines */}
+          {timelineVisible &&
+            !obsStatusLoading &&
+            obsAvailabilityStatus === "partial" && (
+              <div className="flex items-center">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <TriangleAlert className="h-5 w-5 text-yellow-400 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{obsAvailabilityWarningText}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            )}
+
           {/* Observatory Status Timeline */}
           {timelineVisible && (
             <Card className="grid gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 font-thin shadow-stone-900 shadow-md">
               {obsStatusLoading ? (
                 <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
+              ) : obsAvailabilityStatus === "none" ? (
+                <p className="text-sm text-stone-400 text-center py-4">
+                  {obsAvailabilityWarningText}
+                </p>
               ) : (
                 <div className="flex flex-row min-w-0">
                   {/* State Labels */}
