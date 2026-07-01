@@ -12,6 +12,12 @@ services:
     volumes:
       - ${FRONTEND_PATH}:/usr/src/app
       - /usr/src/app/node_modules
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5173"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 30s
 
   backend:
     container_name: nightlydigest-backend
@@ -40,5 +46,8 @@ services:
     image: nginx:latest
     ports:
       - "80:80"
+    depends_on:
+      frontend:
+        condition: service_healthy
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
