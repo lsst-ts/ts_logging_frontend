@@ -319,6 +319,7 @@ export const buildTwilightSeries = (
   color = TIMELINE_COLORS.TWILIGHT_LINE,
   width = TIMELINE_COLORS.TWILIGHT_STROKE_WIDTH,
   labelText = null,
+  showLabelFn = () => true,
 ) => ({
   type: "scatter",
   id,
@@ -340,7 +341,7 @@ export const buildTwilightSeries = (
           .map((twi) => ({
             xAxis: twi,
             label: {
-              show: true,
+              show: showLabelFn(twi),
               formatter: labelText ?? millisToHHmm(twi),
               position: "start",
               distance: 10,
