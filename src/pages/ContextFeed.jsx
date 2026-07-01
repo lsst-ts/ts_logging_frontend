@@ -122,8 +122,12 @@ function ContextFeed() {
 
   // Observatory status data
   const [obsStatusEntries, setObsStatusEntries] = useState([]);
+  const [obsStatusMetrics, setObsStatusMetrics] = useState(null);
   const [obsStatusAvailability, setObsStatusAvailability] = useState(null);
   const [obsStatusLoading, setObsStatusLoading] = useState(false);
+
+  // Total night hours from almanac (for metrics total row)
+  const [nightHours, setNightHours] = useState(null);
 
   // Visibility toggles
   const [timelineVisible, setTimelineVisible] = useState(true);
@@ -221,6 +225,9 @@ function ContextFeed() {
         );
         setTwilightValues(twilightValues);
         setTwilight0DegValues(twilight0DegValues);
+        setNightHours(
+          almanac.reduce((acc, day) => acc + (day.night_hours ?? 0), 0),
+        );
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
@@ -274,10 +281,21 @@ function ContextFeed() {
     fetchObsStatusFromRubinNights({
       start: startDayobs,
       end: endDayobs,
+      nightOnlyMetrics: false,
+      metrics: [
+        "daytime",
+        "operational",
+        "fault",
+        "weather",
+        "downtime",
+        "idle",
+        "unknown",
+      ],
       abortController,
     })
       .then((data) => {
         setObsStatusEntries(data.entries ?? []);
+        setObsStatusMetrics(data.metrics ?? null);
         setObsStatusAvailability(data.availability ?? null);
       })
       .catch((err) => {
@@ -562,13 +580,12 @@ function ContextFeed() {
                     className="flex flex-col w-45"
                     style={{
                       paddingTop: "30px",
-                      paddingBottom: "20px",
                     }}
                   >
                     {SERIES_ORDER.map((stateName) => (
                       <div
                         key={stateName}
-                        className="flex items-center"
+                        className="flex items-center justify-between"
                         style={{
                           height: "20px",
                         }}
@@ -576,8 +593,26 @@ function ContextFeed() {
                         <span className="text-xs text-stone-200">
                           {getStatusLabel(stateName)}
                         </span>
+                        <span className="text-xs text-stone-200 tabular-nums">
+                          {obsStatusMetrics?.[stateName.toLowerCase()] != null
+                            ? obsStatusMetrics[stateName.toLowerCase()].toFixed(
+                                2,
+                              )
+                            : "—"}
+                        </span>
                       </div>
                     ))}
+                    <div
+                      className="flex items-center justify-between"
+                      style={{ marginTop: "32px" }}
+                    >
+                      <span className="text-base text-stone-200">
+                        Night Hours
+                      </span>
+                      <span className="text-base text-stone-400 tabular-nums">
+                        {nightHours != null ? nightHours.toFixed(2) : "—"}
+                      </span>
+                    </div>
                   </div>
                   <div className="flex-1 min-w-0">
                     <ObservatoryStatusTimeline
