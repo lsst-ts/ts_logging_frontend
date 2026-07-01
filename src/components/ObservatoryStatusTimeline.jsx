@@ -61,6 +61,33 @@ function ObservatoryStatusTimeline({
   // Defined before the option useEffect so it can be in its dependency array.
   const updateGraphicElements = useCallback(
     (instance) => {
+      const xMinMillis = fullTimeRange[0]?.toMillis();
+      const xMaxMillis = fullTimeRange[1]?.toMillis();
+      if (xMinMillis && xMaxMillis) {
+        const containerWidth = containerRef.current?.offsetWidth ?? 800;
+        console.log("[OST] resize containerWidth:", containerWidth);
+        const minSeparationMs =
+          (22 * (xMaxMillis - xMinMillis)) / containerWidth;
+        instance.setOption({
+          series: [
+            buildTwilightSeries(
+              "twilight-0deg",
+              twilight0DegValues,
+              [6, 6],
+              xMinMillis,
+              xMaxMillis,
+              "white",
+              1,
+              "0°",
+              (twi) =>
+                twilightValues.every(
+                  (t12) => Math.abs(twi - t12) > minSeparationMs,
+                ),
+            ),
+          ],
+        });
+      }
+
       const result = buildTimelineGraphicElements(instance, containerRef, {
         fullTimeRange,
         computedHeight,
@@ -70,7 +97,7 @@ function ObservatoryStatusTimeline({
 
       instance.setOption({ graphic: result.elements });
     },
-    [fullTimeRange, computedHeight],
+    [fullTimeRange, computedHeight, twilightValues, twilight0DegValues],
   );
 
   const { instanceRef, syncBrushToSelection, xAxisOption } = useEChartsTimeline(
@@ -323,17 +350,6 @@ function ObservatoryStatusTimeline({
           undefined,
           "12°",
         ),
-        // 0° twilight — dashed white line (thinner, longer dashes), label at top
-        buildTwilightSeries(
-          "twilight-0deg",
-          twilight0DegValues,
-          [6, 6],
-          xMinMillis,
-          xMaxMillis,
-          "white",
-          1,
-          "0°",
-        ),
         // Background row lines — one thin line per series at 20% opacity
         ...SERIES_ORDER.map((stateName, idx) => ({
           type: "line",
@@ -442,7 +458,6 @@ function ObservatoryStatusTimeline({
     fullTimeRange,
     xAxisOption,
     twilightValues,
-    twilight0DegValues,
     updateGraphicElements,
     syncBrushToSelection,
     instanceRef,
