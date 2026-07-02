@@ -43,7 +43,7 @@ function ObservatoryStatusCumulativePlot({
   const markerSize = fullScreen
     ? STATUS_CUMULATIVE_SYMBOL_SIZE.fullscreen
     : STATUS_CUMULATIVE_SYMBOL_SIZE.applet;
-  
+
   const fontSize = fullScreen
     ? STATUS_CUMULATIVE_FONTS.fullScreen
     : STATUS_CUMULATIVE_FONTS.applet;
@@ -51,7 +51,7 @@ function ObservatoryStatusCumulativePlot({
   const variableDimensions = fullScreen
     ? STATUS_CUMULATIVE_VARIABLE_DIMENSIONS.fullscreen
     : STATUS_CUMULATIVE_VARIABLE_DIMENSIONS.applet;
-  
+
   // ── Graphic elements (dayobs labels, border lines, baseline) ────────────────
   // These are positioned in pixel space, so must be computed after render.
   // Defined before the option useEffect so it can be in its dependency array.
