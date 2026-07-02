@@ -35,10 +35,7 @@ function ObservatoryStatusApplet({
   availability,
   openDomeTimes = [],
   fullTimeRange,
-  selectedTimeRange,
-  setSelectedTimeRange,
   loading,
-  // brushGroup = null,
 }) {
   const obsAvailabilityStatus = availability?.status ?? null;
   const obsAvailableFrom = availability?.available_from
@@ -95,8 +92,6 @@ function ObservatoryStatusApplet({
                     intervals={intervals}
                     openDomeTimes={openDomeTimes}
                     fullTimeRange={fullTimeRange}
-                    selectedTimeRange={selectedTimeRange}
-                    setSelectedTimeRange={setSelectedTimeRange}
                     fullScreen={true}
                   />
                 )}
@@ -156,8 +151,6 @@ function ObservatoryStatusApplet({
             intervals={intervals}
             openDomeTimes={openDomeTimes}
             fullTimeRange={fullTimeRange}
-            selectedTimeRange={selectedTimeRange}
-            setSelectedTimeRange={setSelectedTimeRange}
           />
         )}
       </CardContent>

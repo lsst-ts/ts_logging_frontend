@@ -704,8 +704,6 @@ export default function Digest() {
               availability={obsStatusAvailability}
               openDomeTimes={openDomeTimes}
               fullTimeRange={fullTimeRange}
-              selectedTimeRange={selectedTimeRange}
-              setSelectedTimeRange={setSelectedTimeRange}
               loading={obsStatusLoading || exposuresLoading || almanacLoading}
             />
             <VisitMapStaticApplet
