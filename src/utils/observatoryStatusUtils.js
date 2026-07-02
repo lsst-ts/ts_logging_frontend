@@ -5,7 +5,7 @@ import {
   STATUS_COLORS,
   SERIES_ORDER,
 } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
-import { formatDuration, isoToUTC } from "@/utils/timeUtils";
+import { isoToUTC, formatDuration, getCurrentDayObs } from "@/utils/timeUtils";
 
 /**
  * Determines the state change description (Old > New format) for a given entry.
@@ -212,6 +212,7 @@ export function statusBitmaskToString(status) {
   return states.map((s) => STATUS_LABELS[s] || s).join(" | ");
 }
 
+// TODO: (OSW-2444) Move to timeUtils
 /**
  * Formats a time string for tooltip display.
  *
@@ -249,6 +250,9 @@ function buildOpenDomeSeries(nights) {
   for (const night of nights.values()) {
     let cumulativeHours = 0;
 
+    // Get current time.
+    const nowMs = Date.now();
+
     // Get reused sunset/sunrise times.
     const { sunsetMs, sunriseMs, intervals } = night;
 
@@ -258,10 +262,6 @@ function buildOpenDomeSeries(nights) {
     // Loop through each open-dome interval.
     intervals.forEach((interval, index) => {
       const openMs = isoToUTC(interval.open_time).toMillis();
-      // If current night, there is no close time.
-      const closeMs = interval.close_time
-        ? isoToUTC(interval.close_time).toMillis()
-        : null;
 
       // Clip open times at sunset.
       const startMs = index === 0 ? Math.max(openMs, sunsetMs) : openMs;
@@ -271,12 +271,16 @@ function buildOpenDomeSeries(nights) {
       // across any closed-dome gap.)
       series.push([startMs, cumulativeHours]);
 
+      // If there is no close time, then the dome is currently open.
+      const closeMs = interval.close_time
+        ? isoToUTC(interval.close_time).toMillis()
+        : null;
+
       // If dome currently open, set a point at the current time.
       const isCurrentlyOpen = closeMs === null;
 
-      // TODO: (OSW-2444) Should Date.now() specify UTC?
       if (isCurrentlyOpen) {
-        series.push([Date.now(), cumulativeHours + interval.open_hours]);
+        series.push([nowMs, cumulativeHours + interval.open_hours]);
 
         return;
       }
@@ -291,14 +295,21 @@ function buildOpenDomeSeries(nights) {
       series.push([endMs, cumulativeHours]);
     });
 
-    // For a completed night, the last open-dome interval
+    // Handle final interval edge cases ---
+    // 1. For a completed night, the last open-dome interval
     // will have it's final value dragged to sunrise and
     // break the line across dayobs with a NaN.
+    // 2. For an ongoing night that has the dome currently
+    // closed, we need to drag out the last close value to
+    // the current time.
     const lastInterval = intervals[intervals.length - 1];
 
+    const isDuringCurrentNight = sunsetMs <= nowMs && nowMs < sunriseMs;
+    const cutOffMs = isDuringCurrentNight ? nowMs : sunriseMs;
+
     if (lastInterval.close_time) {
-      series.push([sunriseMs, cumulativeHours]);
-      series.push([sunriseMs, NaN]);
+      series.push([cutOffMs, cumulativeHours]);
+      series.push([cutOffMs, NaN]);
     }
   }
 
@@ -445,12 +456,8 @@ function buildCumulativeStateSeries(intervals, nights) {
     const lastInterval = intervals[intervals.length - 1];
     const lastEventMs = lastInterval.end_time_ms;
 
-    // TODO: (OSW-2444) Should Date.now() specify UTC?
     const nowMs = Date.now();
-    // TODO: (OSW-2444) Convert to timeUtil.
-    const currentDayObs = Number(
-      DateTime.now().setZone("UTC").minus({ hours: 12 }).toFormat("yyyyLLdd"),
-    );
+    const currentDayObs = getCurrentDayObs("yyyyLLdd");
 
     const isCurrentDayObs = currentDayObs === dayObs;
 
