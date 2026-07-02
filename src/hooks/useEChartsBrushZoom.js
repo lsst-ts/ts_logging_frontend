@@ -21,12 +21,7 @@ import * as echarts from "echarts";
  *   yDomain: [number, number] | null
  * }}
  */
-export function useEChartsBrushZoom(
-  containerRef,
-  {
-    onResize,
-  },
-) {
+export function useEChartsBrushZoom(containerRef, { onResize }) {
   const instanceRef = useRef(null);
 
   const [xDomain, setXDomain] = useState(null);
@@ -117,29 +112,18 @@ export function useEChartsBrushZoom(
       // is both axes (rect) or just x-axis (lineX).
       const area = params.areas[0];
 
-      const shiftHeld = modifierKeys.current.shift;
-
       let x0, x1, y0, y1;
-      let px0, px1, py0, py1;
 
       if (area.brushType === "lineX") {
         [x0, x1] = area.coordRange;
-        [px0, px1] = area.range;
       } else {
         [[x0, x1], [y0, y1]] = area.coordRange;
-        [[px0, px1], [py0, py1]] = area.range;
       }
 
-      setXDomain([
-        Math.min(x0, x1),
-        Math.max(x0, x1),
-      ]);
+      setXDomain([Math.min(x0, x1), Math.max(x0, x1)]);
 
       if (area.brushType === "rect") {
-        setYDomain([
-          Math.min(y0, y1),
-          Math.max(y0, y1),
-        ]);
+        setYDomain([Math.min(y0, y1), Math.max(y0, y1)]);
       }
 
       // Clear the visual brush so the user can immediately draw another zoom box.
