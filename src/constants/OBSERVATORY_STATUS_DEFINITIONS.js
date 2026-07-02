@@ -60,6 +60,7 @@ export const STATUS_BAR_COLORS = {
   IDLE: "#30393E",
 };
 
+// TODO: (OSW-2444) change property names to camelCase
 /**
  * Chart dimension constants
  */
@@ -94,6 +95,8 @@ export const STATUS_TIMELINE_MARGINS = {
   bottom: 40, // Space for hourly tick labels + date labels
 };
 
+// TODO: (OSW-2444) change property names to camelCase
+// TWELVE_DEG to twelveDeg and same for ZERO_DEG
 /**
  * Twilight line styling
  */
@@ -113,6 +116,7 @@ export const TWILIGHT_STYLES = {
   },
 };
 
+// TODO: (OSW-2444) change property names to camelCase
 /**
  * Opacity values for active/inactive states
  */
@@ -136,9 +140,21 @@ export const SERIES_ORDER = [
 ];
 
 /**
+ * Order of state plotting (last state plotted on top)
+ */
+export const STATUS_CUMULATIVE_SERIES_ORDER = [
+  "UNKNOWN",
+  "IDLE",
+  "WEATHER",
+  "DOWNTIME",
+  "OPERATIONAL",
+  "FAULT",
+];
+
+/**
  * z value of cumulative plot elements
  */
-export const CUMULATIVE_ELEMENTS_Z = {
+export const STATUS_CUMULATIVE_ELEMENTS_Z = {
   verticalLines: 1,
   nightHours: 2,
   openDomeLine: 3,
@@ -159,9 +175,9 @@ export const STATUS_CUMULATIVE_MARGINS = {
 };
 
 /**
- * legend labels
+ * Legend labels
  */
-export const LEGEND_LABELS = {
+export const STATUS_CUMULATIVE_LEGEND_LABELS = {
   UNKNOWN: "unknown",
   DAYTIME: "daytime",
   OPERATIONAL: "operational",
@@ -174,7 +190,7 @@ export const LEGEND_LABELS = {
 /**
  * Opacity mapping for states
  */
-export const STATUS_AREA_OPACITY = {
+export const STATUS_CUMULATIVE_AREA_OPACITY = {
   UNKNOWN: 0.5,
   DAYTIME: 0.4,
   OPERATIONAL: 0.4,
@@ -185,9 +201,9 @@ export const STATUS_AREA_OPACITY = {
 };
 
 /**
- * Commonly used text colours
+ * Plot colours (not state-related)
  */
-export const CUMULATIVE_PLOT_COLOURS = {
+export const STATUS_CUMULATIVE_PLOT_COLOURS = {
   names: "white",
   axisLabel: "#bbbbbb",
   axisTick: "#444444",
@@ -205,27 +221,79 @@ export const CUMULATIVE_PLOT_COLOURS = {
  * Chart dimension constants
  */
 export const STATUS_CUMULATIVE_DIMENSIONS = {
-  TITLE_TOP: 0,
-  GRID_BORDER_WIDTH: 2,
+  titleTop: 0,
+  gridBorderWidth: 2.5,
 
   // Legend
-  LEGEND_BORDER_WIDTH: 2,
-  LEGEND_BORDER_RADIUS: 2,
-  LEGEND_BORDER_BOTTOM: 2,
-  LEGEND_LINES_WIDTH: 5,
-  LEGEND_INACTIVE_WIDTH: 1,
+  legendBorderWidth: 2,
+  legendBorderRadius: 2,
+  legendBorderBottom: 2,
+  legendLinesWidth: 5,
+  legendInactiveWidth: 1,
 
   // Axes
-  BREAK_BORDER_WIDTH: 4,
-  Y_AXIS_NAME_GAP: 24,
-  Y_AXIS_LABEL_WIDTH: 8,
-  AXIS_TICK_WIDTH: 2,
+  breakBorderWidth: 4,
+  yAxisNameGap: 24,
+  yAxisLabelWidth: 8,
+  axisTickWidth: 2,
 
   // Data
-  STATE_LINE_WIDTH: 2,
-  OPEN_DOME_LINE_WIDTH: 2,
-  NIGHT_HOURS_LINE_WIDTH: 2,
-  VERTICAL_LINES_WIDTH: 0.5,
-  VERTICAL_LINES_OPACITY: 0.3,
-  MARKER_BORDER_WIDTH: 1,
+  stateLineWidth: 2,
+  openDomeLineWidth: 2,
+  nightHoursLineWidth: 2,
+  verticalLinesWidth: 0.5,
+  verticalLinesOpacity: 0.3,
+  markerBorderWidth: 1,
+};
+
+/**
+ * Chart dimension constants that differ for fullscreen vs applet view
+ */
+export const STATUS_CUMULATIVE_VARIABLE_DIMENSIONS = {
+  applet: {
+    gridTop: 40,
+    xAxisNameGap: 22,
+    xAxisLabelMargin: 10,
+  },
+  fullscreen: {
+    gridTop: 50,
+    xAxisNameGap: 26,
+    xAxisLabelMargin: 12,
+  },
+};
+
+/**
+ * Symbol marker sizes
+ */
+export const STATUS_CUMULATIVE_SYMBOL_SIZE = {
+  applet: {
+    withNote: 12,
+    withoutNote: 10,
+  },
+  fullscreen: {
+    withNote: 14,
+    withoutNote: 12,
+  },
+};
+
+/**
+ * Font sizes for cumulative plot
+ */
+export const STATUS_CUMULATIVE_FONTS = {
+  applet: {
+    titleFontSize: 16,
+    legendFontSize: 10,
+    xAxisNameFontSize: 10,
+    xAxisLabelFontSize: 10,
+    yAxisNameFontSize: 12,
+    yAxisLabelFontSize: 10,
+  },
+  fullScreen: {
+    titleFontSize: 18,
+    legendFontSize: 14,
+    xAxisNameFontSize: 16,
+    xAxisLabelFontSize: 14,
+    yAxisNameFontSize: 16,
+    yAxisLabelFontSize: 14,
+  },
 };
