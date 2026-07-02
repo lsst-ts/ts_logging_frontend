@@ -389,10 +389,9 @@ function buildCumulativeStateSeries(intervals, nights) {
           continue;
         }
 
-        // TODO: (OSW-2444) don't show same-state->same-state && no note
-        // State was already active.
+        // State was already active but a note has been added.
         // Add a data point for a marker.
-        if (wasActive[state]) {
+        if (wasActive[state] && interval.start_note) {
           series[state].push({
             value: [startMs, cumulative[state]],
             showMarker: true,
@@ -497,6 +496,22 @@ function buildCumulativeStateSeries(intervals, nights) {
           });
         }
 
+        // These are the states activated at the last recorded event (the
+        // end of the last interval). We add a marker at their activation
+        // point before dragging them out.
+        if (lastActive[state]) {
+          series[state].push({
+            value: [lastEventMs, cumulative[state]],
+            showMarker: true,
+            status: lastInterval.end_labels,
+            time_ms: lastEventMs,
+            duration: nowMs - lastEventMs,
+            hasNote: !!lastInterval.end_note,
+            note: lastInterval.end_note,
+            clippedAtSunset: false,
+          });
+        }
+
         // If the state is currently active, add extra hours to the cumulative total
         // to account for the time since the last recorded event.
         const value = cumulative[state] + (lastActive[state] ? extraHours : 0);
@@ -575,7 +590,6 @@ export function buildCumulativePlotModel(
   almanacInfo,
   intervals,
   openDomeTimes,
-  // availability, // TODO: (OSW-2444) Handle availability
 ) {
   if (!almanacInfo || almanacInfo.length === 0) return {};
 
