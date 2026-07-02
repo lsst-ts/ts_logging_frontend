@@ -4,6 +4,7 @@ import { buildTimelineGraphicElements } from "@/utils/timelineUtils";
 import { buildCumulativePlotModel } from "@/utils/observatoryStatusUtils";
 import { formatTimestamp, formatDuration } from "@/utils/timeUtils";
 import {
+  SERIES_ORDER,
   STATUS_COLORS,
   STATUS_CUMULATIVE_MARGINS,
   STATUS_CUMULATIVE_DIMENSIONS,
@@ -16,8 +17,11 @@ import {
   STATUS_CUMULATIVE_SYMBOL_SIZE,
   STATUS_CUMULATIVE_FONTS,
 } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
-import { TIMELINE_DIMENSIONS } from "@/constants/TIMELINE_DEFINITIONS";
-import { useEChartsTimeline } from "@/hooks/useEChartsTimeline";
+import {
+  TIMELINE_DIMENSIONS,
+  TIMELINE_COLORS,
+} from "@/constants/TIMELINE_DEFINITIONS";
+import { useEChartsBrushZoom } from "@/hooks/useEChartsBrushZoom";
 
 /**
  * Observatory status applet.
@@ -27,10 +31,7 @@ function ObservatoryStatusCumulativePlot({
   intervals = [],
   openDomeTimes = [],
   fullTimeRange,
-  selectedTimeRange,
-  setSelectedTimeRange,
   fullScreen = false,
-  brushGroup = null,
 }) {
   const containerRef = useRef(null);
   const markerDataRef = useRef([]);
@@ -71,16 +72,9 @@ function ObservatoryStatusCumulativePlot({
     [fullTimeRange, computedHeight],
   );
 
-  const { instanceRef, syncBrushToSelection, xAxisOption } = useEChartsTimeline(
-    containerRef,
-    {
-      fullTimeRange,
-      selectedTimeRange,
-      setSelectedTimeRange,
-      onResize: updateGraphicElements,
-      brushGroup,
-    },
-  );
+  const { instanceRef, xDomain, yDomain } = useEChartsBrushZoom(containerRef, {
+    onResize: updateGraphicElements,
+  });
 
   // ── Tooltip hit detection (brush intercepts ECharts mouse events) ──────────
   // The brush overlay captures all pointer events, so ECharts' own hover
@@ -174,7 +168,6 @@ function ObservatoryStatusCumulativePlot({
 
     const { breaks, nightHours, openDomeSeries, stateSeries } =
       buildCumulativePlotModel(almanacInfo, intervals, openDomeTimes);
-
     const markerData = [];
 
     // Add state markers.
@@ -301,11 +294,13 @@ function ObservatoryStatusCumulativePlot({
         data: [
           { name: "night hours" },
           { name: "open dome" },
-          ...STATUS_CUMULATIVE_SERIES_ORDER.map((stateName) => ({
-            name: `${
-              STATUS_CUMULATIVE_LEGEND_LABELS?.[stateName] ?? stateName
-            }`,
-          })),
+          ...SERIES_ORDER.filter((stateName) => stateName !== "DAYTIME").map(
+            (stateName) => ({
+              name: `${
+                STATUS_CUMULATIVE_LEGEND_LABELS?.[stateName] ?? stateName
+              }`,
+            }),
+          ),
         ],
       },
       grid: {
@@ -330,8 +325,8 @@ function ObservatoryStatusCumulativePlot({
           fontWeight: "lighter",
           fontSize: fontSize.xAxisNameFontSize,
         },
-        min: nightHours?.[0][0],
-        max: nightHours?.[nightHours?.length - 1][0] ?? xAxisOption.max,
+        min: xDomain?.[0] ?? nightHours?.[0][0],
+        max: xDomain?.[1] ?? nightHours?.[nightHours.length - 1][0],
         minInterval: 180 * 1000,
         maxInterval: 3600 * 1000,
         interval: 3600 * 1000,
@@ -388,6 +383,8 @@ function ObservatoryStatusCumulativePlot({
           fontWeight: "lighter",
           fontSize: fontSize.yAxisNameFontSize,
         },
+        min: yDomain?.[0],
+        max: yDomain?.[1],
         axisTick: {
           show: true,
           lineStyle: {
@@ -401,6 +398,7 @@ function ObservatoryStatusCumulativePlot({
           fontWeight: "lighter",
           fontSize: fontSize.yAxisLabelFontSize,
           width: STATUS_CUMULATIVE_DIMENSIONS.yAxisLabelWidth,
+          formatter: (val) => parseFloat(val.toFixed(2)),
         },
         splitLine: {
           lineStyle: {
@@ -409,13 +407,21 @@ function ObservatoryStatusCumulativePlot({
         },
       },
       // TODO: (OSW-2444) align zoom functionality with other plots
-      // brush: buildBrushConfig(),
-      dataZoom: [
-        {
-          type: "inside",
-          filterMode: "none",
+      brush: {
+        toolbox: [],
+        brushType: "rect",
+        xAxisIndex: 0,
+        yAxisIndex: 0,
+        brushMode: "single",
+        brushStyle: {
+          borderColor: TIMELINE_COLORS.SELECTION_STROKE,
+          color: TIMELINE_COLORS.DEFAULT_SELECTION_FILL,
+          borderWidth: 1,
+          opacity: 1,
         },
-      ],
+        inBrush: {},
+        outOfBrush: {},
+      },
       series: [
         // Status-update vertical lines
         {
@@ -529,12 +535,8 @@ function ObservatoryStatusCumulativePlot({
     instance.dispatchAction({
       type: "takeGlobalCursor",
       key: "brush",
-      brushOption: { brushType: "lineX", brushMode: "single" },
+      brushOption: { brushType: "rect", brushMode: "single" },
     });
-
-    // Sync brush to URL-restored selection — must run after setOption (brush
-    // component must exist) and after takeGlobalCursor (brush mode must be active).
-    syncBrushToSelection();
 
     // Defer graphic elements until ECharts has finished rendering,
     // since convertToPixel is only valid after the chart is laid out.
@@ -544,9 +546,9 @@ function ObservatoryStatusCumulativePlot({
     intervals,
     openDomeTimes,
     fullTimeRange,
-    xAxisOption,
+    xDomain,
+    yDomain,
     updateGraphicElements,
-    syncBrushToSelection,
     instanceRef,
   ]);
 
