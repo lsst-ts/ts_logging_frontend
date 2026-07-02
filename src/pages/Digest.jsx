@@ -81,8 +81,6 @@ export default function Digest() {
   const [onSkyTimeAccounting, setOnSkyTimeAccounting] = useState({});
   const [openDomeError, setOpenDomeError] = useState(null);
   const [timeAccountingError, setTimeAccountingError] = useState(null);
-  // TODO: OSW-2330 - Add computed fault to Time Loss card
-  // const [calculatedFaultLoading, setCalculatedFaultLoading] = useState(false);
 
   const [jiraTickets, setJiraTickets] = useState([]);
   const [jiraLoading, setJiraLoading] = useState(false);
