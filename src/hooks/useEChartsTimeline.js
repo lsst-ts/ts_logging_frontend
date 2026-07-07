@@ -97,12 +97,30 @@ export function useEChartsTimeline(
     });
 
     instance.on("brushEnd", (params) => {
-      const ft = fullTimeRangeRef.current;
-      const setter = setSelectedTimeRangeRef.current;
       if (!params.areas.length) {
-        setter(ft);
+        // A bare click clears the brush visually — restore it if a sub-range is
+        // active. Programmatic dispatchAction does not re-trigger brushEnd, so
+        // this won't loop.
+        const sr = selectedTimeRangeRef.current;
+        const fr = fullTimeRangeRef.current;
+        const isFullRange =
+          sr[0].toMillis() === fr[0].toMillis() &&
+          sr[1].toMillis() === fr[1].toMillis();
+        if (!isFullRange) {
+          instance.dispatchAction({
+            type: "brush",
+            areas: [
+              {
+                brushType: "lineX",
+                coordRange: [sr[0].toMillis(), sr[1].toMillis()],
+                xAxisIndex: 0,
+              },
+            ],
+          });
+        }
         return;
       }
+      const setter = setSelectedTimeRangeRef.current;
       const [startMs, endMs] = params.areas[0].coordRange;
       const min = millisToDateTime(Math.round(Math.min(startMs, endMs)));
       const max = millisToDateTime(Math.round(Math.max(startMs, endMs)));

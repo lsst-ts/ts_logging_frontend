@@ -190,7 +190,7 @@ function TimelineChart({
     // Row lines: one thin horizontal line per series
     const rowLineSeries = data.map((entry, i) => ({
       type: "line",
-      z: 1,
+      z: -1,
       id: `row-line-${i}`,
       data: [
         [xMinMillis, categoryIds[i]],
