@@ -78,6 +78,10 @@ function DataTableBody({
 
         const handleClick = (e) => {
           e.stopPropagation();
+          // Ignore clicks from portaled elements (e.g., modals/dialogs)
+          if (!e.currentTarget.contains(e.target)) {
+            return;
+          }
           // Don't select/deselect row if user is dragging to select text
           if (window.getSelection()?.toString().length > 0) {
             return;
