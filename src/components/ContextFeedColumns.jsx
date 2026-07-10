@@ -42,16 +42,14 @@ function renderNameCell(info) {
   // If available, display BLOCK names as Zephyr/Jira links
   if (block) {
     return (
-      <div className="p-1 rounded">
-        <a
-          href={block.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-sky-500 underline hover:text-sky-300"
-        >
-          {formatCellValue(value)}
-        </a>
-      </div>
+      <a
+        href={block.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-sky-500 underline hover:text-sky-300"
+      >
+        {formatCellValue(value)}
+      </a>
     );
   }
 
@@ -418,17 +416,38 @@ export const contextFeedColumns = [
       tooltip: "Dayobs of event.",
     },
   }),
-  columnHelper.accessor("time", {
-    header: "Time (UTC)",
-    cell: (info) => formatTimestamp(info.getValue()),
-    size: 220,
-    minSize: 220,
-    filterType: "number-range",
-    meta: {
-      tooltip: "Time (UTC) associated with event.",
-      selectedKey: true,
+  columnHelper.accessor(
+    (row) => {
+      if (!row.time) return null;
+      const ms = new Date(row.time).getTime();
+      // Extract sub-millisecond digits to get microsecond precision
+      const match = row.time.match(/\.(\d+)/);
+      if (match) {
+        const micros = parseInt(match[1].padEnd(6, "0").slice(3, 6), 10);
+        return ms * 1000 + micros;
+      }
+      return ms * 1000;
     },
-  }),
+    {
+      id: "time",
+      header: "Time (UTC)",
+      cell: (info) => {
+        const micros = info.getValue();
+        if (!micros) return null;
+        const ms = Math.floor(micros / 1000);
+        return DateTime.fromMillis(ms, { zone: "utc" }).toFormat(
+          "yyyy-LL-dd HH:mm:ss.S",
+        );
+      },
+      size: 220,
+      minSize: 220,
+      filterType: "number-range",
+      meta: {
+        tooltip: "Time (UTC) associated with event.",
+        selectedKey: true,
+      },
+    },
+  ),
   columnHelper.accessor("event_time_tai", {
     header: "Time (TAI)",
     cell: (info) => formatTimestamp(info.getValue()),
