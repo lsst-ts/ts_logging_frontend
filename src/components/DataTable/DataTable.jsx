@@ -8,7 +8,7 @@ function findSelectedKey(columns) {
       const found = findSelectedKey(col.columns);
       if (found) return found;
     } else if (col.meta?.selectedKey) {
-      return col.accessorKey;
+      return col.accessorKey || col.id;
     }
   }
   return null;
