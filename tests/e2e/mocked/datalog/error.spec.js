@@ -9,7 +9,7 @@ import {
 const DATALOG_URL = getDataLogUrl();
 
 test.describe("Data-log page — API errors", () => {
-  test("data-log 500 shows ConsDB error toast and table is empty", async ({
+  test("data-log 500 shows an error banner and table is empty", async ({
     page,
   }) => {
     await setupApiMocks(page);
@@ -20,14 +20,19 @@ test.describe("Data-log page — API errors", () => {
     await waitForDataLogLoad(page);
 
     await expect(
-      page.getByText("Error fetching data from ConsDB!"),
+      page.getByText("One or more data sources are unavailable."),
+    ).toBeVisible({
+      timeout: 10000,
+    });
+    await expect(
+      page.getByText("exposures failed to load. Data may be incomplete."),
     ).toBeVisible({
       timeout: 10000,
     });
     await expect(page.locator("[data-slot='table-body'] tr")).toHaveCount(0);
   });
 
-  test("exposure-entries 500 shows exposure log error toast, table still renders", async ({
+  test("exposure-entries 500 shows an error banner, table still renders", async ({
     page,
   }) => {
     await setupApiMocks(page);
@@ -38,14 +43,19 @@ test.describe("Data-log page — API errors", () => {
     await waitForDataLogLoad(page);
 
     await expect(
-      page.getByText("Error fetching exposure log data!"),
+      page.getByText("One or more data sources are unavailable."),
+    ).toBeVisible({
+      timeout: 10000,
+    });
+    await expect(
+      page.getByText("exposure-flags failed to load. Data may be incomplete."),
     ).toBeVisible({
       timeout: 10000,
     });
     await expect(page.locator("[data-slot='table-body'] tr")).toHaveCount(30);
   });
 
-  test("almanac 500 shows almanac error toast but table still renders", async ({
+  test("almanac 500 shows an error banner but table still renders", async ({
     page,
   }) => {
     await setupApiMocks(page);
@@ -55,27 +65,42 @@ test.describe("Data-log page — API errors", () => {
     await page.goto(DATALOG_URL);
     await waitForDataLogLoad(page);
 
-    await expect(page.getByText("Error fetching almanac!")).toBeVisible({
+    await expect(
+      page.getByText("One or more data sources are unavailable."),
+    ).toBeVisible({
+      timeout: 10000,
+    });
+    await expect(
+      page.getByText("almanac failed to load. Data may be incomplete."),
+    ).toBeVisible({
       timeout: 10000,
     });
     await expect(page.locator("[data-slot='table-body'] tr")).toHaveCount(30);
   });
 
-  test("almanac null shows warning toast but table still renders", async ({
+  test("almanac null shows an error banner but table still renders", async ({
     page,
   }) => {
-    // fetchAlmanac returns data.almanac_info — null here triggers the warning toast
+    // fetchAlmanac returns data.almanac_info — null here makes prepareAlmanacData
+    // throw, which is caught the same way as any other almanac fetch failure.
     await setupApiMocks(page, { almanac: { almanac_info: null } });
     await page.goto(DATALOG_URL);
     await waitForDataLogLoad(page);
 
-    await expect(page.getByText("No almanac data available")).toBeVisible({
+    await expect(
+      page.getByText("One or more data sources are unavailable."),
+    ).toBeVisible({
+      timeout: 10000,
+    });
+    await expect(
+      page.getByText("almanac failed to load. Data may be incomplete."),
+    ).toBeVisible({
       timeout: 10000,
     });
     await expect(page.locator("[data-slot='table-body'] tr")).toHaveCount(30);
   });
 
-  test("block-details 500 shows BLOCK error toast", async ({ page }) => {
+  test("block-details 500 shows an error banner", async ({ page }) => {
     await setupApiMocks(page);
     await page.route("**/nightlydigest/api/block-details*", (route) =>
       route.fulfill({ status: 500, json: { detail: "Error" } }),
@@ -83,7 +108,16 @@ test.describe("Data-log page — API errors", () => {
     await page.goto(DATALOG_URL);
     await waitForDataLogLoad(page);
 
-    await expect(page.getByText(/Error fetching BLOCK/)).toBeVisible({
+    await expect(
+      page.getByText("One or more data sources are unavailable."),
+    ).toBeVisible({
+      timeout: 10000,
+    });
+    await expect(
+      page.getByText(
+        "jira-blocks, zephyr-blocks failed to load. Data may be incomplete.",
+      ),
+    ).toBeVisible({
       timeout: 10000,
     });
   });

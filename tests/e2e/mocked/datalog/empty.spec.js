@@ -16,12 +16,12 @@ test.describe("Data-log page — empty data", () => {
     await waitForDataLogLoad(page);
   });
 
-  test("warning toast and 0 rows when no data returned", async ({ page }) => {
-    await expect(
-      page.getByText(
-        "No data log records found in ConsDB for the selected date range.",
-      ),
-    ).toBeVisible({ timeout: 10000 });
+  test("no data notification banner and 0 rows when no data returned", async ({
+    page,
+  }) => {
+    await expect(page.getByText("No exposures found in ConsDB")).toBeVisible({
+      timeout: 10000,
+    });
     await expect(page.locator("[data-slot='table-body'] tr")).toHaveCount(0);
   });
 
