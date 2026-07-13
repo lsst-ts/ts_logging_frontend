@@ -52,7 +52,87 @@ function TimelineChart({
 
   const computedHeight =
     data.length * TIMELINE_DIMENSIONS.SERIES_ROW_HEIGHT +
-    TIMELINE_DIMENSIONS.BASE_HEIGHT;
+    TIMELINE_DIMENSIONS.BASE_HEIGHT +
+    (showMoonIllumination ? TIMELINE_DIMENSIONS.PLOT_LABEL_HEIGHT : 0) +
+    (showTwilight ? TIMELINE_DIMENSIONS.PLOT_LABEL_HEIGHT : 0);
+
+  // ── Init / destroy ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const instance = echarts.init(el, null, { renderer: "canvas" });
+    instanceRef.current = instance;
+    // Canvas rendering has no queryable per-mark DOM, so expose the instance
+    // for e2e assertions (see tests/e2e/mocked/shared/almanac.spec.js etc.).
+    el.__echartsInstance = instance;
+
+    // Resize on container size changes
+    const observer = new ResizeObserver(() => {
+      instance.resize();
+      updateGraphicElements(instance);
+    });
+    observer.observe(el);
+
+    // ── Brush (drag selection) ────────────────────────────────────────────────
+    instance.on("brushEnd", (params) => {
+      const ft = fullTimeRangeRef.current;
+      const setter = setSelectedTimeRangeRef.current;
+      if (!params.areas.length) {
+        setter(ft);
+        return;
+      }
+      const [startMs, endMs] = params.areas[0].coordRange;
+      const min = millisToDateTime(Math.round(Math.min(startMs, endMs)));
+      const max = millisToDateTime(Math.round(Math.max(startMs, endMs)));
+      setter([min, max]);
+    });
+
+    // ── Double-click reset ────────────────────────────────────────────────────
+    // Use native DOM listener — the brush component intercepts mouse events and
+    // prevents ECharts' own dblclick from firing.
+    const handleDblClick = () => {
+      instance.dispatchAction({ type: "brush", areas: [] });
+      setSelectedTimeRangeRef.current(fullTimeRangeRef.current);
+    };
+    el.addEventListener("dblclick", handleDblClick);
+
+    return () => {
+      el.removeEventListener("dblclick", handleDblClick);
+      observer.disconnect();
+      instance.dispose();
+      instanceRef.current = null;
+      delete el.__echartsInstance;
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Sync brush from external selectedTimeRange changes ──────────────────────
+  useEffect(() => {
+    const instance = instanceRef.current;
+    if (!instance || !fullTimeRange[0] || !fullTimeRange[1]) return;
+
+    const isFullRange =
+      selectedTimeRange[0].toMillis() === fullTimeRange[0].toMillis() &&
+      selectedTimeRange[1].toMillis() === fullTimeRange[1].toMillis();
+
+    if (isFullRange) {
+      instance.dispatchAction({ type: "brush", areas: [] });
+    } else {
+      instance.dispatchAction({
+        type: "brush",
+        areas: [
+          {
+            brushType: "lineX",
+            coordRange: [
+              selectedTimeRange[0].toMillis(),
+              selectedTimeRange[1].toMillis(),
+            ],
+            xAxisIndex: 0,
+          },
+        ],
+      });
+    }
+  }, [selectedTimeRange, fullTimeRange]);
 
   // ── Graphic elements (dayobs labels, borders, moon symbols) ─────────────────
   // These are positioned in pixel space, so must be computed after render.
@@ -387,6 +467,7 @@ function TimelineChart({
     <div
       ref={containerRef}
       data-testid="timeline-chart"
+      data-slot="timeline"
       style={{
         width: "100%",
         minWidth: 0,

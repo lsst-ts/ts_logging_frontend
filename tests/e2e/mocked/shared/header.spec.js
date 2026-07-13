@@ -5,6 +5,10 @@ import { waitForPlotsLoad } from "../../helpers/plots-helpers.js";
 import { waitForDataLogLoad } from "../../helpers/datalog-helpers.js";
 import { PLOTS_URL, DATALOG_URL } from "../../helpers/constants.js";
 
+// Timeline is rendered on canvas via ECharts (see TimelineChart.jsx) and is
+// conditionally mounted/unmounted by the Hide/Show Timeline toggle.
+const TIMELINE_SELECTOR = '[data-slot="timeline"]';
+
 const PAGES = [
   {
     name: "plots",
@@ -36,34 +40,27 @@ for (const { name, url, waitForLoad, pageSpecificTipsHeading } of PAGES) {
       ).toBeVisible();
     });
 
-    test.fixme(
-      "clicking Hide Timeline removes the timeline chart and updates the button",
-      async ({ page }) => {
-        const initialChartCount = await page
-          .locator(".recharts-surface")
-          .count();
-        await page.getByRole("button", { name: "Hide Timeline" }).click();
-        await expect(
-          page.getByRole("button", { name: "Show Timeline" }),
-        ).toBeVisible();
-        await expect(page.locator(".recharts-surface")).toHaveCount(
-          initialChartCount - 1,
-        );
-      },
-    );
+    test("clicking Hide Timeline removes the timeline chart and updates the button", async ({
+      page,
+    }) => {
+      await expect(page.locator(TIMELINE_SELECTOR)).toBeVisible();
+      await page.getByRole("button", { name: "Hide Timeline" }).click();
+      await expect(
+        page.getByRole("button", { name: "Show Timeline" }),
+      ).toBeVisible();
+      await expect(page.locator(TIMELINE_SELECTOR)).not.toBeAttached();
+    });
 
     test("clicking Show Timeline restores the timeline chart and updates the button", async ({
       page,
     }) => {
-      const initialChartCount = await page.locator(".recharts-surface").count();
       await page.getByRole("button", { name: "Hide Timeline" }).click();
+      await expect(page.locator(TIMELINE_SELECTOR)).not.toBeAttached();
       await page.getByRole("button", { name: "Show Timeline" }).click();
       await expect(
         page.getByRole("button", { name: "Hide Timeline" }),
       ).toBeVisible();
-      await expect(page.locator(".recharts-surface")).toHaveCount(
-        initialChartCount,
-      );
+      await expect(page.locator(TIMELINE_SELECTOR)).toBeVisible();
     });
   });
 

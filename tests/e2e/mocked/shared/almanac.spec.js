@@ -31,10 +31,27 @@ const MOON_FILL = "#EAB308";
 
 const MOCK_DATA = generateDataLogMock(10, { dayobs: TEST_DAYOBS_INT });
 
-// Selector for the timeline SVG: the recharts surface that is NOT inside a
-// [data-slot="chart"] container (those belong to individual plots on the plots page).
-const TIMELINE_SVG_SELECTOR =
-  ':not([data-slot="chart"]) > .recharts-responsive-container svg.recharts-surface';
+// Timeline is rendered on canvas via ECharts (see TimelineChart.jsx), so
+// twilight lines / moon areas have no per-mark DOM to query. Instead, read
+// back the option the component built — twilight lines live on the
+// "twilight-lines" series' markLine.data, moon-up intervals on the
+// "moon-areas" series' markArea.data.
+const TIMELINE_SELECTOR = '[data-slot="timeline"]';
+
+async function getTimelineSeriesInfo(page) {
+  return page.evaluate((selector) => {
+    const inst = document.querySelector(selector).__echartsInstance;
+    const option = inst.getOption();
+    const twilightSeries = option.series.find((s) => s.id === "twilight-lines");
+    const moonSeries = option.series.find((s) => s.id === "moon-areas");
+    return {
+      twilightLineCount: twilightSeries?.markLine?.data?.length ?? 0,
+      twilightLineColor: twilightSeries?.markLine?.lineStyle?.color ?? null,
+      moonAreaCount: moonSeries?.markArea?.data?.length ?? 0,
+      moonAreaColor: moonSeries?.markArea?.itemStyle?.color ?? null,
+    };
+  }, TIMELINE_SELECTOR);
+}
 
 const PAGES = [
   { name: "plots", url: PLOTS_URL, waitForLoad: waitForPlotsLoad },
@@ -57,11 +74,12 @@ for (const { name, url, waitForLoad } of PAGES) {
       await waitForLoad(page);
     });
 
-    test.fixme("the timeline shows two twilight lines", async ({ page }) => {
-      const timelineSvg = page.locator(TIMELINE_SVG_SELECTOR);
-      await expect(
-        timelineSvg.locator(`line[stroke="${TWILIGHT_STROKE}"]`),
-      ).toHaveCount(2);
+    test("the timeline shows two twilight lines", async ({ page }) => {
+      await expect(page.locator(TIMELINE_SELECTOR)).toBeVisible();
+      const { twilightLineCount, twilightLineColor } =
+        await getTimelineSeriesInfo(page);
+      expect(twilightLineCount).toBe(2);
+      expect(twilightLineColor).toBe(TWILIGHT_STROKE);
     });
   });
 
@@ -77,14 +95,14 @@ for (const { name, url, waitForLoad } of PAGES) {
       await waitForLoad(page);
     });
 
-    test.fixme(
-      "moon area appears in the timeline when moon is up",
-      async ({ page }) => {
-        const timelineSvg = page.locator(TIMELINE_SVG_SELECTOR);
-        await expect(
-          timelineSvg.locator(`path[fill="${MOON_FILL}"]`),
-        ).toHaveCount(1);
-      },
-    );
+    test("moon area appears in the timeline when moon is up", async ({
+      page,
+    }) => {
+      await expect(page.locator(TIMELINE_SELECTOR)).toBeVisible();
+      const { moonAreaCount, moonAreaColor } =
+        await getTimelineSeriesInfo(page);
+      expect(moonAreaCount).toBe(1);
+      expect(moonAreaColor).toBe(MOON_FILL);
+    });
   });
 }

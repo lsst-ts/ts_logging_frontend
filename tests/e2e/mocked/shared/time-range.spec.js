@@ -19,6 +19,38 @@ function fmtMs(ms) {
   )}-${z(d.getUTCDate())}`;
 }
 
+// Timeline is rendered on canvas via ECharts (see TimelineChart.jsx). It
+// exposes its instance on the container node for e2e coordinate mapping,
+// since canvas has no per-mark DOM to query directly.
+const TIMELINE_SELECTOR = '[data-slot="timeline"]';
+
+/**
+ * Maps target times to pixel X offsets (relative to the timeline container)
+ * using the chart's own axis mapping, then reads back the time at those
+ * exact (rounded) pixels — the same round-trip a real drag goes through —
+ * so the expected values aren't thrown off by sub-pixel rounding.
+ */
+async function timelineDragPixels(page, targetStartMs, targetEndMs) {
+  return page.evaluate(
+    ({ selector, targetStartMs, targetEndMs }) => {
+      const inst = document.querySelector(selector).__echartsInstance;
+      const startX = Math.round(
+        inst.convertToPixel({ xAxisIndex: 0 }, targetStartMs),
+      );
+      const endX = Math.round(
+        inst.convertToPixel({ xAxisIndex: 0 }, targetEndMs),
+      );
+      return {
+        startX,
+        endX,
+        expectedStartMs: inst.convertFromPixel({ xAxisIndex: 0 }, startX),
+        expectedEndMs: inst.convertFromPixel({ xAxisIndex: 0 }, endX),
+      };
+    },
+    { selector: TIMELINE_SELECTOR, targetStartMs, targetEndMs },
+  );
+}
+
 const PAGES = [
   { name: "plots", url: PLOTS_URL, waitForLoad: waitForPlotsLoad },
   { name: "data-log", url: DATALOG_URL, waitForLoad: waitForDataLogLoad },
@@ -71,48 +103,37 @@ for (const { name, url, waitForLoad } of PAGES) {
       await expect(page).toHaveURL(/endTime=1767312540000/);
     });
 
-    test.fixme(
-      "dragging on the timeline updates the time range input bar",
-      async ({ page }) => {
-        const timelineSvg = page.locator(".recharts-surface").first();
-        await timelineSvg.scrollIntoViewIfNeeded();
-        await expect(timelineSvg).toBeVisible();
+    test("dragging on the timeline updates the time range input bar", async ({
+      page,
+    }) => {
+      const timelineChart = page.locator(TIMELINE_SELECTOR);
+      await timelineChart.scrollIntoViewIfNeeded();
+      await expect(timelineChart).toBeVisible();
 
-        const svgBox = await timelineSvg.boundingBox();
-        const plotBounds = await timelineSvg.evaluate((svg) => {
-          const clip = svg.querySelector("clipPath rect");
-          return {
-            x: parseFloat(clip.getAttribute("x")),
-            y: parseFloat(clip.getAttribute("y")),
-            width: parseFloat(clip.getAttribute("width")),
-            height: parseFloat(clip.getAttribute("height")),
-          };
-        });
+      const range = FULL_END - FULL_START;
+      const targetStartMs = Math.round(FULL_START + 0.2 * range);
+      const targetEndMs = Math.round(FULL_START + 0.6 * range);
+      const { startX, endX, expectedStartMs, expectedEndMs } =
+        await timelineDragPixels(page, targetStartMs, targetEndMs);
 
-        const startX = svgBox.x + plotBounds.x + plotBounds.width * 0.2;
-        const endX = svgBox.x + plotBounds.x + plotBounds.width * 0.6;
-        const y = svgBox.y + plotBounds.y + plotBounds.height / 2;
+      const box = await timelineChart.boundingBox();
+      const y = box.y + box.height / 2;
 
-        const range = FULL_END - FULL_START;
-        const expectedStartValue = fmtMs(Math.round(FULL_START + 0.2 * range));
-        const expectedEndValue = fmtMs(Math.round(FULL_START + 0.6 * range));
+      await page.mouse.move(box.x + startX, y);
+      await page.mouse.down();
+      await page.mouse.move(box.x + endX, y);
+      await page.mouse.up();
 
-        await page.mouse.move(startX, y);
-        await page.mouse.down();
-        await page.mouse.move(endX, y);
-        await page.mouse.up();
-
-        const bar = page
-          .locator("[data-slot='card']")
-          .filter({ hasText: "Selected Time Range" });
-        await expect(bar.locator("input[type='text']").first()).toHaveValue(
-          expectedStartValue,
-        );
-        await expect(bar.locator("input[type='text']").last()).toHaveValue(
-          expectedEndValue,
-        );
-      },
-    );
+      const bar = page
+        .locator("[data-slot='card']")
+        .filter({ hasText: "Selected Time Range" });
+      await expect(bar.locator("input[type='text']").first()).toHaveValue(
+        fmtMs(Math.round(expectedStartMs)),
+      );
+      await expect(bar.locator("input[type='text']").last()).toHaveValue(
+        fmtMs(Math.round(expectedEndMs)),
+      );
+    });
   });
 
   // ---------------------------------------------------------------------------

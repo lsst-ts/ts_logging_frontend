@@ -30,10 +30,9 @@ const ZOOM_MOCK_DATA = generateDataLogMock(10, {
   postProcess: (r) => ({ ...r, airmass: 1.0 + r.seq_num * 0.15 }),
 });
 
-// Selector for the timeline SVG: the recharts surface that is NOT inside a
-// [data-slot="chart"] container (those belong to individual plots on the plots page).
-const TIMELINE_SVG_SELECTOR =
-  ':not([data-slot="chart"]) > .recharts-responsive-container svg.recharts-surface';
+// Selector for the timeline chart container (rendered on canvas via ECharts —
+// see TimelineChart.jsx).
+const TIMELINE_SELECTOR = '[data-slot="timeline"]';
 
 const PAGES = [
   { name: "plots", url: PLOTS_URL, waitForLoad: waitForPlotsLoad },
@@ -50,30 +49,29 @@ for (const { name, url, waitForLoad } of PAGES) {
       await waitForLoad(page);
     });
 
-    test.fixme(
-      "drag on timeline adds startTime and endTime to URL",
-      async ({ page }) => {
-        const timelineSvg = page.locator(TIMELINE_SVG_SELECTOR);
-        await expect(timelineSvg).toBeVisible();
+    test("drag on timeline adds startTime and endTime to URL", async ({
+      page,
+    }) => {
+      const timelineChart = page.locator(TIMELINE_SELECTOR);
+      await expect(timelineChart).toBeVisible();
 
-        await dragOn(page, timelineSvg, {
-          fromX: 0.25,
-          toX: 0.75,
-          fromY: 0.5,
-          toY: 0.5,
-        });
+      await dragOn(page, timelineChart, {
+        fromX: 0.25,
+        toX: 0.75,
+        fromY: 0.5,
+        toY: 0.5,
+      });
 
-        await expect(page).toHaveURL(/startTime=/);
-        const { startTime, endTime } = getTimeParams(page);
+      await expect(page).toHaveURL(/startTime=/);
+      const { startTime, endTime } = getTimeParams(page);
 
-        expect(startTime).not.toBeNull();
-        expect(endTime).not.toBeNull();
-        expect(startTime).toBeLessThan(endTime);
-        expect(startTime).toBeGreaterThanOrEqual(FULL_START);
-        expect(endTime).toBeLessThanOrEqual(FULL_END);
-        expect(endTime - startTime).toBeLessThan(FULL_RANGE);
-      },
-    );
+      expect(startTime).not.toBeNull();
+      expect(endTime).not.toBeNull();
+      expect(startTime).toBeLessThan(endTime);
+      expect(startTime).toBeGreaterThanOrEqual(FULL_START);
+      expect(endTime).toBeLessThanOrEqual(FULL_END);
+      expect(endTime - startTime).toBeLessThan(FULL_RANGE);
+    });
   });
 
   // ---------------------------------------------------------------------------
@@ -85,57 +83,16 @@ for (const { name, url, waitForLoad } of PAGES) {
       await waitForLoad(page);
     });
 
-    test.fixme(
-      "double-click on timeline resets to the full time range",
-      async ({ page }) => {
-        const timelineSvg = page.locator(TIMELINE_SVG_SELECTOR);
-        await expect(timelineSvg).toBeVisible();
+    test("double-click on timeline resets to the full time range", async ({
+      page,
+    }) => {
+      const timelineChart = page.locator(TIMELINE_SELECTOR);
+      await expect(timelineChart).toBeVisible();
 
-        await timelineSvg.dblclick();
+      await timelineChart.dblclick();
 
-        await expect
-          .poll(() => getTimeParams(page).startTime)
-          .toBe(FULL_START);
-        await expect.poll(() => getTimeParams(page).endTime).toBe(FULL_END);
-      },
-    );
-  });
-
-  // ---------------------------------------------------------------------------
-
-  test.describe(`${name} — Timeline: shift-extend selection`, () => {
-    const INIT_START = FULL_START + Math.round(0.3 * FULL_RANGE);
-    const INIT_END = FULL_START + Math.round(0.6 * FULL_RANGE);
-
-    test.beforeEach(async ({ page }) => {
-      await setupApiMocks(page, { "data-log": ZOOM_MOCK_DATA });
-      await page.goto(`${url}&startTime=${INIT_START}&endTime=${INIT_END}`);
-      await waitForLoad(page);
+      await expect.poll(() => getTimeParams(page).startTime).toBe(FULL_START);
+      await expect.poll(() => getTimeParams(page).endTime).toBe(FULL_END);
     });
-
-    test.fixme(
-      "shift-drag from outside the selection extends it from the farther edge",
-      async ({ page }) => {
-        const timelineSvg = page.locator(TIMELINE_SVG_SELECTOR);
-        await expect(timelineSvg).toBeVisible();
-
-        await dragOn(page, timelineSvg, {
-          fromX: 0.8,
-          toX: 0.9,
-          fromY: 0.5,
-          toY: 0.5,
-          shiftKey: true,
-        });
-
-        await expect
-          .poll(() => getTimeParams(page).endTime)
-          .toBeGreaterThan(INIT_END);
-
-        const { startTime } = getTimeParams(page);
-        const TOLERANCE_MS = 5 * 60 * 1000;
-        expect(startTime).toBeGreaterThanOrEqual(INIT_START - TOLERANCE_MS);
-        expect(startTime).toBeLessThanOrEqual(INIT_START + TOLERANCE_MS);
-      },
-    );
   });
 }
