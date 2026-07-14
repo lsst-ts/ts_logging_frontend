@@ -1,7 +1,10 @@
 // @ts-check
 import { test, expect } from "@playwright/test";
 import { setupApiMocks } from "../../helpers/mock-api.js";
-import { generateDataLogMockMultiBand } from "../../helpers/mock-generators.js";
+import {
+  generateDataLogMock,
+  generateDataLogMockMultiBand,
+} from "../../helpers/mock-generators.js";
 import {
   waitForDataLogLoad,
   applyFilter,
@@ -66,34 +69,6 @@ test.describe("Data-log page — filtering", () => {
     await expect(page.locator("[data-slot='table-body'] tr")).toHaveCount(6);
   });
 
-  test("filter by multiple columns narrows results correctly", async ({
-    page,
-  }) => {
-    // Custom data: 20 records with both varied physical_filter AND science_program,
-    // so that filtering by physical_filter still leaves science_program with >1 unique value.
-    const { generateDataLogMock } = await import(
-      "../../helpers/mock-generators.js"
-    );
-    const multiColData = generateDataLogMock(20, {
-      postProcess: (r, i) => ({
-        ...r,
-        physical_filter: i <= 10 ? "y_10" : "g_10", // 10 y_10, 10 g_10
-        science_program: i % 2 === 1 ? "SURVEY" : "FM", // 5 SURVEY + 5 FM within each band
-      }),
-    });
-    await setupApiMocks(page, { "data-log": multiColData });
-    await page.goto(DATALOG_URL);
-    await waitForDataLogLoad(page);
-
-    // Filter by physical_filter=y_10 → 10 rows (5 SURVEY + 5 FM)
-    await applyFilter(page, "Filter", "y_10");
-    await expect(page.locator("[data-slot='table-body'] tr")).toHaveCount(10);
-
-    // Filter by science_program=SURVEY → 5 rows
-    await applyFilter(page, "Science Program", "SURVEY");
-    await expect(page.locator("[data-slot='table-body'] tr")).toHaveCount(5);
-  });
-
   test("unchecking a filter value removes it", async ({ page }) => {
     await applyFilter(page, "Filter", "y_10");
     await expect(page.locator("[data-slot='table-body'] tr")).toHaveCount(6);
@@ -114,5 +89,34 @@ test.describe("Data-log page — filtering", () => {
     await page.goto(`${DATALOG_URL}&physical_filter=nonexistent`);
     await waitForDataLogLoad(page);
     await expect(page.locator("[data-slot='table-body'] tr")).toHaveCount(0);
+  });
+});
+
+test.describe("Data-log page — filtering across multiple columns", () => {
+  test.beforeEach(async ({ page }) => {
+    // 20 records with both varied physical_filter AND science_program,
+    // so that filtering by physical_filter still leaves science_program with >1 unique value.
+    const multiColData = generateDataLogMock(20, {
+      postProcess: (r, i) => ({
+        ...r,
+        physical_filter: i <= 10 ? "y_10" : "g_10", // 10 y_10, 10 g_10
+        science_program: i % 2 === 1 ? "SURVEY" : "FM", // 5 SURVEY + 5 FM within each band
+      }),
+    });
+    await setupApiMocks(page, { "data-log": multiColData });
+    await page.goto(DATALOG_URL);
+    await waitForDataLogLoad(page);
+  });
+
+  test("filter by multiple columns narrows results correctly", async ({
+    page,
+  }) => {
+    // Filter by physical_filter=y_10 → 10 rows (5 SURVEY + 5 FM)
+    await applyFilter(page, "Filter", "y_10");
+    await expect(page.locator("[data-slot='table-body'] tr")).toHaveCount(10);
+
+    // Filter by science_program=SURVEY → 5 rows
+    await applyFilter(page, "Science Program", "SURVEY");
+    await expect(page.locator("[data-slot='table-body'] tr")).toHaveCount(5);
   });
 });

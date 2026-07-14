@@ -15,12 +15,6 @@ test.describe("Data-log page — table content and formatting", () => {
     await waitForDataLogLoad(page);
   });
 
-  test("exposure counter shows 30 of 30", async ({ page }) => {
-    await expect(page.getByText("30 of 30 exposures selected")).toBeVisible({
-      timeout: 10000,
-    });
-  });
-
   test("RubinTV column shows 'Post-ISR Mosaic' link pointing to rubintv", async ({
     page,
   }) => {

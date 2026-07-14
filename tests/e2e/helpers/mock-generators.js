@@ -94,19 +94,3 @@ export function generateDataLogMockMultiProgram(count, options = {}) {
     }),
   });
 }
-
-/**
- * Generates mock data-log records with varied exposure_flag values.
- * Cycles through ["", "GOOD", "BAD", "WEATHER"].
- *
- * @param {number} count
- * @param {object} [options] - Same options as generateDataLogMock
- * @returns {{ data_log: object[] }}
- */
-export function generateDataLogMockWithFlags(count, options = {}) {
-  const flags = ["", "GOOD", "BAD", "WEATHER"];
-  return generateDataLogMock(count, {
-    ...options,
-    postProcess: (r, i) => ({ ...r, exposure_flag: flags[i % flags.length] }),
-  });
-}

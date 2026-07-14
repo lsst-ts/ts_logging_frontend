@@ -61,18 +61,6 @@ test.describe("Data-log page — grouping", () => {
     await expect(page.locator("[data-slot='table-body'] tr")).toHaveCount(30);
   });
 
-  test("grouping column with null values shows NA group", async ({ page }) => {
-    const nullAirmassData = generateDataLogMock(5, {
-      postProcess: (r) => ({ ...r, airmass: null }),
-    });
-    await setupApiMocks(page, { "data-log": nullAirmassData });
-    await page.goto(DATALOG_URL);
-    await waitForDataLogLoad(page);
-
-    await groupBy(page, "Airmass");
-    await expect(page.getByText(/Airmass: NA/)).toBeVisible();
-  });
-
   test("Expand All Groups button is disabled before grouping and enabled after", async ({
     page,
   }) => {
@@ -128,5 +116,21 @@ test.describe("Data-log page — grouping", () => {
     await groupBy(page, "Filter");
     await expect(page.locator("td.bg-stone-900")).toHaveCount(1);
     await expect(page.getByText(/Filter: y_10 \(6\)/)).toBeVisible();
+  });
+});
+
+test.describe("Data-log page — grouping with null values", () => {
+  test.beforeEach(async ({ page }) => {
+    const nullAirmassData = generateDataLogMock(5, {
+      postProcess: (r) => ({ ...r, airmass: null }),
+    });
+    await setupApiMocks(page, { "data-log": nullAirmassData });
+    await page.goto(DATALOG_URL);
+    await waitForDataLogLoad(page);
+  });
+
+  test("grouping column with null values shows NA group", async ({ page }) => {
+    await groupBy(page, "Airmass");
+    await expect(page.getByText(/Airmass: NA/)).toBeVisible();
   });
 });
