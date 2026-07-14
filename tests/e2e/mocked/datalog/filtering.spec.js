@@ -88,6 +88,15 @@ test.describe("Data-log page — filtering", () => {
     await expect(page).not.toHaveURL(/physical_filter=/);
   });
 
+  test("filter dropdown values are sorted alphabetically", async ({ page }) => {
+    await openColumnMenu(page, "Filter");
+    const labels = await page
+      .getByRole("menu")
+      .locator("label")
+      .allInnerTexts();
+    expect(labels).toEqual(["g_10", "i_10", "r_10", "y_10", "z_10"]);
+  });
+
   test("repeated URL param form applies a multi-value filter", async ({
     page,
   }) => {

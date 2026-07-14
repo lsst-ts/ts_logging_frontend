@@ -31,6 +31,14 @@ test.describe("Data-log page — empty data", () => {
     });
   });
 
+  test("no-data banner can be dismissed", async ({ page }) => {
+    const banner = page.getByText("No exposures found in ConsDB");
+    await expect(banner).toBeVisible({ timeout: 10000 });
+
+    await page.getByRole("button", { name: "Dismiss" }).click();
+    await expect(banner).toHaveCount(0);
+  });
+
   test("reset button doesn't crash on empty table", async ({ page }) => {
     await page.getByRole("button", { name: "Reset Table" }).click();
     await expect(page.locator("[data-slot='table-body']")).toBeAttached();

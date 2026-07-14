@@ -9,6 +9,7 @@ import {
   waitForDataLogLoad,
   groupBy,
   applyFilter,
+  openColumnMenu,
   getDataLogUrl,
 } from "../../helpers/datalog-helpers.js";
 
@@ -93,6 +94,48 @@ test.describe("Data-log page — grouping", () => {
     // Click again to collapse
     await page.locator("td.bg-stone-900").filter({ hasText: "y_10" }).click();
     await expect(page.locator("[data-slot='table-body'] tr")).toHaveCount(5);
+  });
+
+  test("Ungroup via the column menu removes grouping", async ({ page }) => {
+    await groupBy(page, "Filter");
+    await expect(page.locator("td.bg-stone-900")).toHaveCount(5);
+
+    // The menu item label flips to "Ungroup" for a grouped column
+    await openColumnMenu(page, "Filter");
+    await page.getByText("Ungroup").click();
+
+    await expect(page.locator("td.bg-stone-900")).toHaveCount(0);
+    await expect(page.locator("[data-slot='table-body'] tr")).toHaveCount(30);
+  });
+
+  test("grouping by two columns nests the second inside the first", async ({
+    page,
+  }) => {
+    await groupBy(page, "Filter");
+    await groupBy(page, "Science Program");
+    await page.getByRole("button", { name: "Expand All Groups" }).click();
+
+    // 5 filter groups, each with one SURVEY subgroup, plus 30 data rows
+    await expect(page.locator("td.bg-stone-900")).toHaveCount(10);
+    await expect(page.locator("[data-slot='table-body'] tr")).toHaveCount(40);
+    await expect(
+      page.getByText(/Science Program: SURVEY \(6\)/).first(),
+    ).toBeVisible();
+  });
+
+  test("hiding a grouped column keeps the groups", async ({ page }) => {
+    await groupBy(page, "Filter");
+    await expect(page.locator("td.bg-stone-900")).toHaveCount(5);
+
+    await openColumnMenu(page, "Filter");
+    await page.getByRole("menuitem", { name: "Hide Column" }).click();
+
+    // Column header is gone but grouping still applies
+    await expect(
+      page.getByRole("columnheader").filter({ hasText: "Filter" }),
+    ).toHaveCount(0);
+    await expect(page.locator("td.bg-stone-900")).toHaveCount(5);
+    await expect(page.getByText(/Filter: y_10 \(6\)/)).toBeVisible();
   });
 
   test("grouping then filtering shows only matching groups", async ({

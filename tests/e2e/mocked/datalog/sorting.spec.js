@@ -78,6 +78,24 @@ test.describe("Data-log page — sorting", () => {
     await expect(rows.last()).toContainText("20260101000001");
   });
 
+  test("sort menu label progresses asc → desc → unsort", async ({ page }) => {
+    // Airmass is unsorted by default
+    await openColumnMenu(page, "Airmass");
+    await expect(page.getByText("Sort by asc.")).toBeVisible();
+    await page.getByText("Sort by asc.").click();
+
+    await openColumnMenu(page, "Airmass");
+    await expect(page.getByText("Sort by desc.")).toBeVisible();
+    await page.getByText("Sort by desc.").click();
+
+    await openColumnMenu(page, "Airmass");
+    await expect(page.getByText("Unsort")).toBeVisible();
+    await page.getByText("Unsort").click();
+
+    await openColumnMenu(page, "Airmass");
+    await expect(page.getByText("Sort by asc.")).toBeVisible();
+  });
+
   test("Reset Table restores default ascending sort", async ({ page }) => {
     await openColumnMenu(page, "Exposure Id");
     await page.getByText("Sort by desc.").click();

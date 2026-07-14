@@ -55,6 +55,22 @@ test.describe("Data-log page — API errors", () => {
     await expect(page.locator("[data-slot='table-body'] tr")).toHaveCount(30);
   });
 
+  test("error banners are not dismissible", async ({ page }) => {
+    await setupApiMocks(page);
+    await page.route("**/nightlydigest/api/exposure-entries*", (route) =>
+      route.fulfill({ status: 500, json: { detail: "Internal Server Error" } }),
+    );
+    await page.goto(DATALOG_URL);
+    await waitForDataLogLoad(page);
+
+    await expect(
+      page.getByText("exposure-flags failed to load. Data may be incomplete."),
+    ).toBeVisible({ timeout: 10000 });
+
+    // Errors are configured dismissible: false — no dismiss button offered
+    await expect(page.getByRole("button", { name: "Dismiss" })).toHaveCount(0);
+  });
+
   test("almanac 500 shows an error banner but table still renders", async ({
     page,
   }) => {

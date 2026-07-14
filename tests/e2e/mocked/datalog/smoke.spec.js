@@ -62,6 +62,21 @@ test.describe("Data-log page — smoke", () => {
     ).toBeVisible();
   });
 
+  test("download button shows the placeholder popover", async ({ page }) => {
+    await setupApiMocks(page);
+    await page.goto(DATALOG_URL);
+    await waitForDataLogLoad(page);
+
+    // The download trigger is the only popover trigger containing an image
+    await page
+      .locator("[data-slot='popover-trigger']")
+      .filter({ has: page.locator("img") })
+      .click();
+    await expect(
+      page.getByText("This is a placeholder for the download/export button"),
+    ).toBeVisible();
+  });
+
   test("skeletons appear while loading then disappear", async ({ page }) => {
     await setupApiMocks(page);
     // Delay data-log (LIFO: this handler runs first, then continues to setupApiMocks mock)
