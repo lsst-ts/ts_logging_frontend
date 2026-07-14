@@ -70,3 +70,18 @@ export async function groupBy(page, columnHeaderName) {
   await openColumnMenu(page, columnHeaderName);
   await page.getByText(/Group by/).click();
 }
+
+/**
+ * Returns the cell of `row` under the column with visible header `headerName`.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {import('@playwright/test').Locator} row - A table-body row locator
+ * @param {string} headerName - The visible header text (e.g., "Flags")
+ * @returns {Promise<import('@playwright/test').Locator>}
+ */
+export async function cellByHeader(page, row, headerName) {
+  const headerTexts = await page.getByRole("columnheader").allInnerTexts();
+  const idx = headerTexts.findIndex((t) => t.includes(headerName));
+  expect(idx).toBeGreaterThan(-1);
+  return row.locator("td").nth(idx);
+}

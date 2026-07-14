@@ -10,6 +10,7 @@ import {
   applyFilter,
   groupBy,
   getDataLogUrl,
+  cellByHeader,
 } from "../../helpers/datalog-helpers.js";
 
 const DATALOG_URL = getDataLogUrl();
@@ -31,16 +32,6 @@ const EXPOSURE_LOG = generateExposureLogMock([
     message_text: "Passing cloud",
   })),
 ]);
-
-/**
- * Returns the cell of `row` under the column with visible header `headerName`.
- */
-async function cellByHeader(page, row, headerName) {
-  const headerTexts = await page.getByRole("columnheader").allInnerTexts();
-  const idx = headerTexts.findIndex((t) => t.includes(headerName));
-  expect(idx).toBeGreaterThan(-1);
-  return row.locator("td").nth(idx);
-}
 
 test.describe("Data-log page — exposure log flags and comments", () => {
   test.beforeEach(async ({ page }) => {
