@@ -94,3 +94,27 @@ export function generateDataLogMockMultiProgram(count, options = {}) {
     }),
   });
 }
+
+/**
+ * Generates a mock `exposure_entries` response body (the exposure-log endpoint).
+ *
+ * Flags/Comments can only be mocked via this endpoint: mergeAllDataLogSources
+ * matches entries to ConsDB rows by obs_id === exposure_name and overwrites
+ * any exposure_flag present on the data-log records themselves.
+ *
+ * @param {object[]} entries - Partial entries; `obs_id` is required and must
+ *   match a generated `exposure_name` (e.g. "MC_O_20260101_000001"). Other
+ *   fields default to instrument "LSSTCam", exposure_flag "none",
+ *   message_text "".
+ * @returns {{ exposure_entries: object[] }}
+ */
+export function generateExposureLogMock(entries) {
+  return {
+    exposure_entries: entries.map((entry) => ({
+      instrument: "LSSTCam",
+      exposure_flag: "none",
+      message_text: "",
+      ...entry,
+    })),
+  };
+}

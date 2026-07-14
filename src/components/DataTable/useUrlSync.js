@@ -1,10 +1,14 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { getColumnUrlMappings } from "./tableUtils";
 
 /**
  * Hook for syncing column filters with URL parameters.
  * Reads initial filters from URL and writes filter changes back to URL.
+ *
+ * Columns without a `urlParam` in their meta can still be filtered: their
+ * filter values are kept in local state and merged with the URL-derived
+ * filters, but never written to the URL (so they don't survive a reload).
  *
  * @param {Object} options - Configuration options
  * @param {string} options.routePath - TanStack Router route path (e.g., "/data-log")
@@ -22,7 +26,11 @@ export function useUrlSync({ routePath, columns = [], defaultFilters = [] }) {
     [columns],
   );
 
-  // Derive columnFilters directly from URL params (falls back to defaultFilters if none)
+  // Filters for columns without a urlParam mapping (table-only filters)
+  const [localFilters, setLocalFilters] = useState([]);
+
+  // Derive columnFilters from URL params (falling back to defaultFilters if
+  // none), merged with the table-only local filters
   const columnFilters = useMemo(() => {
     const filters = [];
     for (const [urlParam, columnId] of Object.entries(urlParamToColumnId)) {
@@ -31,8 +39,9 @@ export function useUrlSync({ routePath, columns = [], defaultFilters = [] }) {
         filters.push({ id: columnId, value: parseParamValue(value) });
       }
     }
-    return filters.length > 0 ? filters : defaultFilters;
-  }, [searchParams, urlParamToColumnId, defaultFilters]);
+    const urlFilters = filters.length > 0 ? filters : defaultFilters;
+    return [...urlFilters, ...localFilters];
+  }, [searchParams, urlParamToColumnId, defaultFilters, localFilters]);
 
   // Custom setter that updates the URL (columnFilters is derived from URL automatically)
   const setColumnFilters = useCallback(
@@ -52,16 +61,21 @@ export function useUrlSync({ routePath, columns = [], defaultFilters = [] }) {
         }
       }
 
-      // Add current filters
+      // Add current filters: URL-mapped columns go into the URL, the rest
+      // into local state
+      const newLocalFilters = [];
       for (const filter of newFilters) {
         const urlParam = columnIdToUrlParam[filter.id];
         if (urlParam && filter.value) {
           newParams[urlParam] = Array.isArray(filter.value)
             ? filter.value
             : [filter.value];
+        } else if (!urlParam) {
+          newLocalFilters.push(filter);
         }
       }
 
+      setLocalFilters(newLocalFilters);
       navigate({ to: routePath, search: newParams, replace: true });
     },
     [
@@ -74,8 +88,10 @@ export function useUrlSync({ routePath, columns = [], defaultFilters = [] }) {
     ],
   );
 
-  // Reset filters: clears filter params from URL; columnFilters falls back to defaultFilters
+  // Reset filters: clears table-only filters and filter params from URL;
+  // columnFilters falls back to defaultFilters
   const resetFilters = useCallback(() => {
+    setLocalFilters([]);
     const newParams = { ...searchParams };
     for (const urlParam of urlParamKeys) {
       if (Object.hasOwn(newParams, urlParam)) {
