@@ -38,7 +38,10 @@ export async function openColumnMenu(page, columnHeaderName) {
   const header = page
     .getByRole("columnheader")
     .filter({ hasText: columnHeaderName });
-  await header.locator("button").click();
+  // Open via keyboard: on narrow columns the ⋮ button can overflow under the
+  // column-resize handle, which intercepts mouse clicks.
+  await header.locator("button").focus();
+  await page.keyboard.press("Enter");
 }
 
 /**
@@ -80,7 +83,11 @@ export async function groupBy(page, columnHeaderName) {
  * @returns {Promise<import('@playwright/test').Locator>}
  */
 export async function cellByHeader(page, row, headerName) {
-  const headerTexts = await page.getByRole("columnheader").allInnerTexts();
+  const headers = page.getByRole("columnheader");
+  // While a column dropdown menu is open (or still closing), the rest of the
+  // page is aria-hidden and role queries match nothing — wait it out.
+  await expect(headers.filter({ hasText: headerName }).first()).toBeVisible();
+  const headerTexts = await headers.allInnerTexts();
   const idx = headerTexts.findIndex((t) => t.includes(headerName));
   expect(idx).toBeGreaterThan(-1);
   return row.locator("td").nth(idx);

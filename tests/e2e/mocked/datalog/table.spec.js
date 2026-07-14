@@ -4,6 +4,7 @@ import { setupApiMocks } from "../../helpers/mock-api.js";
 import {
   waitForDataLogLoad,
   getDataLogUrl,
+  cellByHeader,
 } from "../../helpers/datalog-helpers.js";
 
 const DATALOG_URL = getDataLogUrl();
@@ -34,6 +35,15 @@ test.describe("Data-log page — table content and formatting", () => {
     await expect(firstRow).toContainText("1.30");
     // img_type not in mock → undefined → "na"
     await expect(firstRow).toContainText("na");
+    // sky_bg_median = 630 → ≥100 → 0 decimals
+    const skyBgCell = await cellByHeader(page, firstRow, "Sky Brightness");
+    await expect(skyBgCell).toHaveText("630");
+    // exp_time = 30 → fixed { decimals: 2 } option overrides inference
+    const expTimeCell = await cellByHeader(page, firstRow, "Exposure Time (s)");
+    await expect(expTimeCell).toHaveText("30.00");
+    // can_see_sky = true → boolean toString
+    const canSeeSkyCell = await cellByHeader(page, firstRow, "Can See Sky");
+    await expect(canSeeSkyCell).toHaveText("true");
   });
 
   test("column header tooltip appears on hover", async ({ page }) => {

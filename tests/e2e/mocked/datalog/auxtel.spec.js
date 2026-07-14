@@ -1,6 +1,7 @@
 // @ts-check
 import { test, expect } from "@playwright/test";
 import { setupApiMocks } from "../../helpers/mock-api.js";
+import { generateDataLogMock } from "../../helpers/mock-generators.js";
 import {
   waitForDataLogLoad,
   getDataLogUrl,
@@ -94,5 +95,30 @@ test.describe("Data-log page — AuxTel", () => {
     await expect(
       page.getByRole("columnheader", { name: /^Seq Num/ }),
     ).toHaveCount(0);
+  });
+});
+
+test.describe("Data-log page — AuxTel RubinTV links", () => {
+  test.beforeEach(async ({ page }) => {
+    // AT_-prefixed exposure names map to the AuxTel telescope in RubinTVLink
+    const auxtelData = generateDataLogMock(5, {
+      postProcess: (r, i) => ({
+        ...r,
+        exposure_name: `AT_O_20260101_${i.toString().padStart(6, "0")}`,
+      }),
+    });
+    await setupApiMocks(page, { "data-log": auxtelData });
+    await page.goto(AUXTEL_URL);
+    await waitForDataLogLoad(page);
+  });
+
+  test("RubinTV column shows 'Mount Monitor' link pointing to the auxtel monitor channel", async ({
+    page,
+  }) => {
+    const link = page.getByRole("link", { name: "Mount Monitor" }).first();
+    await expect(link).toBeVisible();
+    await expect(link).toHaveAttribute("href", /auxtel/);
+    await expect(link).toHaveAttribute("href", /channel_name=monitor/);
+    await expect(link).toHaveAttribute("href", /date_str=2026-01-01/);
   });
 });
