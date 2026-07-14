@@ -22,10 +22,15 @@ export async function waitForDataLogLoad(page) {
  *
  * @param {string} [dayobs="20260101"]
  * @param {string} [telescope="Simonyi"]
+ * @param {string} [endDayobs=dayobs] - For multi-day ranges
  * @returns {string}
  */
-export function getDataLogUrl(dayobs = "20260101", telescope = "Simonyi") {
-  return `/nightlydigest/data-log?startDayobs=${dayobs}&endDayobs=${dayobs}&telescope=${telescope}`;
+export function getDataLogUrl(
+  dayobs = "20260101",
+  telescope = "Simonyi",
+  endDayobs = dayobs,
+) {
+  return `/nightlydigest/data-log?startDayobs=${dayobs}&endDayobs=${endDayobs}&telescope=${telescope}`;
 }
 
 /**
