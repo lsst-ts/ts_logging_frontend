@@ -33,6 +33,8 @@ services:
       - EXTERNAL_INSTANCE_URL=${EXTERNAL_INSTANCE_URL}
       - RUBIN_SIM_DATA_DIR=/home/saluser/develop/rubin_sim_data # Rubin SIM data
       - LSST_DISABLE_BUCKET_VALIDATION=${LSST_DISABLE_BUCKET_VALIDATION}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
 
     ports:
       - "8080:8080"
@@ -40,6 +42,30 @@ services:
       - ${BACKEND_PATH}:/home/saluser/develop
       - ${LOCAL_RUBIN_SIM_DATA_DIR}:/home/saluser/develop/rubin_sim_data:ro # Mount Rubin SIM data directory as read-only
       - ~/.aws:/home/saluser/.aws:ro
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  redis:
+    container_name: nightlydigest-redis
+    image: redis:7-alpine
+    # Cache, not a datastore: bounded memory with LRU eviction and no
+    # persistence.
+    command: >
+      redis-server
+      --maxmemory ${REDIS_MAX_MEMORY:-512mb}
+      --maxmemory-policy allkeys-lru
+      --save ""
+      --appendonly no
+    # Published so redis-cli and scripts/perf_test.py can reach the
+    # cache from the host.
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
 
   nginx:
     container_name: nightlydigest-nginx
