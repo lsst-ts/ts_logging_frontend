@@ -31,6 +31,7 @@ const ALMANAC_MOCK = {
     {
       dayobs: TEST_DAYOBS_INT,
       night_hours: 8,
+      elapsed_twilight_hours: 8,
       twilight_evening_12deg: "2026-01-01 20:00:00",
       twilight_morning_12deg: "2026-01-02 04:00:00",
       moon_rise_time: "2026-01-01 22:00:00",
