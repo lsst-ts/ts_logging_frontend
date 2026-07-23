@@ -1,3 +1,12 @@
+v0.21.0 (2026-07-23)
+====================
+
+New Features
+------------
+
+- Add calculated fault to Time Loss card and refactor Time Accounting applet. (`OSW-2330 <https://rubinobs.atlassian.net//browse/OSW-2330>`_)
+
+
 v0.20.0 (2026-06-18)
 ====================
 

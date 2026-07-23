@@ -1,1 +1,0 @@
-Add calculated fault to Time Loss card and refactor Time Accounting applet.
