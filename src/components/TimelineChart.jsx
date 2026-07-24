@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef } from "react";
-import * as echarts from "echarts";
 
+import { millisToDateTime, dayobsAtMidnight } from "@/utils/timeUtils";
 import {
-  millisToDateTime,
-  millisToHHmm,
-  dayobsAtMidnight,
-} from "@/utils/timeUtils";
-import { generateHourlyTicks } from "@/utils/timelineUtils";
+  generateHourlyTicks,
+  buildBrushConfig,
+  buildGridLinesSeries,
+  buildTwilightSeries,
+  buildTimelineGraphicElements,
+} from "@/utils/timelineUtils";
 import {
   TIMELINE_DIMENSIONS,
   TIMELINE_MARGINS,
@@ -16,6 +17,7 @@ import {
   TIMELINE_INTERVALS,
   TIMELINE_MARKER,
 } from "@/constants/TIMELINE_DEFINITIONS";
+import { useEChartsTimeline } from "@/hooks/useEChartsTimeline";
 
 /**
  * Unified timeline chart component for displaying events over time.
@@ -25,291 +27,128 @@ import {
  * @param {[DateTime, DateTime]} props.fullTimeRange - Full time range for the chart
  * @param {[DateTime, DateTime]} props.selectedTimeRange - Currently selected time range
  * @param {Function} props.setSelectedTimeRange - Function to update selected time range
- * @param {boolean} [props.showTwilight=false] - Whether to show twilight lines
- * @param {number[]} [props.twilightValues=[]] - Twilight times in milliseconds
+ * @param {number[]} [props.twilightValues=[]] - Twilight times in milliseconds (shown when non-empty)
  * @param {boolean} [props.showMoonArea=false] - Whether to show moon-up areas
  * @param {Array<[number, number]>} [props.moonIntervals=[]] - Moon-up intervals
  * @param {boolean} [props.showMoonIllumination=false] - Whether to show moon illumination labels
  * @param {Array<{dayobs: string, illum: string}>} [props.illumValues=[]] - Moon illumination values
- * @param {Function} [props.onMouseDown] - Optional callback for mouseDown event
- * @param {Function} [props.onMouseMove] - Optional callback for mouseMove event
- * @param {Function} [props.onMouseUp] - Optional callback for mouseUp event
- * @param {Function} [props.onDoubleClick] - Optional callback for doubleClick event
  */
 function TimelineChart({
   data,
   fullTimeRange,
   selectedTimeRange,
   setSelectedTimeRange,
-  showTwilight = false,
   twilightValues = [],
   showMoonArea = false,
   moonIntervals = [],
   showMoonIllumination = false,
   illumValues = [],
+  brushGroup,
 }) {
   const containerRef = useRef(null);
-  const instanceRef = useRef(null);
-
-  // Track latest prop values in refs for use inside event handlers without
-  // needing to re-register them on every render.
-  const fullTimeRangeRef = useRef(fullTimeRange);
-  const selectedTimeRangeRef = useRef(selectedTimeRange);
-  const setSelectedTimeRangeRef = useRef(setSelectedTimeRange);
-  useEffect(() => {
-    fullTimeRangeRef.current = fullTimeRange;
-  }, [fullTimeRange]);
-  useEffect(() => {
-    selectedTimeRangeRef.current = selectedTimeRange;
-  }, [selectedTimeRange]);
-  useEffect(() => {
-    setSelectedTimeRangeRef.current = setSelectedTimeRange;
-  }, [setSelectedTimeRange]);
 
   const prevDataRef = useRef(null);
   const scatterEChartsDataRef = useRef(null);
 
   const computedHeight =
     data.length * TIMELINE_DIMENSIONS.SERIES_ROW_HEIGHT +
-    TIMELINE_DIMENSIONS.BASE_HEIGHT +
-    (showMoonIllumination ? TIMELINE_DIMENSIONS.PLOT_LABEL_HEIGHT : 0) +
-    (showTwilight ? TIMELINE_DIMENSIONS.PLOT_LABEL_HEIGHT : 0);
-
-  // ── Init / destroy ──────────────────────────────────────────────────────────
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-
-    const instance = echarts.init(el, null, { renderer: "canvas" });
-    instanceRef.current = instance;
-
-    // Resize on container size changes
-    const observer = new ResizeObserver(() => {
-      instance.resize();
-      updateGraphicElements(instance);
-    });
-    observer.observe(el);
-
-    // ── Brush (drag selection) ────────────────────────────────────────────────
-    instance.on("brushEnd", (params) => {
-      const ft = fullTimeRangeRef.current;
-      const setter = setSelectedTimeRangeRef.current;
-      if (!params.areas.length) {
-        setter(ft);
-        return;
-      }
-      const [startMs, endMs] = params.areas[0].coordRange;
-      const min = millisToDateTime(Math.round(Math.min(startMs, endMs)));
-      const max = millisToDateTime(Math.round(Math.max(startMs, endMs)));
-      setter([min, max]);
-    });
-
-    // ── Double-click reset ────────────────────────────────────────────────────
-    // Use native DOM listener — the brush component intercepts mouse events and
-    // prevents ECharts' own dblclick from firing.
-    const handleDblClick = () => {
-      instance.dispatchAction({ type: "brush", areas: [] });
-      setSelectedTimeRangeRef.current(fullTimeRangeRef.current);
-    };
-    el.addEventListener("dblclick", handleDblClick);
-
-    return () => {
-      el.removeEventListener("dblclick", handleDblClick);
-      observer.disconnect();
-      instance.dispose();
-      instanceRef.current = null;
-    };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── Sync brush from external selectedTimeRange changes ──────────────────────
-  useEffect(() => {
-    const instance = instanceRef.current;
-    if (!instance || !fullTimeRange[0] || !fullTimeRange[1]) return;
-
-    const isFullRange =
-      selectedTimeRange[0].toMillis() === fullTimeRange[0].toMillis() &&
-      selectedTimeRange[1].toMillis() === fullTimeRange[1].toMillis();
-
-    if (isFullRange) {
-      instance.dispatchAction({ type: "brush", areas: [] });
-    } else {
-      instance.dispatchAction({
-        type: "brush",
-        areas: [
-          {
-            brushType: "lineX",
-            coordRange: [
-              selectedTimeRange[0].toMillis(),
-              selectedTimeRange[1].toMillis(),
-            ],
-            xAxisIndex: 0,
-          },
-        ],
-      });
-    }
-  }, [selectedTimeRange, fullTimeRange]);
+    TIMELINE_DIMENSIONS.BASE_HEIGHT;
 
   // ── Graphic elements (dayobs labels, borders, moon symbols) ─────────────────
   // These are positioned in pixel space, so must be computed after render.
   // Defined before the option useEffect so it can be in its dependency array.
   const updateGraphicElements = useCallback(
     (instance) => {
-      const xMinMillis = fullTimeRange[0]?.toMillis();
-      const xMaxMillis = fullTimeRange[1]?.toMillis();
-      if (!xMinMillis || !xMaxMillis) return;
+      const result = buildTimelineGraphicElements(instance, containerRef, {
+        fullTimeRange,
+        computedHeight,
+        showBaseline: data?.length > 1,
+      });
+      if (!result) return;
 
-      const hourlyTicks = generateHourlyTicks(
-        xMinMillis,
-        xMaxMillis + 60000,
-        TIMELINE_INTERVALS.HOURLY_TICK_INTERVAL,
-      );
+      const { elements, fontFamily } = result;
 
-      // Get pixel x bounds from the axis (reliable for value-type x-axis)
-      const gridLeft = instance.convertToPixel({ xAxisIndex: 0 }, xMinMillis);
-      const gridRight = instance.convertToPixel({ xAxisIndex: 0 }, xMaxMillis);
-      if (gridLeft == null || gridRight == null) return;
+      // ── Chile midnight: moon illumination symbol ─────────────────────────
+      if (showMoonIllumination) {
+        const xMinMillis = fullTimeRange[0]?.toMillis();
+        const xMaxMillis = fullTimeRange[1]?.toMillis();
+        const hourlyTicks = generateHourlyTicks(
+          xMinMillis,
+          xMaxMillis + 60000,
+          TIMELINE_INTERVALS.HOURLY_TICK_INTERVAL,
+        );
 
-      // Derive grid y bounds from our own margin constants — convertToPixel
-      // on a category y-axis returns the row centre, not the grid edge.
-      const containerHeight =
-        containerRef.current?.offsetHeight ?? computedHeight;
-      const fontFamily = getComputedStyle(containerRef.current).fontFamily;
-      const bottomMargin =
-        TIMELINE_MARGINS.bottom +
-        (showTwilight ? TIMELINE_DIMENSIONS.PLOT_LABEL_HEIGHT : 0);
-      const gridBottom = containerHeight - bottomMargin;
+        for (const tickMs of hourlyTicks) {
+          const dt = millisToDateTime(tickMs);
+          // Skip hours already handled by buildDayobsGraphicElements
+          if (dt.hour === 12 || dt.hour === 0) continue;
 
-      const elements = [];
+          const dtChile = dt.setZone("America/Santiago");
+          if (dtChile.hour !== 0) continue;
 
-      // White baseline across the bottom of the grid in multi-series mode
-      if (data?.length > 1) {
-        elements.push({
-          type: "line",
-          silent: true,
-          z: 0,
-          shape: {
-            x1: gridLeft,
-            y1: gridBottom,
-            x2: gridRight,
-            y2: gridBottom,
-          },
-          style: { stroke: "white", lineWidth: 1, opacity: 1 },
-        });
-      }
+          const pixelX = instance.convertToPixel({ xAxisIndex: 0 }, tickMs);
+          if (pixelX == null) continue;
 
-      for (const tickMs of hourlyTicks) {
-        const dt = millisToDateTime(tickMs);
-        const hourUTC = dt.hour;
-        const pixelX = instance.convertToPixel({ xAxisIndex: 0 }, tickMs);
-        if (pixelX == null) continue;
+          const dayobs = dayobsAtMidnight(dtChile, "yyyyLLdd");
+          const illumEntry = illumValues.find(
+            (entry) => entry.dayobs === dayobs,
+          );
+          const illumLabel = illumEntry?.illum ?? null;
+          if (!illumLabel) continue;
 
-        // ── UTC midday: dayobs border line ──────────────────────────────────
-        if (hourUTC === 12) {
+          const r = TIMELINE_DIMENSIONS.MOON_RADIUS;
+          const xOff = TIMELINE_DIMENSIONS.X_OFFSET;
+          const moonY = r; // offset down by radius so symbol isn't clipped at top
+
           elements.push({
-            type: "line",
-            silent: true,
-            z: 0,
-            shape: {
-              x1: pixelX,
-              y1: 0,
-              x2: pixelX,
-              y2: containerHeight,
-            },
-            style: {
-              stroke: TIMELINE_COLORS.DAYOBS_BORDER,
-              lineWidth: 1,
-            },
-          });
-          continue;
-        }
-
-        // ── UTC midnight: date label ─────────────────────────────────────────
-        if (hourUTC === 0) {
-          elements.push({
-            type: "text",
+            type: "group",
             silent: true,
             z: 0,
             x: pixelX,
-            y:
-              gridBottom +
-              TIMELINE_DIMENSIONS.DIST_BELOW_X_AXIS +
-              (showTwilight ? TIMELINE_DIMENSIONS.PLOT_LABEL_HEIGHT : 0),
-            style: {
-              text: dayobsAtMidnight(dt, "yyyy-LL-dd"),
-              textAlign: "center",
-              fill: showTwilight
-                ? TIMELINE_COLORS.DAYOBS_LABEL_DIM
-                : TIMELINE_COLORS.DAYOBS_LABEL,
-              fontSize: TIMELINE_DIMENSIONS.LABEL_TEXT_SIZE,
-              fontFamily,
-              userSelect: "none",
-            },
+            y: moonY,
+            children: [
+              {
+                type: "circle",
+                shape: { cx: -xOff, cy: 0, r },
+                style: { fill: TIMELINE_COLORS.MOON_SYMBOL_LIGHT },
+              },
+              {
+                type: "circle",
+                shape: { cx: -xOff + r / 2, cy: -r / 2, r },
+                style: { fill: TIMELINE_COLORS.MOON_SYMBOL_DARK },
+              },
+              {
+                type: "text",
+                x: xOff,
+                y: -r,
+                style: {
+                  text: illumLabel,
+                  fill: TIMELINE_COLORS.MOON_LABEL,
+                  fontSize: TIMELINE_TEXT_STYLES.LABEL_FONT_SIZE,
+                  fontWeight: TIMELINE_TEXT_STYLES.LABEL_FONT_WEIGHT,
+                  fontFamily,
+                  userSelect: "none",
+                },
+              },
+            ],
           });
-          continue;
-        }
-
-        // ── Chile midnight: moon illumination symbol ─────────────────────────
-        if (showMoonIllumination) {
-          const dtChile = dt.setZone("America/Santiago");
-          if (dtChile.hour === 0) {
-            const dayobs = dayobsAtMidnight(dtChile, "yyyyLLdd");
-            const illumEntry = illumValues.find(
-              (entry) => entry.dayobs === dayobs,
-            );
-            const illumLabel = illumEntry?.illum ?? null;
-
-            if (illumLabel) {
-              const r = TIMELINE_DIMENSIONS.MOON_RADIUS;
-              const xOff = TIMELINE_DIMENSIONS.X_OFFSET;
-              const moonY = r; // offset down by radius so symbol isn't clipped at top
-
-              elements.push({
-                type: "group",
-                silent: true,
-                z: 0,
-                x: pixelX,
-                y: moonY,
-                children: [
-                  {
-                    type: "circle",
-                    shape: { cx: -xOff, cy: 0, r },
-                    style: { fill: TIMELINE_COLORS.MOON_SYMBOL_LIGHT },
-                  },
-                  {
-                    type: "circle",
-                    shape: { cx: -xOff + r / 2, cy: -r / 2, r },
-                    style: { fill: TIMELINE_COLORS.MOON_SYMBOL_DARK },
-                  },
-                  {
-                    type: "text",
-                    x: xOff,
-                    y: -r,
-                    style: {
-                      text: illumLabel,
-                      fill: TIMELINE_COLORS.MOON_LABEL,
-                      fontSize: TIMELINE_TEXT_STYLES.LABEL_FONT_SIZE,
-                      fontWeight: TIMELINE_TEXT_STYLES.LABEL_FONT_WEIGHT,
-                      fontFamily,
-                      userSelect: "none",
-                    },
-                  },
-                ],
-              });
-            }
-          }
         }
       }
 
       instance.setOption({ graphic: elements });
     },
-    [
-      data,
+    [data, fullTimeRange, showMoonIllumination, illumValues, computedHeight],
+  );
+
+  const { instanceRef, syncBrushToSelection, xAxisOption } = useEChartsTimeline(
+    containerRef,
+    {
       fullTimeRange,
-      showMoonIllumination,
-      illumValues,
-      computedHeight,
-      showTwilight,
-    ],
+      selectedTimeRange,
+      setSelectedTimeRange,
+      onResize: updateGraphicElements,
+      brushGroup,
+    },
   );
 
   // ── Build and apply the ECharts option ─────────────────────────────────────
@@ -351,7 +190,7 @@ function TimelineChart({
     // Row lines: one thin horizontal line per series
     const rowLineSeries = data.map((entry, i) => ({
       type: "line",
-      z: 1,
+      z: -1,
       id: `row-line-${i}`,
       data: [
         [xMinMillis, categoryIds[i]],
@@ -383,16 +222,6 @@ function TimelineChart({
         entry.timestamps.map((t) => [t, categoryIds[i]]),
       );
     }
-
-    console.debug(
-      "[TimelineChart] series counts:",
-      data.map((entry, i) => ({
-        id: `data-${i}`,
-        label: entry.label ?? entry.color,
-        count: entry.timestamps.length,
-        isActive: entry.isActive,
-      })),
-    );
 
     // Data point scatter series: one per entry
     const scatterSeries = data.map((entry, i) => ({
@@ -440,65 +269,17 @@ function TimelineChart({
           : { data: [] },
     };
 
-    // Twilight lines — dedicated host series
-    const twilightSeries = {
-      type: "scatter",
-      id: "twilight-lines",
-      data: [],
-      silent: true,
-      animation: false,
-      markLine:
-        showTwilight && twilightValues.length
-          ? {
-              silent: true,
-              z: 0,
-              symbol: ["none", "none"],
-              lineStyle: {
-                color: TIMELINE_COLORS.TWILIGHT_LINE,
-                width: TIMELINE_COLORS.TWILIGHT_STROKE_WIDTH,
-                type: "solid",
-              },
-              data: twilightValues
-                .filter((twi) => xMinMillis <= twi && twi <= xMaxMillis)
-                .map((twi) => ({
-                  xAxis: twi,
-                  label: {
-                    show: true,
-                    formatter: millisToHHmm(twi),
-                    position: "end",
-                    distance: 10,
-                    rotate: 0,
-                    color: TIMELINE_COLORS.TWILIGHT_LABEL,
-                    fontSize: TIMELINE_TEXT_STYLES.LABEL_FONT_SIZE,
-                    fontWeight: TIMELINE_TEXT_STYLES.LABEL_FONT_WEIGHT,
-                    letterSpacing: TIMELINE_TEXT_STYLES.LABEL_LETTER_SPACING,
-                  },
-                })),
-            }
-          : { data: [] },
-    };
-
     const option = {
       animation: false,
       toolbox: { show: false },
       grid: {
-        top:
-          TIMELINE_MARGINS.top +
-          (showMoonIllumination ? TIMELINE_DIMENSIONS.PLOT_LABEL_HEIGHT : 0),
+        top: TIMELINE_MARGINS.top,
         right: TIMELINE_MARGINS.right,
         left: TIMELINE_MARGINS.left,
-        bottom:
-          TIMELINE_MARGINS.bottom +
-          (showTwilight ? TIMELINE_DIMENSIONS.PLOT_LABEL_HEIGHT : 0),
+        bottom: TIMELINE_MARGINS.bottom,
         containLabel: false,
       },
-      xAxis: {
-        type: "value",
-        min: xMinMillis,
-        max: xMaxMillis,
-        show: false,
-        splitLine: { show: false },
-      },
+      xAxis: xAxisOption,
       yAxis: {
         type: "category",
         data: categoryIds,
@@ -508,43 +289,17 @@ function TimelineChart({
         min: -1,
         max: categoryIds.length,
       },
-      brush: {
-        toolbox: [],
-        xAxisIndex: 0,
-        brushType: "lineX",
-        brushStyle: {
-          borderColor: TIMELINE_COLORS.SELECTION_STROKE,
-          color: TIMELINE_COLORS.DEFAULT_SELECTION_FILL,
-          borderWidth: 1,
-          opacity: 1,
-        },
-        inBrush: {},
-        outOfBrush: {},
-      },
+      brush: buildBrushConfig(),
       series: [
-        // Invisible host series for hourly grid lines
-        {
-          type: "scatter",
-          id: "grid-lines",
-          data: [],
-          silent: true,
-          animation: false,
-          markLine: {
-            silent: true,
-            z: 0,
-            symbol: ["none", "none"],
-            lineStyle: {
-              color: TIMELINE_COLORS.GRID_LINE,
-              opacity: TIMELINE_COLORS.GRID_OPACITY,
-              width: 1,
-              type: "solid",
-            },
-            label: { show: false },
-            data: hourlyTicks.map((tick) => ({ xAxis: tick })),
-          },
-        },
+        buildGridLinesSeries(hourlyTicks),
         moonSeries,
-        twilightSeries,
+        buildTwilightSeries(
+          "twilight-lines",
+          twilightValues,
+          "solid",
+          xMinMillis,
+          xMaxMillis,
+        ),
         ...rowLineSeries,
         ...scatterSeries,
       ],
@@ -560,26 +315,9 @@ function TimelineChart({
       brushOption: { brushType: "lineX", brushMode: "single" },
     });
 
-    // Restore brush from URL params on load — but only if it's a sub-range.
-    // Must run after setOption (brush component must exist) and after
-    // takeGlobalCursor (brush mode must be active).
-    const sr = selectedTimeRangeRef.current;
-    const fr = fullTimeRangeRef.current;
-    const isFullRange =
-      sr?.[0]?.toMillis() === fr?.[0]?.toMillis() &&
-      sr?.[1]?.toMillis() === fr?.[1]?.toMillis();
-    if (sr && fr && sr[0] && sr[1] && !isFullRange) {
-      instance.dispatchAction({
-        type: "brush",
-        areas: [
-          {
-            brushType: "lineX",
-            coordRange: [sr[0].toMillis(), sr[1].toMillis()],
-            xAxisIndex: 0,
-          },
-        ],
-      });
-    }
+    // Sync brush to URL-restored selection — must run after setOption (brush
+    // component must exist) and after takeGlobalCursor (brush mode must be active).
+    syncBrushToSelection();
 
     // Defer graphic elements until ECharts has finished rendering,
     // since convertToPixel is only valid after the chart is laid out.
@@ -587,13 +325,15 @@ function TimelineChart({
   }, [
     data,
     fullTimeRange,
-    showTwilight,
+    xAxisOption,
     twilightValues,
     showMoonArea,
     moonIntervals,
     showMoonIllumination,
     illumValues,
     updateGraphicElements,
+    syncBrushToSelection,
+    instanceRef,
   ]);
 
   // ── Targeted isActive update ────────────────────────────────────────────────
@@ -635,13 +375,13 @@ function TimelineChart({
       },
       { notMerge: false },
     );
-  }, [data]);
+  }, [data, instanceRef]);
 
   // Re-run graphic elements when the relevant props change
   useEffect(() => {
     const instance = instanceRef.current;
     if (instance) updateGraphicElements(instance);
-  }, [updateGraphicElements]);
+  }, [updateGraphicElements, instanceRef]);
 
   return (
     <div
