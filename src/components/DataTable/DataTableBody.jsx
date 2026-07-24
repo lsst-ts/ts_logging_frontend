@@ -1,6 +1,8 @@
+import { useEffect, useRef } from "react";
 import { flexRender } from "@tanstack/react-table";
 
 import { TableBody, TableRow, TableCell } from "@/components/ui/table";
+
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { SKELETON_ROW_COUNT } from "./constants";
@@ -13,8 +15,37 @@ import { SKELETON_ROW_COUNT } from "./constants";
  * @param {Object} props.table - TanStack Table instance
  * @param {Array} props.columns - Column definitions (for skeleton column count)
  * @param {boolean} props.isLoading - Whether data is loading
+ * @param {string|null} props.selected - The selected key value to match (or null for none)
+ * @param {Function} props.onSelectionChange - Callback when a row is clicked to select
+ * @param {string} props.selectedKey - The column accessor key used for selection
  */
-function DataTableBody({ table, columns, isLoading }) {
+function DataTableBody({
+  table,
+  columns,
+  isLoading,
+  selected = null,
+  onSelectionChange,
+  selectedKey,
+}) {
+  const selectedRowRef = useRef(null);
+  const hasScrolled = useRef(false);
+
+  useEffect(() => {
+    if (
+      hasScrolled.current ||
+      isLoading ||
+      selected === null ||
+      !selectedRowRef.current
+    )
+      return;
+    hasScrolled.current = true;
+    selectedRowRef.current.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+      container: "nearest",
+    });
+  }, [isLoading, selected]);
+
   if (isLoading) {
     return (
       <TableBody>
@@ -36,8 +67,42 @@ function DataTableBody({ table, columns, isLoading }) {
       {table.getRowModel().rows.map((row) => {
         const isGroupedRow = row.getIsGrouped();
 
+        // Check if this row matches the selected value
+        // Use loose equality (==) to handle number/string comparisons
+        const rowValue = row.getValue(selectedKey);
+        const isSelected =
+          !isGroupedRow &&
+          selected != null &&
+          selectedKey &&
+          rowValue == selected;
+
+        const handleClick = (e) => {
+          e.stopPropagation();
+          // Ignore clicks from portaled elements (e.g., modals/dialogs)
+          if (!e.currentTarget.contains(e.target)) {
+            return;
+          }
+          // Don't select/deselect row if user is dragging to select text
+          if (window.getSelection()?.toString().length > 0) {
+            return;
+          }
+          if (onSelectionChange && !isGroupedRow && selectedKey) {
+            onSelectionChange(isSelected ? null : row.getValue(selectedKey));
+          }
+        };
+
         return (
-          <TableRow key={row.id}>
+          <TableRow
+            key={row.id}
+            ref={isSelected ? selectedRowRef : null}
+            onClick={handleClick}
+            data-selected={isSelected ? "true" : undefined}
+            className={
+              isSelected
+                ? "bg-black/40 shadow-[inset_4px_0_0_0_white] border-t-2 border-b-2 border-white"
+                : ""
+            }
+          >
             {isGroupedRow ? (
               <GroupedRowCell row={row} table={table} columns={columns} />
             ) : (

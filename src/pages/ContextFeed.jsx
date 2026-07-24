@@ -33,7 +33,7 @@ import {
 import { mergeContextFeedSources, getBlockSourceLabel } from "@/utils/utils";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
 import { prepareAlmanacData } from "@/utils/timelineUtils";
-import { useUrlSync } from "@/components/DataTable";
+import { useUrlSync, useSelectionSync } from "@/components/DataTable";
 
 // This filters out the non-selected telescope's exposures, queues and
 // narrative logs from the default display.
@@ -85,15 +85,21 @@ function ContextFeed() {
   const { selectedTimeRange, setSelectedTimeRange, fullTimeRange } =
     useTimeRangeFromURL("/context-feed");
 
+  // Selection state synced with URL
+  const { selectedValue, setSelectedValue } = useSelectionSync({
+    routePath: "/context-feed",
+    selectedKey: "time",
+  });
+
   // Data and loading flags
   const [rubinNightsData, setRubinNightsData] = useState([]);
-  const [rubinNightsDataLoading, setRubinNightsDataLoading] = useState(false);
+  const [rubinNightsDataLoading, setRubinNightsDataLoading] = useState(true);
   const [blockLookup, setBlockLookup] = useState({});
-  const [blockLookupLoading, setBlockLookupLoading] = useState(false);
+  const [blockLookupLoading, setBlockLookupLoading] = useState(true);
 
   // Almanac data for timeline
   const [twilightValues, setTwilightValues] = useState([]);
-  const [almanacLoading, setAlmanacLoading] = useState(false);
+  const [almanacLoading, setAlmanacLoading] = useState(true);
 
   // Visibility toggles
   const [timelineVisible, setTimelineVisible] = useState(true);
@@ -538,6 +544,8 @@ function ContextFeed() {
           setColumnFilters={setColumnFilters}
           resetFilters={resetFilters}
           blockLookup={blockLookup}
+          selected={selectedValue}
+          onSelectionChange={setSelectedValue}
         />
       </div>
     </>

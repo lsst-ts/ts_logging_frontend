@@ -32,6 +32,7 @@ import {
   prepareMoonIntervals,
 } from "@/utils/timelineUtils";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
+import { useSelectionSync } from "@/components/DataTable";
 
 function DataLog() {
   // Routing and URL params
@@ -65,11 +66,11 @@ function DataLog() {
 
   // Data and loading flags
   const [consDBdata, setConsDBdata] = useState([]);
-  const [consDBdataLoading, setConsDBdataLoading] = useState(false);
+  const [consDBdataLoading, setConsDBdataLoading] = useState(true);
   const [exposureLogData, setExposureLogData] = useState([]);
-  const [exposureLogDataLoading, setExposureLogDataLoading] = useState(false);
+  const [exposureLogDataLoading, setExposureLogDataLoading] = useState(true);
   const [blockLookup, setBlockLookup] = useState({});
-  const [blockLookupLoading, setBlockLookupLoading] = useState(false);
+  const [blockLookupLoading, setBlockLookupLoading] = useState(true);
 
   // Almanac data for timeline
   const [twilightValues, setTwilightValues] = useState([]);
@@ -93,6 +94,11 @@ function DataLog() {
     removeNotification,
     clearNotifications,
   } = useNotifications();
+  // Selection state synced with URL
+  const { selectedValue, setSelectedValue } = useSelectionSync({
+    routePath: "/data-log",
+    selectedKey: "exposure_id",
+  });
 
   // Calculate moon intervals when moon values or full time range changes
   useEffect(() => {
@@ -489,6 +495,8 @@ function DataLog() {
           data={filteredDataLogTableData}
           dataLogLoading={tableLoading}
           blockLookup={blockLookup}
+          selected={selectedValue}
+          onSelectionChange={setSelectedValue}
         />
       </div>
     </>
