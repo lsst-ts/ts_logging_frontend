@@ -1,0 +1,2 @@
+Configured nginx proxy cache to cache API responses using
+``Cache-Control`` headers set by the backend.
