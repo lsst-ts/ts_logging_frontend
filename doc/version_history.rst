@@ -1,3 +1,21 @@
+v0.22.0-alpha.1 (2026-07-24)
+============================
+
+New Features
+------------
+
+- Adds the ability to click to select a single row, and also syncs the selected row state with the URL, allowing it to be shared and for links to specific rows to be generated. (`OSW-1321 <https://rubinobs.atlassian.net//browse/OSW-1321>`_)
+- Add Observatory Status timeline to the Context Feed. (`OSW-2117 <https://rubinobs.atlassian.net//browse/OSW-2117>`_)
+- Add cumulative time in state plot of observatory status data to digest page, replacing the previous time accounting applet. (`OSW-2118 <https://rubinobs.atlassian.net//browse/OSW-2118>`_)
+
+
+Performance Enhancement
+-----------------------
+
+- Configured nginx proxy cache to cache API responses using
+  ``Cache-Control`` headers set by the backend. (`OSW-2415 <https://rubinobs.atlassian.net//browse/OSW-2415>`_)
+
+
 v0.21.0 (2026-07-23)
 ====================
 
