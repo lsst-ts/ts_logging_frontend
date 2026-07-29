@@ -226,6 +226,12 @@ export function formatTimeForTooltip(timeStr) {
   return dt.toFormat("HH:mm:ss");
 }
 
+/**
+ * Build day-break gaps between consecutive nights for the cumulative plot.
+ *
+ * @param {Map} nights Night metadata keyed by dayobs.
+ * @returns {Array<{start: number, end: number, gap: string}>} Day-break gap definitions.
+ */
 function buildDayBreaks(nights) {
   const DAY_BREAK_GAP = "2%";
   const dayBreaks = [];
@@ -243,6 +249,14 @@ function buildDayBreaks(nights) {
   return dayBreaks;
 }
 
+/**
+ * Build the open-dome overlay series for each night in the cumulative plot.
+ *
+ * Inserts `NaN` values between nights to break the plotted line.
+ *
+ * @param {Map} nights Night metadata keyed by dayobs.
+ * @returns {Array<[number, number]>} `[timestampMs, cumulativeOpenHours]` points.
+ */
 function buildOpenDomeSeries(nights) {
   const series = [];
 
@@ -316,6 +330,15 @@ function buildOpenDomeSeries(nights) {
   return series;
 }
 
+/**
+ * Build the night-hours reference series used by the cumulative plot.
+ *
+ * Inserts a `NaN` value after each sunrise to create a gap between
+ * consecutive nights in the plotted line.
+ *
+ * @param {Map} nights Night metadata keyed by dayobs.
+ * @returns {Array<[number, number]>} `[timestampMs, nightHours]` points.
+ */
 function buildNightHoursSeries(nights) {
   const series = [];
 
@@ -328,6 +351,13 @@ function buildNightHoursSeries(nights) {
   return series;
 }
 
+/**
+ * Build cumulative state series data for each observatory state across nights.
+ *
+ * @param {Array} intervals Observatory status intervals for the selected range.
+ * @param {Map} nights Night metadata keyed by dayobs.
+ * @returns {Object<string, Array<Object>>} Series data keyed by observatory state.
+ */
 function buildCumulativeStateSeries(intervals, nights) {
   // Build one output series per state.
   const stateNames = Object.keys(OBSERVATORY_STATES).filter(
@@ -553,7 +583,14 @@ function buildCumulativeStateSeries(intervals, nights) {
   return series;
 }
 
-function buildDayObsMap(almanacInfo, openDomeTimes = []) {
+/**
+ * Build a night metadata map from almanac data and open-dome intervals.
+ *
+ * @param {Array} almanacInfo Almanac records for each night.
+ * @param {Array} [openDomeTimes=[]] Open-dome intervals to attach to each night.
+ * @returns {Map} Night metadata keyed by dayobs.
+ */
+function buildNightMetadataMap(almanacInfo, openDomeTimes = []) {
   const nights = new Map();
 
   // Create all nights from almanac data.
@@ -593,6 +630,19 @@ function buildDayObsMap(almanacInfo, openDomeTimes = []) {
   return nights;
 }
 
+/**
+ * Assemble the data model used by the cumulative plot.
+ *
+ * @param {Array} almanacInfo Almanac records for the relevant nights.
+ * @param {Array} intervals Observatory status intervals to plot.
+ * @param {Array} openDomeTimes Open-dome intervals to overlay.
+ * @returns {{
+ *   breaks: Array,
+ *   nightHours: Array<[number, number]>,
+ *   openDomeSeries: Array<[number, number]>,
+ *   stateSeries: Object<string, Array<Object>>
+ * }} Data consumed by the cumulative plot component.
+ */
 export function buildCumulativePlotModel(
   almanacInfo,
   intervals,
@@ -600,7 +650,7 @@ export function buildCumulativePlotModel(
 ) {
   if (!almanacInfo || almanacInfo.length === 0) return {};
 
-  const nights = buildDayObsMap(almanacInfo, openDomeTimes);
+  const nights = buildNightMetadataMap(almanacInfo, openDomeTimes);
 
   return {
     breaks: buildDayBreaks(nights),

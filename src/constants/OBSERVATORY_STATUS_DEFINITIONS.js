@@ -1,8 +1,8 @@
 /**
- * Observatory Status Timeline Constants and Definitions
+ * Observatory Status Constants and Definitions
  *
  * This file contains bitmask definitions, colors, and styling configurations
- * for the observatory status timeline component.
+ * for the observatory status components.
  */
 
 /**

@@ -2,19 +2,18 @@ import { useEffect, useRef, useState } from "react";
 import * as echarts from "echarts";
 
 /**
- * Manages an ECharts instance lifecycle with brush-based zoom selection for timeline charts.
+ * Manages an ECharts instance lifecycle and brush-based zoom interactions.
  *
  * Handles:
  * - Chart init / dispose
  * - Resize via ResizeObserver
- * - Brush selection (rect or lineX with Shift key)
- * - brushEnd → updates xDomain / yDomain
- * - Double-click reset of selection
- * - Syncing brush interactions to internal zoom state
+ * - Brush mode switching (rect by default, lineX while Shift is held)
+ * - Updates xDomain and yDomain after a brush selection
+ * - Double-click reset of the current zoom
  *
- * @param {React.RefObject} containerRef - Ref to the chart container div
+ * @param {React.RefObject} containerRef - Ref to the chart container element.
  * @param {Object} options
- * @param {Function} [options.onResize] - Called with (instance) after resize
+ * @param {Function} [options.onResize] - Called with the ECharts instance after resize.
  * @returns {{
  *   instanceRef: React.RefObject,
  *   xDomain: [number, number] | null,
@@ -38,7 +37,7 @@ export function useEChartsBrushZoom(containerRef, { onResize }) {
     yDomainRef.current = yDomain;
   }, [yDomain]);
 
-  // For shift and control zoom options ----------
+  // Update the active brush mode based on whether the Shift key is held.
   const updateBrushType = () => {
     const instance = instanceRef.current;
     if (!instance) return;

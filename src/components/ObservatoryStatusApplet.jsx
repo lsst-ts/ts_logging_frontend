@@ -27,7 +27,16 @@ import DownloadIcon from "../assets/DownloadIcon.svg";
 import InfoIcon from "../assets/InfoIcon.svg";
 
 /**
- * Observatory status applet (WIP)
+ * Render the observatory status dashboard applet with availability warnings,
+ * fullscreen detail viewing, and info/download overlays.
+ *
+ * @param {Object} props
+ * @param {Array} [props.almanacInfo=[]] Almanac night metadata used by the cumulative plot.
+ * @param {Array} [props.intervals=[]] Observatory status intervals to display.
+ * @param {Object} [props.availability] Availability metadata for the observatory-status feed.
+ * @param {Array} [props.openDomeTimes=[]] Open-dome intervals to overlay on the plot.
+ * @param {[DateTime, DateTime]} props.fullTimeRange Visible time range for the chart.
+ * @param {boolean} props.loading Whether the underlying data is still loading.
  */
 function ObservatoryStatusApplet({
   almanacInfo = [],

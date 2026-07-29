@@ -24,7 +24,15 @@ import {
 import { useEChartsBrushZoom } from "@/hooks/useEChartsBrushZoom";
 
 /**
- * Observatory status applet.
+ * Render the cumulative observatory status chart as an ECharts plot with
+ * state markers, open-dome overlays, and brush-based zoom interactions.
+ *
+ * @param {Object} props
+ * @param {Array} [props.almanacInfo=[]] Almanac data for night boundaries and twilight markers.
+ * @param {Array} [props.intervals=[]] Observatory status intervals to convert into cumulative series.
+ * @param {Array} [props.openDomeTimes=[]] Open-dome intervals to overlay on the plot.
+ * @param {[DateTime, DateTime]} props.fullTimeRange Visible time range for the chart.
+ * @param {boolean} [props.fullScreen=false] Whether the plot is being rendered in fullscreen mode.
  */
 function ObservatoryStatusCumulativePlot({
   almanacInfo = [],
