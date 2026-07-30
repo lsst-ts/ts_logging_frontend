@@ -1,3 +1,13 @@
+v0.23.0-alpha.1 (2026-07-30)
+============================
+
+New Features
+------------
+
+- Add Observatory Status timeline to the Context Feed. (`OSW-2117 <https://rubinobs.atlassian.net//browse/OSW-2117>`_)
+- Add cumulative time in state plot of observatory status data to digest page, replacing the previous time accounting applet. (`OSW-2118 <https://rubinobs.atlassian.net//browse/OSW-2118>`_)
+
+
 v0.22.0 (2026-07-30)
 ====================
 
