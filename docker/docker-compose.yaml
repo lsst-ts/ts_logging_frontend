@@ -1,5 +1,23 @@
 version: '3.8'
 
+# Shared by the API service and the refresh worker: same image, same
+# upstream credentials, same mounts — only the command differs.
+x-backend-environment: &backend-environment
+  - ACCESS_TOKEN=${ACCESS_TOKEN}
+  - JIRA_API_TOKEN=${JIRA_API_TOKEN}
+  - JIRA_API_HOSTNAME=${JIRA_API_HOSTNAME}
+  - ZEPHYR_API_TOKEN=${ZEPHYR_API_TOKEN}
+  - EXTERNAL_INSTANCE_URL=${EXTERNAL_INSTANCE_URL}
+  - RUBIN_SIM_DATA_DIR=/home/saluser/develop/rubin_sim_data # Rubin SIM data
+  - LSST_DISABLE_BUCKET_VALIDATION=${LSST_DISABLE_BUCKET_VALIDATION}
+  - REDIS_HOST=redis
+  - REDIS_PORT=6379
+
+x-backend-volumes: &backend-volumes
+  - ${BACKEND_PATH}:/home/saluser/develop
+  - ${LOCAL_RUBIN_SIM_DATA_DIR}:/home/saluser/develop/rubin_sim_data:ro # Mount Rubin SIM data directory as read-only
+  - ~/.aws:/home/saluser/.aws:ro
+
 services:
   frontend:
     container_name: nightlydigest-frontend
@@ -25,23 +43,26 @@ services:
       context: ${BACKEND_PATH}
       dockerfile: docker/Dockerfile
     image: nightlydigest-backend-local
-    environment:
-      - ACCESS_TOKEN=${ACCESS_TOKEN}
-      - JIRA_API_TOKEN=${JIRA_API_TOKEN}
-      - JIRA_API_HOSTNAME=${JIRA_API_HOSTNAME}
-      - ZEPHYR_API_TOKEN=${ZEPHYR_API_TOKEN}
-      - EXTERNAL_INSTANCE_URL=${EXTERNAL_INSTANCE_URL}
-      - RUBIN_SIM_DATA_DIR=/home/saluser/develop/rubin_sim_data # Rubin SIM data
-      - LSST_DISABLE_BUCKET_VALIDATION=${LSST_DISABLE_BUCKET_VALIDATION}
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-
+    environment: *backend-environment
     ports:
       - "8080:8080"
-    volumes:
-      - ${BACKEND_PATH}:/home/saluser/develop
-      - ${LOCAL_RUBIN_SIM_DATA_DIR}:/home/saluser/develop/rubin_sim_data:ro # Mount Rubin SIM data directory as read-only
-      - ~/.aws:/home/saluser/.aws:ro
+    volumes: *backend-volumes
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  # Keeps today's cache entries warm. Runs as a single container: the
+  # worker does no cross-instance coordination, so a second replica
+  # would only duplicate upstream fetches.
+  refresh-worker:
+    container_name: nightlydigest-refresh-worker
+    build:
+      context: ${BACKEND_PATH}
+      dockerfile: docker/Dockerfile
+    image: nightlydigest-backend-local
+    command: docker/refresh_worker.sh
+    environment: *backend-environment
+    volumes: *backend-volumes
     depends_on:
       redis:
         condition: service_healthy
