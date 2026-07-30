@@ -1,18 +1,4 @@
 import { forwardRef, useImperativeHandle } from "react";
-
-// Helper to find the column with selectedKey metadata
-function findSelectedKey(columns) {
-  for (const col of columns) {
-    if (col.columns) {
-      // Handle column groups
-      const found = findSelectedKey(col.columns);
-      if (found) return found;
-    } else if (col.meta?.selectedKey) {
-      return col.accessorKey || col.id;
-    }
-  }
-  return null;
-}
 import {
   useReactTable,
   getCoreRowModel,
@@ -171,7 +157,6 @@ const DataTable = forwardRef(function DataTable(
               isLoading={isLoading}
               selected={selected}
               onSelectionChange={onSelectionChange}
-              selectedKey={findSelectedKey(columns)}
             />
           </Table>
         </div>

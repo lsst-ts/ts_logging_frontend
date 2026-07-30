@@ -97,7 +97,7 @@ function DataLog() {
   // Selection state synced with URL
   const { selectedValue, setSelectedValue } = useSelectionSync({
     routePath: "/data-log",
-    selectedKey: "exposure_id",
+    paramName: "selectedExposureId",
   });
 
   // Calculate moon intervals when moon values or full time range changes

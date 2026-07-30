@@ -88,7 +88,7 @@ function ContextFeed() {
   // Selection state synced with URL
   const { selectedValue, setSelectedValue } = useSelectionSync({
     routePath: "/context-feed",
-    selectedKey: "time",
+    paramName: "selectedTime",
   });
 
   // Data and loading flags

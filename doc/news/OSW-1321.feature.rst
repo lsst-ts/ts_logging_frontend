@@ -1,1 +1,1 @@
-Adds the ability to click to select a single row, and also syncs the selected row state with the URL, allowing it to be shared and for links to specific rows to be generated.
+Add the ability to click to select a single row, and also sync the selected row state with the URL, allowing it to be shared and for links to specific rows to be generated.

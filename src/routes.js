@@ -150,8 +150,8 @@ const contextFeedUrlParams =
   getColumnUrlMappings(contextFeedColumns).urlParamKeys;
 
 // Selection params (not part of column urlParam mappings)
-const dataLogSelectionParams = ["selected_exposure_id"];
-const contextFeedSelectionParams = ["selected_time"];
+const dataLogSelectionParams = ["selectedExposureId"];
+const contextFeedSelectionParams = ["selectedTime"];
 
 // All array keys (for router parseSearch)
 const arrayKeys = [
