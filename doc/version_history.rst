@@ -1,3 +1,18 @@
+v0.22.0 (2026-07-30)
+====================
+
+New Features
+------------
+
+- Add the ability to click to select a single row, and also sync the selected row state with the URL, allowing it to be shared and for links to specific rows to be generated. (`OSW-1321 <https://rubinobs.atlassian.net//browse/OSW-1321>`_)
+
+
+Performance Enhancement
+-----------------------
+
+- Configured nginx proxy cache to cache API responses using ``Cache-Control`` headers set by the backend. (`OSW-2415 <https://rubinobs.atlassian.net//browse/OSW-2415>`_)
+
+
 v0.21.0 (2026-07-23)
 ====================
 
