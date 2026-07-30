@@ -22,14 +22,12 @@ function renderScienceProgram(info) {
   // If available, display BLOCK names as Zephyr/Jira links
   if (block) {
     return (
-      // Wrap in a dark background for visibility
-      // when row is highlighted.
-      <div className="bg-stone-800 p-1 rounded">
+      <div className="p-1 rounded">
         <a
           href={block.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-sky-500 underline hover:text-sky-400"
+          className="text-sky-500 underline hover:text-sky-300"
         >
           {formatCellValue(value)}
         </a>
@@ -81,6 +79,7 @@ const commonColumns = [
     filterType: null,
     meta: {
       tooltip: "Unique identifier for the exposure.",
+      selectedKey: true,
     },
   }),
   columnHelper.accessor("seq_num", {

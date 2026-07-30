@@ -35,6 +35,8 @@ import DataTableToolbar from "./DataTableToolbar";
  * @param {Function} props.onReset - Custom reset handler
  * @param {Object} props.filterFns - Custom filter functions
  * @param {React.Ref} ref - Ref for imperative methods (setCollapseAll, setGrouping)
+ * @param {string|null} props.selected - The selected key value (or null for none)
+ * @param {Function} props.onSelectionChange - Callback when a row is clicked to select
  */
 const DataTable = forwardRef(function DataTable(
   {
@@ -50,6 +52,8 @@ const DataTable = forwardRef(function DataTable(
     onReset,
     filterFns = {},
     tableMeta = {},
+    selected = null,
+    onSelectionChange,
   },
   ref,
 ) {
@@ -151,6 +155,8 @@ const DataTable = forwardRef(function DataTable(
               table={table}
               columns={columns}
               isLoading={isLoading}
+              selected={selected}
+              onSelectionChange={onSelectionChange}
             />
           </Table>
         </div>

@@ -1,9 +1,25 @@
+import { memo, useCallback, useRef } from "react";
 import { flexRender } from "@tanstack/react-table";
 
 import { TableBody, TableRow, TableCell } from "@/components/ui/table";
+
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { SKELETON_ROW_COUNT } from "./constants";
+
+// Finds the column accessor key marked as the selection key in its meta
+function findSelectedKey(columns) {
+  for (const col of columns) {
+    if (col.columns) {
+      // Handle column groups
+      const found = findSelectedKey(col.columns);
+      if (found) return found;
+    } else if (col.meta?.selectedKey) {
+      return col.accessorKey || col.id;
+    }
+  }
+  return null;
+}
 
 /**
  * DataTable body component with skeleton loading, grouped rows,
@@ -11,10 +27,35 @@ import { SKELETON_ROW_COUNT } from "./constants";
  *
  * @param {Object} props
  * @param {Object} props.table - TanStack Table instance
- * @param {Array} props.columns - Column definitions (for skeleton column count)
+ * @param {Array} props.columns - Column definitions (for skeleton column count and selection key lookup)
  * @param {boolean} props.isLoading - Whether data is loading
+ * @param {string|null} props.selected - The selected key value to match (or null for none)
+ * @param {Function} props.onSelectionChange - Callback when a row is clicked to select
  */
-function DataTableBody({ table, columns, isLoading }) {
+function DataTableBody({
+  table,
+  columns,
+  isLoading,
+  selected = null,
+  onSelectionChange,
+}) {
+  const selectedKey = findSelectedKey(columns);
+
+  // No initial selection means nothing to scroll to, so skip future scrolls too.
+  const hasScrolled = useRef(selected === null);
+
+  // Scroll to the selected row when it appears in the DOM
+  const setSelectedRowRef = useCallback((node) => {
+    if (node && !hasScrolled.current) {
+      node.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+        container: "nearest",
+      });
+      hasScrolled.current = true;
+    }
+  }, []);
+
   if (isLoading) {
     return (
       <TableBody>
@@ -36,19 +77,77 @@ function DataTableBody({ table, columns, isLoading }) {
       {table.getRowModel().rows.map((row) => {
         const isGroupedRow = row.getIsGrouped();
 
+        // Check if this row matches the selected value
+        // Use loose equality (==) to handle number/string comparisons
+        const rowValue = row.getValue(selectedKey);
+        const isSelected =
+          !isGroupedRow &&
+          selected != null &&
+          selectedKey &&
+          rowValue == selected;
+
+        const handleClick = (e) => {
+          e.stopPropagation();
+          // Ignore clicks from portaled elements (e.g., modals/dialogs)
+          if (!e.currentTarget.contains(e.target)) {
+            return;
+          }
+          // Don't select/deselect row if user is dragging to select text
+          if (window.getSelection()?.toString().length > 0) {
+            return;
+          }
+          if (onSelectionChange && !isGroupedRow && selectedKey) {
+            onSelectionChange(isSelected ? null : row.getValue(selectedKey));
+          }
+        };
+
         return (
-          <TableRow key={row.id}>
-            {isGroupedRow ? (
-              <GroupedRowCell row={row} table={table} columns={columns} />
-            ) : (
-              <NormalRowCells row={row} />
-            )}
-          </TableRow>
+          <MemoTableRow
+            key={row.id}
+            ref={isSelected ? setSelectedRowRef : null}
+            isSelected={isSelected}
+            row={row}
+            table={table}
+            columns={columns}
+            onClick={handleClick}
+            data-selected={isSelected ? "true" : undefined}
+            className={
+              isSelected
+                ? "bg-black/40 shadow-[inset_4px_0_0_0_white] border-t-2 border-b-2 border-white"
+                : ""
+            }
+          />
         );
       })}
     </TableBody>
   );
 }
+
+/**
+ * Row wrapper memoized on the props that actually affect rendered output,
+ * so selecting a row doesn't re-render every other row in the table.
+ */
+const MemoTableRow = memo(
+  // eslint-disable-next-line no-unused-vars
+  function MemoTableRow({ ref, isSelected, row, table, columns, ...props }) {
+    const isGroupedRow = row.getIsGrouped();
+
+    return (
+      <TableRow ref={ref} {...props}>
+        {isGroupedRow ? (
+          <GroupedRowCell row={row} table={table} columns={columns} />
+        ) : (
+          <NormalRowCells row={row} />
+        )}
+      </TableRow>
+    );
+  },
+  (prevProps, nextProps) =>
+    prevProps.isSelected === nextProps.isSelected &&
+    prevProps.row === nextProps.row &&
+    prevProps.table === nextProps.table &&
+    prevProps.columns === nextProps.columns,
+);
 
 /**
  * Renders a grouped row with expand/collapse toggle

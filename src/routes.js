@@ -149,19 +149,37 @@ const dataLogUrlParams = getColumnUrlMappings(dataLogColumns).urlParamKeys;
 const contextFeedUrlParams =
   getColumnUrlMappings(contextFeedColumns).urlParamKeys;
 
+// Selection params (not part of column urlParam mappings)
+const dataLogSelectionParams = ["selectedExposureId"];
+const contextFeedSelectionParams = ["selectedTime"];
+
 // All array keys (for router parseSearch)
-const arrayKeys = [...new Set([...dataLogUrlParams, ...contextFeedUrlParams])];
+const arrayKeys = [
+  ...new Set([
+    ...dataLogUrlParams,
+    ...contextFeedUrlParams,
+    ...dataLogSelectionParams,
+    ...contextFeedSelectionParams,
+  ]),
+];
 
 // Create page-specific schemas with their filter fields
 export const dataLogSearchSchema = applyCommonValidations(
   applyDateValidation(
-    baseSearchParamsSchema.extend(createFilterSchema(dataLogUrlParams)),
+    baseSearchParamsSchema.extend(
+      createFilterSchema([...dataLogUrlParams, ...dataLogSelectionParams]),
+    ),
   ),
 );
 
 export const contextFeedSearchSchema = applyCommonValidations(
   applyDateValidation(
-    baseSearchParamsSchema.extend(createFilterSchema(contextFeedUrlParams)),
+    baseSearchParamsSchema.extend(
+      createFilterSchema([
+        ...contextFeedUrlParams,
+        ...contextFeedSelectionParams,
+      ]),
+    ),
   ),
 );
 
@@ -197,6 +215,7 @@ const dataLogRoute = createRoute({
   beforeLoad: stripUnknownParams([
     ...GLOBAL_SEARCH_PARAMS,
     ...dataLogUrlParams,
+    ...dataLogSelectionParams,
   ]),
   errorComponent: SearchParamErrorComponent,
 });
@@ -209,6 +228,7 @@ const contextFeedRoute = createRoute({
   beforeLoad: stripUnknownParams([
     ...GLOBAL_SEARCH_PARAMS,
     ...contextFeedUrlParams,
+    ...contextFeedSelectionParams,
   ]),
   errorComponent: SearchParamErrorComponent,
 });
