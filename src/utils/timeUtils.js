@@ -258,7 +258,7 @@ function dayObsIntToDateTime(dayobsInt) {
  * using Luxon DateTime.
  *
  * @param {Date} calendarDate - The input JS date in the local timezone.
- * @returns {string} A date string formatted as "LLL dd, yyyy".
+ * @returns {string} A date string formatted as "LLLL dd, yyyy".
  */
 function calendarDateToLongFormat(calendarDate) {
   return calendarDate instanceof Date && !isNaN(calendarDate)
@@ -285,6 +285,47 @@ function utcDateToCalendarDate(utcDate) {
   return new Date(d.year, d.month - 1, d.day);
 }
 
+/**
+ * Formats a timestamp (milliseconds since epoch) to the standard context feed table format.
+ *
+ * @param {number} millis - Timestamp in milliseconds since epoch.
+ * @returns {string} Formatted date-time string as "yyyy-LL-dd HH:mm:ss.S"
+ */
+function formatTimestamp(millis) {
+  return DateTime.fromMillis(millis, { zone: "utc" }).toFormat(
+    "yyyy-LL-dd HH:mm:ss.S",
+  );
+}
+
+/**
+ * Formats a duration in milliseconds to hh:mm:ss.ms format.
+ *
+ * @param {number} durationMs - Duration in milliseconds.
+ * @returns {string} Formatted duration string as "hh:mm:ss.ms"
+ */
+function formatDuration(durationMs) {
+  const hours = Math.floor(durationMs / 3600000);
+  const minutes = Math.floor((durationMs % 3600000) / 60000);
+  const seconds = Math.floor((durationMs % 60000) / 1000);
+  const millis = Math.floor(durationMs % 1000);
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
+    2,
+    "0",
+  )}:${String(seconds).padStart(2, "0")}.${String(millis).padStart(3, "0")}`;
+}
+
+/**
+ * Returns the current dayobs as a formatted dayobs string.
+ *
+ * @param {string} [format="yyyy-LL-dd"] - The format string (e.g., "yyyy-LL-dd" or "yyyyLLdd").
+ * @returns {string} The current dayobs, as a formatted string.
+ */
+function getCurrentDayObs(format = "yyyyLLdd") {
+  return Number(
+    DateTime.now().setZone("UTC").minus({ hours: 12 }).toFormat(format),
+  );
+}
+
 export {
   isoToTAI,
   isoToUTC,
@@ -308,4 +349,7 @@ export {
   dayObsIntToDateTime,
   calendarDateToLongFormat,
   utcDateToCalendarDate,
+  formatTimestamp,
+  formatDuration,
+  getCurrentDayObs,
 };

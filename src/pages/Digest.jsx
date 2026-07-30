@@ -34,7 +34,7 @@ import { useSearch } from "@tanstack/react-router";
 import { TELESCOPES } from "@/components/Parameters";
 import ObservingConditionsApplet from "@/components/ObservingConditionsApplet";
 import NightSummary from "@/components/NightSummary.jsx";
-import TimeAccountingApplet from "@/components/TimeAccountingApplet";
+import ObservatoryStatusApplet from "@/components/ObservatoryStatusApplet";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
 import VisitMapStaticApplet from "@/components/VisitMapStaticApplet.jsx";
 
@@ -62,18 +62,18 @@ export default function Digest() {
   const [sumOnSkyExpTime, setSumOnSkyExpTime] = useState(0.0);
   const [flags, setFlags] = useState([]);
   const [reports, setReports] = useState([]);
-  // TODO: OSW-2118 - Update the Time Accounting applet
-  // const [obsStatusIntervals, setObsStatusIntervals] = useState([]);
+  const [obsStatusIntervals, setObsStatusIntervals] = useState([]);
   const [obsStatusFaultLoss, setObsStatusFaultLoss] = useState(0.0);
   const [obsStatusWeatherLoss, setObsStatusWeatherLoss] = useState(0.0);
   const [obsStatusAvailability, setObsStatusAvailability] = useState(
     EMPTY_OBS_STATUS_AVAILABILITY,
   );
 
-  const [exposuresLoading, setExposuresLoading] = useState(false);
+  // TODO: (OSW-2444) Why do these need to be false for the obs applet to work?
+  const [exposuresLoading, setExposuresLoading] = useState(true);
   const [expectedExposuresLoading, setExpectedExposuresLoading] =
     useState(false);
-  const [almanacLoading, setAlmanacLoading] = useState(false);
+  const [almanacLoading, setAlmanacLoading] = useState(true);
   const [narrativeLoading, setNarrativeLoading] = useState(false);
   const [nightreportLoading, setNightreportLoading] = useState(false);
   const [obsStatusLoading, setObsStatusLoading] = useState(false);
@@ -134,14 +134,14 @@ export default function Digest() {
     setJiraTickets([]);
     // TODO: OSW-2430 Replace Narrative log with weatherloss
     // from obs status in the Time Loss card
+    // setNarrativeWeatherLoss(0.0);
     setNarrativeFaultLoss(0.0);
     setExposureCount(0);
     setReports([]);
     setOnSkyExpCount(0);
     setExpectedOnSkyExpCount(0);
     setFlags([]);
-    // TODO: OSW-2118 - Update the Time Accounting applet
-    // setObsStatusIntervals([]);
+    setObsStatusIntervals([]);
     setObsStatusFaultLoss(0.0);
     setObsStatusWeatherLoss(0.0);
     setObsStatusAvailability(EMPTY_OBS_STATUS_AVAILABILITY);
@@ -291,11 +291,11 @@ export default function Digest() {
       abortController,
     })
       .then((data) => {
+        const intervals = data?.intervals ?? [];
         const metrics = data?.metrics ?? {};
         const availability = data?.availability ?? {};
 
-        // TODO: OSW-2118 - Update the Time Accounting applet
-        // setObsStatusIntervals(data.intervals);
+        setObsStatusIntervals(intervals);
         setObsStatusFaultLoss(
           typeof metrics.fault_loss === "number" ? metrics.fault_loss : 0.0,
         );
@@ -698,16 +698,13 @@ export default function Digest() {
               reports={reports}
               nightreportLoading={nightreportLoading}
             />
-            <TimeAccountingApplet
-              loading={faultLoading}
-              onSkyTimeAccounting={onSkyTimeAccounting}
-              sumOnSkyExpTime={totalExpTimeBetweenTwilights}
-              elapsedTwilightHours={elapsedTwilightHours}
-              closedDomeHours={domeTotals?.closedHours ?? null}
-              calculatedFaultHours={calculatedFault}
-              faultDataUnavailable={faultUnavailable}
-              faultErrorMessage={faultUnavailableReason}
-              domeError={openDomeError}
+            <ObservatoryStatusApplet
+              almanacInfo={almanacInfo}
+              intervals={obsStatusIntervals}
+              availability={obsStatusAvailability}
+              openDomeTimes={openDomeTimes}
+              fullTimeRange={fullTimeRange}
+              loading={obsStatusLoading || exposuresLoading || almanacLoading}
             />
             <VisitMapStaticApplet
               mapData={staticVisitMaps?.staticMapUrl}
