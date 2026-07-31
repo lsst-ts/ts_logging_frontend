@@ -12,6 +12,7 @@ x-backend-environment: &backend-environment
   - LSST_DISABLE_BUCKET_VALIDATION=${LSST_DISABLE_BUCKET_VALIDATION}
   - REDIS_HOST=redis
   - REDIS_PORT=6379
+  - ND_CACHING_DISABLE_REDIS=${ND_CACHING_DISABLE_REDIS:-}
 
 x-backend-volumes: &backend-volumes
   - ${BACKEND_PATH}:/home/saluser/develop
@@ -93,8 +94,10 @@ services:
     image: nginx:latest
     ports:
       - "80:80"
+    environment:
+      - ND_CACHING_DISABLE_NGINX=${ND_CACHING_DISABLE_NGINX:-}
     depends_on:
       frontend:
         condition: service_healthy
     volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./nginx.conf.template:/etc/nginx/templates/default.conf.template
