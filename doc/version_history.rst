@@ -1,3 +1,12 @@
+v0.22.1-alpha.1 (2026-07-31)
+============================
+
+Bug Fixes
+---------
+
+- Remove premature memoization of TableRow to avoid rendering problems. (`OSW-2754 <https://rubinobs.atlassian.net//browse/OSW-2754>`_)
+
+
 v0.22.0 (2026-07-30)
 ====================
 
