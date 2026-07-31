@@ -1,0 +1,1 @@
+Remove premature memoization of TableRow to avoid rendering problems.
