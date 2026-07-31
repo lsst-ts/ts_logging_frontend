@@ -10,6 +10,15 @@ log_format cache_log '$remote_addr - $remote_user [$time_local] '
                      '"$http_referer" "$http_user_agent" '
                      'cache=$upstream_cache_status';
 
+# When the nginx cache is disabled the upstream Cache-Control header is
+# replaced with no-store, so the browser does not serve a cached response
+# either. Otherwise whatever the backend sent is passed through unchanged.
+map $nd_cache_disabled $nd_cache_control {
+  ""       $upstream_http_cache_control;
+  "0"      $upstream_http_cache_control;
+  default  "no-store";
+}
+
 server {
   listen 80;
   server_name localhost;
@@ -27,13 +36,21 @@ server {
     proxy_set_header Upgrade $http_upgrade;
     proxy_set_header Connection "upgrade";
 
-    proxy_pass_header Cache-Control;
-
     proxy_cache nightlydigest_cache;
     proxy_cache_key "$scheme$request_method$host$request_uri";
     proxy_cache_use_stale error timeout updating;
     proxy_cache_lock on;
 
+    # ND_CACHING_DISABLE_NGINX: missing, empty or "0" leaves the cache on;
+    set $nd_cache_disabled "${ND_CACHING_DISABLE_NGINX}";
+    proxy_cache_bypass $nd_cache_disabled;
+    proxy_no_cache $nd_cache_disabled;
+
+    # Re-emitted from $nd_cache_control below, which either restores the
+    # upstream value or overrides it with no-store.
+    proxy_hide_header Cache-Control;
+
+    add_header Cache-Control $nd_cache_control always;
     add_header X-Cache-Status $upstream_cache_status;
   }
 }
