@@ -10,8 +10,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { createColumnHelper } from "@tanstack/react-table";
-import { formatCellValue } from "@/utils/utils";
-import { formatTimestamp } from "@/utils/timeUtils";
+import { formatCellValue, formatTimestampCell } from "@/utils/utils";
 import { matchValueOrInList } from "@/components/DataTable/tableUtils";
 import { CATEGORY_INDEX_INFO } from "@/constants/CONTEXT_FEED_DEFINITIONS";
 
@@ -19,6 +18,16 @@ import CopyIcon from "../assets/CopyIcon.svg";
 import FullScreenIcon from "../assets/FullScreenIcon.svg";
 
 const columnHelper = createColumnHelper();
+
+// Helper function to make time columns more readable.
+// Default zone is UTC; otherwise pass in IANA identifier.
+// Missing timestamps display as "--"; unparseable ones display as given.
+function formatTimestamp(tsString, tsZone = "utc") {
+  return formatTimestampCell(tsString, {
+    zone: tsZone,
+    format: "yyyy-LL-dd HH:mm:ss.S",
+  });
+}
 
 // Handles Zephyr/Jira links on BLOCK names and plain text.
 function renderNameCell(info) {
