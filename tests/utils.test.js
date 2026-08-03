@@ -8,6 +8,8 @@ import {
   getDisplayDateRange,
   getKeyByValue,
   formatCellValue,
+  formatTimestampCell,
+  MISSING_TIMESTAMP_DISPLAY,
   mergeAllDataLogSources,
   mergeContextFeedSources,
   getRubinTVUrl,
@@ -318,6 +320,60 @@ describe("utils", () => {
 
     it("formats strings directly", () => {
       expect(formatCellValue("hello")).toBe("hello");
+    });
+  });
+
+  describe("formatTimestampCell", () => {
+    it("returns the missing placeholder for empty values", () => {
+      expect(formatTimestampCell(null)).toBe(MISSING_TIMESTAMP_DISPLAY);
+      expect(formatTimestampCell(undefined)).toBe(MISSING_TIMESTAMP_DISPLAY);
+      expect(formatTimestampCell("")).toBe(MISSING_TIMESTAMP_DISPLAY);
+      expect(formatTimestampCell(0)).toBe(MISSING_TIMESTAMP_DISPLAY);
+    });
+
+    it("passes non-timestamp strings through untouched", () => {
+      // Unhandled values stay visible rather than hiding behind the
+      // placeholder, which is reserved for genuinely missing values.
+      expect(formatTimestampCell("unknown")).toBe("unknown");
+      expect(formatTimestampCell("NaT")).toBe("NaT");
+      expect(formatTimestampCell("unknown", { format: "yyyy-LL-dd" })).toBe(
+        "unknown",
+      );
+    });
+
+    it("passes valid timestamps through unchanged when no format is given", () => {
+      // Data log columns rely on this: they display the raw backend string.
+      expect(formatTimestampCell("2026-01-02T00:00:00.000")).toBe(
+        "2026-01-02T00:00:00.000",
+      );
+      expect(formatTimestampCell("2026-01-02T03:14:15.926-04:00")).toBe(
+        "2026-01-02T03:14:15.926-04:00",
+      );
+    });
+
+    it("applies the format option when given", () => {
+      expect(
+        formatTimestampCell("2026-01-02T00:00:00.123456", {
+          format: "yyyy-LL-dd HH:mm:ss.S",
+        }),
+      ).toBe("2026-01-02 00:00:00.123");
+    });
+
+    it("converts into the requested zone", () => {
+      expect(
+        formatTimestampCell("2026-01-02T00:00:00.000Z", {
+          zone: "America/Santiago",
+          format: "yyyy-LL-dd HH:mm:ss.S",
+        }),
+      ).toBe("2026-01-01 21:00:00.0");
+    });
+
+    it("defaults to UTC", () => {
+      expect(
+        formatTimestampCell("2026-01-02T03:14:15.926-04:00", {
+          format: "yyyy-LL-dd HH:mm:ss.S",
+        }),
+      ).toBe("2026-01-02 07:14:15.926");
     });
   });
 

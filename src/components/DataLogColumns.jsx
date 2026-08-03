@@ -2,6 +2,7 @@ import { createColumnHelper } from "@tanstack/react-table";
 import RubinTVLink from "@/components/RubinTVLink";
 import {
   formatCellValue,
+  formatTimestampCell,
   DEFAULT_PIXEL_SCALE_MEDIAN,
   PSF_SIGMA_FACTOR,
 } from "@/utils/utils";
@@ -113,7 +114,7 @@ const commonColumns = [
   // Dayobs and timestamp
   columnHelper.accessor("obs_start", {
     header: "Obs Start (TAI)",
-    cell: (info) => formatCellValue(info.getValue()),
+    cell: (info) => formatTimestampCell(info.getValue()),
     size: 240,
     minSize: 240,
     filterType: "number-range",
@@ -124,7 +125,7 @@ const commonColumns = [
   }),
   columnHelper.accessor("obs_end", {
     header: "Obs End (TAI)",
-    cell: (info) => formatCellValue(info.getValue()),
+    cell: (info) => formatTimestampCell(info.getValue()),
     size: 240,
     minSize: 240,
     filterType: "number-range",
