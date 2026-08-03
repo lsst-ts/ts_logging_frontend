@@ -153,6 +153,38 @@ const formatCellValue = (value, options = {}) => {
   return value.toString();
 };
 
+// Displayed in timestamp cells when the value is missing.
+const MISSING_TIMESTAMP_DISPLAY = "--";
+
+/**
+ * Formats a timestamp for table display.
+ *
+ * Missing timestamps (null, undefined, "" or 0) are rendered as "--" rather
+ * than leaving the cell blank. Any other value is passed through untouched
+ * unless a `format` is given and the value parses as a timestamp, so unhandled
+ * strings stay visible rather than being hidden behind the placeholder.
+ *
+ * Luxon only natively supports millisecond precision, not microseconds.
+ * Will need to extract microseconds if this precision is required.
+ *
+ * @param {*} value - The timestamp to format (ISO string).
+ * @param {Object} [options={}] - Optional configuration.
+ * @param {string} [options.zone="utc"] - IANA zone identifier to display in.
+ * @param {string} [options.format] - Luxon format string. When omitted, or when
+ *   the value does not parse, the value is displayed as given.
+ * @returns {string} A display-safe formatted timestamp.
+ */
+const formatTimestampCell = (value, options = {}) => {
+  if (value === null || value === undefined || value === "" || value === 0)
+    return MISSING_TIMESTAMP_DISPLAY;
+
+  const { zone = "utc", format } = options;
+  if (!format) return value.toString();
+
+  const dt = DateTime.fromISO(value, { zone });
+  return dt.isValid ? dt.toFormat(format) : value.toString();
+};
+
 /**
  * Converts a string key into a more human-readable title.
  *
@@ -630,6 +662,8 @@ export {
   getDisplayDateRange,
   getKeyByValue,
   formatCellValue,
+  formatTimestampCell,
+  MISSING_TIMESTAMP_DISPLAY,
   prettyTitleFromKey,
   mergeAllDataLogSources,
   mergeContextFeedSources,

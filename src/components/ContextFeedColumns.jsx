@@ -1,7 +1,6 @@
 import React from "react";
 import yaml from "js-yaml";
 
-import { DateTime } from "luxon";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +10,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { createColumnHelper } from "@tanstack/react-table";
-import { formatCellValue } from "@/utils/utils";
+import { formatCellValue, formatTimestampCell } from "@/utils/utils";
 import { matchValueOrInList } from "@/components/DataTable/tableUtils";
 import { CATEGORY_INDEX_INFO } from "@/components/context-feed-definitions.js";
 
@@ -22,12 +21,12 @@ const columnHelper = createColumnHelper();
 
 // Helper function to make time columns more readable.
 // Default zone is UTC; otherwise pass in IANA identifier.
-// Luxon only natively supports millisecond precision, not microseconds.
-// Will need to extract microseconds if this precision is required.
+// Missing timestamps display as "--"; unparseable ones display as given.
 function formatTimestamp(tsString, tsZone = "utc") {
-  if (!tsString) return null;
-  const dt = DateTime.fromISO(tsString, { zone: tsZone });
-  return dt.isValid ? dt.toFormat("yyyy-LL-dd HH:mm:ss.S") : tsString;
+  return formatTimestampCell(tsString, {
+    zone: tsZone,
+    format: "yyyy-LL-dd HH:mm:ss.S",
+  });
 }
 
 // Handles Zephyr/Jira links on BLOCK names and plain text.
