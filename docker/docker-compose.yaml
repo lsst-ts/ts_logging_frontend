@@ -13,6 +13,7 @@ x-backend-environment: &backend-environment
   - REDIS_HOST=redis
   - REDIS_PORT=6379
   - ND_CACHING_DISABLE_REDIS=${ND_CACHING_DISABLE_REDIS:-}
+  - LOG_LEVEL=${LOG_LEVEL:-INFO}
 
 x-backend-volumes: &backend-volumes
   - ${BACKEND_PATH}:/home/saluser/develop

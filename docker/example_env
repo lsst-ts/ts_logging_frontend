@@ -12,3 +12,5 @@ LSST_DISABLE_BUCKET_VALIDATION=1
 # Optional: set to 1 to turn off a caching layer (empty or 0 leaves it on)
 #ND_CACHING_DISABLE_NGINX=1
 #ND_CACHING_DISABLE_REDIS=1
+# Optional: backend log level, applied to the API and the refresh worker
+#LOG_LEVEL=DEBUG
