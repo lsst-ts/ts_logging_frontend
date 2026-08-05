@@ -1,0 +1,15 @@
+FROM rubincr.lsst.org/develop-env-javascript:ec-develop
+
+LABEL maintainer Sebastian Aranda <sebastian.aranda@noirlab.edu>
+
+WORKDIR /usr/src/app
+COPY . .
+
+USER root
+RUN chown -R saluser:saluser /usr/src/app
+USER saluser
+
+RUN npm install
+RUN npx vite build
+
+VOLUME /usr/src/app/dist
