@@ -29,7 +29,9 @@ export function AppSidebar({ ...props }) {
 
   const frontendReleaseNotesHref =
     "https://github.com/lsst-ts/ts_logging_frontend" +
-    `/blob/v${packageJson.version}/doc/version_history.rst`;
+    `/blob/${
+      packageJson.version !== "develop" ? `v${packageJson.version}` : "develop"
+    }/doc/version_history.rst`;
 
   const backendReleaseNotesHref =
     "https://github.com/lsst-ts/ts_logging_and_reporting" +
