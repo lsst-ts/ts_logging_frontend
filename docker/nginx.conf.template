@@ -40,6 +40,8 @@ server {
     proxy_cache_key "$scheme$request_method$host$request_uri";
     proxy_cache_use_stale error timeout updating;
     proxy_cache_lock on;
+    proxy_cache_lock_timeout 60s;
+    proxy_cache_lock_age 60s;
 
     # ND_CACHING_DISABLE_NGINX: missing, empty or "0" leaves the cache on;
     set $nd_cache_disabled "${ND_CACHING_DISABLE_NGINX}";
