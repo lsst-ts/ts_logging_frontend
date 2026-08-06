@@ -26,7 +26,12 @@ import TimelineChart from "@/components/TimelineChart";
 import ObservatoryStatusTimeline from "@/components/ObservatoryStatusTimeline";
 import ContextFeedTable from "@/components/ContextFeedTable.jsx";
 import { CATEGORY_INDEX_INFO } from "@/constants/CONTEXT_FEED_DEFINITIONS";
-import { SERIES_ORDER } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
+import {
+  SERIES_ORDER,
+  METRIC_STATES,
+  STATUS_TIMELINE_DIMENSIONS,
+  STATUS_TIMELINE_MARGINS,
+} from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
 import { getStatusLabel } from "@/utils/observatoryStatusUtils";
 import { contextFeedColumns } from "@/components/ContextFeedColumns";
 import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
@@ -277,16 +282,8 @@ function ContextFeed() {
     fetchObsStatusFromRubinNights({
       start: startDayobs,
       end: endDayobs,
-      nightOnlyMetrics: false,
-      metrics: [
-        "daytime",
-        "operational",
-        "fault",
-        "weather",
-        "downtime",
-        "idle",
-        "unknown",
-      ],
+      nightOnlyMetrics: true,
+      metrics: METRIC_STATES.map((stateName) => stateName.toLowerCase()),
       abortController,
     })
       .then((data) => {
@@ -299,7 +296,7 @@ function ContextFeed() {
           console.error("Error fetching observatory status:", err);
           addNotification({
             type: "error",
-            source: "obs-status",
+            source: "observatory-status",
           });
         }
       })
@@ -551,7 +548,12 @@ function ContextFeed() {
                   <div
                     className="flex flex-col w-45"
                     style={{
-                      paddingTop: "30px",
+                      // Centre the first label on the first chart row, which
+                      // sits one row height below the top margin
+                      paddingTop: `${
+                        STATUS_TIMELINE_MARGINS.top +
+                        STATUS_TIMELINE_DIMENSIONS.SERIES_ROW_HEIGHT / 2
+                      }px`,
                     }}
                   >
                     {SERIES_ORDER.map((stateName) => (
@@ -559,24 +561,29 @@ function ContextFeed() {
                         key={stateName}
                         className="flex items-center justify-between"
                         style={{
-                          height: "20px",
+                          height: `${STATUS_TIMELINE_DIMENSIONS.SERIES_ROW_HEIGHT}px`,
                         }}
                       >
                         <span className="text-xs text-stone-200">
                           {getStatusLabel(stateName)}
                         </span>
                         <span className="text-xs text-stone-200 tabular-nums">
-                          {obsStatusMetrics?.[stateName.toLowerCase()] != null
-                            ? obsStatusMetrics[stateName.toLowerCase()].toFixed(
-                                2,
-                              )
-                            : "—"}
+                          {!METRIC_STATES.includes(stateName)
+                            ? ""
+                            : obsStatusMetrics?.[stateName.toLowerCase()] !=
+                                null
+                              ? obsStatusMetrics[
+                                  stateName.toLowerCase()
+                                ].toFixed(2)
+                              : "—"}
                         </span>
                       </div>
                     ))}
                     <div
                       className="flex items-center justify-between"
-                      style={{ marginTop: "32px" }}
+                      style={{
+                        marginTop: `${STATUS_TIMELINE_DIMENSIONS.METRICS_TOTAL_ROW_GAP}px`,
+                      }}
                     >
                       <span className="text-base text-stone-200">
                         Night Hours

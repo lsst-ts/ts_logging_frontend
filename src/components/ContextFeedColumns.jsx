@@ -424,10 +424,7 @@ export const contextFeedColumns = [
       cell: (info) => {
         const micros = info.getValue();
         if (!micros) return null;
-        const ms = Math.floor(micros / 1000);
-        return DateTime.fromMillis(ms, { zone: "utc" }).toFormat(
-          "yyyy-LL-dd HH:mm:ss.S",
-        );
+        return formatTimestamp(Math.floor(micros / 1000));
       },
       size: 220,
       minSize: 220,

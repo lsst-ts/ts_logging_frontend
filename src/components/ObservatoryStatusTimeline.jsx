@@ -15,10 +15,6 @@ import {
   STATUS_TIMELINE_DIMENSIONS,
   STATUS_TIMELINE_MARGINS,
 } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
-import {
-  TIMELINE_MARGINS,
-  TIMELINE_DIMENSIONS,
-} from "@/constants/TIMELINE_DEFINITIONS";
 import { useEChartsTimeline } from "@/hooks/useEChartsTimeline";
 
 /**
@@ -91,6 +87,7 @@ function ObservatoryStatusTimeline({
         fullTimeRange,
         computedHeight,
         showBaseline: true,
+        bottomMargin: STATUS_TIMELINE_MARGINS.bottom,
       });
       if (!result) return;
 
@@ -435,7 +432,9 @@ function ObservatoryStatusTimeline({
       ],
     };
 
-    markerSeriesIdxRef.current = option.series.length - 1;
+    markerSeriesIdxRef.current = option.series.findIndex(
+      (s) => s.id === "markers",
+    );
     instance.setOption(option, { notMerge: false });
 
     // Activate brush mode permanently — without this the brush is inert

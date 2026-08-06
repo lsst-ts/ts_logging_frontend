@@ -157,13 +157,20 @@ export const prepareMoonIntervals = (events, xMinMillis, xMaxMillis) => {
  * @param {[DateTime, DateTime]} options.fullTimeRange
  * @param {number} options.computedHeight - Fallback height if offsetHeight unavailable
  * @param {boolean} [options.showBaseline=false] - Add white baseline at bottom of grid
+ * @param {number} [options.bottomMargin=TIMELINE_MARGINS.bottom] - Bottom margin of the
+ *   caller's grid, used to place the baseline and date labels on the x-axis
  * @returns {{ elements: Array, containerHeight: number, fontFamily: string,
  *             gridLeft: number, gridRight: number, gridBottom: number } | null}
  */
 export const buildTimelineGraphicElements = (
   instance,
   containerRef,
-  { fullTimeRange, computedHeight, showBaseline = false },
+  {
+    fullTimeRange,
+    computedHeight,
+    showBaseline = false,
+    bottomMargin = TIMELINE_MARGINS.bottom,
+  },
 ) => {
   const xMinMillis = fullTimeRange[0]?.toMillis();
   const xMaxMillis = fullTimeRange[1]?.toMillis();
@@ -175,7 +182,7 @@ export const buildTimelineGraphicElements = (
 
   const containerHeight = containerRef.current?.offsetHeight ?? computedHeight;
   const fontFamily = getComputedStyle(containerRef.current).fontFamily;
-  const gridBottom = containerHeight - TIMELINE_MARGINS.bottom;
+  const gridBottom = containerHeight - bottomMargin;
 
   const hourlyTicks = generateHourlyTicks(
     xMinMillis,
@@ -302,12 +309,16 @@ export const buildGridLinesSeries = (hourlyTicks) => ({
  *
  * @param {string} id - Series id
  * @param {number[]} values - Twilight times in milliseconds
- * @param {"solid"|"dashed"} lineType - Line style
+ * @param {"solid"|"dashed"|"dotted"|number[]} type - ECharts line style, either a
+ *   named style or a dash pattern such as [dash, gap]
  * @param {number} xMinMillis - Chart x-axis minimum
  * @param {number} xMaxMillis - Chart x-axis maximum
  * @param {string} [color] - Optional line color (defaults to TWILIGHT_LINE)
  * @param {number} [width] - Optional line width (defaults to TWILIGHT_STROKE_WIDTH)
- * @param {number[]} [lineDash] - Optional dash pattern [dash, gap] for dashed lines
+ * @param {string} [labelText] - Optional fixed label text; defaults to the
+ *   twilight time formatted as HH:mm
+ * @param {(twilightMs: number) => boolean} [showLabelFn] - Predicate deciding whether
+ *   a given twilight line gets a label (defaults to always showing it)
  * @returns {Object} ECharts series config
  */
 export const buildTwilightSeries = (

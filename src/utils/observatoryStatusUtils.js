@@ -67,12 +67,13 @@ export function transformStatusToSeries(entries, endTime) {
   const closeInterval = (stateName, endMs) => {
     const interval = activeIntervals[stateName];
     if (!interval) return;
+    const end = Math.max(endMs, interval.start);
     series[stateName].push({
       start: interval.start,
-      end: endMs,
+      end,
       note: interval.note,
       time: interval.time,
-      duration: formatDuration(endMs - interval.start),
+      duration: formatDuration(end - interval.start),
       stateChange: interval.stateChange,
     });
     delete activeIntervals[stateName];
@@ -136,15 +137,7 @@ export function transformStatusToSeries(entries, endTime) {
   // Close any still-open intervals at the end of the visible range
   for (const stateName of SERIES_ORDER) {
     if (activeIntervals[stateName]) {
-      const interval = activeIntervals[stateName];
-      series[stateName].push({
-        start: interval.start,
-        end: endTime,
-        note: interval.note,
-        time: interval.time,
-        duration: formatDuration(endTime - interval.start),
-        stateChange: interval.stateChange,
-      });
+      closeInterval(stateName, endTime);
     }
   }
 

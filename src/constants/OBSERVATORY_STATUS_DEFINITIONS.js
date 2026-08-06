@@ -71,6 +71,10 @@ export const STATUS_TIMELINE_DIMENSIONS = {
   BAR_HEIGHT: 12,
   MARKER_SIZE: 14,
   MARKER_SIZE_WITH_NOTE: 16,
+
+  // Gap between the last state row and the Night Hours total row in the
+  // label column, chosen to line the total up with the chart's date labels
+  METRICS_TOTAL_ROW_GAP: 32,
 };
 
 /**
@@ -95,3 +99,13 @@ export const SERIES_ORDER = [
   "IDLE",
   "UNKNOWN",
 ];
+
+/**
+ * States with a meaningful hours metric.
+ *
+ * Metrics are requested night-only, so daytime is always zero and is left out
+ * of the label column. The state keeps its chart row regardless.
+ */
+export const METRIC_STATES = SERIES_ORDER.filter(
+  (stateName) => stateName !== "DAYTIME",
+);
