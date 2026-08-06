@@ -514,10 +514,10 @@ const calculateSumExpTimeBetweenTwilights = (exposureFields, almanacInfo) => {
  * - "1.2.3a1" -> "1.2.3-alpha.1"
  * - "1.2.3rc1" -> "1.2.3-rc.1"
  * @returns The git tag corresponding to the version string
- * or "main" if the version string is unrecognized
+ * or "develop" if the version string is unrecognized
  */
 function parseBackendVersion(versionString) {
-  const defaultVersion = "main";
+  const defaultVersion = "develop";
   const match = versionString.match(/^(\d+\.\d+\.\d+)([a-z]\d+|rc\d+)?$/);
   if (!match) {
     console.warn(`Unrecognized version string: ${versionString}`);
