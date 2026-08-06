@@ -19,32 +19,27 @@ test.describe("Header — timeline toggle", () => {
     ).toBeVisible();
   });
 
-  test.fixme(
-    "clicking Hide Timeline removes the timeline chart and updates the button",
-    async ({ page }) => {
-      const initialChartCount = await page.locator(".recharts-surface").count();
-      await page.getByRole("button", { name: "Hide Timeline" }).click();
-      await expect(
-        page.getByRole("button", { name: "Show Timeline" }),
-      ).toBeVisible();
-      await expect(page.locator(".recharts-surface")).toHaveCount(
-        initialChartCount - 1,
-      );
-    },
-  );
+  test("clicking Hide Timeline removes the timeline chart and updates the button", async ({
+    page,
+  }) => {
+    await expect(page.getByTestId("timeline-chart")).toBeVisible();
+    await page.getByRole("button", { name: "Hide Timeline" }).click();
+    await expect(
+      page.getByRole("button", { name: "Show Timeline" }),
+    ).toBeVisible();
+    await expect(page.getByTestId("timeline-chart")).toHaveCount(0);
+  });
 
   test("clicking Show Timeline restores the timeline chart and updates the button", async ({
     page,
   }) => {
-    const initialChartCount = await page.locator(".recharts-surface").count();
     await page.getByRole("button", { name: "Hide Timeline" }).click();
+    await expect(page.getByTestId("timeline-chart")).toHaveCount(0);
     await page.getByRole("button", { name: "Show Timeline" }).click();
     await expect(
       page.getByRole("button", { name: "Hide Timeline" }),
     ).toBeVisible();
-    await expect(page.locator(".recharts-surface")).toHaveCount(
-      initialChartCount,
-    );
+    await expect(page.getByTestId("timeline-chart")).toBeVisible();
   });
 });
 
