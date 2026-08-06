@@ -67,17 +67,6 @@ export const STATUS_TIMELINE_DIMENSIONS = {
   // Height per data series row
   SERIES_ROW_HEIGHT: 20,
 
-  // Base height for labels and margins
-  BASE_HEIGHT: 60,
-
-  // Label and axis spacing
-  PLOT_LABEL_HEIGHT: 20,
-  DIST_BELOW_X_AXIS: 16,
-
-  // Text styling
-  LABEL_TEXT_SIZE: 14,
-  AXIS_LABEL_TEXT_SIZE: 12,
-
   // Bar/marker styling
   BAR_HEIGHT: 12,
   MARKER_SIZE: 14,
@@ -92,34 +81,6 @@ export const STATUS_TIMELINE_MARGINS = {
   right: 30,
   left: 30,
   bottom: 40, // Space for hourly tick labels + date labels
-};
-
-/**
- * Twilight line styling
- */
-export const TWILIGHT_STYLES = {
-  TWELVE_DEG: {
-    color: "#0ea5e9", // Sky blue
-    lineWidth: 2,
-    lineType: "solid",
-    label: "12°",
-  },
-  ZERO_DEG: {
-    color: "#0ea5e9", // Same blue
-    lineWidth: 2,
-    lineType: "dashed",
-    dashPattern: [5, 5], // 5px dash, 5px gap
-    label: "0°",
-  },
-};
-
-/**
- * Opacity values for active/inactive states
- */
-export const STATUS_OPACITY = {
-  ACTIVE: 1,
-  INACTIVE: 0.3,
-  HOVER: 0.8,
 };
 
 /**

@@ -172,16 +172,6 @@ export function getStatusLabel(stateName) {
 }
 
 /**
- * Gets the bit value for a given state name.
- *
- * @param {string} stateName - Name of the state
- * @returns {number} Bitmask value
- */
-export function getStateBitValue(stateName) {
-  return OBSERVATORY_STATES[stateName] || 0;
-}
-
-/**
  * Parses a status bitmask into an array of active state names.
  *
  * @param {number} status - Bitmask status value

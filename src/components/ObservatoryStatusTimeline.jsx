@@ -65,7 +65,6 @@ function ObservatoryStatusTimeline({
       const xMaxMillis = fullTimeRange[1]?.toMillis();
       if (xMinMillis && xMaxMillis) {
         const containerWidth = containerRef.current?.offsetWidth ?? 800;
-        console.log("[OST] resize containerWidth:", containerWidth);
         const minSeparationMs =
           (22 * (xMaxMillis - xMinMillis)) / containerWidth;
         instance.setOption({
