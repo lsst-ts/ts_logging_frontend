@@ -11,38 +11,38 @@ test.describe("Plots page — smoke test", () => {
     await page.goto(PLOTS_URL);
   });
 
-  // test("loads with default plots and no console errors", async ({ page }) => {
-  //   const consoleErrors = [];
-  //   page.on("console", (msg) => {
-  //     if (msg.type() === "error") {
-  //       const text = msg.text();
-  //       // Exclude a pre-existing Recharts internal warning about key props on
-  //       // Line children — not caused by our code and not actionable here.
-  //       if (text.includes("Each child in a list should have a unique")) return;
-  //       consoleErrors.push(text);
-  //     }
-  //   });
+  test("loads with default plots and no console errors", async ({ page }) => {
+    const consoleErrors = [];
+    page.on("console", (msg) => {
+      if (msg.type() === "error") {
+        const text = msg.text();
+        // Exclude a pre-existing Recharts internal warning about key props on
+        // Line children — not caused by our code and not actionable here.
+        if (text.includes("Each child in a list should have a unique")) return;
+        consoleErrors.push(text);
+      }
+    });
 
-  //   await waitForPlotsLoad(page);
+    await waitForPlotsLoad(page);
 
-  //   // Page header — CardTitle is a div (not a heading), so match by slot + text
-  //   await expect(page.locator("[data-slot='card-title']")).toContainText(
-  //     "Plots:",
-  //   );
+    // Page header — CardTitle is a div (not a heading), so match by slot + text
+    await expect(page.locator("[data-slot='card-title']")).toContainText(
+      "Plots:",
+    );
 
-  //   // Default 4 plots visible (airmass, psf_median, zero_point_median, sky_bg_median)
-  //   await expect(page.locator("[data-slot='chart']")).toHaveCount(4);
+    // Default 4 plots visible (airmass, psf_median, zero_point_median, sky_bg_median)
+    await expect(page.locator("[data-slot='chart']")).toHaveCount(4);
 
-  //   // Controls are present
-  //   await expect(
-  //     page.getByRole("button", { name: "Show / Hide Plots" }),
-  //   ).toBeVisible();
-  //   await expect(
-  //     page.getByRole("button", { name: "Plot Format" }),
-  //   ).toBeVisible();
+    // Controls are present
+    await expect(
+      page.getByRole("button", { name: "Show / Hide Plots" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Plot Format" }),
+    ).toBeVisible();
 
-  //   expect(consoleErrors).toHaveLength(0);
-  // });
+    expect(consoleErrors).toHaveLength(0);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -90,27 +90,27 @@ test.describe("Plots page — single record", () => {
 // ---------------------------------------------------------------------------
 
 test.describe("Plots page — API errors", () => {
-  // test("a data-log 500 shows an error banner", async ({ page }) => {
-  //   await setupApiMocks(page);
-  //   // Override data-log after setupApiMocks — Playwright evaluates routes LIFO
-  //   // so this handler takes precedence over the one registered inside setupApiMocks.
-  //   await page.route("**/nightlydigest/api/data-log*", (route) =>
-  //     route.fulfill({ status: 500, json: { detail: "Internal Server Error" } }),
-  //   );
-  //   await page.goto(PLOTS_URL);
-  //   await waitForPlotsLoad(page);
+  test("a data-log 500 shows an error banner", async ({ page }) => {
+    await setupApiMocks(page);
+    // Override data-log after setupApiMocks — Playwright evaluates routes LIFO
+    // so this handler takes precedence over the one registered inside setupApiMocks.
+    await page.route("**/nightlydigest/api/data-log*", (route) =>
+      route.fulfill({ status: 500, json: { detail: "Internal Server Error" } }),
+    );
+    await page.goto(PLOTS_URL);
+    await waitForPlotsLoad(page);
 
-  //   await expect(
-  //     page.getByText("One or more data sources are unavailable."),
-  //   ).toBeVisible({
-  //     timeout: 10000,
-  //   });
-  //   await expect(
-  //     page.getByText("exposures failed to load. Data may be incomplete"),
-  //   ).toBeVisible({
-  //     timeout: 10000,
-  //   });
-  // });
+    await expect(
+      page.getByText("One or more data sources are unavailable."),
+    ).toBeVisible({
+      timeout: 10000,
+    });
+    await expect(
+      page.getByText("exposures failed to load. Data may be incomplete"),
+    ).toBeVisible({
+      timeout: 10000,
+    });
+  });
 
   test("an almanac 500 shows an error banner and data plots still render", async ({
     page,

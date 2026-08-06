@@ -32,8 +32,10 @@ const ALMANAC_MOCK = {
       dayobs: TEST_DAYOBS_INT,
       night_hours: 8,
       elapsed_twilight_hours: 8,
+      twilight_evening_0deg: "2026-01-01 19:30:00",
       twilight_evening_12deg: "2026-01-01 20:00:00",
       twilight_morning_12deg: "2026-01-02 04:00:00",
+      twilight_morning_0deg: "2026-01-02 04:30:00",
       moon_rise_time: "2026-01-01 22:00:00",
       moon_set_time: "2026-01-02 02:00:00",
       moon_illumination: "50%",
@@ -56,18 +58,18 @@ test.describe("Twilight lines — full night range", () => {
     await waitForPlotsLoad(page);
   });
 
-  // test("each visible chart shows exactly two twilight lines", async ({
-  //   page,
-  // }) => {
-  //   const charts = page.locator("[data-slot='chart']");
-  //   await expect(charts).toHaveCount(4);
+  test("each visible chart shows exactly two twilight lines", async ({
+    page,
+  }) => {
+    const charts = page.locator("[data-slot='chart']");
+    await expect(charts).toHaveCount(4);
 
-  //   for (let i = 0; i < 4; i++) {
-  //     await expect(
-  //       charts.nth(i).locator(`line[stroke="${TWILIGHT_STROKE}"]`),
-  //     ).toHaveCount(2);
-  //   }
-  // });
+    for (let i = 0; i < 4; i++) {
+      await expect(
+        charts.nth(i).locator(`line[stroke="${TWILIGHT_STROKE}"]`),
+      ).toHaveCount(2);
+    }
+  });
 
   test.fixme("the timeline also shows two twilight lines", async ({ page }) => {
     const timelineSvg = page.locator(
@@ -78,19 +80,19 @@ test.describe("Twilight lines — full night range", () => {
     ).toHaveCount(2);
   });
 
-  // test("evening twilight line is positioned left of morning twilight line", async ({
-  //   page,
-  // }) => {
-  //   // Twilight values are emitted in almanac order: evening (index 0) then
-  //   // morning (index 1), so the first line in the DOM is earlier.
-  //   const firstChart = page.locator("[data-slot='chart']").first();
-  //   const lines = firstChart.locator(`line[stroke="${TWILIGHT_STROKE}"]`);
+  test("evening twilight line is positioned left of morning twilight line", async ({
+    page,
+  }) => {
+    // Twilight values are emitted in almanac order: evening (index 0) then
+    // morning (index 1), so the first line in the DOM is earlier.
+    const firstChart = page.locator("[data-slot='chart']").first();
+    const lines = firstChart.locator(`line[stroke="${TWILIGHT_STROKE}"]`);
 
-  //   const eveningBox = await lines.nth(0).boundingBox();
-  //   const morningBox = await lines.nth(1).boundingBox();
+    const eveningBox = await lines.nth(0).boundingBox();
+    const morningBox = await lines.nth(1).boundingBox();
 
-  //   expect(eveningBox.x).toBeLessThan(morningBox.x);
-  // });
+    expect(eveningBox.x).toBeLessThan(morningBox.x);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -126,21 +128,21 @@ test.describe("Moon areas — full night range", () => {
     await waitForPlotsLoad(page);
   });
 
-  // test("moon area appears on showMoon charts (Zero Points, Sky Brightness)", async ({
-  //   page,
-  // }) => {
-  //   const zeroPoint = page.locator(
-  //     '[data-slot="chart"][title="Photometric Zero Points"]',
-  //   );
-  //   const skyBrightness = page.locator(
-  //     '[data-slot="chart"][title="Sky Brightness"]',
-  //   );
+  test("moon area appears on showMoon charts (Zero Points, Sky Brightness)", async ({
+    page,
+  }) => {
+    const zeroPoint = page.locator(
+      '[data-slot="chart"][title="Photometric Zero Points"]',
+    );
+    const skyBrightness = page.locator(
+      '[data-slot="chart"][title="Sky Brightness"]',
+    );
 
-  //   await expect(zeroPoint.locator(`path[fill="${MOON_FILL}"]`)).toHaveCount(1);
-  //   await expect(
-  //     skyBrightness.locator(`path[fill="${MOON_FILL}"]`),
-  //   ).toHaveCount(1);
-  // });
+    await expect(zeroPoint.locator(`path[fill="${MOON_FILL}"]`)).toHaveCount(1);
+    await expect(
+      skyBrightness.locator(`path[fill="${MOON_FILL}"]`),
+    ).toHaveCount(1);
+  });
 
   test("moon area is absent on non-showMoon charts (Airmass, PSF)", async ({
     page,
@@ -152,27 +154,27 @@ test.describe("Moon areas — full night range", () => {
     await expect(psf.locator(`path[fill="${MOON_FILL}"]`)).toHaveCount(0);
   });
 
-  // test("moon area is positioned between the evening and morning twilight lines", async ({
-  //   page,
-  // }) => {
-  //   // The mock has moon_rise at 22:00 UTC (2 h after evening twilight at 20:00)
-  //   // and moon_set at 02:00 UTC (2 h before morning twilight at 04:00), so the
-  //   // yellow area must sit strictly inside the two blue lines.
-  //   const zeroPoint = page.locator(
-  //     '[data-slot="chart"][title="Photometric Zero Points"]',
-  //   );
-  //   const lines = zeroPoint.locator(`line[stroke="${TWILIGHT_STROKE}"]`);
-  //   const moonPath = zeroPoint.locator(`path[fill="${MOON_FILL}"]`);
+  test("moon area is positioned between the evening and morning twilight lines", async ({
+    page,
+  }) => {
+    // The mock has moon_rise at 22:00 UTC (2 h after evening twilight at 20:00)
+    // and moon_set at 02:00 UTC (2 h before morning twilight at 04:00), so the
+    // yellow area must sit strictly inside the two blue lines.
+    const zeroPoint = page.locator(
+      '[data-slot="chart"][title="Photometric Zero Points"]',
+    );
+    const lines = zeroPoint.locator(`line[stroke="${TWILIGHT_STROKE}"]`);
+    const moonPath = zeroPoint.locator(`path[fill="${MOON_FILL}"]`);
 
-  //   const eveningBox = await lines.nth(0).boundingBox();
-  //   const morningBox = await lines.nth(1).boundingBox();
-  //   const moonBox = await moonPath.boundingBox();
+    const eveningBox = await lines.nth(0).boundingBox();
+    const morningBox = await lines.nth(1).boundingBox();
+    const moonBox = await moonPath.boundingBox();
 
-  //   // Moon area starts after the evening twilight line
-  //   expect(moonBox.x).toBeGreaterThan(eveningBox.x);
-  //   // Moon area ends before the morning twilight line
-  //   expect(moonBox.x + moonBox.width).toBeLessThan(morningBox.x);
-  // });
+    // Moon area starts after the evening twilight line
+    expect(moonBox.x).toBeGreaterThan(eveningBox.x);
+    // Moon area ends before the morning twilight line
+    expect(moonBox.x + moonBox.width).toBeLessThan(morningBox.x);
+  });
 });
 
 // ---------------------------------------------------------------------------
