@@ -17,6 +17,7 @@ import {
   dayobsAtMidnight,
   getValidTimeRange,
   generateDayObsRange,
+  formatTimestamp,
 } from "../src/utils/timeUtils";
 
 const TAI_OFFSET_SECONDS = 37;
@@ -129,6 +130,76 @@ describe("timeUtils", () => {
     it("accepts custom format", () => {
       const dt = DateTime.fromISO("2025-08-18T00:00:00Z", { zone: "utc" });
       expect(dayobsAtMidnight(dt, "yyyyLLdd")).toBe("20250817");
+    });
+  });
+
+  describe("formatTimestamp", () => {
+    describe("milliseconds since epoch", () => {
+      it("formats in UTC", () => {
+        expect(formatTimestamp(1755475200000)).toBe("2025-08-18 00:00:00.000");
+      });
+
+      it("converts to the requested zone", () => {
+        expect(formatTimestamp(1755475200000, "America/Santiago")).toBe(
+          "2025-08-17 20:00:00.000",
+        );
+      });
+
+      it("treats the epoch as a real timestamp, not a missing value", () => {
+        expect(formatTimestamp(0)).toBe("1970-01-01 00:00:00.000");
+      });
+
+      it("returns null for NaN", () => {
+        expect(formatTimestamp(NaN)).toBeNull();
+      });
+    });
+
+    describe("ISO date-time strings", () => {
+      it("formats a UTC string", () => {
+        expect(formatTimestamp("2025-08-18T00:00:00Z")).toBe(
+          "2025-08-18 00:00:00.000",
+        );
+      });
+
+      it("truncates sub-millisecond precision", () => {
+        // Luxon only natively supports millisecond precision, not the
+        // microseconds the backend sends. Extract them here if ever needed.
+        expect(formatTimestamp("2026-07-12T22:03:26.082206+00:00")).toBe(
+          "2026-07-12 22:03:26.082",
+        );
+      });
+
+      it("assumes the requested zone when the string carries no offset", () => {
+        expect(formatTimestamp("2025-08-18T00:00:00", "America/Santiago")).toBe(
+          "2025-08-18 00:00:00.000",
+        );
+      });
+
+      it("converts an offset-bearing string into the requested zone", () => {
+        expect(
+          formatTimestamp("2026-07-12T22:03:26+00:00", "America/Santiago"),
+        ).toBe("2026-07-12 18:03:26.000");
+      });
+
+      it("normalises a non-UTC offset to UTC", () => {
+        expect(formatTimestamp("2025-08-18T00:00:00-04:00")).toBe(
+          "2025-08-18 04:00:00.000",
+        );
+      });
+
+      it("passes unparseable strings through unchanged", () => {
+        // The backend sends "NaT" for absent script timestamps.
+        expect(formatTimestamp("NaT")).toBe("NaT");
+        expect(formatTimestamp("not a date")).toBe("not a date");
+      });
+    });
+
+    describe("missing values", () => {
+      it("returns null for null, undefined and empty string", () => {
+        expect(formatTimestamp(null)).toBeNull();
+        expect(formatTimestamp(undefined)).toBeNull();
+        expect(formatTimestamp("")).toBeNull();
+      });
     });
   });
 

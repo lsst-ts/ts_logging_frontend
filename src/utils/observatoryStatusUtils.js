@@ -8,22 +8,6 @@ import {
 import { formatDuration } from "@/utils/timeUtils";
 
 /**
- * Transforms raw observatory status entries into series data for rendering.
- *
- * Converts status change events into continuous intervals for each state.
- * Each state gets its own array of intervals showing when that state was active.
- *
- * @param {Array} entries - Array of status entries from API, sorted by time:
- *   [{ time: string, status: number, note: string, statusLabels: string, time_ms: number }]
- * @param {number} endTime - End time of the visible range (to close final intervals)
- * @returns {Object} Object with state names as keys and arrays of intervals as values:
- *   {
- *     UNKNOWN: [{ start, end, note, time }],
- *     DAYTIME: [{ start, end, note, time }],
- *     ...
- *   }
- */
-/**
  * Determines the state change description (Old > New format) for a given entry.
  * Shows all active states before and after the transition, separated by pipes.
  *
@@ -49,6 +33,22 @@ export function getStateChangeDescription(entries, entryIndex) {
   return `> ${afterStr}`;
 }
 
+/**
+ * Transforms raw observatory status entries into series data for rendering.
+ *
+ * Converts status change events into continuous intervals for each state.
+ * Each state gets its own array of intervals showing when that state was active.
+ *
+ * @param {Array} entries - Array of status entries from API, sorted by time:
+ *   [{ time: string, status: number, note: string, statusLabels: string, time_ms: number }]
+ * @param {number} endTime - End time of the visible range (to close final intervals)
+ * @returns {Object} Object with state names as keys and arrays of intervals as values:
+ *   {
+ *     UNKNOWN: [{ start, end, note, time }],
+ *     DAYTIME: [{ start, end, note, time }],
+ *     ...
+ *   }
+ */
 export function transformStatusToSeries(entries, endTime) {
   const series = {};
   for (const stateName of SERIES_ORDER) {

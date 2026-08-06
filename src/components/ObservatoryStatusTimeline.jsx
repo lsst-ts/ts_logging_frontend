@@ -24,7 +24,7 @@ import { useEChartsTimeline } from "@/hooks/useEChartsTimeline";
 /**
  * Observatory status timeline component.
  *
- * Displays 7 parallel series showing when each observatory state was active,
+ * Display 7 parallel series showing when each observatory state was active,
  * derived from a bitmask status feed. Shares the selection brush with
  * TimelineChart via the shared selectedTimeRange / setSelectedTimeRange props.
  *
@@ -239,6 +239,7 @@ function ObservatoryStatusTimeline({
       tooltip: {
         trigger: "item",
         triggerOn: "none",
+        confine: true,
         backgroundColor: "rgba(0,0,0,1)",
         borderColor: "#555",
         textStyle: { color: "#fff", fontSize: 12 },

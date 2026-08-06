@@ -1,5 +1,4 @@
 import { useEffect, useState, useMemo, useRef } from "react";
-import { DateTime } from "luxon";
 
 import { useSearch } from "@tanstack/react-router";
 
@@ -26,12 +25,9 @@ import {
 import TimelineChart from "@/components/TimelineChart";
 import ObservatoryStatusTimeline from "@/components/ObservatoryStatusTimeline";
 import ContextFeedTable from "@/components/ContextFeedTable.jsx";
-import { CATEGORY_INDEX_INFO } from "@/components/context-feed-definitions.js";
+import { CATEGORY_INDEX_INFO } from "@/constants/CONTEXT_FEED_DEFINITIONS";
 import { SERIES_ORDER } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
-import {
-  getStatusLabel,
-  getStateChangeDescription,
-} from "@/utils/observatoryStatusUtils";
+import { getStatusLabel } from "@/utils/observatoryStatusUtils";
 import { contextFeedColumns } from "@/components/ContextFeedColumns";
 import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
 import PageHeader from "@/components/PageHeader";
@@ -386,41 +382,17 @@ function ContextFeed() {
 
   // Global table loading flag
   const tableLoading =
-    rubinNightsDataLoading ||
-    almanacLoading ||
-    blockLookupLoading ||
-    obsStatusLoading;
-
-  // Convert observatory status entries to context feed rows
-  const obsStatusFeedRows = useMemo(() => {
-    return obsStatusEntries.map((entry, i) => {
-      const timeUTC = DateTime.fromMillis(entry.time_ms, { zone: "utc" });
-      return {
-        time: entry.time,
-        event_time_dt: timeUTC,
-        event_time_millis: entry.time_ms,
-        event_type: "Observatory Status",
-        event_color: "#ffffff",
-        displayIndex: null,
-        name: getStateChangeDescription(obsStatusEntries, i),
-        description: entry.note ?? "",
-      };
-    });
-  }, [obsStatusEntries]);
+    rubinNightsDataLoading || almanacLoading || blockLookupLoading;
 
   // Merge data sources together to form one object
   // to pass to TanStack Table.
   const contextFeedTableData = useMemo(() => {
     if (tableLoading) return [];
 
-    const feedRows = rubinNightsData.length
+    return rubinNightsData.length
       ? mergeContextFeedSources(rubinNightsData, blockLookup)
       : [];
-
-    return [...feedRows, ...obsStatusFeedRows].sort(
-      (a, b) => a.event_time_millis - b.event_time_millis,
-    );
-  }, [tableLoading, rubinNightsData, blockLookup, obsStatusFeedRows]);
+  }, [tableLoading, rubinNightsData, blockLookup]);
 
   // Filter data based on selected time range
   const filteredData = useMemo(

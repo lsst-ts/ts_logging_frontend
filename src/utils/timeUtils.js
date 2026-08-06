@@ -286,15 +286,27 @@ function utcDateToCalendarDate(utcDate) {
 }
 
 /**
- * Formats a timestamp (milliseconds since epoch) to the standard context feed table format.
+ * Formats a timestamp to the standard context feed table format.
  *
- * @param {number} millis - Timestamp in milliseconds since epoch.
- * @returns {string} Formatted date-time string as "yyyy-LL-dd HH:mm:ss.S"
+ * Accepts either milliseconds since epoch or an ISO date-time string.
+ *
+ * @param {number|string} timestamp - Milliseconds since epoch, or an ISO date-time string.
+ * @param {string} [zone="utc"] - IANA zone identifier; otherwise UTC.
+ * @returns {string|null} Formatted date-time string as "yyyy-LL-dd HH:mm:ss.SSS",
+ *   null if there is no timestamp, or the original string if it cannot be parsed
+ *   (e.g. "NaT").
  */
-function formatTimestamp(millis) {
-  return DateTime.fromMillis(millis, { zone: "utc" }).toFormat(
-    "yyyy-LL-dd HH:mm:ss.S",
-  );
+function formatTimestamp(timestamp, zone = "utc") {
+  if (timestamp == null || timestamp === "") return null;
+
+  const dt =
+    typeof timestamp === "number"
+      ? DateTime.fromMillis(timestamp, { zone })
+      : DateTime.fromISO(timestamp, { zone });
+
+  if (!dt.isValid) return typeof timestamp === "string" ? timestamp : null;
+
+  return dt.toFormat("yyyy-LL-dd HH:mm:ss.SSS");
 }
 
 /**

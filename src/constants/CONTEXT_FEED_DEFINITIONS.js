@@ -15,5 +15,5 @@ export const CATEGORY_INDEX_INFO = {
   20: { color: "#14b8a6", label: "Narrative Log (Simonyi)", displayIndex: 9 },
   21: { color: "#38bdf8", label: "Narrative Log (AuxTel)", displayIndex: 10 },
   22: { color: "#3b82f6", label: "Narrative Log (General)", displayIndex: 11 },
-  30: { color: "#ffffff", label: "Observatory Status", displayIndex: null },
+  23: { color: "#ffffff", label: "Observatory Status", displayIndex: null },
 };

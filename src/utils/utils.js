@@ -8,7 +8,7 @@ import {
   isoToUTC,
   getDayobsUTC,
 } from "./timeUtils";
-import { CATEGORY_INDEX_INFO } from "@/components/context-feed-definitions.js";
+import { CATEGORY_INDEX_INFO } from "@/constants/CONTEXT_FEED_DEFINITIONS";
 import { GLOBAL_SEARCH_PARAMS } from "@/routes";
 
 export const DEFAULT_EXTERNAL_INSTANCE_URL =
