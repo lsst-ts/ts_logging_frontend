@@ -8,7 +8,7 @@ import {
   isoToUTC,
   getDayobsUTC,
 } from "./timeUtils";
-import { CATEGORY_INDEX_INFO } from "@/components/context-feed-definitions.js";
+import { CATEGORY_INDEX_INFO } from "@/constants/CONTEXT_FEED_DEFINITIONS";
 import { GLOBAL_SEARCH_PARAMS } from "@/routes";
 
 export const DEFAULT_EXTERNAL_INSTANCE_URL =
@@ -448,9 +448,10 @@ const getDayobsAlmanac = (dayobs, almanacInfo) => {
  * @param {Object[]} almanacInfo - Array of almanac records.
  *   Each record should contain:
  *     - {string} dayobs: the observing date key
- *     - {string} twilight_evening_12deg: ISO date string of evening twilight
- *     - {string} twilight_morning_12deg: ISO date string of next morning twilight
- * @returns {number} Total exposure time, in seconds, for all exposures that start
+ *     - {string} twilight_evening_12deg: ISO date string of evening nautical twilight (12°)
+ *     - {string} twilight_morning_12deg: ISO date string of next morning nautical twilight (12°)
+ *
+ * @returns {number} Total exposure time (seconds) for all exposures that start
  *   between their corresponding evening and morning twilights.
  */
 const calculateSumExpTimeBetweenTwilights = (exposureFields, almanacInfo) => {

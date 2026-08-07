@@ -11,3 +11,9 @@ export const FULL_RANGE = FULL_END - FULL_START;
 
 // UTC to TAI conversion offset (37 seconds in milliseconds)
 export const UTC_TO_TAI_MS = 37000;
+
+// Timeline grid insets (from TIMELINE_MARGINS in TIMELINE_DEFINITIONS.js).
+// The ECharts grid uses containLabel: false, so the plot area is just the
+// container inset by these fixed pixel margins.
+export const TIMELINE_MARGIN_LEFT = 30;
+export const TIMELINE_MARGIN_RIGHT = 30;

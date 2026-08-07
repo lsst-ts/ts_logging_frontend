@@ -285,6 +285,47 @@ function utcDateToCalendarDate(utcDate) {
   return new Date(d.year, d.month - 1, d.day);
 }
 
+/**
+ * Formats a timestamp to the standard context feed table format.
+ *
+ * Accepts either milliseconds since epoch or an ISO date-time string.
+ *
+ * @param {number|string} timestamp - Milliseconds since epoch, or an ISO date-time string.
+ * @param {string} [zone="utc"] - IANA zone identifier; otherwise UTC.
+ * @returns {string|null} Formatted date-time string as "yyyy-LL-dd HH:mm:ss.SSS",
+ *   null if there is no timestamp, or the original string if it cannot be parsed
+ *   (e.g. "NaT").
+ */
+function formatTimestamp(timestamp, zone = "utc") {
+  if (timestamp == null || timestamp === "") return null;
+
+  const dt =
+    typeof timestamp === "number"
+      ? DateTime.fromMillis(timestamp, { zone })
+      : DateTime.fromISO(timestamp, { zone });
+
+  if (!dt.isValid) return typeof timestamp === "string" ? timestamp : null;
+
+  return dt.toFormat("yyyy-LL-dd HH:mm:ss.SSS");
+}
+
+/**
+ * Formats a duration in milliseconds to hh:mm:ss.ms format.
+ *
+ * @param {number} durationMs - Duration in milliseconds.
+ * @returns {string} Formatted duration string as "hh:mm:ss.ms"
+ */
+function formatDuration(durationMs) {
+  const hours = Math.floor(durationMs / 3600000);
+  const minutes = Math.floor((durationMs % 3600000) / 60000);
+  const seconds = Math.floor((durationMs % 60000) / 1000);
+  const millis = Math.floor(durationMs % 1000);
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
+    2,
+    "0",
+  )}:${String(seconds).padStart(2, "0")}.${String(millis).padStart(3, "0")}`;
+}
+
 export {
   isoToTAI,
   isoToUTC,
@@ -308,4 +349,6 @@ export {
   dayObsIntToDateTime,
   calendarDateToLongFormat,
   utcDateToCalendarDate,
+  formatTimestamp,
+  formatDuration,
 };

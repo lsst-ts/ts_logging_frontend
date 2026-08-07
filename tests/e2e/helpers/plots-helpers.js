@@ -1,5 +1,6 @@
 // @ts-check
 import { expect } from "@playwright/test";
+import { TIMELINE_MARGIN_LEFT, TIMELINE_MARGIN_RIGHT } from "./constants.js";
 
 /**
  * Waits for the Plots page to finish loading.
@@ -51,6 +52,26 @@ export async function dragOn(
 
   if (shiftKey) await page.keyboard.up("Shift");
   if (ctrlKey) await page.keyboard.up("Control");
+}
+
+/**
+ * Returns the page coordinates of the timeline's plot area (the region the
+ * x axis maps onto), so a drag can target an exact fraction of the time range.
+ *
+ * The timeline is an ECharts canvas, so there is no DOM element to measure —
+ * the plot area is derived from the container box and the fixed grid margins.
+ *
+ * @param {import('@playwright/test').Locator} timeline - the timeline container
+ * @returns {Promise<{ left: number, width: number, centreY: number }>}
+ */
+export async function timelinePlotArea(timeline) {
+  await timeline.scrollIntoViewIfNeeded();
+  const box = await timeline.boundingBox();
+  return {
+    left: box.x + TIMELINE_MARGIN_LEFT,
+    width: box.width - TIMELINE_MARGIN_LEFT - TIMELINE_MARGIN_RIGHT,
+    centreY: box.y + box.height / 2,
+  };
 }
 
 /**

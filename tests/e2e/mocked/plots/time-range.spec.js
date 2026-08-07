@@ -1,7 +1,10 @@
 // @ts-check
 import { test, expect } from "@playwright/test";
 import { setupApiMocks } from "../../helpers/mock-api.js";
-import { waitForPlotsLoad } from "../../helpers/plots-helpers.js";
+import {
+  waitForPlotsLoad,
+  timelinePlotArea,
+} from "../../helpers/plots-helpers.js";
 import { PLOTS_URL, FULL_START, FULL_END } from "../../helpers/constants.js";
 
 /** Format a UTC millisecond timestamp as "H:mm  yyyy-LL-dd" (the EditableDateTimeInput format). */
@@ -60,53 +63,39 @@ test.describe("Time range synchronisation", () => {
     await expect(page).toHaveURL(/endTime=1767312540000/);
   });
 
-  test.fixme(
-    "dragging on the timeline updates the time range input bar",
-    async ({ page }) => {
-      // The timeline is the first recharts-surface in DOM order (rendered above
-      // the individual plot charts).
-      const timelineSvg = page.locator(".recharts-surface").first();
-      await timelineSvg.scrollIntoViewIfNeeded();
-      await expect(timelineSvg).toBeVisible();
+  test("dragging on the timeline updates the time range input bar", async ({
+    page,
+  }) => {
+    const timeline = page.getByTestId("timeline-chart");
+    await expect(timeline).toBeVisible();
 
-      const svgBox = await timelineSvg.boundingBox();
-      const plotBounds = await timelineSvg.evaluate((svg) => {
-        const clip = svg.querySelector("clipPath rect");
-        return {
-          x: parseFloat(clip.getAttribute("x")),
-          y: parseFloat(clip.getAttribute("y")),
-          width: parseFloat(clip.getAttribute("width")),
-          height: parseFloat(clip.getAttribute("height")),
-        };
-      });
+    const { left, width, centreY } = await timelinePlotArea(timeline);
 
-      // Drag from 20% to 60% of the plot area width.
-      const startX = svgBox.x + plotBounds.x + plotBounds.width * 0.2;
-      const endX = svgBox.x + plotBounds.x + plotBounds.width * 0.6;
-      const y = svgBox.y + plotBounds.y + plotBounds.height / 2;
+    // Drag from 20% to 60% of the plot area width.
+    const startX = left + width * 0.2;
+    const endX = left + width * 0.6;
 
-      // handleSelection computes: time = fullStart + fractionX * range
-      // Dragging to exactly 20% and 60% of the plot area gives fractionX = 0.2 / 0.6.
-      const range = FULL_END - FULL_START;
-      const expectedStartValue = fmtMs(Math.round(FULL_START + 0.2 * range));
-      const expectedEndValue = fmtMs(Math.round(FULL_START + 0.6 * range));
+    // The brush maps pixels back to time linearly across the plot area, so
+    // dragging to exactly 20% and 60% gives those fractions of the range.
+    const range = FULL_END - FULL_START;
+    const expectedStartValue = fmtMs(Math.round(FULL_START + 0.2 * range));
+    const expectedEndValue = fmtMs(Math.round(FULL_START + 0.6 * range));
 
-      await page.mouse.move(startX, y);
-      await page.mouse.down();
-      await page.mouse.move(endX, y);
-      await page.mouse.up();
+    await page.mouse.move(startX, centreY);
+    await page.mouse.down();
+    await page.mouse.move(endX, centreY);
+    await page.mouse.up();
 
-      const bar = page
-        .locator("[data-slot='card']")
-        .filter({ hasText: "Selected Time Range" });
-      await expect(bar.locator("input[type='text']").first()).toHaveValue(
-        expectedStartValue,
-      );
-      await expect(bar.locator("input[type='text']").last()).toHaveValue(
-        expectedEndValue,
-      );
-    },
-  );
+    const bar = page
+      .locator("[data-slot='card']")
+      .filter({ hasText: "Selected Time Range" });
+    await expect(bar.locator("input[type='text']").first()).toHaveValue(
+      expectedStartValue,
+    );
+    await expect(bar.locator("input[type='text']").last()).toHaveValue(
+      expectedEndValue,
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------

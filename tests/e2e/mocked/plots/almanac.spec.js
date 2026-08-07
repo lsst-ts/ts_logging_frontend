@@ -32,8 +32,10 @@ const ALMANAC_MOCK = {
       dayobs: TEST_DAYOBS_INT,
       night_hours: 8,
       elapsed_twilight_hours: 8,
+      twilight_evening_0deg: "2026-01-01 19:30:00",
       twilight_evening_12deg: "2026-01-01 20:00:00",
       twilight_morning_12deg: "2026-01-02 04:00:00",
+      twilight_morning_0deg: "2026-01-02 04:30:00",
       moon_rise_time: "2026-01-01 22:00:00",
       moon_set_time: "2026-01-02 02:00:00",
       moon_illumination: "50%",
@@ -67,15 +69,6 @@ test.describe("Twilight lines — full night range", () => {
         charts.nth(i).locator(`line[stroke="${TWILIGHT_STROKE}"]`),
       ).toHaveCount(2);
     }
-  });
-
-  test.fixme("the timeline also shows two twilight lines", async ({ page }) => {
-    const timelineSvg = page.locator(
-      ':not([data-slot="chart"]) > .recharts-responsive-container svg.recharts-surface',
-    );
-    await expect(
-      timelineSvg.locator(`line[stroke="${TWILIGHT_STROKE}"]`),
-    ).toHaveCount(2);
   });
 
   test("evening twilight line is positioned left of morning twilight line", async ({
