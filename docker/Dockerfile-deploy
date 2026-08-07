@@ -1,0 +1,31 @@
+FROM lsstts/develop-env:develop AS version_bumper
+
+WORKDIR /home/saluser/develop
+COPY scripts/make_release.py scripts/make_release.py
+COPY package.json package.json
+
+USER root
+RUN chown saluser:saluser /home/saluser/develop/package.json /home/saluser/develop/scripts/make_release.py
+USER saluser
+
+RUN source /home/saluser/.setup_dev.sh && \
+    python scripts/make_release.py --version develop --no-version-check --no-release-notes --no-git
+
+FROM rubincr.lsst.org/develop-env-javascript:ec-develop
+
+LABEL maintainer Sebastian Aranda <sebastian.aranda@noirlab.edu>
+
+WORKDIR /usr/src/app
+COPY . .
+
+USER root
+RUN chown -R saluser:saluser /usr/src/app
+USER saluser
+
+COPY --from=version_bumper /home/saluser/develop/package.json package.json
+COPY --from=version_bumper /home/saluser/develop/package-lock.json package-lock.json
+
+RUN npm install
+RUN npx vite build
+
+VOLUME /usr/src/app/dist

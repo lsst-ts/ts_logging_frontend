@@ -751,16 +751,16 @@ describe("utils", () => {
     });
 
     it("returns 'main' for invalid version strings", () => {
-      expect(parseBackendVersion("invalid-version")).toBe("main");
-      expect(parseBackendVersion("v1.2")).toBe("main");
-      expect(parseBackendVersion("")).toBe("main");
-      expect(parseBackendVersion("1.2.3-unknown")).toBe("main");
+      expect(parseBackendVersion("invalid-version")).toBe("develop");
+      expect(parseBackendVersion("v1.2")).toBe("develop");
+      expect(parseBackendVersion("")).toBe("develop");
+      expect(parseBackendVersion("1.2.3-unknown")).toBe("develop");
       expect(parseBackendVersion("1.2.3.dev1+g6c0764173.d20251021")).toBe(
-        "main",
+        "develop",
       );
-      expect(parseBackendVersion("1.2.3-alpha.1")).toBe("main");
-      expect(parseBackendVersion("1.2.3a-1")).toBe("main");
-      expect(parseBackendVersion("1.2.3b1")).toBe("main");
+      expect(parseBackendVersion("1.2.3-alpha.1")).toBe("develop");
+      expect(parseBackendVersion("1.2.3a-1")).toBe("develop");
+      expect(parseBackendVersion("1.2.3b1")).toBe("develop");
     });
   });
 

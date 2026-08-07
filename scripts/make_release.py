@@ -23,7 +23,7 @@ SEMVER_REGEX = (
 )
 
 
-def run_towncrier_build(version: str):
+def run_towncrier_build(version: str, no_git: bool = False):
     """Run the towncrier build command to generate release notes.
 
     Parameters
@@ -36,11 +36,12 @@ def run_towncrier_build(version: str):
     subprocess.run(["towncrier", "build", "--yes", f"--version=v{version}"], check=True)
 
     # Stage and commit the generated changelog
-    subprocess.run(["git", "add", VERSION_HISTORY_PATH], check=True)
-    subprocess.run(["git", "commit", "-m", "Update the version history."], check=True)
+    if not no_git:
+        subprocess.run(["git", "add", VERSION_HISTORY_PATH], check=True)
+        subprocess.run(["git", "commit", "-m", "Update the version history."], check=True)
 
 
-def bump_package_json_metadata(version: str):
+def bump_package_json_metadata(version: str, no_git: bool = False):
     """Update `version` and `lastUpdated` fields
     in the package.json file.
 
@@ -68,8 +69,9 @@ def bump_package_json_metadata(version: str):
     subprocess.run(['npm', 'install', '--package-lock-only'])
 
     # Stage and commit the changes
-    subprocess.run(["git", "add", PACKAGE_JSON_PATH, PACKAGE_LOCK_PATH], check=True)
-    subprocess.run(["git", "commit", "-m", f"Bump package.json metadata for v{version}."], check=True)
+    if not no_git:
+        subprocess.run(["git", "add", PACKAGE_JSON_PATH, PACKAGE_LOCK_PATH], check=True)
+        subprocess.run(["git", "commit", "-m", f"Bump package.json metadata for v{version}."], check=True)
 
 
 def git_tag(version: str):
@@ -116,15 +118,41 @@ def main():
         type=str,
         help="The releasing version (just the number, without the v prefix)", required=True
     )
+    parser.add_argument(
+        "--no-version-check",
+        action="store_true",
+        help="Skip checking the version format (useful for non-semver versions)."
+    )
+    parser.add_argument(
+        "--no-release-notes",
+        action="store_true",
+        help="Skip generating release notes with towncrier."
+    )
+    parser.add_argument(
+        "--no-package-json",
+        action="store_true",
+        help="Skip updating package.json metadata."
+    )
+    parser.add_argument(
+        "--no-git",
+        action="store_true",
+        help="Skip committing changes to git (useful for testing)."
+    )
+
 
     args = parser.parse_args()
 
-    if not check_version_format(args.version):
+    if not args.no_version_check and not check_version_format(args.version):
         raise ValueError(f"Version '{args.version}' is not in valid semantic versioning format.")
 
-    run_towncrier_build(args.version)
-    bump_package_json_metadata(args.version)
-    git_tag(args.version)
+    if not args.no_release_notes:
+        run_towncrier_build(args.version, no_git=args.no_git)
+
+    if not args.no_package_json:
+        bump_package_json_metadata(args.version, no_git=args.no_git)
+
+    if not args.no_git:
+        git_tag(args.version)
 
 
 if __name__ == "__main__":

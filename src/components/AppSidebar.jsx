@@ -15,7 +15,7 @@ import RubinIcon from "../assets/RubinIcon.svg";
 import packageJson from "../../package.json";
 
 export function AppSidebar({ ...props }) {
-  const [backendVersion, setBackendVersion] = useState("main");
+  const [backendVersion, setBackendVersion] = useState("develop");
   useEffect(() => {
     const abortController = new AbortController();
     fetchBackendVersion(abortController.signal).then((backendVersionString) => {
@@ -27,14 +27,19 @@ export function AppSidebar({ ...props }) {
     };
   }, []);
 
+  const frontendVersionIsDevelop = packageJson.version === "develop";
+  const backendVersionIsDevelop = backendVersion === "develop";
+
   const frontendReleaseNotesHref =
     "https://github.com/lsst-ts/ts_logging_frontend" +
-    `/blob/v${packageJson.version}/doc/version_history.rst`;
+    `/blob/${
+      !frontendVersionIsDevelop ? `v${packageJson.version}` : "develop"
+    }/doc/version_history.rst`;
 
   const backendReleaseNotesHref =
     "https://github.com/lsst-ts/ts_logging_and_reporting" +
     `/blob/${
-      backendVersion !== "main" ? `v${backendVersion}` : "main"
+      !backendVersionIsDevelop ? `v${backendVersion}` : "develop"
     }/doc/version_history.rst`;
 
   return (
@@ -76,7 +81,10 @@ export function AppSidebar({ ...props }) {
           <p>
             Nightly Digest{" "}
             <strong>
-              v{packageJson.version} ({packageJson.lastUpdated})
+              {!frontendVersionIsDevelop
+                ? `v${packageJson.version}`
+                : "develop"}{" "}
+              ({packageJson.lastUpdated})
             </strong>
           </p>
           <p>

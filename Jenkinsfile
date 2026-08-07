@@ -1,37 +1,24 @@
-properties(
-    [
-    buildDiscarder(
-        logRotator(
-            artifactDaysToKeepStr: '',
-            artifactNumToKeepStr: '',
-            daysToKeepStr: '14',
-            numToKeepStr: '10',
-        )
-    ),
-    // Make new builds terminate existing builds
-    disableConcurrentBuilds(
-        abortPrevious: true,
-    )
-    ]
-)
-
 pipeline {
-  agent{
-    docker {
-      alwaysPull true
-      image 'lsstts/develop-env:develop'
-      args "--entrypoint=''"
-    }
+  options {
+    disableConcurrentBuilds()
   }
+
+  agent any
+
   environment {
+    dockerImageName = "rubincr.lsst.org/nightlydigest-frontend:"
     dockerImage = ""
-    // LTD credentials
-    user_ci = credentials('lsst-io')
-    LTD_USERNAME="${user_ci_USR}"
-    LTD_PASSWORD="${user_ci_PSW}"
   }
+
   stages {
     stage("Run pre-commit hooks and tests") {
+      agent{
+        docker {
+          alwaysPull true
+          image 'lsstts/develop-env:develop'
+          args "--entrypoint=''"
+        }
+      }
       steps {
         script {
           sh """
@@ -47,6 +34,13 @@ pipeline {
       }
     }
     stage("Run e2e tests") {
+      agent{
+        docker {
+          alwaysPull true
+          image 'lsstts/develop-env:develop'
+          args "--entrypoint=''"
+        }
+      }
       steps {
         script {
           sh """
@@ -54,6 +48,37 @@ pipeline {
             npx playwright install chromium
             npm run test:e2e -- --reporter=list
           """
+        }
+      }
+    }
+
+    stage("Build Docker image") {
+      when {
+        anyOf {
+          branch "develop"
+        }
+      }
+      steps {
+        script {
+          image_tag = "develop"
+          dockerImageName = dockerImageName + image_tag
+          echo "dockerImageName: ${dockerImageName}"
+          dockerImage = docker.build(dockerImageName, "-f docker/Dockerfile-deploy .")
+        }
+      }
+    }
+    
+    stage("Push Docker image") {
+      when {
+        anyOf {
+          branch "develop"
+        }
+      }
+      steps {
+        script {
+          docker.withRegistry("https://rubincr.lsst.org/", "nexus3-lsst_jenkins") {
+            dockerImage.push()
+          }
         }
       }
     }
