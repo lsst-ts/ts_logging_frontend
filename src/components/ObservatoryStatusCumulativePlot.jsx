@@ -50,16 +50,16 @@ function ObservatoryStatusCumulativePlot({
 
   // Set constants based on applet or fullscreen view.
   const markerSize = fullScreen
-    ? STATUS_CUMULATIVE_SYMBOL_SIZE.fullscreen
-    : STATUS_CUMULATIVE_SYMBOL_SIZE.applet;
+    ? STATUS_CUMULATIVE_SYMBOL_SIZE.FULL_SCREEN
+    : STATUS_CUMULATIVE_SYMBOL_SIZE.APPLET;
 
   const fontSize = fullScreen
-    ? STATUS_CUMULATIVE_FONTS.fullScreen
-    : STATUS_CUMULATIVE_FONTS.applet;
+    ? STATUS_CUMULATIVE_FONTS.FULL_SCREEN
+    : STATUS_CUMULATIVE_FONTS.APPLET;
 
   const variableDimensions = fullScreen
-    ? STATUS_CUMULATIVE_VARIABLE_DIMENSIONS.fullscreen
-    : STATUS_CUMULATIVE_VARIABLE_DIMENSIONS.applet;
+    ? STATUS_CUMULATIVE_VARIABLE_DIMENSIONS.FULL_SCREEN
+    : STATUS_CUMULATIVE_VARIABLE_DIMENSIONS.APPLET;
 
   // ── Graphic elements (dayobs labels, border lines, baseline) ────────────────
   // These are positioned in pixel space, so must be computed after render.
@@ -124,7 +124,7 @@ function ObservatoryStatusCumulativePlot({
           const dist = Math.sqrt(dx * dx + dy * dy);
 
           const radius =
-            (data[i].hasNote ? markerSize.withNote : markerSize.withoutNote) /
+            (data[i].hasNote ? markerSize.WITH_NOTE : markerSize.WITHOUT_NOTE) /
             2;
 
           if (dist < radius && dist < closestDist) {
@@ -205,11 +205,11 @@ function ObservatoryStatusCumulativePlot({
       title: {
         text: "Cumulative Time in State",
         textStyle: {
-          color: STATUS_CUMULATIVE_PLOT_COLOURS.names,
-          fontSize: fontSize.titleFontSize,
+          color: STATUS_CUMULATIVE_PLOT_COLOURS.NAMES,
+          fontSize: fontSize.TITLE_FONT_SIZE,
           fontWeight: "lighter",
         },
-        top: STATUS_CUMULATIVE_DIMENSIONS.titleTop,
+        top: STATUS_CUMULATIVE_DIMENSIONS.TITLE_TOP,
       },
       tooltip: {
         trigger: "item",
@@ -284,20 +284,20 @@ function ObservatoryStatusCumulativePlot({
         },
       },
       legend: {
-        borderColor: STATUS_CUMULATIVE_PLOT_COLOURS.borders,
-        borderWidth: STATUS_CUMULATIVE_DIMENSIONS.legendBorderWidth,
-        borderRadius: STATUS_CUMULATIVE_DIMENSIONS.legendBorderRadius,
-        backgroundColor: STATUS_CUMULATIVE_PLOT_COLOURS.legendBackground,
-        bottom: STATUS_CUMULATIVE_DIMENSIONS.legendBorderBottom,
+        borderColor: STATUS_CUMULATIVE_PLOT_COLOURS.BORDERS,
+        borderWidth: STATUS_CUMULATIVE_DIMENSIONS.LEGEND_BORDER_WIDTH,
+        borderRadius: STATUS_CUMULATIVE_DIMENSIONS.LEGEND_BORDER_RADIUS,
+        backgroundColor: STATUS_CUMULATIVE_PLOT_COLOURS.LEGEND_BACKGROUND,
+        bottom: STATUS_CUMULATIVE_DIMENSIONS.LEGEND_BORDER_BOTTOM,
         textStyle: {
-          color: STATUS_CUMULATIVE_PLOT_COLOURS.names,
+          color: STATUS_CUMULATIVE_PLOT_COLOURS.NAMES,
           fontWeight: "lighter",
-          fontSize: fontSize.legendFontSize,
+          fontSize: fontSize.LEGEND_FONT_SIZE,
         },
         lineStyle: {
-          width: STATUS_CUMULATIVE_DIMENSIONS.legendLinesWidth,
-          inactiveColor: STATUS_CUMULATIVE_PLOT_COLOURS.borders,
-          inactiveWidth: STATUS_CUMULATIVE_DIMENSIONS.legendInactiveWidth,
+          width: STATUS_CUMULATIVE_DIMENSIONS.LEGEND_LINES_WIDTH,
+          inactiveColor: STATUS_CUMULATIVE_PLOT_COLOURS.BORDERS,
+          inactiveWidth: STATUS_CUMULATIVE_DIMENSIONS.LEGEND_INACTIVE_WIDTH,
         },
         data: [
           { name: "night hours" },
@@ -312,13 +312,13 @@ function ObservatoryStatusCumulativePlot({
         ],
       },
       grid: {
-        z: STATUS_CUMULATIVE_ELEMENTS_Z.grid,
-        top: variableDimensions.gridTop,
+        z: STATUS_CUMULATIVE_ELEMENTS_Z.GRID,
+        top: variableDimensions.GRID_TOP,
         left: STATUS_CUMULATIVE_MARGINS.top,
         right: STATUS_CUMULATIVE_MARGINS.right,
         bottom: STATUS_CUMULATIVE_MARGINS.bottom,
-        borderColor: STATUS_CUMULATIVE_PLOT_COLOURS.borders,
-        borderWidth: STATUS_CUMULATIVE_DIMENSIONS.gridBorderWidth,
+        borderColor: STATUS_CUMULATIVE_PLOT_COLOURS.BORDERS,
+        borderWidth: STATUS_CUMULATIVE_DIMENSIONS.GRID_BORDER_WIDTH,
         show: true,
         containLabel: true, // deprecated?
         outerBoundsMode: "same",
@@ -327,11 +327,11 @@ function ObservatoryStatusCumulativePlot({
         type: "time",
         name: "UTC",
         nameLocation: "center",
-        nameGap: variableDimensions.xAxisNameGap,
+        nameGap: variableDimensions.X_AXIS_NAME_GAP,
         nameTextStyle: {
-          color: STATUS_CUMULATIVE_PLOT_COLOURS.names,
+          color: STATUS_CUMULATIVE_PLOT_COLOURS.NAMES,
           fontWeight: "lighter",
-          fontSize: fontSize.xAxisNameFontSize,
+          fontSize: fontSize.X_AXIS_NAME_FONT_SIZE,
         },
         min: xDomain?.[0] ?? nightHours?.[0][0],
         max: xDomain?.[1] ?? nightHours?.[nightHours.length - 1][0],
@@ -344,8 +344,8 @@ function ObservatoryStatusCumulativePlot({
           show: true,
           length: TIMELINE_DIMENSIONS.HOURLY_TICK_LENGTH,
           lineStyle: {
-            color: STATUS_CUMULATIVE_PLOT_COLOURS.axisTick,
-            width: STATUS_CUMULATIVE_DIMENSIONS.axisTickWidth,
+            color: STATUS_CUMULATIVE_PLOT_COLOURS.AXIS_TICK,
+            width: STATUS_CUMULATIVE_DIMENSIONS.AXIS_TICK_WIDTH,
           },
         },
         axisLabel: {
@@ -360,9 +360,9 @@ function ObservatoryStatusCumulativePlot({
 
             return `${h}:${String(m).padStart(2, "0")}`;
           },
-          margin: variableDimensions.xAxisLabelMargin,
-          fontSize: fontSize.xAxisLabelFontSize,
-          color: STATUS_CUMULATIVE_PLOT_COLOURS.axisLabel,
+          margin: variableDimensions.X_AXIS_LABEL_MARGIN,
+          fontSize: fontSize.X_AXIS_LABEL_FONT_SIZE,
+          color: STATUS_CUMULATIVE_PLOT_COLOURS.AXIS_LABEL,
           fontWeight: "lighter",
         },
         // Add day breaks to show only nights.
@@ -370,12 +370,12 @@ function ObservatoryStatusCumulativePlot({
         breakArea: {
           expandOnClick: false,
           zigzagAmplitude: 0,
-          zigzagZ: STATUS_CUMULATIVE_ELEMENTS_Z.xAxisBreaks,
+          zigzagZ: STATUS_CUMULATIVE_ELEMENTS_Z.X_AXIS_BREAKS,
           itemStyle: {
             borderType: "solid",
-            borderColor: STATUS_CUMULATIVE_PLOT_COLOURS.borders,
-            borderWidth: STATUS_CUMULATIVE_DIMENSIONS.breakBorderWidth,
-            color: STATUS_CUMULATIVE_PLOT_COLOURS.breakAreaFill,
+            borderColor: STATUS_CUMULATIVE_PLOT_COLOURS.BORDERS,
+            borderWidth: STATUS_CUMULATIVE_DIMENSIONS.BREAK_BORDER_WIDTH,
+            color: STATUS_CUMULATIVE_PLOT_COLOURS.BREAK_AREA_FILL,
             opacity: 1,
           },
         },
@@ -385,32 +385,32 @@ function ObservatoryStatusCumulativePlot({
         name: "Cumulative Hours",
         nameLocation: "center",
         nameRotate: 90,
-        nameGap: STATUS_CUMULATIVE_DIMENSIONS.yAxisNameGap,
+        nameGap: STATUS_CUMULATIVE_DIMENSIONS.Y_AXIS_NAME_GAP,
         nameTextStyle: {
-          color: STATUS_CUMULATIVE_PLOT_COLOURS.names,
+          color: STATUS_CUMULATIVE_PLOT_COLOURS.NAMES,
           fontWeight: "lighter",
-          fontSize: fontSize.yAxisNameFontSize,
+          fontSize: fontSize.Y_AXIS_NAME_FONT_SIZE,
         },
         min: yDomain?.[0],
         max: yDomain?.[1],
         axisTick: {
           show: true,
           lineStyle: {
-            color: STATUS_CUMULATIVE_PLOT_COLOURS.axisTick,
-            width: STATUS_CUMULATIVE_DIMENSIONS.axisTickWidth,
+            color: STATUS_CUMULATIVE_PLOT_COLOURS.AXIS_TICK,
+            width: STATUS_CUMULATIVE_DIMENSIONS.AXIS_TICK_WIDTH,
           },
         },
         axisLabel: {
           show: true,
-          color: STATUS_CUMULATIVE_PLOT_COLOURS.axisLabel,
+          color: STATUS_CUMULATIVE_PLOT_COLOURS.AXIS_LABEL,
           fontWeight: "lighter",
-          fontSize: fontSize.yAxisLabelFontSize,
-          width: STATUS_CUMULATIVE_DIMENSIONS.yAxisLabelWidth,
+          fontSize: fontSize.Y_AXIS_LABEL_FONT_SIZE,
+          width: STATUS_CUMULATIVE_DIMENSIONS.Y_AXIS_LABEL_WIDTH,
           formatter: (val) => parseFloat(val.toFixed(2)),
         },
         splitLine: {
           lineStyle: {
-            color: STATUS_CUMULATIVE_PLOT_COLOURS.hourLines,
+            color: STATUS_CUMULATIVE_PLOT_COLOURS.HOUR_LINES,
           },
         },
       },
@@ -439,12 +439,12 @@ function ObservatoryStatusCumulativePlot({
           animation: false,
           markLine: {
             silent: true,
-            z: STATUS_CUMULATIVE_ELEMENTS_Z.verticalLines,
+            z: STATUS_CUMULATIVE_ELEMENTS_Z.VERTICAL_LINES,
             symbol: ["none", "none"],
             lineStyle: {
-              color: STATUS_CUMULATIVE_PLOT_COLOURS.statusUpdateLines,
-              opacity: STATUS_CUMULATIVE_DIMENSIONS.verticalLinesOpacity,
-              width: STATUS_CUMULATIVE_DIMENSIONS.verticalLinesWidth,
+              color: STATUS_CUMULATIVE_PLOT_COLOURS.STATUS_UPDATE_LINES,
+              opacity: STATUS_CUMULATIVE_DIMENSIONS.VERTICAL_LINES_OPACITY,
+              width: STATUS_CUMULATIVE_DIMENSIONS.VERTICAL_LINES_WIDTH,
               type: "solid",
             },
             label: { show: false },
@@ -461,7 +461,7 @@ function ObservatoryStatusCumulativePlot({
           name: `${STATUS_CUMULATIVE_LEGEND_LABELS?.[stateName] ?? stateName}`,
           lineStyle: {
             color: STATUS_COLORS[stateName],
-            width: STATUS_CUMULATIVE_DIMENSIONS.stateLineWidth,
+            width: STATUS_CUMULATIVE_DIMENSIONS.STATE_LINE_WIDTH,
           },
           areaStyle: {
             color: STATUS_COLORS[stateName],
@@ -470,7 +470,7 @@ function ObservatoryStatusCumulativePlot({
           itemStyle: {
             opacity: 0,
           },
-          z: STATUS_CUMULATIVE_ELEMENTS_Z.stateLines,
+          z: STATUS_CUMULATIVE_ELEMENTS_Z.STATE_LINES,
         })),
         // Open dome line
         {
@@ -479,13 +479,13 @@ function ObservatoryStatusCumulativePlot({
           name: "open dome",
           id: "open-dome",
           lineStyle: {
-            color: STATUS_CUMULATIVE_PLOT_COLOURS.openDomeLine,
-            width: STATUS_CUMULATIVE_DIMENSIONS.openDomeLineWidth,
+            color: STATUS_CUMULATIVE_PLOT_COLOURS.OPEN_DOME_LINE,
+            width: STATUS_CUMULATIVE_DIMENSIONS.OPEN_DOME_LINE_WIDTH,
           },
           itemStyle: {
             opacity: 0,
           },
-          z: STATUS_CUMULATIVE_ELEMENTS_Z.openDomeLine,
+          z: STATUS_CUMULATIVE_ELEMENTS_Z.OPEN_DOME_LINE,
         },
         // Night Hours - horizontal lines marking available observing hours
         {
@@ -494,15 +494,15 @@ function ObservatoryStatusCumulativePlot({
           name: "night hours",
           id: "night-hours",
           lineStyle: {
-            color: STATUS_CUMULATIVE_PLOT_COLOURS.nightHoursLine,
+            color: STATUS_CUMULATIVE_PLOT_COLOURS.NIGHT_HOURS_LINE,
             opacity: 1,
             type: "solid",
-            width: STATUS_CUMULATIVE_DIMENSIONS.nightHoursLineWidth,
+            width: STATUS_CUMULATIVE_DIMENSIONS.NIGHT_HOURS_LINE_WIDTH,
           },
           itemStyle: {
             opacity: 0,
           },
-          z: STATUS_CUMULATIVE_ELEMENTS_Z.nightHours,
+          z: STATUS_CUMULATIVE_ELEMENTS_Z.NIGHT_HOURS,
         },
         // Markers at the start of each interval: diamond if has note, circle if not
         ...STATUS_CUMULATIVE_SERIES_ORDER.map((stateName) => ({
@@ -515,16 +515,18 @@ function ObservatoryStatusCumulativePlot({
           itemStyle: {
             color: (params) =>
               STATUS_COLORS[params.data.stateName] ??
-              STATUS_CUMULATIVE_PLOT_COLOURS.markerBorder,
-            borderColor: STATUS_CUMULATIVE_PLOT_COLOURS.markerBorder,
-            borderWidth: STATUS_CUMULATIVE_DIMENSIONS.markerBorderWidth,
+              STATUS_CUMULATIVE_PLOT_COLOURS.MARKER_BORDER,
+            borderColor: STATUS_CUMULATIVE_PLOT_COLOURS.MARKER_BORDER,
+            borderWidth: STATUS_CUMULATIVE_DIMENSIONS.MARKER_BORDER_WIDTH,
             opacity: 1,
           },
           symbol: (value, params) =>
             params.data.hasNote ? "diamond" : "circle",
           symbolSize: (value, params) =>
-            params.data.hasNote ? markerSize.withNote : markerSize.withoutNote,
-          z: STATUS_CUMULATIVE_ELEMENTS_Z.markers,
+            params.data.hasNote
+              ? markerSize.WITH_NOTE
+              : markerSize.WITHOUT_NOTE,
+          z: STATUS_CUMULATIVE_ELEMENTS_Z.MARKERS,
         })),
       ],
     };

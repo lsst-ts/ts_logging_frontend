@@ -126,13 +126,13 @@ export const STATUS_CUMULATIVE_SERIES_ORDER = [
  * z value of cumulative plot elements
  */
 export const STATUS_CUMULATIVE_ELEMENTS_Z = {
-  verticalLines: 1,
-  nightHours: 2,
-  openDomeLine: 3,
-  stateLines: 4,
-  xAxisBreaks: 5,
-  grid: 6,
-  markers: 7,
+  VERTICAL_LINES: 1,
+  NIGHT_HOURS: 2,
+  OPEN_DOME_LINE: 3,
+  STATE_LINES: 4,
+  X_AXIS_BREAKS: 5,
+  GRID: 6,
+  MARKERS: 7,
 };
 
 /**
@@ -175,61 +175,61 @@ export const STATUS_CUMULATIVE_AREA_OPACITY = {
  * Plot colours (not state-related)
  */
 export const STATUS_CUMULATIVE_PLOT_COLOURS = {
-  names: "white",
-  axisLabel: "#bbbbbb",
-  axisTick: "#444444",
-  borders: "#444444",
-  legendBackground: "#111111",
-  hourLines: "#222222",
-  breakAreaFill: "#222222",
-  statusUpdateLines: "white",
-  markerBorder: "white",
-  nightHoursLine: "white",
-  openDomeLine: "#CC79A7",
+  NAMES: "white",
+  AXIS_LABEL: "#bbbbbb",
+  AXIS_TICK: "#444444",
+  BORDERS: "#444444",
+  LEGEND_BACKGROUND: "#111111",
+  HOUR_LINES: "#222222",
+  BREAK_AREA_FILL: "#222222",
+  STATUS_UPDATE_LINES: "white",
+  MARKER_BORDER: "white",
+  NIGHT_HOURS_LINE: "white",
+  OPEN_DOME_LINE: "#CC79A7",
 };
 
 /**
  * Chart dimension constants
  */
 export const STATUS_CUMULATIVE_DIMENSIONS = {
-  titleTop: 0,
-  gridBorderWidth: 2.5,
+  TITLE_TOP: 0,
+  GRID_BORDER_WIDTH: 2.5,
 
   // Legend
-  legendBorderWidth: 2,
-  legendBorderRadius: 2,
-  legendBorderBottom: 2,
-  legendLinesWidth: 5,
-  legendInactiveWidth: 1,
+  LEGEND_BORDER_WIDTH: 2,
+  LEGEND_BORDER_RADIUS: 2,
+  LEGEND_BORDER_BOTTOM: 2,
+  LEGEND_LINES_WIDTH: 5,
+  LEGEND_INACTIVE_WIDTH: 1,
 
   // Axes
-  breakBorderWidth: 4,
-  yAxisNameGap: 24,
-  yAxisLabelWidth: 8,
-  axisTickWidth: 2,
+  BREAK_BORDER_WIDTH: 4,
+  Y_AXIS_NAME_GAP: 24,
+  Y_AXIS_LABEL_WIDTH: 8,
+  AXIS_TICK_WIDTH: 2,
 
   // Data
-  stateLineWidth: 2,
-  openDomeLineWidth: 2,
-  nightHoursLineWidth: 2,
-  verticalLinesWidth: 0.5,
-  verticalLinesOpacity: 0.3,
-  markerBorderWidth: 1,
+  STATE_LINE_WIDTH: 2,
+  OPEN_DOME_LINE_WIDTH: 2,
+  NIGHT_HOURS_LINE_WIDTH: 2,
+  VERTICAL_LINES_WIDTH: 0.5,
+  VERTICAL_LINES_OPACITY: 0.3,
+  MARKER_BORDER_WIDTH: 1,
 };
 
 /**
  * Chart dimension constants that differ for fullscreen vs applet view
  */
 export const STATUS_CUMULATIVE_VARIABLE_DIMENSIONS = {
-  applet: {
-    gridTop: 40,
-    xAxisNameGap: 22,
-    xAxisLabelMargin: 10,
+  APPLET: {
+    GRID_TOP: 40,
+    X_AXIS_NAME_GAP: 22,
+    X_AXIS_LABEL_MARGIN: 10,
   },
-  fullscreen: {
-    gridTop: 50,
-    xAxisNameGap: 26,
-    xAxisLabelMargin: 12,
+  FULL_SCREEN: {
+    GRID_TOP: 50,
+    X_AXIS_NAME_GAP: 26,
+    X_AXIS_LABEL_MARGIN: 12,
   },
 };
 
@@ -237,13 +237,13 @@ export const STATUS_CUMULATIVE_VARIABLE_DIMENSIONS = {
  * Symbol marker sizes
  */
 export const STATUS_CUMULATIVE_SYMBOL_SIZE = {
-  applet: {
-    withNote: 12,
-    withoutNote: 10,
+  APPLET: {
+    WITH_NOTE: 12,
+    WITHOUT_NOTE: 10,
   },
-  fullscreen: {
-    withNote: 14,
-    withoutNote: 12,
+  FULL_SCREEN: {
+    WITH_NOTE: 14,
+    WITHOUT_NOTE: 12,
   },
 };
 
@@ -251,20 +251,20 @@ export const STATUS_CUMULATIVE_SYMBOL_SIZE = {
  * Font sizes for cumulative plot
  */
 export const STATUS_CUMULATIVE_FONTS = {
-  applet: {
-    titleFontSize: 16,
-    legendFontSize: 10,
-    xAxisNameFontSize: 10,
-    xAxisLabelFontSize: 10,
-    yAxisNameFontSize: 12,
-    yAxisLabelFontSize: 10,
+  APPLET: {
+    TITLE_FONT_SIZE: 16,
+    LEGEND_FONT_SIZE: 10,
+    X_AXIS_NAME_FONT_SIZE: 10,
+    X_AXIS_LABEL_FONT_SIZE: 10,
+    Y_AXIS_NAME_FONT_SIZE: 12,
+    Y_AXIS_LABEL_FONT_SIZE: 10,
   },
-  fullScreen: {
-    titleFontSize: 18,
-    legendFontSize: 14,
-    xAxisNameFontSize: 16,
-    xAxisLabelFontSize: 14,
-    yAxisNameFontSize: 16,
-    yAxisLabelFontSize: 14,
+  FULL_SCREEN: {
+    TITLE_FONT_SIZE: 18,
+    LEGEND_FONT_SIZE: 14,
+    X_AXIS_NAME_FONT_SIZE: 16,
+    X_AXIS_LABEL_FONT_SIZE: 14,
+    Y_AXIS_NAME_FONT_SIZE: 16,
+    Y_AXIS_LABEL_FONT_SIZE: 14,
   },
 };
