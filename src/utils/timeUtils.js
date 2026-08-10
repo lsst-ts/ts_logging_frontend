@@ -258,7 +258,7 @@ function dayObsIntToDateTime(dayobsInt) {
  * using Luxon DateTime.
  *
  * @param {Date} calendarDate - The input JS date in the local timezone.
- * @returns {string} A date string formatted as "LLL dd, yyyy".
+ * @returns {string} A date string formatted as "LLLL dd, yyyy".
  */
 function calendarDateToLongFormat(calendarDate) {
   return calendarDate instanceof Date && !isNaN(calendarDate)
@@ -326,6 +326,18 @@ function formatDuration(durationMs) {
   )}:${String(seconds).padStart(2, "0")}.${String(millis).padStart(3, "0")}`;
 }
 
+/**
+ * Returns the current dayobs as a formatted dayobs string.
+ *
+ * @param {string} [format="yyyy-LL-dd"] - The format string (e.g., "yyyy-LL-dd" or "yyyyLLdd").
+ * @returns {string} The current dayobs, as a formatted string.
+ */
+function getCurrentDayObs(format = "yyyyLLdd") {
+  return Number(
+    DateTime.now().setZone("UTC").minus({ hours: 12 }).toFormat(format),
+  );
+}
+
 export {
   isoToTAI,
   isoToUTC,
@@ -351,4 +363,5 @@ export {
   utcDateToCalendarDate,
   formatTimestamp,
   formatDuration,
+  getCurrentDayObs,
 };

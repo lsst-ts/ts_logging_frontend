@@ -109,3 +109,162 @@ export const SERIES_ORDER = [
 export const METRIC_STATES = SERIES_ORDER.filter(
   (stateName) => stateName !== "DAYTIME",
 );
+
+/**
+ * Order of state plotting (last state plotted on top)
+ */
+export const STATUS_CUMULATIVE_SERIES_ORDER = [
+  "UNKNOWN",
+  "IDLE",
+  "WEATHER",
+  "DOWNTIME",
+  "OPERATIONAL",
+  "FAULT",
+];
+
+/**
+ * z value of cumulative plot elements
+ */
+export const STATUS_CUMULATIVE_ELEMENTS_Z = {
+  verticalLines: 1,
+  nightHours: 2,
+  openDomeLine: 3,
+  stateLines: 4,
+  xAxisBreaks: 5,
+  grid: 6,
+  markers: 7,
+};
+
+/**
+ * Cumulative plot margin configuration
+ */
+export const STATUS_CUMULATIVE_MARGINS = {
+  top: 20, // Space for twilight labels at top of chart
+  right: 4,
+  left: 30,
+  bottom: 70, // Space for hourly tick labels + date labels
+};
+
+/**
+ * Legend labels
+ */
+export const STATUS_CUMULATIVE_LEGEND_LABELS = {
+  UNKNOWN: "unknown",
+  DAYTIME: "daytime",
+  OPERATIONAL: "operational",
+  FAULT: "fault",
+  WEATHER: "weather",
+  DOWNTIME: "downtime",
+  IDLE: "idle",
+};
+
+/**
+ * Opacity mapping for states
+ */
+export const STATUS_CUMULATIVE_AREA_OPACITY = {
+  UNKNOWN: 0.5,
+  DAYTIME: 0.4,
+  OPERATIONAL: 0.4,
+  FAULT: 0.4,
+  WEATHER: 0.4,
+  DOWNTIME: 0.4,
+  IDLE: 0.5,
+};
+
+/**
+ * Plot colours (not state-related)
+ */
+export const STATUS_CUMULATIVE_PLOT_COLOURS = {
+  names: "white",
+  axisLabel: "#bbbbbb",
+  axisTick: "#444444",
+  borders: "#444444",
+  legendBackground: "#111111",
+  hourLines: "#222222",
+  breakAreaFill: "#222222",
+  statusUpdateLines: "white",
+  markerBorder: "white",
+  nightHoursLine: "white",
+  openDomeLine: "#CC79A7",
+};
+
+/**
+ * Chart dimension constants
+ */
+export const STATUS_CUMULATIVE_DIMENSIONS = {
+  titleTop: 0,
+  gridBorderWidth: 2.5,
+
+  // Legend
+  legendBorderWidth: 2,
+  legendBorderRadius: 2,
+  legendBorderBottom: 2,
+  legendLinesWidth: 5,
+  legendInactiveWidth: 1,
+
+  // Axes
+  breakBorderWidth: 4,
+  yAxisNameGap: 24,
+  yAxisLabelWidth: 8,
+  axisTickWidth: 2,
+
+  // Data
+  stateLineWidth: 2,
+  openDomeLineWidth: 2,
+  nightHoursLineWidth: 2,
+  verticalLinesWidth: 0.5,
+  verticalLinesOpacity: 0.3,
+  markerBorderWidth: 1,
+};
+
+/**
+ * Chart dimension constants that differ for fullscreen vs applet view
+ */
+export const STATUS_CUMULATIVE_VARIABLE_DIMENSIONS = {
+  applet: {
+    gridTop: 40,
+    xAxisNameGap: 22,
+    xAxisLabelMargin: 10,
+  },
+  fullscreen: {
+    gridTop: 50,
+    xAxisNameGap: 26,
+    xAxisLabelMargin: 12,
+  },
+};
+
+/**
+ * Symbol marker sizes
+ */
+export const STATUS_CUMULATIVE_SYMBOL_SIZE = {
+  applet: {
+    withNote: 12,
+    withoutNote: 10,
+  },
+  fullscreen: {
+    withNote: 14,
+    withoutNote: 12,
+  },
+};
+
+/**
+ * Font sizes for cumulative plot
+ */
+export const STATUS_CUMULATIVE_FONTS = {
+  applet: {
+    titleFontSize: 16,
+    legendFontSize: 10,
+    xAxisNameFontSize: 10,
+    xAxisLabelFontSize: 10,
+    yAxisNameFontSize: 12,
+    yAxisLabelFontSize: 10,
+  },
+  fullScreen: {
+    titleFontSize: 18,
+    legendFontSize: 14,
+    xAxisNameFontSize: 16,
+    xAxisLabelFontSize: 14,
+    yAxisNameFontSize: 16,
+    yAxisLabelFontSize: 14,
+  },
+};

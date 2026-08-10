@@ -1,0 +1,27 @@
+{
+  "entries": [],
+  "intervals": [
+    {
+      "start_time_ms": 1767232800000,
+      "end_time_ms": 1767243600000,
+      "start_state": 2,
+      "end_state": 2,
+      "start_note": null,
+      "end_note": null,
+      "start_labels": "OPERATIONAL",
+      "end_labels": "OPERATIONAL"
+    }
+  ],
+  "metrics": {
+    "fault_loss": 1.5,
+    "weather": 0.5
+  },
+  "availability": {
+    "status": "full",
+    "available_from": null
+  },
+  "totals": {
+    "fault_loss": 1.5,
+    "weather": 0.5
+  }
+}
