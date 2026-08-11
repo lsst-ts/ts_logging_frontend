@@ -108,6 +108,7 @@ test.describe("Observatory Status applet — full availability", () => {
     ).toBeVisible();
   });
 
+  // Failing on Jenkins
   test("hovering a marker shows tooltip with time, state and duration", async ({
     page,
   }) => {
@@ -122,6 +123,7 @@ test.describe("Observatory Status applet — full availability", () => {
     await expect(tooltip).toContainText("03:00:00.000");
   });
 
+  // Failing on Jenkins
   test("does not show a note row for a noteless interval", async ({ page }) => {
     const card = observatoryStatusCard(page);
     const svg = card.locator("svg").first();
@@ -133,6 +135,7 @@ test.describe("Observatory Status applet — full availability", () => {
     await expect(tooltip).not.toContainText("Note:");
   });
 
+  // Failing on Jenkins
   test("hides the tooltip when the mouse leaves the chart", async ({
     page,
   }) => {
@@ -182,6 +185,7 @@ test.describe("Observatory Status applet — interval with a note", () => {
     await waitForObservatoryStatusAppletLoad(page);
   });
 
+  // Failing on Jenkins
   test("shows the note in the tooltip for a noted interval", async ({
     page,
   }) => {

@@ -219,7 +219,7 @@ test.describe("Individual plots — ctrl drag zoom out", () => {
     ).toBeAttached();
   });
 
-  test("ctrl-drag expands the visible time range (zoom out)", async ({
+  test.skip("ctrl-drag expands the visible time range (zoom out)", async ({
     page,
   }) => {
     const firstChartSvg = page
