@@ -16,6 +16,7 @@ import InfoIcon from "../assets/InfoIcon.svg";
 import TimeLossIcon from "../assets/TimeLossIcon.svg";
 
 import { formatDayobsStrForDisplay } from "@/utils/timeUtils";
+import { OBSERVATORY_STATE_AVAILABILITY_STATUS } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
 
 export default function TimeLossCard({
   narrativeLogData,
@@ -36,7 +37,8 @@ export default function TimeLossCard({
   const heading = "Fault Loss";
 
   const availability = obsStatusAvailability ?? {};
-  const availabilityStatus = availability.status ?? "none";
+  const availabilityStatus =
+    availability.status ?? OBSERVATORY_STATE_AVAILABILITY_STATUS.NONE;
   const availableFrom = availability.available_from
     ? formatDayobsStrForDisplay(String(availability.available_from))
     : null;
@@ -44,8 +46,10 @@ export default function TimeLossCard({
   const formatHours = (value) =>
     typeof value === "number" ? value.toFixed(2) : "NA";
 
-  const isFullyAvailable = availabilityStatus === "full";
-  const isNotAvailable = availabilityStatus === "none";
+  const isFullyAvailable =
+    availabilityStatus === OBSERVATORY_STATE_AVAILABILITY_STATUS.FULL;
+  const isNotAvailable =
+    availabilityStatus === OBSERVATORY_STATE_AVAILABILITY_STATUS.NONE;
 
   // Tooltip to be shown over obs status data if data
   // partially or fully unavailable due to user querying
