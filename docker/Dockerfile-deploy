@@ -3,6 +3,7 @@ FROM lsstts/develop-env:develop AS version_bumper
 WORKDIR /home/saluser/develop
 COPY scripts/make_release.py scripts/make_release.py
 COPY package.json package.json
+COPY package-lock.json package-lock.json
 
 USER root
 RUN chown saluser:saluser /home/saluser/develop/package.json /home/saluser/develop/scripts/make_release.py
@@ -25,7 +26,7 @@ USER saluser
 COPY --from=version_bumper /home/saluser/develop/package.json package.json
 COPY --from=version_bumper /home/saluser/develop/package-lock.json package-lock.json
 
-RUN npm install
+RUN npm ci
 RUN npx vite build
 
 VOLUME /usr/src/app/dist
