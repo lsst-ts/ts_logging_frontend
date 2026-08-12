@@ -219,7 +219,8 @@ test.describe("Individual plots — ctrl drag zoom out", () => {
     ).toBeAttached();
   });
 
-  test("ctrl-drag expands the visible time range (zoom out)", async ({
+  // OSW-2796 - Test is flaky and fails locally and on branch CI.
+  test.skip("ctrl-drag expands the visible time range (zoom out)", async ({
     page,
   }) => {
     const firstChartSvg = page

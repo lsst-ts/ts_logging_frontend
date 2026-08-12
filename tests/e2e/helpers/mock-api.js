@@ -13,6 +13,14 @@ function loadFixture(name) {
 const DEFAULT_MOCKS = {
   "data-log": loadFixture("data-log"),
   almanac: loadFixture("almanac"),
+  exposures: loadFixture("exposures"),
+  "expected-exposures": loadFixture("expected-exposures"),
+  "narrative-log": loadFixture("narrative-log"),
+  "obs-status": loadFixture("obs-status"),
+  "night-reports": loadFixture("night-reports"),
+  "exposure-flags": loadFixture("exposure-flags"),
+  "jira-tickets": loadFixture("jira-tickets"),
+  "static-visit-map": loadFixture("static-visit-map"),
   version: { version: "test" },
 };
 
