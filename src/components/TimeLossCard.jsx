@@ -19,22 +19,22 @@ import { formatDayobsStrForDisplay } from "@/utils/timeUtils";
 import { OBSERVATORY_STATE_AVAILABILITY_STATUS } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
 
 export default function TimeLossCard({
-  narrativeLogData,
-  obsStatusData,
+  // narrativeLogData,
+  obsStatusFaultLoss,
+  obsStatusWeatherLoss,
   obsStatusAvailability,
   calculatedData,
-  narrativeLogloading = false,
+  // narrativeLogloading = false,
   obsStatusLoading = false,
   calculatedFaultLoading = false,
   faultDataUnavailable = false,
   faultErrorMessage = null,
   onClick = false,
 }) {
-  const loading =
-    narrativeLogloading || obsStatusLoading || calculatedFaultLoading;
+  const loading = obsStatusLoading || calculatedFaultLoading;
   const isClickable = onClick && !loading;
 
-  const heading = "Fault Loss";
+  const heading = "Time Loss";
 
   const availability = obsStatusAvailability ?? {};
   const availabilityStatus =
@@ -44,7 +44,9 @@ export default function TimeLossCard({
     : null;
 
   const formatHours = (value) =>
-    typeof value === "number" ? value.toFixed(2) : "NA";
+    typeof value === "number" && Number.isFinite(value)
+      ? value.toFixed(2)
+      : "NA";
 
   const isFullyAvailable =
     availabilityStatus === OBSERVATORY_STATE_AVAILABILITY_STATUS.FULL;
@@ -65,7 +67,7 @@ export default function TimeLossCard({
       <strong>{availableFrom ?? "the supported date range"}</strong>
       .
       <br />
-      Fault time loss has been computed for the available dayobs.
+      Time loss has been computed for the available dayobs.
     </>
   );
 
@@ -86,19 +88,19 @@ export default function TimeLossCard({
       <div className="flex flex-row justify-between">
         {/* Data */}
         <div className="grid grid-cols-[auto_1fr] items-center gap-x-4 text-md">
-          <div>Obs. Status:</div>
+          <div>Fault:</div>
           {obsStatusLoading ? (
             <Skeleton className="h-3 w-10 bg-teal-700" />
           ) : // Show data when availabile
           isFullyAvailable ? (
-            <div>{formatHours(obsStatusData)}</div>
+            <div>{formatHours(obsStatusFaultLoss)}</div>
           ) : (
             // Show tooltip and warning icon for no/partial data
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="flex items-center gap-1 cursor-help">
                   <span>
-                    {isNotAvailable ? "NA" : formatHours(obsStatusData)}
+                    {isNotAvailable ? "NA" : formatHours(obsStatusFaultLoss)}
                   </span>
 
                   <TriangleAlert className="h-4 w-4 text-yellow-500" />
@@ -111,14 +113,31 @@ export default function TimeLossCard({
             </Tooltip>
           )}
 
-          <div>Narrative Log:</div>
-          {narrativeLogloading ? (
+          <div>Weather:</div>
+          {obsStatusLoading ? (
             <Skeleton className="h-3 w-10 bg-teal-700" />
+          ) : isFullyAvailable ? (
+            <div>{formatHours(obsStatusWeatherLoss)}</div>
           ) : (
-            formatHours(narrativeLogData)
+            // Show tooltip and warning icon for no/partial data
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1 cursor-help">
+                  <span>
+                    {isNotAvailable ? "NA" : formatHours(obsStatusWeatherLoss)}
+                  </span>
+
+                  <TriangleAlert className="h-4 w-4 text-yellow-500" />
+                </div>
+              </TooltipTrigger>
+
+              <TooltipContent>
+                <p>{tooltipText}</p>
+              </TooltipContent>
+            </Tooltip>
           )}
 
-          <div>Calculated:</div>
+          <div>(Calculated Fault):</div>
           {calculatedFaultLoading ? (
             <Skeleton className="h-3 w-10 bg-teal-700" />
           ) : faultDataUnavailable ? (
@@ -151,25 +170,31 @@ export default function TimeLossCard({
           </PopoverTrigger>
           <PopoverContent className="bg-black text-white text-sm border-yellow-700 w-100">
             <p>
-              Observing hours lost to faults as recorded in the Narrative Log
-              and Observatory Status, and calculated from exposures.
+              Observing hours (<strong>-12°</strong>) lost to fault or weather
+              according to Observatory Status records, and fault loss calculated
+              from exposures.
               <br />
               <br />
               <strong>Observatory Status Fault Loss</strong>
               <br />
-              Sum of all observing time with an active <code>FAULT</code>{" "}
-              status, except during <code>DOWNTIME</code>.
+              Sum of all observing time with an active <strong>
+                FAULT
+              </strong>{" "}
+              status, except during <strong>DOWNTIME</strong>.
               <br />
               <br />
-              <strong>Narrative Log Fault Loss</strong>
+              <strong>Observatory Status Weather Loss</strong>
               <br />
-              Sum of all time lost to fault as recorded in the Narrative Log.
+              Sum of all observing time with an active <strong>
+                WEATHER
+              </strong>{" "}
+              status.
               <br />
               <br />
               <strong>Calculated Fault Loss</strong>
               <br />
               Total available observing time – exposure time – overhead time* –
-              time lost to weather**.
+              time lost to weather.
               <br />
               <br />
               <em>
@@ -177,7 +202,6 @@ export default function TimeLossCard({
                 potential additional overhead of up to 2 minutes per visit.
               </em>
               <br />
-              <em>**weather loss is derived from Observatory Status data.</em>
             </p>
           </PopoverContent>
         </Popover>

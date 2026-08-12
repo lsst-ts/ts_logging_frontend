@@ -10,7 +10,7 @@ import {
   fetchExposures,
   fetchExpectedExposures,
   fetchAlmanac,
-  fetchNarrativeLog,
+  // fetchNarrativeLog,
   fetchObsStatusFromRubinNights,
   fetchNightreport,
   fetchExposureFlags,
@@ -53,7 +53,7 @@ export default function Digest() {
     useTimeRangeFromURL("/");
 
   // const [narrativeWeatherLoss, setNarrativeWeatherLoss] = useState(0.0);
-  const [narrativeFaultLoss, setNarrativeFaultLoss] = useState(0.0);
+  // const [narrativeFaultLoss, setNarrativeFaultLoss] = useState(0.0);
   const [exposureFields, setExposureFields] = useState([]);
   const [exposureCount, setExposureCount] = useState(0);
   const [sumExpTime, setSumExpTime] = useState(0.0);
@@ -73,7 +73,6 @@ export default function Digest() {
   const [expectedExposuresLoading, setExpectedExposuresLoading] =
     useState(true);
   const [almanacLoading, setAlmanacLoading] = useState(true);
-  const [narrativeLoading, setNarrativeLoading] = useState(true);
   const [nightreportLoading, setNightreportLoading] = useState(true);
   const [obsStatusLoading, setObsStatusLoading] = useState(true);
   const [dayObsOpenDomeHours, setDayObsOpenDomeHours] = useState({});
@@ -121,7 +120,7 @@ export default function Digest() {
     setExposuresLoading(true);
     setExpectedExposuresLoading(true);
     setAlmanacLoading(true);
-    setNarrativeLoading(true);
+    // setNarrativeLoading(true);
     setNightreportLoading(true);
     setJiraLoading(true);
     setFlagsLoading(true);
@@ -134,7 +133,8 @@ export default function Digest() {
     // TODO: OSW-2430 Replace Narrative log with weatherloss
     // from obs status in the Time Loss card
     // setNarrativeWeatherLoss(0.0);
-    setNarrativeFaultLoss(0.0);
+
+    // setNarrativeFaultLoss(0.0);
     setExposureCount(0);
     setReports([]);
     setOnSkyExpCount(0);
@@ -261,24 +261,24 @@ export default function Digest() {
         }
       });
 
-    fetchNarrativeLog(startDayobs, queryEndDayobs, instrument, abortController)
-      .then((data) => {
-        setNarrativeFaultLoss(data.time_lost_to_faults);
-      })
-      .catch((err) => {
-        if (!abortController.signal.aborted) {
-          console.error("Error fetching narrative log:", err);
-          addNotification({
-            type: "error",
-            source: "time-loss",
-          });
-        }
-      })
-      .finally(() => {
-        if (!abortController.signal.aborted) {
-          setNarrativeLoading(false);
-        }
-      });
+    // fetchNarrativeLog(startDayobs, queryEndDayobs, instrument, abortController)
+    //   .then((data) => {
+    //     setNarrativeFaultLoss(data.time_lost_to_faults);
+    //   })
+    //   .catch((err) => {
+    //     if (!abortController.signal.aborted) {
+    //       console.error("Error fetching narrative log:", err);
+    //       addNotification({
+    //         type: "error",
+    //         source: "time-loss",
+    //       });
+    //     }
+    //   })
+    //   .finally(() => {
+    //     if (!abortController.signal.aborted) {
+    //       setNarrativeLoading(false);
+    //     }
+    //   });
 
     fetchObsStatusFromRubinNights({
       start: startDayobs,
@@ -301,6 +301,7 @@ export default function Digest() {
         setObsStatusWeatherLoss(
           typeof metrics.weather === "number" ? metrics.weather : 0.0,
         );
+        // setObsStatusWeatherLoss(6.0);
         setObsStatusAvailability({
           status:
             typeof availability.status === "string"
@@ -593,7 +594,7 @@ export default function Digest() {
     !expectedExposuresLoading &&
     !almanacLoading &&
     !obsStatusLoading &&
-    !narrativeLoading &&
+    // !narrativeLoading &&
     !nightreportLoading &&
     !jiraLoading &&
     !flagsLoading &&
@@ -640,14 +641,15 @@ export default function Digest() {
             data={efficiencyText}
             label="Open-shutter (-weather) efficiency"
             tooltip="Efficiency computed as total on-sky exposure time / ( time between 12° twilights - time lost to weather as recorded in Observatory Status ). Exposures started outside the twilights are not counted in total time."
-            loading={almanacLoading || exposuresLoading || narrativeLoading}
+            loading={almanacLoading || exposuresLoading} //||  narrativeLoading}
           />
           <TimeLossCard
-            narrativeLogData={narrativeFaultLoss}
-            obsStatusData={obsStatusFaultLoss}
+            // narrativeLogData={narrativeFaultLoss}
+            obsStatusFaultLoss={obsStatusFaultLoss}
+            obsStatusWeatherLoss={obsStatusWeatherLoss}
             obsStatusAvailability={obsStatusAvailability}
             calculatedData={calculatedFault}
-            narrativeLogloading={narrativeLoading}
+            // narrativeLogloading={narrativeLoading}
             obsStatusLoading={obsStatusLoading}
             calculatedFaultLoading={faultLoading}
             faultDataUnavailable={faultUnavailable}
