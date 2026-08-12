@@ -244,6 +244,7 @@ function DataLog() {
     const abortController = new AbortController();
 
     if (consDBdata.length === 0) {
+      setBlockLookupLoading(false);
       return; // don't know which BLOCKs to query
     }
 

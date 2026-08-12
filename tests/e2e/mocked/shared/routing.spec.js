@@ -214,7 +214,7 @@ test.describe("Plots — unknown parameter stripping", () => {
     page,
   }) => {
     await page.goto(
-      `/nightlydigest/plots?startDayobs=${TEST_DAYOBS}&unknown=value&foo=bar`,
+      `/nightlydigest/plots?startDayobs=${TEST_DAYOBS}&endDayobs=${TEST_DAYOBS}&unknown=value&foo=bar`,
     );
     await waitForPlotsLoad(page);
     await expect(page).not.toHaveURL(/unknown=/);

@@ -77,6 +77,8 @@ export function useEChartsTimeline(
 
     const instance = echarts.init(el, null, { renderer: "canvas" });
     instanceRef.current = instance;
+    // Canvas has no per-mark DOM — expose the instance for e2e assertions.
+    el.__echartsInstance = instance;
 
     const observer = new ResizeObserver(() => {
       instance.resize();
@@ -143,6 +145,7 @@ export function useEChartsTimeline(
       observer.disconnect();
       instance.dispose();
       instanceRef.current = null;
+      delete el.__echartsInstance;
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
