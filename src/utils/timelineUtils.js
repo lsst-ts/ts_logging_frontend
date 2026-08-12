@@ -157,6 +157,8 @@ export const prepareMoonIntervals = (events, xMinMillis, xMaxMillis) => {
  * @param {[DateTime, DateTime]} options.fullTimeRange
  * @param {number} options.computedHeight - Fallback height if offsetHeight unavailable
  * @param {boolean} [options.showBaseline=false] - Add white baseline at bottom of grid
+ * @param {boolean} [options.cumulativePlot=false] - Vary outputs slightly as required
+ * @param {boolean} [options.fullScreen=false] - Vary outputs slightly as required
  * @param {number} [options.bottomMargin=TIMELINE_MARGINS.bottom] - Bottom margin of the
  *   caller's grid, used to place the baseline and date labels on the x-axis
  * @returns {{ elements: Array, containerHeight: number, fontFamily: string,
@@ -169,6 +171,8 @@ export const buildTimelineGraphicElements = (
     fullTimeRange,
     computedHeight,
     showBaseline = false,
+    cumulativePlot = false,
+    fullScreen = false,
     bottomMargin = TIMELINE_MARGINS.bottom,
   },
 ) => {
@@ -199,7 +203,7 @@ export const buildTimelineGraphicElements = (
     if (pixelX == null) continue;
 
     // UTC midday: dayobs border line
-    if (hourUTC === 12) {
+    if (hourUTC === 12 && !cumulativePlot) {
       elements.push({
         type: "line",
         silent: true,
@@ -211,7 +215,7 @@ export const buildTimelineGraphicElements = (
     }
 
     // UTC midnight: date label
-    if (hourUTC === 0) {
+    if (hourUTC === 0 && !cumulativePlot) {
       elements.push({
         type: "text",
         silent: true,
@@ -223,6 +227,26 @@ export const buildTimelineGraphicElements = (
           textAlign: "center",
           fill: TIMELINE_COLORS.DAYOBS_LABEL,
           fontSize: TIMELINE_DIMENSIONS.LABEL_TEXT_SIZE,
+          fontFamily,
+          userSelect: "none",
+        },
+      });
+      continue;
+    }
+
+    // UTC 5 (approx middle of observing night): date label
+    if (hourUTC === 5 && cumulativePlot) {
+      elements.push({
+        type: "text",
+        silent: true,
+        z: 0,
+        x: pixelX,
+        y: fullScreen ? 30 : 26,
+        style: {
+          text: dt.minus({ day: 1 }).toFormat("yyyy-LL-dd"),
+          textAlign: "center",
+          fill: "#bbbbbb",
+          fontSize: fullScreen ? 14 : 10,
           fontFamily,
           userSelect: "none",
         },

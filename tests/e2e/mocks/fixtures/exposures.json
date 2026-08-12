@@ -1,0 +1,12 @@
+{
+  "exposures": [],
+  "exposures_count": 0,
+  "sum_exposure_time": 0,
+  "on_sky_exposures_count": 0,
+  "total_on_sky_exposure_time": 0,
+  "open_dome_times": [],
+  "day_obs_open_dome_hours": {},
+  "open_dome_error": null,
+  "night_on_sky_time_accounting": {},
+  "time_accounting_error": null
+}
