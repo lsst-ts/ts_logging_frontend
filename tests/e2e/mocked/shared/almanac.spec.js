@@ -9,6 +9,7 @@ import {
   DATALOG_URL,
   TEST_DAYOBS_INT,
 } from "../../helpers/constants.js";
+import { TIMELINE_COLORS } from "../../../../src/constants/TIMELINE_DEFINITIONS.js";
 
 const ALMANAC_MOCK = {
   almanac_info: [
@@ -24,10 +25,6 @@ const ALMANAC_MOCK = {
     },
   ],
 };
-
-// Color constants (from PLOT_DEFINITIONS.js)
-const TWILIGHT_STROKE = "#0ea5e9";
-const MOON_FILL = "#EAB308";
 
 const MOCK_DATA = generateDataLogMock(10, { dayobs: TEST_DAYOBS_INT });
 
@@ -79,7 +76,7 @@ for (const { name, url, waitForLoad } of PAGES) {
       const { twilightLineCount, twilightLineColor } =
         await getTimelineSeriesInfo(page);
       expect(twilightLineCount).toBe(2);
-      expect(twilightLineColor).toBe(TWILIGHT_STROKE);
+      expect(twilightLineColor).toBe(TIMELINE_COLORS.TWILIGHT_LINE);
     });
   });
 
@@ -102,7 +99,7 @@ for (const { name, url, waitForLoad } of PAGES) {
       const { moonAreaCount, moonAreaColor } =
         await getTimelineSeriesInfo(page);
       expect(moonAreaCount).toBe(1);
-      expect(moonAreaColor).toBe(MOON_FILL);
+      expect(moonAreaColor).toBe(TIMELINE_COLORS.MOON_AREA_FILL);
     });
   });
 }
