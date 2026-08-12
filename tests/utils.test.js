@@ -560,7 +560,11 @@ describe("utils", () => {
   describe("getRubinTVUrl", () => {
     beforeEach(() => {
       vi.stubGlobal("window", {
-        location: { host: "localhost", origin: "http://localhost" },
+        location: {
+          host: "localhost",
+          hostname: "localhost",
+          origin: "http://localhost",
+        },
       });
     });
 
@@ -594,6 +598,7 @@ describe("utils", () => {
     it("uses production origin if not localhost", () => {
       for (const [site, config] of Object.entries(SITE_CONFIGURATION)) {
         window.location.host = site;
+        window.location.hostname = site;
         window.location.origin = `https://${site}`;
 
         const dateStr = getDayobsStartUTC("20240607").toFormat("yyyy-MM-dd");
@@ -618,6 +623,7 @@ describe("utils", () => {
 
     it("raises error for unknown host", () => {
       window.location.host = "unknownhost.com";
+      window.location.hostname = "unknownhost.com";
       window.location.origin = "https://unknownhost.com";
 
       expect(() => getRubinTVUrl("Simonyi", "20240607", 1)).toThrowError(

@@ -24,10 +24,9 @@ pipeline {
           sh """
             source /home/saluser/.setup_dev.sh
 
-            npm install
+            npm ci
             pre-commit run --all-files
 
-            npm install vitest
             npx vitest run --run --no-color --reporter=verbose
           """
         }
@@ -45,6 +44,7 @@ pipeline {
         script {
           sh """
             source /home/saluser/.setup_dev.sh
+            npm ci
             npx playwright install chromium
             npm run test:e2e -- --reporter=list
           """

@@ -387,6 +387,7 @@ function TimelineChart({
     <div
       ref={containerRef}
       data-testid="timeline-chart"
+      data-slot="timeline"
       style={{
         width: "100%",
         minWidth: 0,

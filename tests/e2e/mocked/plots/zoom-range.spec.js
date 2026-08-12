@@ -30,69 +30,9 @@ const ZOOM_MOCK_DATA = generateDataLogMock(10, {
   postProcess: (r) => ({ ...r, airmass: 1.0 + r.seq_num * 0.15 }),
 });
 
-// ---------------------------------------------------------------------------
-
-test.describe("Timeline — drag range selection", () => {
-  test.beforeEach(async ({ page }) => {
-    await setupApiMocks(page, { "data-log": ZOOM_MOCK_DATA });
-    await page.goto(PLOTS_URL);
-    await waitForPlotsLoad(page);
-  });
-
-  test("drag on timeline adds startTime and endTime to URL", async ({
-    page,
-  }) => {
-    // Drag across the middle third of the timeline (horizontal only — the
-    // TimelineChart uses 1D selection so only X needs to change).
-    const timeline = page.getByTestId("timeline-chart");
-    await expect(timeline).toBeVisible();
-
-    await dragOn(page, timeline, {
-      fromX: 0.25,
-      toX: 0.75,
-      fromY: 0.5,
-      toY: 0.5,
-    });
-
-    await expect(page).toHaveURL(/startTime=/);
-    const { startTime, endTime } = getTimeParams(page);
-
-    // Both params must be present and form a valid sub-range
-    expect(startTime).not.toBeNull();
-    expect(endTime).not.toBeNull();
-    expect(startTime).toBeLessThan(endTime);
-    expect(startTime).toBeGreaterThanOrEqual(FULL_START);
-    expect(endTime).toBeLessThanOrEqual(FULL_END);
-    // The drag covered the middle third so the result must be narrower
-    // than the full range
-    expect(endTime - startTime).toBeLessThan(FULL_RANGE);
-  });
-});
-
-// ---------------------------------------------------------------------------
-
-test.describe("Timeline — double-click resets selection", () => {
-  test.beforeEach(async ({ page }) => {
-    // Start with a pre-existing selection so there is something to reset
-    await setupApiMocks(page, { "data-log": ZOOM_MOCK_DATA });
-    await page.goto(`${PLOTS_URL}&startTime=${recTAI(2)}&endTime=${recTAI(8)}`);
-    await waitForPlotsLoad(page);
-  });
-
-  test("double-click on timeline resets to the full time range", async ({
-    page,
-  }) => {
-    const timeline = page.getByTestId("timeline-chart");
-    await expect(timeline).toBeVisible();
-
-    await timeline.dblclick();
-
-    // The reset callback sets selectedTimeRange = fullTimeRange which
-    // navigates to startTime=FULL_START, endTime=FULL_END
-    await expect.poll(() => getTimeParams(page).startTime).toBe(FULL_START);
-    await expect.poll(() => getTimeParams(page).endTime).toBe(FULL_END);
-  });
-});
+// Timeline drag/double-click selection is covered for both pages in
+// tests/e2e/mocked/shared/zoom-range.spec.js — this file covers zooming on
+// the individual plots.
 
 // ---------------------------------------------------------------------------
 

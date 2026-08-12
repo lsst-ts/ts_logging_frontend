@@ -7,7 +7,6 @@
       "day_obs": 20260101,
       "seq_num": 1,
       "obs_start": "2026-01-02T00:00:00.000",
-      "science_program": "SURVEY",
       "physical_filter": "y_10",
       "band": "y",
       "can_see_sky": true,
@@ -17,7 +16,8 @@
       "zero_point_median": 32,
       "sky_bg_median": 630,
       "exp_time": 30,
-      "air_temp": 15
+      "air_temp": 15,
+      "science_program": "BF"
     },
     {
       "exposure_id": 20260101000002,
@@ -26,7 +26,6 @@
       "day_obs": 20260101,
       "seq_num": 2,
       "obs_start": "2026-01-02T00:01:00.000",
-      "science_program": "SURVEY",
       "physical_filter": "y_10",
       "band": "y",
       "can_see_sky": true,
@@ -36,7 +35,8 @@
       "zero_point_median": 32,
       "sky_bg_median": 630,
       "exp_time": 30,
-      "air_temp": 15
+      "air_temp": 15,
+      "science_program": "DF"
     },
     {
       "exposure_id": 20260101000003,
@@ -45,7 +45,6 @@
       "day_obs": 20260101,
       "seq_num": 3,
       "obs_start": "2026-01-02T00:02:00.000",
-      "science_program": "SURVEY",
       "physical_filter": "y_10",
       "band": "y",
       "can_see_sky": true,
@@ -55,7 +54,8 @@
       "zero_point_median": 32,
       "sky_bg_median": 630,
       "exp_time": 30,
-      "air_temp": 15
+      "air_temp": 15,
+      "science_program": "MINI"
     },
     {
       "exposure_id": 20260101000004,
@@ -64,7 +64,6 @@
       "day_obs": 20260101,
       "seq_num": 4,
       "obs_start": "2026-01-02T00:03:00.000",
-      "science_program": "SURVEY",
       "physical_filter": "y_10",
       "band": "y",
       "can_see_sky": true,
@@ -74,7 +73,8 @@
       "zero_point_median": 32,
       "sky_bg_median": 630,
       "exp_time": 30,
-      "air_temp": 15
+      "air_temp": 15,
+      "science_program": "SN"
     },
     {
       "exposure_id": 20260101000005,
@@ -83,7 +83,6 @@
       "day_obs": 20260101,
       "seq_num": 5,
       "obs_start": "2026-01-02T00:04:00.000",
-      "science_program": "SURVEY",
       "physical_filter": "y_10",
       "band": "y",
       "can_see_sky": true,
@@ -93,7 +92,8 @@
       "zero_point_median": 32,
       "sky_bg_median": 630,
       "exp_time": 30,
-      "air_temp": 15
+      "air_temp": 15,
+      "science_program": "FM"
     },
     {
       "exposure_id": 20260101000006,
@@ -102,7 +102,6 @@
       "day_obs": 20260101,
       "seq_num": 6,
       "obs_start": "2026-01-02T00:05:00.000",
-      "science_program": "SURVEY",
       "physical_filter": "y_10",
       "band": "y",
       "can_see_sky": true,
@@ -112,7 +111,8 @@
       "zero_point_median": 32,
       "sky_bg_median": 630,
       "exp_time": 30,
-      "air_temp": 15
+      "air_temp": 15,
+      "science_program": "BF"
     },
     {
       "exposure_id": 20260101000007,
@@ -121,7 +121,6 @@
       "day_obs": 20260101,
       "seq_num": 7,
       "obs_start": "2026-01-02T00:06:00.000",
-      "science_program": "SURVEY",
       "physical_filter": "y_10",
       "band": "y",
       "can_see_sky": true,
@@ -131,7 +130,8 @@
       "zero_point_median": 32,
       "sky_bg_median": 630,
       "exp_time": 30,
-      "air_temp": 15
+      "air_temp": 15,
+      "science_program": "DF"
     },
     {
       "exposure_id": 20260101000008,
@@ -140,7 +140,6 @@
       "day_obs": 20260101,
       "seq_num": 8,
       "obs_start": "2026-01-02T00:07:00.000",
-      "science_program": "SURVEY",
       "physical_filter": "y_10",
       "band": "y",
       "can_see_sky": true,
@@ -150,7 +149,8 @@
       "zero_point_median": 32,
       "sky_bg_median": 630,
       "exp_time": 30,
-      "air_temp": 15
+      "air_temp": 15,
+      "science_program": "MINI"
     },
     {
       "exposure_id": 20260101000009,
@@ -159,7 +159,6 @@
       "day_obs": 20260101,
       "seq_num": 9,
       "obs_start": "2026-01-02T00:08:00.000",
-      "science_program": "SURVEY",
       "physical_filter": "y_10",
       "band": "y",
       "can_see_sky": true,
@@ -169,7 +168,8 @@
       "zero_point_median": 32,
       "sky_bg_median": 630,
       "exp_time": 30,
-      "air_temp": 15
+      "air_temp": 15,
+      "science_program": "SN"
     },
     {
       "exposure_id": 20260101000010,
@@ -178,7 +178,6 @@
       "day_obs": 20260101,
       "seq_num": 10,
       "obs_start": "2026-01-02T00:09:00.000",
-      "science_program": "SURVEY",
       "physical_filter": "y_10",
       "band": "y",
       "can_see_sky": true,
@@ -188,7 +187,8 @@
       "zero_point_median": 32,
       "sky_bg_median": 630,
       "exp_time": 30,
-      "air_temp": 15
+      "air_temp": 15,
+      "science_program": "FM"
     },
     {
       "exposure_id": 20260101000011,
@@ -197,7 +197,6 @@
       "day_obs": 20260101,
       "seq_num": 11,
       "obs_start": "2026-01-02T00:10:00.000",
-      "science_program": "SURVEY",
       "physical_filter": "y_10",
       "band": "y",
       "can_see_sky": true,
@@ -207,7 +206,8 @@
       "zero_point_median": 32,
       "sky_bg_median": 630,
       "exp_time": 30,
-      "air_temp": 15
+      "air_temp": 15,
+      "science_program": "BF"
     },
     {
       "exposure_id": 20260101000012,
@@ -216,7 +216,6 @@
       "day_obs": 20260101,
       "seq_num": 12,
       "obs_start": "2026-01-02T00:11:00.000",
-      "science_program": "SURVEY",
       "physical_filter": "y_10",
       "band": "y",
       "can_see_sky": true,
@@ -226,7 +225,8 @@
       "zero_point_median": 32,
       "sky_bg_median": 630,
       "exp_time": 30,
-      "air_temp": 15
+      "air_temp": 15,
+      "science_program": "DF"
     },
     {
       "exposure_id": 20260101000013,
@@ -235,7 +235,6 @@
       "day_obs": 20260101,
       "seq_num": 13,
       "obs_start": "2026-01-02T00:12:00.000",
-      "science_program": "SURVEY",
       "physical_filter": "y_10",
       "band": "y",
       "can_see_sky": true,
@@ -245,7 +244,8 @@
       "zero_point_median": 32,
       "sky_bg_median": 630,
       "exp_time": 30,
-      "air_temp": 15
+      "air_temp": 15,
+      "science_program": "MINI"
     },
     {
       "exposure_id": 20260101000014,
@@ -254,7 +254,6 @@
       "day_obs": 20260101,
       "seq_num": 14,
       "obs_start": "2026-01-02T00:13:00.000",
-      "science_program": "SURVEY",
       "physical_filter": "y_10",
       "band": "y",
       "can_see_sky": true,
@@ -264,7 +263,8 @@
       "zero_point_median": 32,
       "sky_bg_median": 630,
       "exp_time": 30,
-      "air_temp": 15
+      "air_temp": 15,
+      "science_program": "SN"
     },
     {
       "exposure_id": 20260101000015,
@@ -273,7 +273,6 @@
       "day_obs": 20260101,
       "seq_num": 15,
       "obs_start": "2026-01-02T00:14:00.000",
-      "science_program": "SURVEY",
       "physical_filter": "y_10",
       "band": "y",
       "can_see_sky": true,
@@ -283,7 +282,8 @@
       "zero_point_median": 32,
       "sky_bg_median": 630,
       "exp_time": 30,
-      "air_temp": 15
+      "air_temp": 15,
+      "science_program": "FM"
     },
     {
       "exposure_id": 20260101000016,
@@ -292,7 +292,6 @@
       "day_obs": 20260101,
       "seq_num": 16,
       "obs_start": "2026-01-02T00:15:00.000",
-      "science_program": "SURVEY",
       "physical_filter": "y_10",
       "band": "y",
       "can_see_sky": true,
@@ -302,7 +301,8 @@
       "zero_point_median": 32,
       "sky_bg_median": 630,
       "exp_time": 30,
-      "air_temp": 15
+      "air_temp": 15,
+      "science_program": "BF"
     },
     {
       "exposure_id": 20260101000017,
@@ -311,7 +311,6 @@
       "day_obs": 20260101,
       "seq_num": 17,
       "obs_start": "2026-01-02T00:16:00.000",
-      "science_program": "SURVEY",
       "physical_filter": "y_10",
       "band": "y",
       "can_see_sky": true,
@@ -321,7 +320,8 @@
       "zero_point_median": 32,
       "sky_bg_median": 630,
       "exp_time": 30,
-      "air_temp": 15
+      "air_temp": 15,
+      "science_program": "DF"
     },
     {
       "exposure_id": 20260101000018,
@@ -330,7 +330,6 @@
       "day_obs": 20260101,
       "seq_num": 18,
       "obs_start": "2026-01-02T00:17:00.000",
-      "science_program": "SURVEY",
       "physical_filter": "y_10",
       "band": "y",
       "can_see_sky": true,
@@ -340,7 +339,8 @@
       "zero_point_median": 32,
       "sky_bg_median": 630,
       "exp_time": 30,
-      "air_temp": 15
+      "air_temp": 15,
+      "science_program": "MINI"
     },
     {
       "exposure_id": 20260101000019,
@@ -349,7 +349,6 @@
       "day_obs": 20260101,
       "seq_num": 19,
       "obs_start": "2026-01-02T00:18:00.000",
-      "science_program": "SURVEY",
       "physical_filter": "y_10",
       "band": "y",
       "can_see_sky": true,
@@ -359,7 +358,8 @@
       "zero_point_median": 32,
       "sky_bg_median": 630,
       "exp_time": 30,
-      "air_temp": 15
+      "air_temp": 15,
+      "science_program": "SN"
     },
     {
       "exposure_id": 20260101000020,
@@ -368,7 +368,6 @@
       "day_obs": 20260101,
       "seq_num": 20,
       "obs_start": "2026-01-02T00:19:00.000",
-      "science_program": "SURVEY",
       "physical_filter": "y_10",
       "band": "y",
       "can_see_sky": true,
@@ -378,7 +377,8 @@
       "zero_point_median": 32,
       "sky_bg_median": 630,
       "exp_time": 30,
-      "air_temp": 15
+      "air_temp": 15,
+      "science_program": "FM"
     },
     {
       "exposure_id": 20260101000021,
@@ -387,7 +387,6 @@
       "day_obs": 20260101,
       "seq_num": 21,
       "obs_start": "2026-01-02T00:20:00.000",
-      "science_program": "SURVEY",
       "physical_filter": "y_10",
       "band": "y",
       "can_see_sky": true,
@@ -397,7 +396,8 @@
       "zero_point_median": 32,
       "sky_bg_median": 630,
       "exp_time": 30,
-      "air_temp": 15
+      "air_temp": 15,
+      "science_program": "BF"
     },
     {
       "exposure_id": 20260101000022,
@@ -406,7 +406,6 @@
       "day_obs": 20260101,
       "seq_num": 22,
       "obs_start": "2026-01-02T00:21:00.000",
-      "science_program": "SURVEY",
       "physical_filter": "y_10",
       "band": "y",
       "can_see_sky": true,
@@ -416,7 +415,8 @@
       "zero_point_median": 32,
       "sky_bg_median": 630,
       "exp_time": 30,
-      "air_temp": 15
+      "air_temp": 15,
+      "science_program": "DF"
     },
     {
       "exposure_id": 20260101000023,
@@ -425,7 +425,6 @@
       "day_obs": 20260101,
       "seq_num": 23,
       "obs_start": "2026-01-02T00:22:00.000",
-      "science_program": "SURVEY",
       "physical_filter": "y_10",
       "band": "y",
       "can_see_sky": true,
@@ -435,7 +434,8 @@
       "zero_point_median": 32,
       "sky_bg_median": 630,
       "exp_time": 30,
-      "air_temp": 15
+      "air_temp": 15,
+      "science_program": "MINI"
     },
     {
       "exposure_id": 20260101000024,
@@ -444,7 +444,6 @@
       "day_obs": 20260101,
       "seq_num": 24,
       "obs_start": "2026-01-02T00:23:00.000",
-      "science_program": "SURVEY",
       "physical_filter": "y_10",
       "band": "y",
       "can_see_sky": true,
@@ -454,7 +453,8 @@
       "zero_point_median": 32,
       "sky_bg_median": 630,
       "exp_time": 30,
-      "air_temp": 15
+      "air_temp": 15,
+      "science_program": "SN"
     },
     {
       "exposure_id": 20260101000025,
@@ -463,7 +463,6 @@
       "day_obs": 20260101,
       "seq_num": 25,
       "obs_start": "2026-01-02T00:24:00.000",
-      "science_program": "SURVEY",
       "physical_filter": "y_10",
       "band": "y",
       "can_see_sky": true,
@@ -473,7 +472,8 @@
       "zero_point_median": 32,
       "sky_bg_median": 630,
       "exp_time": 30,
-      "air_temp": 15
+      "air_temp": 15,
+      "science_program": "FM"
     },
     {
       "exposure_id": 20260101000026,
@@ -482,7 +482,6 @@
       "day_obs": 20260101,
       "seq_num": 26,
       "obs_start": "2026-01-02T00:25:00.000",
-      "science_program": "SURVEY",
       "physical_filter": "y_10",
       "band": "y",
       "can_see_sky": true,
@@ -492,7 +491,8 @@
       "zero_point_median": 32,
       "sky_bg_median": 630,
       "exp_time": 30,
-      "air_temp": 15
+      "air_temp": 15,
+      "science_program": "BF"
     },
     {
       "exposure_id": 20260101000027,
@@ -501,7 +501,6 @@
       "day_obs": 20260101,
       "seq_num": 27,
       "obs_start": "2026-01-02T00:26:00.000",
-      "science_program": "SURVEY",
       "physical_filter": "y_10",
       "band": "y",
       "can_see_sky": true,
@@ -511,7 +510,8 @@
       "zero_point_median": 32,
       "sky_bg_median": 630,
       "exp_time": 30,
-      "air_temp": 15
+      "air_temp": 15,
+      "science_program": "DF"
     },
     {
       "exposure_id": 20260101000028,
@@ -520,7 +520,6 @@
       "day_obs": 20260101,
       "seq_num": 28,
       "obs_start": "2026-01-02T00:27:00.000",
-      "science_program": "SURVEY",
       "physical_filter": "y_10",
       "band": "y",
       "can_see_sky": true,
@@ -530,7 +529,8 @@
       "zero_point_median": 32,
       "sky_bg_median": 630,
       "exp_time": 30,
-      "air_temp": 15
+      "air_temp": 15,
+      "science_program": "MINI"
     },
     {
       "exposure_id": 20260101000029,
@@ -539,7 +539,6 @@
       "day_obs": 20260101,
       "seq_num": 29,
       "obs_start": "2026-01-02T00:28:00.000",
-      "science_program": "SURVEY",
       "physical_filter": "y_10",
       "band": "y",
       "can_see_sky": true,
@@ -549,7 +548,8 @@
       "zero_point_median": 32,
       "sky_bg_median": 630,
       "exp_time": 30,
-      "air_temp": 15
+      "air_temp": 15,
+      "science_program": "SN"
     },
     {
       "exposure_id": 20260101000030,
@@ -558,7 +558,6 @@
       "day_obs": 20260101,
       "seq_num": 30,
       "obs_start": "2026-01-02T00:29:00.000",
-      "science_program": "SURVEY",
       "physical_filter": "y_10",
       "band": "y",
       "can_see_sky": true,
@@ -568,7 +567,8 @@
       "zero_point_median": 32,
       "sky_bg_median": 630,
       "exp_time": 30,
-      "air_temp": 15
+      "air_temp": 15,
+      "science_program": "FM"
     }
   ]
 }

@@ -132,6 +132,7 @@ const DataTable = forwardRef(function DataTable(
   // Reset handler
   const handleReset = () => {
     resetState();
+    table.resetColumnSizing();
     onReset?.();
   };
 

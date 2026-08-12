@@ -10,6 +10,7 @@ import {
   FULL_END,
   UTC_TO_TAI_MS,
 } from "../../helpers/constants.js";
+import { PLOT_COLORS } from "../../../../src/components/PLOT_DEFINITIONS.js";
 
 // Almanac events placed well within the observable night.
 // UTC strings are converted internally via UTC + 37 s → TAI ms.
@@ -43,10 +44,6 @@ const ALMANAC_MOCK = {
   ],
 };
 
-// Color constants (from PLOT_DEFINITIONS.js)
-const TWILIGHT_STROKE = "#0ea5e9";
-const MOON_FILL = "#EAB308";
-
 const MOCK_DATA = generateDataLogMock(10, { dayobs: TEST_DAYOBS_INT });
 
 // ---------------------------------------------------------------------------
@@ -66,7 +63,7 @@ test.describe("Twilight lines — full night range", () => {
 
     for (let i = 0; i < 4; i++) {
       await expect(
-        charts.nth(i).locator(`line[stroke="${TWILIGHT_STROKE}"]`),
+        charts.nth(i).locator(`line[stroke="${PLOT_COLORS.twilightStroke}"]`),
       ).toHaveCount(2);
     }
   });
@@ -77,7 +74,9 @@ test.describe("Twilight lines — full night range", () => {
     // Twilight values are emitted in almanac order: evening (index 0) then
     // morning (index 1), so the first line in the DOM is earlier.
     const firstChart = page.locator("[data-slot='chart']").first();
-    const lines = firstChart.locator(`line[stroke="${TWILIGHT_STROKE}"]`);
+    const lines = firstChart.locator(
+      `line[stroke="${PLOT_COLORS.twilightStroke}"]`,
+    );
 
     const eveningBox = await lines.nth(0).boundingBox();
     const morningBox = await lines.nth(1).boundingBox();
@@ -105,7 +104,7 @@ test.describe("Twilight lines — zoom excludes both events", () => {
   }) => {
     const firstChart = page.locator("[data-slot='chart']").first();
     await expect(
-      firstChart.locator(`line[stroke="${TWILIGHT_STROKE}"]`),
+      firstChart.locator(`line[stroke="${PLOT_COLORS.twilightStroke}"]`),
     ).toHaveCount(0);
   });
 });
@@ -129,9 +128,11 @@ test.describe("Moon areas — full night range", () => {
       '[data-slot="chart"][title="Sky Brightness"]',
     );
 
-    await expect(zeroPoint.locator(`path[fill="${MOON_FILL}"]`)).toHaveCount(1);
     await expect(
-      skyBrightness.locator(`path[fill="${MOON_FILL}"]`),
+      zeroPoint.locator(`path[fill="${PLOT_COLORS.moonFill}"]`),
+    ).toHaveCount(1);
+    await expect(
+      skyBrightness.locator(`path[fill="${PLOT_COLORS.moonFill}"]`),
     ).toHaveCount(1);
   });
 
@@ -141,8 +142,12 @@ test.describe("Moon areas — full night range", () => {
     const airmass = page.locator('[data-slot="chart"][title="Airmass"]');
     const psf = page.locator('[data-slot="chart"][title="Seeing (PSF FWHM)"]');
 
-    await expect(airmass.locator(`path[fill="${MOON_FILL}"]`)).toHaveCount(0);
-    await expect(psf.locator(`path[fill="${MOON_FILL}"]`)).toHaveCount(0);
+    await expect(
+      airmass.locator(`path[fill="${PLOT_COLORS.moonFill}"]`),
+    ).toHaveCount(0);
+    await expect(
+      psf.locator(`path[fill="${PLOT_COLORS.moonFill}"]`),
+    ).toHaveCount(0);
   });
 
   test("moon area is positioned between the evening and morning twilight lines", async ({
@@ -154,8 +159,10 @@ test.describe("Moon areas — full night range", () => {
     const zeroPoint = page.locator(
       '[data-slot="chart"][title="Photometric Zero Points"]',
     );
-    const lines = zeroPoint.locator(`line[stroke="${TWILIGHT_STROKE}"]`);
-    const moonPath = zeroPoint.locator(`path[fill="${MOON_FILL}"]`);
+    const lines = zeroPoint.locator(
+      `line[stroke="${PLOT_COLORS.twilightStroke}"]`,
+    );
+    const moonPath = zeroPoint.locator(`path[fill="${PLOT_COLORS.moonFill}"]`);
 
     const eveningBox = await lines.nth(0).boundingBox();
     const morningBox = await lines.nth(1).boundingBox();
@@ -187,6 +194,8 @@ test.describe("Moon areas — zoom ends before moon rise", () => {
     const zeroPoint = page.locator(
       '[data-slot="chart"][title="Photometric Zero Points"]',
     );
-    await expect(zeroPoint.locator(`path[fill="${MOON_FILL}"]`)).toHaveCount(0);
+    await expect(
+      zeroPoint.locator(`path[fill="${PLOT_COLORS.moonFill}"]`),
+    ).toHaveCount(0);
   });
 });
