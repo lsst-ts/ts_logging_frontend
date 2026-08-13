@@ -1,3 +1,26 @@
+v0.23.0 (2026-08-13)
+====================
+
+New Features
+------------
+
+- Add Observatory Status timeline to the Context Feed. (`OSW-2117 <https://rubinobs.atlassian.net//browse/OSW-2117>`_)
+- Add cumulative time in state plot of observatory status data to digest page, replacing the previous time accounting applet. (`OSW-2118 <https://rubinobs.atlassian.net//browse/OSW-2118>`_)
+- Add E2E tests for the data log page (`OSW-2155 <https://rubinobs.atlassian.net//browse/OSW-2155>`_)
+
+
+Bug Fixes
+---------
+
+- Remove premature memoization of table rows, which stopped expandable cells and group rows redrawing. (`OSW-2754 <https://rubinobs.atlassian.net//browse/OSW-2754>`_)
+
+
+Other Changes and Additions
+---------------------------
+
+- Implement automatic CI pipeline for image building in merges to develop. (`OSW-2773 <https://rubinobs.atlassian.net//browse/OSW-2773>`_)
+
+
 v0.22.0 (2026-07-30)
 ====================
 

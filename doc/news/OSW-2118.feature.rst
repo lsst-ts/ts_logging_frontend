@@ -1,1 +1,0 @@
-Add cumulative time in state plot of observatory status data to digest page, replacing the previous time accounting applet.

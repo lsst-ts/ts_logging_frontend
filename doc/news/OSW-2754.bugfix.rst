@@ -1,1 +1,0 @@
-Remove premature memoization of table rows, which stopped expandable cells and group rows redrawing.
