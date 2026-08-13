@@ -12,9 +12,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogHeader,
+  DialogContent,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+
 import InfoIcon from "../assets/InfoIcon.svg";
 import DownloadIcon from "../assets/DownloadIcon.svg";
+import FullScreenIcon from "../assets/FullScreenIcon.svg";
 
 function Report({
   id,
@@ -70,7 +79,7 @@ function Report({
     <div
       ref={reportRef}
       id={dayObs}
-      className={`flex flex-col gap-2 [&:not(:last-child)]:border-b [&:not(:last-child)]:pb-8`}
+      className="flex flex-col gap-2 [&:not(:last-child)]:border-b [&:not(:last-child)]:pb-8  max-w-[75ch]"
     >
       <div className="hidden">{id}</div>
       <div className="font-semibold">Night of {dayObs}</div>
@@ -81,7 +90,7 @@ function Report({
       <div className="whitespace-pre-wrap">{telescopeSummary}</div>
       <div className="font-medium">Observers</div>
       <div>{(observersCrew ?? []).join(", ")}</div>
-      <div className="text-xs text-end mt-2">Sent at {dateSent}Z</div>
+      <div className="text-[0.875em] text-end mt-2">Sent at {dateSent}Z</div>
     </div>
   );
 }
@@ -145,6 +154,7 @@ ${report.date_sent ? `Sent at ${report.date_sent}Z` : ""}`;
 
 function handleDownload(reports) {
   // TODO: Implement the download functionality
+  // See OSW-1343
   console.log("TODO: download reports...");
   const textContent = reports
     .map(convertReportToText)
@@ -162,6 +172,23 @@ function NightSummary({ reports = [], nightreportLoading = false }) {
 
   const appletTitle =
     availableDays.length > 1 ? "Night Reports" : "Night Report";
+
+  const renderReports = () => (
+    <>
+      {nightreportLoading ? (
+        <Skeleton className="w-full h-full bg-stone-900" />
+      ) : (
+        reports.map((report) => (
+          <Report
+            key={report.id}
+            containerRef={reportsContainerRef}
+            setDay={setSelectedDay}
+            {...report}
+          />
+        ))
+      )}
+    </>
+  );
 
   return (
     <Card className="border-none p-0 bg-stone-800 gap-2">
@@ -181,6 +208,24 @@ function NightSummary({ reports = [], nightreportLoading = false }) {
             />
           )}
           <div className="flex flex-row gap-2 ml-auto">
+            <Dialog>
+              <DialogTrigger
+                className="self-end min-w-4"
+                aria-label={`Open ${appletTitle.toLowerCase()} in fullscreen`}
+              >
+                <img src={FullScreenIcon} alt="Fullscreen" />
+              </DialogTrigger>
+              <DialogContent className="bg-teal-900/75 border-none p-8 !w-auto !max-w-7xl !max-h-[90vh] grid-rows-[auto_1fr] text-lg">
+                <DialogHeader>
+                  <DialogTitle className=" text-neutral-200 text-2xl">
+                    {appletTitle}
+                  </DialogTitle>
+                </DialogHeader>
+                <CardContent className="flex flex-col gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 font-thin min-w-[30vw] min-h-[30vh] box-border overflow-y-auto">
+                  {renderReports(true)}
+                </CardContent>
+              </DialogContent>
+            </Dialog>
             <Popover>
               <PopoverTrigger className="self-end min-w-4">
                 <img
@@ -210,20 +255,7 @@ function NightSummary({ reports = [], nightreportLoading = false }) {
         style={{ maxHeight: "100%" }}
         className="grid gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 h-80 font-thin overflow-y-auto"
       >
-        {nightreportLoading ? (
-          <div className="flex flex-col gap-2">
-            <Skeleton className="w-full h-full min-h-[180px] bg-stone-900" />
-          </div>
-        ) : (
-          reports.map((report) => (
-            <Report
-              key={report.id}
-              containerRef={reportsContainerRef}
-              setDay={setSelectedDay}
-              {...report}
-            />
-          ))
-        )}
+        {renderReports()}
       </CardContent>
     </Card>
   );
