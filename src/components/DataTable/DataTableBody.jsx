@@ -1,4 +1,4 @@
-import { memo, useCallback, useRef } from "react";
+import { useCallback, useRef } from "react";
 import { flexRender } from "@tanstack/react-table";
 
 import { TableBody, TableRow, TableCell } from "@/components/ui/table";
@@ -102,13 +102,9 @@ function DataTableBody({
         };
 
         return (
-          <MemoTableRow
+          <TableRow
             key={row.id}
             ref={isSelected ? setSelectedRowRef : null}
-            isSelected={isSelected}
-            row={row}
-            table={table}
-            columns={columns}
             onClick={handleClick}
             data-selected={isSelected ? "true" : undefined}
             className={
@@ -116,38 +112,18 @@ function DataTableBody({
                 ? "bg-black/40 shadow-[inset_4px_0_0_0_white] border-t-2 border-b-2 border-white"
                 : ""
             }
-          />
+          >
+            {isGroupedRow ? (
+              <GroupedRowCell row={row} table={table} columns={columns} />
+            ) : (
+              <NormalRowCells row={row} />
+            )}
+          </TableRow>
         );
       })}
     </TableBody>
   );
 }
-
-/**
- * Row wrapper memoized on the props that actually affect rendered output,
- * so selecting a row doesn't re-render every other row in the table.
- */
-const MemoTableRow = memo(
-  // eslint-disable-next-line no-unused-vars
-  function MemoTableRow({ ref, isSelected, row, table, columns, ...props }) {
-    const isGroupedRow = row.getIsGrouped();
-
-    return (
-      <TableRow ref={ref} {...props}>
-        {isGroupedRow ? (
-          <GroupedRowCell row={row} table={table} columns={columns} />
-        ) : (
-          <NormalRowCells row={row} />
-        )}
-      </TableRow>
-    );
-  },
-  (prevProps, nextProps) =>
-    prevProps.isSelected === nextProps.isSelected &&
-    prevProps.row === nextProps.row &&
-    prevProps.table === nextProps.table &&
-    prevProps.columns === nextProps.columns,
-);
 
 /**
  * Renders a grouped row with expand/collapse toggle
