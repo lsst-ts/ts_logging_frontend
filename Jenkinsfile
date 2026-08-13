@@ -56,6 +56,7 @@ pipeline {
       when {
         anyOf {
           branch "develop"
+          branch "alpha-release"
         }
       }
       steps {
@@ -72,6 +73,7 @@ pipeline {
       when {
         anyOf {
           branch "develop"
+          branch "alpha-release"
         }
       }
       steps {
