@@ -1,0 +1,1 @@
+Stop table column filters taking a new identity on every render, which rebuilt the filtered, grouped and faceted row models and collapsed expanded groups.

@@ -142,7 +142,14 @@ function ContextFeed() {
   } = useNotifications();
 
   // Default event type filters based on telescope
-  const defaultEventTypes = filterDefaultEventsByTelescope(telescope);
+  const defaultEventTypes = useMemo(
+    () => filterDefaultEventsByTelescope(telescope),
+    [telescope],
+  );
+  const defaultFilters = useMemo(
+    () => [{ id: "event_type", value: defaultEventTypes }],
+    [defaultEventTypes],
+  );
 
   // The table filter state is hoisted up here in order to allow
   // the timeline checkboxes to interact with it
@@ -151,7 +158,7 @@ function ContextFeed() {
   const { columnFilters, setColumnFilters, resetFilters } = useUrlSync({
     routePath: "/context-feed",
     columns: contextFeedColumns,
-    defaultFilters: [{ id: "event_type", value: defaultEventTypes }],
+    defaultFilters,
   });
 
   // Apply telescope-specific default filters when telescope changes
