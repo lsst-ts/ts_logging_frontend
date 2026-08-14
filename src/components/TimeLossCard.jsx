@@ -19,12 +19,10 @@ import TimeLossIcon from "../assets/TimeLossIcon.svg";
 import { OBSERVATORY_STATE_AVAILABILITY_STATUS } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
 
 export default function TimeLossCard({
-  // narrativeLogData,
   obsStatusFaultLoss,
   obsStatusWeatherLoss,
   obsStatusAvailability,
   calculatedData,
-  // narrativeLogloading = false,
   obsStatusLoading = false,
   calculatedFaultLoading = false,
   faultDataUnavailable = false,

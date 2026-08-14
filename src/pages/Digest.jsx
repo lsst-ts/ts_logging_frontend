@@ -10,7 +10,6 @@ import {
   fetchExposures,
   fetchExpectedExposures,
   fetchAlmanac,
-  // fetchNarrativeLog,
   fetchObsStatusFromRubinNights,
   fetchNightreport,
   fetchExposureFlags,
@@ -53,8 +52,6 @@ export default function Digest() {
   const { selectedTimeRange, setSelectedTimeRange, fullTimeRange } =
     useTimeRangeFromURL("/");
 
-  // const [narrativeWeatherLoss, setNarrativeWeatherLoss] = useState(0.0);
-  // const [narrativeFaultLoss, setNarrativeFaultLoss] = useState(0.0);
   const [exposureFields, setExposureFields] = useState([]);
   const [exposureCount, setExposureCount] = useState(0);
   const [sumExpTime, setSumExpTime] = useState(0.0);
@@ -121,7 +118,6 @@ export default function Digest() {
     setExposuresLoading(true);
     setExpectedExposuresLoading(true);
     setAlmanacLoading(true);
-    // setNarrativeLoading(true);
     setNightreportLoading(true);
     setJiraLoading(true);
     setFlagsLoading(true);
@@ -131,11 +127,6 @@ export default function Digest() {
     setSumOnSkyExpTime(0.0);
     setSumExpTime(0);
     setJiraTickets([]);
-    // TODO: OSW-2430 Replace Narrative log with weatherloss
-    // from obs status in the Time Loss card
-    // setNarrativeWeatherLoss(0.0);
-
-    // setNarrativeFaultLoss(0.0);
     setExposureCount(0);
     setReports([]);
     setOnSkyExpCount(0);
@@ -182,9 +173,7 @@ export default function Digest() {
           setOnSkyTimeAccounting(nightOnSkyTimeAccounting);
           setOpenDomeError(domeError);
           setTimeAccountingError(accountingError);
-          // placeholder usage of openDomeTimes to pass eslint
-          // for now, it is unused right now
-          console.log(openDomeTimes);
+
           if (exposuresNo === 0) {
             addNotification({
               type: "noData",
@@ -262,25 +251,6 @@ export default function Digest() {
         }
       });
 
-    // fetchNarrativeLog(startDayobs, queryEndDayobs, instrument, abortController)
-    //   .then((data) => {
-    //     setNarrativeFaultLoss(data.time_lost_to_faults);
-    //   })
-    //   .catch((err) => {
-    //     if (!abortController.signal.aborted) {
-    //       console.error("Error fetching narrative log:", err);
-    //       addNotification({
-    //         type: "error",
-    //         source: "time-loss",
-    //       });
-    //     }
-    //   })
-    //   .finally(() => {
-    //     if (!abortController.signal.aborted) {
-    //       setNarrativeLoading(false);
-    //     }
-    //   });
-
     fetchObsStatusFromRubinNights({
       start: startDayobs,
       end: endDayobs,
@@ -302,7 +272,6 @@ export default function Digest() {
         setObsStatusWeatherLoss(
           typeof metrics.weather === "number" ? metrics.weather : 0.0,
         );
-        // setObsStatusWeatherLoss(6.0);
         setObsStatusAvailability({
           status:
             typeof availability.status === "string"
@@ -595,7 +564,6 @@ export default function Digest() {
     !expectedExposuresLoading &&
     !almanacLoading &&
     !obsStatusLoading &&
-    // !narrativeLoading &&
     !nightreportLoading &&
     !jiraLoading &&
     !flagsLoading &&
@@ -654,12 +622,10 @@ export default function Digest() {
             }
           />
           <TimeLossCard
-            // narrativeLogData={narrativeFaultLoss}
             obsStatusFaultLoss={obsStatusFaultLoss}
             obsStatusWeatherLoss={obsStatusWeatherLoss}
             obsStatusAvailability={obsStatusAvailability}
             calculatedData={calculatedFault}
-            // narrativeLogloading={narrativeLoading}
             obsStatusLoading={obsStatusLoading}
             calculatedFaultLoading={faultLoading}
             faultDataUnavailable={faultUnavailable}
