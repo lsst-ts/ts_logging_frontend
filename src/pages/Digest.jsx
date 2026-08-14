@@ -609,7 +609,6 @@ export default function Digest() {
             icon={<EfficiencyChart value={efficiency} />}
             data={efficiencyText}
             label="Open-shutter (-weather) efficiency"
-            testId="efficiency-card"
             tooltip="Efficiency computed as total on-sky exposure time / ( time between 12° twilights - time lost to weather as recorded in Observatory Status or treated as 0.0 when not available ). Exposures started outside the twilights are not counted in total time."
             loading={almanacLoading || exposuresLoading || obsStatusLoading}
             statusIndicator={

@@ -28,6 +28,19 @@ export function timeLossCard(page) {
 }
 
 /**
+ * Locator for a metric card on the Digest page, identified by its label.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} label
+ * @returns {import('@playwright/test').Locator}
+ */
+export function metricsCard(page, label) {
+  return page.locator("[data-slot='metrics-card']").filter({
+    has: page.locator("[data-slot='metrics-card-label']", { hasText: label }),
+  });
+}
+
+/**
  * Waits until the Observatory Status applet has finished loading.
  *
  * The applet shows a skeleton while loading. Once loaded it either renders the

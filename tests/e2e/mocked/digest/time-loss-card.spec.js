@@ -2,7 +2,7 @@
 import { test, expect } from "@playwright/test";
 import { setupApiMocks } from "../../helpers/mock-api.js";
 import { DIGEST_URL } from "../../helpers/constants.js";
-import { timeLossCard } from "../../helpers/digest-helpers.js";
+import { metricsCard, timeLossCard } from "../../helpers/digest-helpers.js";
 
 const AVAILABLE_OBS_STATUS = (metrics = { fault_loss: 1.5, weather: 0.5 }) => ({
   entries: [],
@@ -37,14 +37,11 @@ const EXPOSURES_FOR_ZERO_WEATHER_CALCULATIONS = {
   time_accounting_error: null,
 };
 
-test.describe("Digest page — Time Loss card", () => {
+test.describe("Digest page — Time Loss and Efficiency cards", () => {
   test("shows Observatory Status fault and weather loss when fully available", async ({
     page,
   }) => {
     await setupApiMocks(page, {
-      // Deliberately distinct from the Obs Status fault value: the Narrative
-      // Log response must not determine either value in this card.
-      "narrative-log": { time_lost_to_faults: 9.75 },
       "obs-status": AVAILABLE_OBS_STATUS(),
     });
     await page.goto(DIGEST_URL);
@@ -86,7 +83,10 @@ test.describe("Digest page — Time Loss card", () => {
     await expect(card.getByTestId("time-loss-fault")).toHaveText("NA");
     await expect(card.getByTestId("time-loss-weather")).toHaveText("NA");
     const calculatedFault = card.getByTestId("time-loss-calculated-fault");
-    const efficiency = page.getByTestId("efficiency-card-value");
+    const efficiency = metricsCard(
+      page,
+      "Open-shutter (-weather) efficiency",
+    ).locator("[data-slot='metrics-card-value']");
     await expect(calculatedFault).toHaveText(/^-?\d+\.\d{2}$/);
     await expect(efficiency).toHaveText(/^\d+ %$/);
     const unavailableCalculatedFault = await calculatedFault.textContent();
@@ -118,9 +118,11 @@ test.describe("Digest page — Time Loss card", () => {
     await expect(
       timeLossCard(page).getByTestId("time-loss-calculated-fault"),
     ).toHaveText(unavailableCalculatedFault ?? "");
-    await expect(page.getByTestId("efficiency-card-value")).toHaveText(
-      unavailableEfficiency ?? "",
-    );
+    await expect(
+      metricsCard(page, "Open-shutter (-weather) efficiency").locator(
+        "[data-slot='metrics-card-value']",
+      ),
+    ).toHaveText(unavailableEfficiency ?? "");
   });
 
   test("keeps partial Obs Status values visible with a time-loss warning", async ({

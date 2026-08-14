@@ -14,7 +14,6 @@ export default function MetricsCard({
   metadata,
   tooltip,
   statusIndicator = null,
-  testId,
   loading = false,
   onClick = null,
 }) {
@@ -22,7 +21,7 @@ export default function MetricsCard({
 
   return (
     <div
-      data-testid={testId}
+      data-slot="metrics-card"
       onClick={isClickable ? onClick : undefined}
       className={`flex flex-col justify-between bg-teal-900 text-white font-light p-4 rounded-lg shadow-[4px_4px_4px_0px_#0369A1] transition hover:opacity-90 ${
         isClickable ? "cursor-pointer" : ""
@@ -33,9 +32,7 @@ export default function MetricsCard({
           {loading ? (
             <Skeleton className="h-6 w-20 bg-teal-700" />
           ) : (
-            <span data-testid={testId ? `${testId}-value` : undefined}>
-              {data}
-            </span>
+            <span data-slot="metrics-card-value">{data}</span>
           )}
           {!loading && statusIndicator}
         </div>
@@ -50,7 +47,9 @@ export default function MetricsCard({
       </div>
       <div className="flex flex-row justify-between min-h-12">
         <div className="flex flex-col justify-between">
-          <div className="text-md">{label}</div>
+          <div data-slot="metrics-card-label" className="text-md">
+            {label}
+          </div>
           {loading ? (
             <Skeleton className="h-3 w-16 bg-teal-700" />
           ) : (
