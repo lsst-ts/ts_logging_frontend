@@ -14,6 +14,7 @@ export default function MetricsCard({
   metadata,
   tooltip,
   statusIndicator = null,
+  testId,
   loading = false,
   onClick = null,
 }) {
@@ -21,6 +22,7 @@ export default function MetricsCard({
 
   return (
     <div
+      data-testid={testId}
       onClick={isClickable ? onClick : undefined}
       className={`flex flex-col justify-between bg-teal-900 text-white font-light p-4 rounded-lg shadow-[4px_4px_4px_0px_#0369A1] transition hover:opacity-90 ${
         isClickable ? "cursor-pointer" : ""
@@ -28,7 +30,13 @@ export default function MetricsCard({
     >
       <div className="flex flex-row justify-between h-12">
         <div className="flex items-center gap-1 text-2xl">
-          {loading ? <Skeleton className="h-6 w-20 bg-teal-700" /> : data}
+          {loading ? (
+            <Skeleton className="h-6 w-20 bg-teal-700" />
+          ) : (
+            <span data-testid={testId ? `${testId}-value` : undefined}>
+              {data}
+            </span>
+          )}
           {!loading && statusIndicator}
         </div>
         {/* Render dynamic component and static icons */}

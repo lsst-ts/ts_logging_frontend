@@ -11,11 +11,11 @@ import {
   TooltipContent,
 } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
+import ObservatoryStatusAvailabilityWarning from "@/components/ObservatoryStatusAvailabilityWarning";
 
 import InfoIcon from "../assets/InfoIcon.svg";
 import TimeLossIcon from "../assets/TimeLossIcon.svg";
 
-import { formatDayobsStrForDisplay } from "@/utils/timeUtils";
 import { OBSERVATORY_STATE_AVAILABILITY_STATUS } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
 
 export default function TimeLossCard({
@@ -39,10 +39,6 @@ export default function TimeLossCard({
   const availability = obsStatusAvailability ?? {};
   const availabilityStatus =
     availability.status ?? OBSERVATORY_STATE_AVAILABILITY_STATUS.NONE;
-  const availableFrom = availability.available_from
-    ? formatDayobsStrForDisplay(String(availability.available_from))
-    : null;
-
   const formatHours = (value) =>
     typeof value === "number" && Number.isFinite(value)
       ? value.toFixed(2)
@@ -52,30 +48,6 @@ export default function TimeLossCard({
     availabilityStatus === OBSERVATORY_STATE_AVAILABILITY_STATUS.FULL;
   const isNotAvailable =
     availabilityStatus === OBSERVATORY_STATE_AVAILABILITY_STATUS.NONE;
-
-  // Tooltip to be shown next to card heading if obs status data
-  // partially or fully unavailable due to user querying
-  // before/around when the data started being recorded.
-  const tooltipText = isNotAvailable ? (
-    <>
-      Observatory Status data is only available from{" "}
-      <strong>{availableFrom ?? "the supported date range"}</strong>.
-      <br />
-      Weather loss is treated as 0.0 when calculating fault loss for dayobs
-      without Observatory Status data.
-    </>
-  ) : (
-    <>
-      Observatory Status data is only available from{" "}
-      <strong>{availableFrom ?? "the supported date range"}</strong>
-      .
-      <br />
-      Time loss has been computed for the available dayobs.
-      <br />
-      Weather loss is treated as 0.0 when calculating fault loss for dayobs
-      without Observatory Status data.
-    </>
-  );
 
   return (
     // Card
@@ -90,21 +62,14 @@ export default function TimeLossCard({
       <div className="flex flex-row justify-between h-12">
         <div className="flex items-center gap-1">
           <div className="text-2xl">{heading}</div>
-          {!isFullyAvailable && !loading && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div
-                  data-testid="time-loss-fault"
-                  className="flex items-center gap-1 cursor-help"
-                >
-                  <TriangleAlert className="h-5 w-5 text-yellow-500" />
-                </div>
-              </TooltipTrigger>
-
-              <TooltipContent>
-                <p>{tooltipText}</p>
-              </TooltipContent>
-            </Tooltip>
+          {!loading && (
+            <ObservatoryStatusAvailabilityWarning
+              availability={obsStatusAvailability}
+              ariaLabel="Time Loss data availability warning"
+              testId="time-loss-availability-warning"
+              partialDetails="Time loss has been computed for the available dayobs."
+              details="Weather loss is treated as 0.0 for dayobs without Observatory Status data."
+            />
           )}
         </div>
         <img src={TimeLossIcon} alt={heading} />
@@ -173,7 +138,9 @@ export default function TimeLossCard({
               </TooltipContent>
             </Tooltip>
           ) : (
-            <div>{formatHours(calculatedData)}</div>
+            <div data-testid="time-loss-calculated-fault">
+              {formatHours(calculatedData)}
+            </div>
           )}
         </div>
         {/* Info Icon */}

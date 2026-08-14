@@ -25,10 +25,7 @@ import {
   computeCalculatedFault,
   isDictionaryEmpty,
 } from "@/utils/utils";
-import {
-  getDayobsStartUTC,
-  formatDayobsStrForDisplay,
-} from "@/utils/timeUtils";
+import { getDayobsStartUTC } from "@/utils/timeUtils";
 import { useNotifications } from "@/hooks/useNotifications";
 import { NotificationBannerStack } from "@/components/NotificationBannerStack";
 import DialogMetricsCard from "@/components/dialog-metrics-card";
@@ -40,13 +37,7 @@ import NightSummary from "@/components/NightSummary.jsx";
 import ObservatoryStatusApplet from "@/components/ObservatoryStatusApplet";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
 import VisitMapStaticApplet from "@/components/VisitMapStaticApplet.jsx";
-import { OBSERVATORY_STATE_AVAILABILITY_STATUS } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { TriangleAlert } from "lucide-react";
+import ObservatoryStatusAvailabilityWarning from "@/components/ObservatoryStatusAvailabilityWarning";
 
 const EMPTY_OBS_STATUS_AVAILABILITY = {
   status: "none",
@@ -619,10 +610,6 @@ export default function Digest() {
         (notification) => notification.type !== "error",
       );
 
-  const availableFrom = obsStatusAvailability.available_from
-    ? formatDayobsStrForDisplay(String(obsStatusAvailability.available_from))
-    : null;
-
   return (
     <>
       <div className="flex flex-col w-full p-8 gap-6">
@@ -654,35 +641,16 @@ export default function Digest() {
             icon={<EfficiencyChart value={efficiency} />}
             data={efficiencyText}
             label="Open-shutter (-weather) efficiency"
+            testId="efficiency-card"
             tooltip="Efficiency computed as total on-sky exposure time / ( time between 12° twilights - time lost to weather as recorded in Observatory Status or treated as 0.0 when not available ). Exposures started outside the twilights are not counted in total time."
-            loading={almanacLoading || exposuresLoading} //||  narrativeLoading}
+            loading={almanacLoading || exposuresLoading || obsStatusLoading}
             statusIndicator={
-              obsStatusAvailability?.status !==
-                OBSERVATORY_STATE_AVAILABILITY_STATUS.FULL && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      type="button"
-                      aria-label="Efficiency data availability warning"
-                      className="inline-flex shrink-0 cursor-help text-yellow-500"
-                    >
-                      <TriangleAlert className="h-5 w-5" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>
-                      Observatory Status data is only available from{" "}
-                      <strong>
-                        {availableFrom ?? "the supported date range"}
-                      </strong>
-                      .
-                      <br />
-                      Weather loss is treated as 0.0 when calculating fault loss
-                      for dayobs without Observatory Status data.
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              )
+              <ObservatoryStatusAvailabilityWarning
+                availability={obsStatusAvailability}
+                ariaLabel="Efficiency data availability warning"
+                testId="efficiency-availability-warning"
+                details="Weather loss is treated as 0.0 for dayobs without Observatory Status data."
+              />
             }
           />
           <TimeLossCard
