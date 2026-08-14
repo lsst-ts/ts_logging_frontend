@@ -18,6 +18,16 @@ export function observatoryStatusCard(page) {
 }
 
 /**
+ * Locator for the Time Loss metric card on the Digest page.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @returns {import('@playwright/test').Locator}
+ */
+export function timeLossCard(page) {
+  return page.getByTestId("time-loss-card");
+}
+
+/**
  * Waits until the Observatory Status applet has finished loading.
  *
  * The applet shows a skeleton while loading. Once loaded it either renders the
