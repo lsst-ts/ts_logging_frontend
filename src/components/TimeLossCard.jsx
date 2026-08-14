@@ -53,13 +53,16 @@ export default function TimeLossCard({
   const isNotAvailable =
     availabilityStatus === OBSERVATORY_STATE_AVAILABILITY_STATUS.NONE;
 
-  // Tooltip to be shown over obs status data if data
+  // Tooltip to be shown next to card heading if obs status data
   // partially or fully unavailable due to user querying
   // before/around when the data started being recorded.
   const tooltipText = isNotAvailable ? (
     <>
       Observatory Status data is only available from{" "}
       <strong>{availableFrom ?? "the supported date range"}</strong>.
+      <br />
+      Weather loss is treated as 0.0 when calculating fault loss for dayobs
+      without Observatory Status data.
     </>
   ) : (
     <>
@@ -68,12 +71,16 @@ export default function TimeLossCard({
       .
       <br />
       Time loss has been computed for the available dayobs.
+      <br />
+      Weather loss is treated as 0.0 when calculating fault loss for dayobs
+      without Observatory Status data.
     </>
   );
 
   return (
     // Card
     <div
+      data-testid="time-loss-card"
       onClick={isClickable ? onClick : undefined}
       className={`flex flex-col justify-between bg-teal-900 text-white font-light p-4 rounded-lg shadow-[4px_4px_4px_0px_#0369A1] transition hover:opacity-90 ${
         isClickable ? "cursor-pointer" : ""
@@ -81,29 +88,16 @@ export default function TimeLossCard({
     >
       {/* Heading & Icon */}
       <div className="flex flex-row justify-between h-12">
-        <div className="text-2xl">{heading}</div>
-        <img src={TimeLossIcon} alt={heading} />
-      </div>
-      {/* Data & Info Icon */}
-      <div className="flex flex-row justify-between">
-        {/* Data */}
-        <div className="grid grid-cols-[auto_1fr] items-center gap-x-4 text-md">
-          <div>Fault:</div>
-          {obsStatusLoading ? (
-            <Skeleton className="h-3 w-10 bg-teal-700" />
-          ) : // Show data when availabile
-          isFullyAvailable ? (
-            <div>{formatHours(obsStatusFaultLoss)}</div>
-          ) : (
-            // Show tooltip and warning icon for no/partial data
+        <div className="flex items-center gap-1">
+          <div className="text-2xl">{heading}</div>
+          {!isFullyAvailable && !loading && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="flex items-center gap-1 cursor-help">
-                  <span>
-                    {isNotAvailable ? "NA" : formatHours(obsStatusFaultLoss)}
-                  </span>
-
-                  <TriangleAlert className="h-4 w-4 text-yellow-500" />
+                <div
+                  data-testid="time-loss-fault"
+                  className="flex items-center gap-1 cursor-help"
+                >
+                  <TriangleAlert className="h-5 w-5 text-yellow-500" />
                 </div>
               </TooltipTrigger>
 
@@ -112,29 +106,53 @@ export default function TimeLossCard({
               </TooltipContent>
             </Tooltip>
           )}
-
+        </div>
+        <img src={TimeLossIcon} alt={heading} />
+      </div>
+      {/* Data & Info Icon */}
+      <div className="flex flex-row justify-between">
+        {/* Data */}
+        <div className="grid grid-cols-[auto_1fr] items-center gap-x-4 text-md">
+          <div>Fault:</div>
+          {obsStatusLoading ? (
+            <Skeleton
+              data-testid="time-loss-fault-loading"
+              className="h-3 w-10 bg-teal-700"
+            />
+          ) : // Show data when availabile
+          isFullyAvailable ? (
+            <div data-testid="time-loss-fault">
+              {formatHours(obsStatusFaultLoss)}
+            </div>
+          ) : (
+            <div
+              data-testid="time-loss-fault"
+              className="flex items-center gap-1 cursor-help"
+            >
+              <span>
+                {isNotAvailable ? "NA" : formatHours(obsStatusFaultLoss)}
+              </span>
+            </div>
+          )}
           <div>Weather:</div>
           {obsStatusLoading ? (
-            <Skeleton className="h-3 w-10 bg-teal-700" />
+            <Skeleton
+              data-testid="time-loss-weather-loading"
+              className="h-3 w-10 bg-teal-700"
+            />
           ) : isFullyAvailable ? (
-            <div>{formatHours(obsStatusWeatherLoss)}</div>
+            <div data-testid="time-loss-weather">
+              {formatHours(obsStatusWeatherLoss)}
+            </div>
           ) : (
-            // Show tooltip and warning icon for no/partial data
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-1 cursor-help">
-                  <span>
-                    {isNotAvailable ? "NA" : formatHours(obsStatusWeatherLoss)}
-                  </span>
-
-                  <TriangleAlert className="h-4 w-4 text-yellow-500" />
-                </div>
-              </TooltipTrigger>
-
-              <TooltipContent>
-                <p>{tooltipText}</p>
-              </TooltipContent>
-            </Tooltip>
+            <div
+              data-testid="time-loss-weather"
+              className="flex items-center gap-1 cursor-help"
+            >
+              <span>
+                {isNotAvailable ? "NA" : formatHours(obsStatusWeatherLoss)}
+              </span>
+            </div>
           )}
 
           <div>(Calculated Fault):</div>
@@ -194,7 +212,7 @@ export default function TimeLossCard({
               <strong>Calculated Fault Loss</strong>
               <br />
               Total available observing time – exposure time – overhead time* –
-              time lost to weather.
+              time lost to weather**.
               <br />
               <br />
               <em>
@@ -202,6 +220,10 @@ export default function TimeLossCard({
                 potential additional overhead of up to 2 minutes per visit.
               </em>
               <br />
+              <em>
+                **weather loss is derived from Observatory Status data when
+                available, and treated as 0.0 when not available.
+              </em>
             </p>
           </PopoverContent>
         </Popover>

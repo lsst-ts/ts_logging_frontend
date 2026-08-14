@@ -13,6 +13,7 @@ export default function MetricsCard({
   label,
   metadata,
   tooltip,
+  statusIndicator = null,
   loading = false,
   onClick = null,
 }) {
@@ -26,8 +27,9 @@ export default function MetricsCard({
       }`}
     >
       <div className="flex flex-row justify-between h-12">
-        <div className="text-2xl">
+        <div className="flex items-center gap-1 text-2xl">
           {loading ? <Skeleton className="h-6 w-20 bg-teal-700" /> : data}
+          {!loading && statusIndicator}
         </div>
         {/* Render dynamic component and static icons */}
         {typeof icon === "string" ? (
