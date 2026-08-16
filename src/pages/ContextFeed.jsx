@@ -142,13 +142,11 @@ function ContextFeed() {
   } = useNotifications();
 
   // Default event type filters based on telescope
-  const defaultEventTypes = useMemo(
-    () => filterDefaultEventsByTelescope(telescope),
-    [telescope],
-  );
   const defaultFilters = useMemo(
-    () => [{ id: "event_type", value: defaultEventTypes }],
-    [defaultEventTypes],
+    () => [
+      { id: "event_type", value: filterDefaultEventsByTelescope(telescope) },
+    ],
+    [telescope],
   );
 
   // The table filter state is hoisted up here in order to allow
