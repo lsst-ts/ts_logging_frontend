@@ -29,7 +29,7 @@ function DataLogTable({
   // Get column filters synced with URL
   const { columnFilters, setColumnFilters, resetFilters } = useUrlSync({
     routePath: "/data-log",
-    columns: dataLogColumns[telescope] ?? [],
+    columns: dataLogColumns[telescope],
   });
 
   // Reset handler - clears all filters
@@ -40,7 +40,7 @@ function DataLogTable({
   return (
     <DataTable
       data={data}
-      columns={dataLogColumns[telescope] ?? []}
+      columns={dataLogColumns[telescope]}
       isLoading={dataLogLoading}
       defaultColumnVisibility={defaultColumnVisibility[telescope] ?? {}}
       defaultColumnOrder={defaultColumnOrder[telescope] ?? []}

@@ -2,6 +2,11 @@ import { useCallback, useMemo, useState } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { getColumnUrlMappings } from "./tableUtils";
 
+// A `= []` default allocates a new array on every call, which would invalidate
+// the memos below, so the optional params default to shared identities.
+const NO_COLUMNS = [];
+const NO_FILTERS = [];
+
 /**
  * Hook for syncing column filters with URL parameters.
  * Reads initial filters from URL and writes filter changes back to URL.
@@ -16,9 +21,12 @@ import { getColumnUrlMappings } from "./tableUtils";
  * @param {Array} options.defaultFilters - Default filters used by resetFilters()
  * @returns {Object} { columnFilters, setColumnFilters, resetFilters }
  */
-export function useUrlSync({ routePath, columns = [], defaultFilters = [] }) {
+export function useUrlSync({
+  routePath,
+  columns = NO_COLUMNS,
+  defaultFilters = NO_FILTERS,
+}) {
   const navigate = useNavigate({ from: routePath });
-  const searchParams = useSearch({ from: routePath });
 
   // Memoize the column mappings so they don't change on every render
   const { urlParamToColumnId, columnIdToUrlParam, urlParamKeys } = useMemo(
@@ -26,22 +34,37 @@ export function useUrlSync({ routePath, columns = [], defaultFilters = [] }) {
     [columns],
   );
 
+  // Subscribe to the filter params only. structuralSharing keeps the result
+  // reference-stable while their values are unchanged
+  const filterParams = useSearch({
+    from: routePath,
+    select: (search) =>
+      Object.fromEntries(
+        urlParamKeys
+          .filter((key) => search[key] !== undefined)
+          .map((key) => [key, search[key]]),
+      ),
+    structuralSharing: true,
+  });
+
   // Filters for columns without a urlParam mapping (table-only filters)
-  const [localFilters, setLocalFilters] = useState([]);
+  const [localFilters, setLocalFilters] = useState(NO_FILTERS);
 
   // Derive columnFilters from URL params (falling back to defaultFilters if
   // none), merged with the table-only local filters
   const columnFilters = useMemo(() => {
     const filters = [];
     for (const [urlParam, columnId] of Object.entries(urlParamToColumnId)) {
-      const value = searchParams[urlParam];
+      const value = filterParams[urlParam];
       if (value !== undefined && value !== null && value !== "") {
         filters.push({ id: columnId, value: parseParamValue(value) });
       }
     }
     const urlFilters = filters.length > 0 ? filters : defaultFilters;
-    return [...urlFilters, ...localFilters];
-  }, [searchParams, urlParamToColumnId, defaultFilters, localFilters]);
+    return localFilters.length > 0
+      ? [...urlFilters, ...localFilters]
+      : urlFilters;
+  }, [filterParams, urlParamToColumnId, defaultFilters, localFilters]);
 
   // Custom setter that updates the URL (columnFilters is derived from URL automatically)
   const setColumnFilters = useCallback(
@@ -51,55 +74,65 @@ export function useUrlSync({ routePath, columns = [], defaultFilters = [] }) {
           ? filtersOrUpdater(columnFilters)
           : filtersOrUpdater;
 
-      // Build new URL params (preserve non-filter params)
-      const newParams = { ...searchParams };
+      // Filters on columns without a urlParam go to local state. Falling back
+      // to the shared empty identity keeps columnFilters stable when there are
+      // none.
+      const newLocalFilters = newFilters.filter(
+        (filter) => !columnIdToUrlParam[filter.id],
+      );
+      setLocalFilters(
+        newLocalFilters.length > 0 ? newLocalFilters : NO_FILTERS,
+      );
 
-      // Remove old filter params
-      for (const urlParam of urlParamKeys) {
-        if (Object.hasOwn(newParams, urlParam)) {
-          delete newParams[urlParam];
-        }
-      }
+      navigate({
+        to: routePath,
+        search: (prev) => {
+          // Build new URL params (preserve non-filter params)
+          const newParams = { ...prev };
 
-      // Add current filters: URL-mapped columns go into the URL, the rest
-      // into local state
-      const newLocalFilters = [];
-      for (const filter of newFilters) {
-        const urlParam = columnIdToUrlParam[filter.id];
-        if (urlParam && filter.value) {
-          newParams[urlParam] = Array.isArray(filter.value)
-            ? filter.value
-            : [filter.value];
-        } else if (!urlParam) {
-          newLocalFilters.push(filter);
-        }
-      }
+          // Remove old filter params
+          for (const urlParam of urlParamKeys) {
+            if (Object.hasOwn(newParams, urlParam)) {
+              delete newParams[urlParam];
+            }
+          }
 
-      setLocalFilters(newLocalFilters);
-      navigate({ to: routePath, search: newParams, replace: true });
+          // Add current filters for URL-mapped columns
+          for (const filter of newFilters) {
+            const urlParam = columnIdToUrlParam[filter.id];
+            if (urlParam && filter.value) {
+              newParams[urlParam] = Array.isArray(filter.value)
+                ? filter.value
+                : [filter.value];
+            }
+          }
+
+          return newParams;
+        },
+        replace: true,
+      });
     },
-    [
-      columnFilters,
-      searchParams,
-      navigate,
-      routePath,
-      columnIdToUrlParam,
-      urlParamKeys,
-    ],
+    [columnFilters, navigate, routePath, columnIdToUrlParam, urlParamKeys],
   );
 
   // Reset filters: clears table-only filters and filter params from URL;
   // columnFilters falls back to defaultFilters
   const resetFilters = useCallback(() => {
-    setLocalFilters([]);
-    const newParams = { ...searchParams };
-    for (const urlParam of urlParamKeys) {
-      if (Object.hasOwn(newParams, urlParam)) {
-        delete newParams[urlParam];
-      }
-    }
-    navigate({ to: routePath, search: newParams, replace: true });
-  }, [searchParams, navigate, routePath, urlParamKeys]);
+    setLocalFilters(NO_FILTERS);
+    navigate({
+      to: routePath,
+      search: (prev) => {
+        const newParams = { ...prev };
+        for (const urlParam of urlParamKeys) {
+          if (Object.hasOwn(newParams, urlParam)) {
+            delete newParams[urlParam];
+          }
+        }
+        return newParams;
+      },
+      replace: true,
+    });
+  }, [navigate, routePath, urlParamKeys]);
 
   return {
     columnFilters,
