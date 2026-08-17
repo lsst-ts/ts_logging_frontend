@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Popover,
@@ -25,8 +25,19 @@ import InfoIcon from "../assets/InfoIcon.svg";
 import DownloadIcon from "../assets/DownloadIcon.svg";
 import FullScreenIcon from "../assets/FullScreenIcon.svg";
 
+function scrollToNode(node) {
+  if (!node) {
+    console.warn(`Node is not available to be scrolled into view.`);
+    return;
+  }
+  node.scrollIntoView({
+    behavior: "smooth",
+    block: "start",
+    inline: "nearest",
+  });
+}
+
 function Report({
-  id,
   day_obs: dayObs,
   summary,
   weather,
@@ -34,40 +45,8 @@ function Report({
   auxtel_summary: auxTelSummary,
   date_sent: dateSent,
   observers_crew: observersCrew,
-  containerRef,
-  setDay = () => {},
+  reportRef,
 }) {
-  const reportRef = useRef(null);
-
-  useEffect(() => {
-    if (!containerRef?.current) return;
-    const container = containerRef.current;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const dayObs = parseInt(entry.target.id, 10);
-            setDay(dayObs);
-          }
-        });
-      },
-      {
-        root: container,
-      },
-    );
-
-    const node = reportRef.current;
-    if (node) {
-      observer.observe(node);
-    }
-
-    return () => {
-      if (node) {
-        observer.unobserve(node);
-      }
-    };
-  }, [containerRef?.current]);
-
   let telescopeSummary = "-";
   if (maintelSummary) {
     telescopeSummary = maintelSummary;
@@ -78,10 +57,9 @@ function Report({
   return (
     <div
       ref={reportRef}
-      id={dayObs}
       className="flex flex-col gap-2 [&:not(:last-child)]:border-b [&:not(:last-child)]:pb-8  max-w-[75ch]"
+      data-dayobs={dayObs}
     >
-      <div className="hidden">{id}</div>
       <div className="font-semibold">Night of {dayObs}</div>
       <div className="whitespace-pre-wrap">{summary}</div>
       <div className="font-medium">Weather</div>
@@ -95,26 +73,9 @@ function Report({
   );
 }
 
-function scrollToId(id) {
-  const target = document.getElementById(id);
-  if (!target) {
-    console.warn(`Element with id ${id} not found.`);
-    return;
-  }
-  target.scrollIntoView({
-    behavior: "smooth",
-    block: "start",
-    inline: "nearest",
-  });
-}
-
-function SelectObsDay({ days, selectedDay, setDay }) {
-  const handleChange = (value) => {
-    scrollToId(value);
-    setDay(value);
-  };
+function SelectObsDay({ days, selectedDay, onChange }) {
   return (
-    <Select value={selectedDay} onValueChange={handleChange}>
+    <Select value={selectedDay} onValueChange={onChange}>
       <SelectTrigger
         className={
           "!h-[1rem] text-sidebar-foreground text-xs px-2 py-0" +
@@ -163,32 +124,85 @@ function handleDownload(reports) {
 }
 
 function NightSummary({ reports = [], nightreportLoading = false }) {
-  const availableDays = reports.map((report) => report.day_obs);
-  const [selectedDay, setSelectedDay] = useState(availableDays[0]);
+  const [selectedDay, setSelectedDay] = useState(null);
+
+  const [prevReports, setPrevReports] = useState(reports);
+  if (prevReports !== reports) {
+    setPrevReports(reports);
+    if (reports.length > 0) {
+      setSelectedDay(reports[0].day_obs);
+    }
+  }
 
   const reportsContainerRef = useRef(null);
+  const reportElementsRef = useRef(new Map());
 
-  const showObsDaySelector = !nightreportLoading && availableDays.length > 1;
+  const handleSelectedDay = useCallback((dayobs) => {
+    const node = reportElementsRef.current.get(String(dayobs));
+    scrollToNode(node);
+  }, []);
 
-  const appletTitle =
-    availableDays.length > 1 ? "Night Reports" : "Night Report";
+  const setReportElementRef = useCallback((dayObs, node) => {
+    if (node) {
+      reportElementsRef.current.set(String(dayObs), node);
+      return;
+    }
+    reportElementsRef.current.delete(String(dayObs));
+  }, []);
 
-  const renderReports = () => (
+  useEffect(() => {
+    if (nightreportLoading || !reports.length) return;
+
+    const container = reportsContainerRef.current;
+    if (!container) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const dayObs = parseInt(entry.target.dataset.dayobs, 10);
+            setSelectedDay(dayObs);
+          }
+        });
+      },
+      {
+        root: container,
+      },
+    );
+
+    reportElementsRef.current.forEach((node) => {
+      observer.observe(node);
+    });
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [nightreportLoading, reports]);
+
+  const renderReports = (dialog = false) => (
     <>
       {nightreportLoading ? (
         <Skeleton className="w-full h-full bg-stone-900" />
       ) : (
         reports.map((report) => (
           <Report
-            key={report.id}
-            containerRef={reportsContainerRef}
-            setDay={setSelectedDay}
+            key={dialog ? "dialog-" + report.id : report.id}
+            reportRef={
+              dialog
+                ? null
+                : (node) => setReportElementRef(report.day_obs, node)
+            }
             {...report}
           />
         ))
       )}
     </>
   );
+
+  const availableDays = reports.map((report) => report.day_obs);
+  const showObsDaySelector = !nightreportLoading && availableDays.length > 1;
+  const appletTitle =
+    availableDays.length > 1 ? "Night Reports" : "Night Report";
 
   return (
     <Card className="border-none p-0 bg-stone-800 gap-2">
@@ -204,7 +218,7 @@ function NightSummary({ reports = [], nightreportLoading = false }) {
             <SelectObsDay
               days={availableDays}
               selectedDay={selectedDay}
-              setDay={setSelectedDay}
+              onChange={handleSelectedDay}
             />
           )}
           <div className="flex flex-row gap-2 ml-auto">
