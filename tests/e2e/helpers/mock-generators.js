@@ -118,3 +118,66 @@ export function generateExposureLogMock(entries) {
     })),
   };
 }
+
+/**
+ * Generates a context-feed API response.
+ *
+ * Rows are spaced a minute apart from 20:00 UTC on the given dayobs, which
+ * keeps them inside the night's full time range. `postProcess` receives each
+ * row and its one-based index, so tests can vary category_index, finalStatus
+ * or config per row.
+ *
+ * @param {number} count
+ * @param {{dayobs?: number, overrides?: object, postProcess?: (row: object, i: number) => object}} [options]
+ * @returns {{data: object[], cols: string[]}}
+ */
+export function generateContextFeedMock(
+  count,
+  { dayobs = 20260101, overrides = {}, postProcess = (a) => a } = {},
+) {
+  const dayObsStr = String(dayobs);
+  const year = dayObsStr.slice(0, 4);
+  const month = dayObsStr.slice(4, 6);
+  const day = dayObsStr.slice(6, 8);
+  const nightStart = new Date(`${year}-${month}-${day}T20:00:00.000Z`);
+
+  const data = [];
+  for (let i = 1; i <= count; i++) {
+    const time = new Date(nightStart.getTime() + (i - 1) * 60_000);
+    data.push(
+      postProcess(
+        Object.assign(
+          {
+            time: time.toISOString(),
+            category_index: 7,
+            name: `MC_O_${dayObsStr}_${String(i).padStart(6, "0")}`,
+            description: `Simonyi exposure ${i}`,
+            config: null,
+            script_salIndex: 0,
+            finalStatus: null,
+            timestampProcessStart: null,
+            timestampConfigureStart: null,
+            timestampConfigureEnd: null,
+            timestampRunStart: null,
+            timestampProcessEnd: null,
+          },
+          overrides,
+        ),
+        i,
+      ),
+    );
+  }
+
+  return {
+    data,
+    cols: [
+      "time",
+      "category_index",
+      "name",
+      "description",
+      "config",
+      "script_salIndex",
+      "finalStatus",
+    ],
+  };
+}

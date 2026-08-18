@@ -4,9 +4,11 @@ import { setupApiMocks } from "../../helpers/mock-api.js";
 import { generateDataLogMock } from "../../helpers/mock-generators.js";
 import { waitForPlotsLoad } from "../../helpers/plots-helpers.js";
 import { waitForDataLogLoad } from "../../helpers/datalog-helpers.js";
+import { waitForContextFeedLoad } from "../../helpers/contextfeed-helpers.js";
 import {
   PLOTS_URL,
   DATALOG_URL,
+  CONTEXTFEED_URL,
   TEST_DAYOBS_INT,
 } from "../../helpers/constants.js";
 import { TIMELINE_COLORS } from "../../../../src/constants/TIMELINE_DEFINITIONS.js";
@@ -52,12 +54,30 @@ async function getTimelineSeriesInfo(page) {
   }, TIMELINE_SELECTOR);
 }
 
+// `showsMoonArea` mirrors whether the page passes showMoonArea to
+// TimelineChart. Context Feed deliberately does not.
 const PAGES = [
-  { name: "plots", url: PLOTS_URL, waitForLoad: waitForPlotsLoad },
-  { name: "data-log", url: DATALOG_URL, waitForLoad: waitForDataLogLoad },
+  {
+    name: "plots",
+    url: PLOTS_URL,
+    waitForLoad: waitForPlotsLoad,
+    showsMoonArea: true,
+  },
+  {
+    name: "data-log",
+    url: DATALOG_URL,
+    waitForLoad: waitForDataLogLoad,
+    showsMoonArea: true,
+  },
+  {
+    name: "context-feed",
+    url: CONTEXTFEED_URL,
+    waitForLoad: waitForContextFeedLoad,
+    showsMoonArea: false,
+  },
 ];
 
-for (const { name, url, waitForLoad } of PAGES) {
+for (const { name, url, waitForLoad, showsMoonArea } of PAGES) {
   // The timeline always renders the full night's almanac data regardless of
   // zoom selection (zoom only filters individual plot charts, not the timeline).
 
@@ -97,11 +117,23 @@ for (const { name, url, waitForLoad } of PAGES) {
     test("moon area appears in the timeline when moon is up", async ({
       page,
     }) => {
+      test.skip(!showsMoonArea, "page does not enable moon areas");
+
       await expect(page.locator(TIMELINE_SELECTOR)).toBeVisible();
       const { moonAreaCount, moonAreaColor } =
         await getTimelineSeriesInfo(page);
       expect(moonAreaCount).toBe(1);
       expect(moonAreaColor).toBe(TIMELINE_COLORS.MOON_AREA_FILL);
+    });
+
+    test("no moon area when the page does not enable them", async ({
+      page,
+    }) => {
+      test.skip(showsMoonArea, "page enables moon areas");
+
+      await expect(page.locator(TIMELINE_SELECTOR)).toBeVisible();
+      const { moonAreaCount } = await getTimelineSeriesInfo(page);
+      expect(moonAreaCount).toBe(0);
     });
   });
 }

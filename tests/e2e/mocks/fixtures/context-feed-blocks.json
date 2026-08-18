@@ -1,0 +1,15 @@
+{
+  "data": {
+    "BLOCK-T249": {
+      "summary": "Wide-fast-deep survey block",
+      "url": "https://rubinobs.atlassian.net/projects/BLOCK/BLOCK-T249",
+      "source": "zephyr"
+    },
+    "BLOCK-T250": {
+      "summary": "Twilight microsurvey block",
+      "url": "https://rubinobs.atlassian.net/browse/BLOCK-T250",
+      "source": "jira"
+    }
+  },
+  "errors": null
+}

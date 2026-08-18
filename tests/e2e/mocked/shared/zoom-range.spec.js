@@ -8,9 +8,11 @@ import {
   getTimeParams,
 } from "../../helpers/plots-helpers.js";
 import { waitForDataLogLoad } from "../../helpers/datalog-helpers.js";
+import { waitForContextFeedLoad } from "../../helpers/contextfeed-helpers.js";
 import {
   PLOTS_URL,
   DATALOG_URL,
+  CONTEXTFEED_URL,
   TEST_DAYOBS_INT,
   FULL_START,
   FULL_END,
@@ -37,6 +39,11 @@ const TIMELINE_SELECTOR = '[data-slot="timeline"]';
 const PAGES = [
   { name: "plots", url: PLOTS_URL, waitForLoad: waitForPlotsLoad },
   { name: "data-log", url: DATALOG_URL, waitForLoad: waitForDataLogLoad },
+  {
+    name: "context-feed",
+    url: CONTEXTFEED_URL,
+    waitForLoad: waitForContextFeedLoad,
+  },
 ];
 
 for (const { name, url, waitForLoad } of PAGES) {

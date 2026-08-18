@@ -471,6 +471,8 @@ function ObservatoryStatusTimeline({
   return (
     <div
       ref={containerRef}
+      data-testid="obs-status-timeline"
+      data-slot="obs-status-timeline"
       style={{
         width: "100%",
         minWidth: 0,

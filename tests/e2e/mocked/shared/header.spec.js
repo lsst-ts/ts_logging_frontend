@@ -3,7 +3,12 @@ import { test, expect } from "@playwright/test";
 import { setupApiMocks } from "../../helpers/mock-api.js";
 import { waitForPlotsLoad } from "../../helpers/plots-helpers.js";
 import { waitForDataLogLoad } from "../../helpers/datalog-helpers.js";
-import { PLOTS_URL, DATALOG_URL } from "../../helpers/constants.js";
+import { waitForContextFeedLoad } from "../../helpers/contextfeed-helpers.js";
+import {
+  PLOTS_URL,
+  DATALOG_URL,
+  CONTEXTFEED_URL,
+} from "../../helpers/constants.js";
 
 // Timeline is rendered on canvas via ECharts (see TimelineChart.jsx) and is
 // conditionally mounted/unmounted by the Hide/Show Timeline toggle.
@@ -20,6 +25,15 @@ const PAGES = [
     name: "data-log",
     url: DATALOG_URL,
     waitForLoad: waitForDataLogLoad,
+    pageSpecificTipsHeading: "Table Tips",
+  },
+  {
+    // Context Feed labels its toggle "Hide/Show Timelines" (it has two
+    // charts). getByRole name matching is substring-based, so the shared
+    // "Hide Timeline" / "Show Timeline" queries still resolve it.
+    name: "context-feed",
+    url: CONTEXTFEED_URL,
+    waitForLoad: waitForContextFeedLoad,
     pageSpecificTipsHeading: "Table Tips",
   },
 ];

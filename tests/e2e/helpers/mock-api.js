@@ -12,6 +12,7 @@ function loadFixture(name) {
 
 const DEFAULT_MOCKS = {
   "data-log": loadFixture("data-log"),
+  "context-feed": loadFixture("context-feed"),
   almanac: loadFixture("almanac"),
   exposures: loadFixture("exposures"),
   "expected-exposures": loadFixture("expected-exposures"),
