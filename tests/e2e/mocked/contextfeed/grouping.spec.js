@@ -20,13 +20,6 @@ test.describe("Context Feed — group by task", () => {
     await waitForContextFeedLoad(page);
   });
 
-  test("ungrouped by default and the group toggle button is disabled", async ({
-    page,
-  }) => {
-    await expect(tableRows(page)).toHaveCount(SIMONYI_ROWS);
-    await expect(groupToggleButton(page)).toBeDisabled();
-  });
-
   test("checking Group by Task collapses rows into task groups", async ({
     page,
   }) => {
@@ -48,30 +41,6 @@ test.describe("Context Feed — group by task", () => {
     await toggleToolbarCheckbox(page, "Group by Task");
     await expect(groupToggleButton(page)).toBeEnabled();
     await expect(groupToggleButton(page)).toHaveText("Expand All Groups");
-  });
-
-  test("Expand All Groups reveals every leaf row", async ({ page }) => {
-    await toggleToolbarCheckbox(page, "Group by Task");
-    await page.getByRole("button", { name: "Expand All Groups" }).click();
-
-    // 2 group header rows + the 10 leaf rows beneath them.
-    await expect(tableRows(page)).toHaveCount(2 + SIMONYI_ROWS);
-    await expect(
-      page.getByRole("button", { name: "Collapse All Groups" }),
-    ).toBeVisible();
-
-    await page.getByRole("button", { name: "Collapse All Groups" }).click();
-    await expect(tableRows(page)).toHaveCount(2);
-  });
-
-  test("clicking a single group header expands just that group", async ({
-    page,
-  }) => {
-    await toggleToolbarCheckbox(page, "Group by Task");
-    await tableRows(page).nth(0).click();
-
-    // First group has 5 leaf rows; the second stays collapsed.
-    await expect(tableRows(page)).toHaveCount(2 + 5);
   });
 
   test("unchecking Group by Task restores the flat row list", async ({

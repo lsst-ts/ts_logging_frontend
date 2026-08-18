@@ -149,6 +149,16 @@ test.describe("Context Feed — expandable traceback and YAML cells", () => {
     await expect(row(page, YAML_ROW)).not.toContainText(YAML_BODY_TEXT);
   });
 
+  test("expanding a cell does not select the row", async ({ page }) => {
+    // The <pre> in traceback/YAML cells stops propagation so that expanding a
+    // cell never doubles as a row click.
+    const yamlRow = row(page, YAML_ROW);
+    await yamlRow.locator("pre").click();
+
+    await expect(yamlRow).toContainText(YAML_BODY_TEXT);
+    await expect(page.locator("tr[data-selected='true']")).toHaveCount(0);
+  });
+
   test("an expanded traceback opens in a fullscreen dialog", async ({
     page,
   }) => {

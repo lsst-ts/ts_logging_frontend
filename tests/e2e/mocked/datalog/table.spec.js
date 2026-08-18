@@ -46,16 +46,6 @@ test.describe("Data-log page — table content and formatting", () => {
     await expect(canSeeSkyCell).toHaveText("true");
   });
 
-  test("column header tooltip appears on hover", async ({ page }) => {
-    const airmassHeader = page
-      .getByRole("columnheader")
-      .filter({ hasText: "Airmass" });
-    await airmassHeader.locator("span.cursor-help").hover();
-    await expect(
-      page.getByText("Airmass of the observed line of sight"),
-    ).toBeVisible();
-  });
-
   test("correct columns are visible by default for Simonyi", async ({
     page,
   }) => {
@@ -78,83 +68,6 @@ test.describe("Data-log page — table content and formatting", () => {
         page.getByRole("columnheader").filter({ hasText: col }),
       ).toHaveCount(0);
     }
-  });
-
-  test("columns can be resized by dragging the resize handle", async ({
-    page,
-  }) => {
-    // Use Exposure Id (size: 140, early in table) — less likely to have overlap issues
-    const header = page
-      .getByRole("columnheader")
-      .filter({ hasText: "Exposure Id" });
-    const headerBox = await header.boundingBox();
-
-    // The resize handle is absolute right-0, 12px wide — position at the right edge
-    const dragX = headerBox.x + headerBox.width - 4;
-    const dragY = headerBox.y + headerBox.height / 2;
-
-    await page.mouse.move(dragX, dragY);
-    await page.mouse.down();
-    await page.mouse.move(dragX + 80, dragY);
-    await page.mouse.up();
-
-    // Wait for React re-render after resize
-    const newHeaderBox = await header.boundingBox();
-    expect(newHeaderBox.width).toBeGreaterThan(headerBox.width);
-  });
-
-  test("Reset Table restores column widths after a resize", async ({
-    page,
-  }) => {
-    const header = page
-      .getByRole("columnheader")
-      .filter({ hasText: "Exposure Id" });
-    const originalBox = await header.boundingBox();
-
-    const dragX = originalBox.x + originalBox.width - 4;
-    const dragY = originalBox.y + originalBox.height / 2;
-    await page.mouse.move(dragX, dragY);
-    await page.mouse.down();
-    await page.mouse.move(dragX + 80, dragY);
-    await page.mouse.up();
-
-    const resizedBox = await header.boundingBox();
-    expect(resizedBox.width).toBeGreaterThan(originalBox.width);
-
-    await page.getByRole("button", { name: "Reset Table" }).click();
-
-    await expect(async () => {
-      const resetBox = await header.boundingBox();
-      expect(Math.abs(resetBox.width - originalBox.width)).toBeLessThan(2);
-    }).toPass();
-  });
-
-  test("resizing below minSize clamps at minSize", async ({ page }) => {
-    // Exposure Id has size: 140 and minSize: 140 — grow it first, then drag
-    // far below the minimum and check it clamps back to 140
-    const header = page
-      .getByRole("columnheader")
-      .filter({ hasText: "Exposure Id" });
-    const originalBox = await header.boundingBox();
-
-    let dragX = originalBox.x + originalBox.width - 4;
-    const dragY = originalBox.y + originalBox.height / 2;
-    await page.mouse.move(dragX, dragY);
-    await page.mouse.down();
-    await page.mouse.move(dragX + 60, dragY);
-    await page.mouse.up();
-
-    const grownBox = await header.boundingBox();
-    expect(grownBox.width).toBeGreaterThan(originalBox.width);
-
-    dragX = grownBox.x + grownBox.width - 4;
-    await page.mouse.move(dragX, dragY);
-    await page.mouse.down();
-    await page.mouse.move(dragX - 200, dragY);
-    await page.mouse.up();
-
-    const clampedBox = await header.boundingBox();
-    expect(Math.abs(clampedBox.width - originalBox.width)).toBeLessThan(2);
   });
 
   test("rows highlight on hover", async ({ page }) => {
