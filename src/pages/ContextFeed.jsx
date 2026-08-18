@@ -321,7 +321,11 @@ function ContextFeed() {
     const abortController = new AbortController();
 
     if (rubinNightsData.length === 0) {
-      return; // don't know which BLOCK to query
+      // Don't know which BLOCK to query. Still clear the flag - it feeds
+      // tableLoading, which would otherwise pin the page to its loading
+      // skeletons and suppress the empty-state and error banners.
+      setBlockLookupLoading(false);
+      return;
     }
 
     setBlockLookupLoading(true);
