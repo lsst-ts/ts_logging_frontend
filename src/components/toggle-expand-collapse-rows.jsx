@@ -1,5 +1,5 @@
 function ToggleExpandCollapseRows({ table, expanded, setExpanded }) {
-  const grouping = table.getState().grouping;
+  const grouping = table.state.grouping;
 
   // Walk grouped row model recursively to collect
   // expandable group row ids

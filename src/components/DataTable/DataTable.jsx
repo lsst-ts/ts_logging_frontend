@@ -1,19 +1,9 @@
 import { forwardRef, useImperativeHandle } from "react";
-import {
-  useReactTable,
-  getCoreRowModel,
-  getSortedRowModel,
-  getGroupedRowModel,
-  getExpandedRowModel,
-  getFacetedMinMaxValues,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-} from "@tanstack/react-table";
+import { useTable } from "@tanstack/react-table";
 
 import { Table } from "@/components/ui/table";
-import { matchValueOrInList } from "./tableUtils";
 
+import { dataTableFeatures } from "./tableFeatures";
 import { useDataTableState } from "./useDataTableState";
 import DataTableHeader from "./DataTableHeader";
 import DataTableBody from "./DataTableBody";
@@ -33,7 +23,6 @@ import DataTableToolbar from "./DataTableToolbar";
  * @param {Function} props.setColumnFilters - Filter setter (required)
  * @param {Object} props.toolbar - Toolbar configuration
  * @param {Function} props.onReset - Custom reset handler
- * @param {Object} props.filterFns - Custom filter functions
  * @param {React.Ref} ref - Ref for imperative methods (setCollapseAll, setGrouping)
  * @param {string|null} props.selected - The selected key value (or null for none)
  * @param {Function} props.onSelectionChange - Callback when a row is clicked to select
@@ -50,7 +39,6 @@ const DataTable = forwardRef(function DataTable(
     setColumnFilters,
     toolbar = {},
     onReset,
-    filterFns = {},
     tableMeta = {},
     selected = null,
     onSelectionChange,
@@ -80,7 +68,8 @@ const DataTable = forwardRef(function DataTable(
   });
 
   // Create table instance
-  const table = useReactTable({
+  const table = useTable({
+    features: dataTableFeatures,
     data,
     columns,
     state: {
@@ -96,24 +85,12 @@ const DataTable = forwardRef(function DataTable(
       toggleExpandedRows,
       ...tableMeta,
     },
-    filterFns: {
-      multiEquals: matchValueOrInList,
-      ...filterFns,
-    },
     onColumnVisibilityChange: setColumnVisibility,
     onColumnOrderChange: setColumnOrder,
     onSortingChange: setSorting,
     onGroupingChange: setGrouping,
     onExpandedChange: setExpanded,
     onColumnFiltersChange: setColumnFilters,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getGroupedRowModel: getGroupedRowModel(),
-    getExpandedRowModel: getExpandedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
-    getFacetedMinMaxValues: getFacetedMinMaxValues(),
     columnResizeMode: "onChange",
   });
 
