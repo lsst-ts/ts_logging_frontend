@@ -183,6 +183,10 @@ function NightSummary({ reports = [], nightreportLoading = false }) {
     <>
       {nightreportLoading ? (
         <Skeleton className="w-full h-full bg-stone-900" />
+      ) : reports.length === 0 ? (
+        <div className="flex h-full w-full items-center justify-center">
+          No reports available
+        </div>
       ) : (
         reports.map((report) => (
           <Report
