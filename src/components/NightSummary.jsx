@@ -245,7 +245,10 @@ function NightSummary({ reports = [], nightreportLoading = false }) {
               </DialogContent>
             </Dialog>
             <Popover>
-              <PopoverTrigger className="self-end min-w-4">
+              <PopoverTrigger
+                className="self-end min-w-4"
+                aria-label={`Download ${appletTitle.toLowerCase()} data`}
+              >
                 <img
                   src={DownloadIcon}
                   onClick={() => handleDownload(reports)}
@@ -258,7 +261,13 @@ function NightSummary({ reports = [], nightreportLoading = false }) {
               </PopoverContent>
             </Popover>
             <Popover>
-              <PopoverTrigger className="self-end min-w-4">
+              <PopoverTrigger
+                className="self-end min-w-4"
+                aria-label={`${
+                  appletTitle.charAt(0).toUpperCase() +
+                  appletTitle.slice(1).toLowerCase()
+                } information`}
+              >
                 <img src={InfoIcon} />
               </PopoverTrigger>
               <PopoverContent className="bg-black text-white text-sm border-yellow-700">
