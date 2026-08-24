@@ -386,7 +386,6 @@ function TimelineChart({
   return (
     <div
       ref={containerRef}
-      data-testid="timeline-chart"
       data-slot="timeline"
       style={{
         width: "100%",
