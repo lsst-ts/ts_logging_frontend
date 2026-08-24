@@ -16,6 +16,17 @@ const DATALOG_BLOCK_ROWS = generateDataLogMock(10, {
     science_program: i % 2 === 1 ? "BLOCK-320" : "BLOCK-999",
   }),
 });
+// Mixed-case science programs, to pin case-insensitive sorting. v9 resolves
+// every column's sort through the sortFns registry in tableFeatures.js; drop
+// that registry and these fall back to case-sensitive comparison, which orders
+// "BLOCK-1" before "Beta" instead of after.
+const DATALOG_MIXED_CASE_ROWS = generateDataLogMock(4, {
+  postProcess: (r, i) => ({
+    ...r,
+    science_program: ["BLOCK-1", "alpha", "Beta", "gamma"][i - 1],
+  }),
+});
+
 const DATALOG_BLOCK_URL = "https://rubinobs.atlassian.net/browse/BLOCK-320";
 const DATALOG_BLOCK_LOOKUP = {
   data: {
@@ -74,6 +85,11 @@ export const DATATABLE_PAGES = [
       defaultFirst: "20260101000001",
       defaultLast: "20260101000030",
       unsortedColumn: "Airmass",
+      caseInsensitive: {
+        column: "Science Program",
+        mocks: { "data-log": DATALOG_MIXED_CASE_ROWS },
+        expectedOrder: ["alpha", "Beta", "BLOCK-1", "gamma"],
+      },
     },
     filter: {
       column: "Filter",
@@ -138,6 +154,18 @@ export const DATATABLE_PAGES = [
       defaultFirst: "2026-01-01 20:00:00.000",
       defaultLast: "2026-01-01 22:10:00.000",
       unsortedColumn: "Name",
+      caseInsensitive: {
+        // The default fixture's names already mix cases.
+        column: "Name",
+        mocks: {},
+        expectedOrder: [
+          "BLOCK-T249",
+          "BLOCK-T250",
+          "maintel/take_image.py",
+          "maintel/track_target.py",
+          "MC_O_20260101_000001",
+        ],
+      },
     },
     filter: {
       // Final Status is a table-only filter — event_type is the URL-synced one
@@ -203,105 +231,16 @@ export const DATATABLE_PAGES = [
   },
 ];
 
-/** All rows currently rendered in the table body. */
-export function tableRows(page) {
-  return page.locator("[data-slot='table-body'] tr");
-}
-
-const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
-/**
- * The header cell for a column, matched from the start of its text.
- *
- * A plain substring match is not enough here: the Context Feed has six columns
- * containing "Time (UTC)", so "Time (UTC)" would resolve to all of them.
- *
- * @param {import('@playwright/test').Page} page
- * @param {string} name - Visible header text (e.g. "Time (UTC)")
- */
-export function columnHeader(page, name) {
-  return page
-    .getByRole("columnheader")
-    .filter({ hasText: new RegExp(`^\\s*${escapeRegExp(name)}`) });
-}
-
-/**
- * Opens a column's ⋮ menu.
- *
- * Opened from the keyboard: on narrow columns the ⋮ button can overflow under
- * the resize handle, which intercepts mouse clicks.
- *
- * @param {import('@playwright/test').Page} page
- * @param {string} name - Visible header text
- */
-export async function openColumnMenu(page, name) {
-  await columnHeader(page, name).locator("button").focus();
-  await page.keyboard.press("Enter");
-}
-
-/**
- * Applies a multi-select column filter and dismisses the dropdown.
- *
- * Clear/Apply call e.stopPropagation(), so the Radix dropdown does not close
- * on its own; until it does, the rest of the page is aria-hidden.
- *
- * @param {import('@playwright/test').Page} page
- * @param {string} name - Visible header text
- * @param {string|string[]} values
- */
-export async function applyColumnFilter(page, name, values) {
-  await openColumnMenu(page, name);
-  for (const value of Array.isArray(values) ? values : [values]) {
-    await page.getByRole("checkbox", { name: value, exact: true }).click();
-  }
-  await page.getByRole("button", { name: "Apply" }).click();
-  await page.keyboard.press("Escape");
-}
-
-/**
- * Clears a column's multi-select filter and dismisses the dropdown.
- *
- * @param {import('@playwright/test').Page} page
- * @param {string} name - Visible header text
- */
-export async function clearColumnFilter(page, name) {
-  await openColumnMenu(page, name);
-  await page.getByRole("button", { name: "Clear" }).click();
-  await page.keyboard.press("Escape");
-}
-
-/**
- * Groups the table by a column via its header menu.
- *
- * @param {import('@playwright/test').Page} page
- * @param {string} name - Visible header text
- */
-export async function groupByColumn(page, name) {
-  await openColumnMenu(page, name);
-  // Match the menu item by role: the Context Feed toolbar also has a
-  // "Group by Task" label, which a plain text match would collide with.
-  await page.getByRole("menuitem", { name: "Group by", exact: true }).click();
-}
-
-/** Group header cells (the shaded full-width rows grouping adds). */
-export function groupHeaderCells(page) {
-  return page.locator("td.bg-stone-900");
-}
-
-/**
- * Returns the cell in body row `rowIndex` under the column with visible header
- * `headerName`.
- *
- * @param {import('@playwright/test').Page} page
- * @param {number} rowIndex - Zero-based body row index
- * @param {string} headerName
- */
-export async function cellByHeader(page, rowIndex, headerName) {
-  const headers = page.getByRole("columnheader");
-  const texts = await headers.allInnerTexts();
-  const index = texts.findIndex((text) => text.includes(headerName));
-  if (index === -1) {
-    throw new Error(`No column header matching "${headerName}"`);
-  }
-  return tableRows(page).nth(rowIndex).locator("td").nth(index);
-}
+// The generic table interactions these specs use live in
+// datatable-helpers.js. Re-exported so a spec can take the page descriptions
+// and the helpers from one import.
+export {
+  tableRows,
+  groupHeaderCells,
+  columnHeader,
+  openColumnMenu,
+  applyColumnFilter,
+  clearColumnFilter,
+  groupByColumn,
+  cellByHeader,
+} from "./datatable-helpers.js";

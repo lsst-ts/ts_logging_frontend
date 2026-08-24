@@ -1,6 +1,14 @@
 // @ts-check
 import { expect } from "@playwright/test";
 
+// Generic table interactions come from datatable-helpers.js; only
+// Context Feed-specific helpers are defined here.
+export {
+  tableRows,
+  cellByHeader,
+  clearColumnFilter,
+} from "./datatable-helpers.js";
+
 /**
  * Row counts for the default context-feed fixture
  * (tests/e2e/mocks/fixtures/context-feed.json).
@@ -53,30 +61,6 @@ export function getContextFeedUrl(
   return `/nightlydigest/context-feed?startDayobs=${dayobs}&endDayobs=${endDayobs}&telescope=${telescope}`;
 }
 
-/** All rows currently rendered in the table body. */
-export function tableRows(page) {
-  return page.locator("[data-slot='table-body'] tr");
-}
-
-/**
- * Returns the cell in the given row under the given column header.
- *
- * @param {import('@playwright/test').Page} page
- * @param {number} rowIndex - Zero-based body row index
- * @param {string} headerName - Visible header text (e.g. "Description")
- */
-export async function cellByHeader(page, rowIndex, headerName) {
-  const headers = page.getByRole("columnheader");
-  const count = await headers.count();
-  for (let i = 0; i < count; i++) {
-    const text = await headers.nth(i).textContent();
-    if (text?.includes(headerName)) {
-      return tableRows(page).nth(rowIndex).locator("td").nth(i);
-    }
-  }
-  throw new Error(`No column header matching "${headerName}"`);
-}
-
 /**
  * Toggles one of the timeline's event-type checkboxes by its label.
  *
@@ -107,26 +91,6 @@ export async function toggleToolbarCheckbox(page, label) {
     .filter({ hasText: label })
     .getByRole("checkbox")
     .click();
-}
-
-/**
- * Clears a column's multi-select filter via its header menu.
- *
- * The Clear/Apply buttons call e.stopPropagation(), so the Radix dropdown
- * does not auto-close - Escape dismisses it. Until it closes, the rest of
- * the page is aria-hidden and role queries match nothing.
- *
- * @param {import('@playwright/test').Page} page
- * @param {string} columnHeaderName
- */
-export async function clearColumnFilter(page, columnHeaderName) {
-  const header = page
-    .getByRole("columnheader")
-    .filter({ hasText: columnHeaderName });
-  await header.locator("button").focus();
-  await page.keyboard.press("Enter");
-  await page.getByRole("button", { name: "Clear" }).click();
-  await page.keyboard.press("Escape");
 }
 
 /**
