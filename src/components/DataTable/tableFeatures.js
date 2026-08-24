@@ -13,12 +13,6 @@ import {
   createFilteredRowModel,
   createGroupedRowModel,
   createSortedRowModel,
-  filterFn_arrIncludes,
-  filterFn_equals,
-  filterFn_inDateRange,
-  filterFn_includesString,
-  filterFn_inNumberRange,
-  filterFn_weakEquals,
   rowExpandingFeature,
   rowSortingFeature,
   sortFn_alphanumeric,
@@ -28,8 +22,6 @@ import {
   tableFeatures,
 } from "@tanstack/react-table";
 
-import { matchValueOrInList } from "./tableUtils";
-
 /**
  * The TanStack Table v9 feature set shared by every DataTable instance.
  *
@@ -37,10 +29,11 @@ import { matchValueOrInList } from "./tableUtils";
  * here, along with the row model factory it feeds. Defined at module scope
  * because the object has to keep a stable identity across renders.
  *
- * The `filterFns` / `sortFns` registries hold the built-ins that the "auto"
- * resolvers can pick for a column that doesn't name its own function, plus our
- * custom `multiEquals`. Without them, auto-resolution silently falls back to
- * basic comparison.
+ * `sortFns` is not optional. v9 defaults every column to `sortFn: "auto"`, and
+ * the auto resolver looks its choice ("alphanumeric", "text", "datetime") up in
+ * this registry rather than reaching for the built-in directly. No column in
+ * this app names its own sort function, so every sort goes through here.
+ *
  */
 export const dataTableFeatures = tableFeatures({
   columnFacetingFeature,
@@ -61,15 +54,6 @@ export const dataTableFeatures = tableFeatures({
   groupedRowModel: createGroupedRowModel(),
   sortedRowModel: createSortedRowModel(),
 
-  filterFns: {
-    arrIncludes: filterFn_arrIncludes,
-    equals: filterFn_equals,
-    inDateRange: filterFn_inDateRange,
-    includesString: filterFn_includesString,
-    inNumberRange: filterFn_inNumberRange,
-    multiEquals: matchValueOrInList,
-    weakEquals: filterFn_weakEquals,
-  },
   sortFns: {
     alphanumeric: sortFn_alphanumeric,
     basic: sortFn_basic,

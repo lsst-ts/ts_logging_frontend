@@ -6,9 +6,36 @@ import {
   tableRows,
   columnHeader,
   openColumnMenu,
+  cellByHeader,
 } from "../../../helpers/datatable-pages.js";
 
 for (const { name, url, waitForLoad, mocks, sort } of DATATABLE_PAGES) {
+  test.describe(`${name} — DataTable: sorting is case-insensitive`, () => {
+    // Guards the sortFns registry in tableFeatures.js. v9 defaults every column
+    // to sortFn "auto" and resolves the choice through that registry, so
+    // without it these orderings quietly become case-sensitive.
+    test("a mixed-case string column sorts without regard to case", async ({
+      page,
+    }) => {
+      const { column, mocks: caseMocks, expectedOrder } = sort.caseInsensitive;
+
+      await setupApiMocks(page, caseMocks);
+      await page.goto(url);
+      await waitForLoad(page);
+
+      await openColumnMenu(page, column);
+      await page.getByText("Sort by asc.").click();
+
+      const actual = [];
+      for (let i = 0; i < expectedOrder.length; i++) {
+        actual.push(
+          (await (await cellByHeader(page, i, column)).innerText()).trim(),
+        );
+      }
+      expect(actual).toEqual(expectedOrder);
+    });
+  });
+
   test.describe(`${name} — DataTable: sorting`, () => {
     test.beforeEach(async ({ page }) => {
       await setupApiMocks(page, mocks);
