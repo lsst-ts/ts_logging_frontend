@@ -6,7 +6,14 @@ import { defineConfig, devices } from "@playwright/test";
  * traffic, no auth tokens required.
  *
  * Run with: npm run test:e2e
+ *
+ * The dev server runs on 5175 rather than vite's default 5173 so the suite
+ * never adopts the docker frontend container (or a dev server you have open)
+ * as its target — those have their own node_modules and can silently make
+ * every test fail. Override with E2E_PORT if you need a different port.
  */
+const PORT = Number(process.env.E2E_PORT ?? 5175);
+
 export default defineConfig({
   testDir: "./tests/e2e/mocked",
   fullyParallel: true,
@@ -16,7 +23,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: [["html", { open: "never" }]],
   use: {
-    baseURL: "http://localhost:5173",
+    baseURL: `http://localhost:${PORT}`,
     trace: "on-first-retry",
   },
   projects: [
@@ -26,8 +33,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run dev",
-    url: "http://localhost:5173/nightlydigest/",
+    command: `npm run dev -- --port ${PORT} --strictPort`,
+    url: `http://localhost:${PORT}/nightlydigest/`,
     reuseExistingServer: !process.env.CI,
   },
 });

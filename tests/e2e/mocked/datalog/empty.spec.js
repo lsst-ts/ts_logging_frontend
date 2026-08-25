@@ -4,7 +4,6 @@ import { setupApiMocks } from "../../helpers/mock-api.js";
 import {
   waitForDataLogLoad,
   getDataLogUrl,
-  openColumnMenu,
 } from "../../helpers/datalog-helpers.js";
 
 const DATALOG_URL = getDataLogUrl();
@@ -37,19 +36,5 @@ test.describe("Data-log page — empty data", () => {
 
     await page.getByRole("button", { name: "Dismiss" }).click();
     await expect(banner).toHaveCount(0);
-  });
-
-  test("reset button doesn't crash on empty table", async ({ page }) => {
-    await page.getByRole("button", { name: "Reset Table" }).click();
-    await expect(page.locator("[data-slot='table-body']")).toBeAttached();
-  });
-
-  test("column menu opens and shows sort/group options on empty table", async ({
-    page,
-  }) => {
-    // Use a column that isn't the default sort (Exposure Id is sorted asc by default)
-    await openColumnMenu(page, "Airmass");
-    await expect(page.getByText("Sort by asc.")).toBeVisible();
-    await expect(page.getByText("Group by")).toBeVisible();
   });
 });

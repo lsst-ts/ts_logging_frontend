@@ -33,67 +33,13 @@ export function getDataLogUrl(
   return `/nightlydigest/data-log?startDayobs=${dayobs}&endDayobs=${endDayobs}&telescope=${telescope}`;
 }
 
-/**
- * Opens the column menu dropdown for a given column header.
- *
- * @param {import('@playwright/test').Page} page
- * @param {string} columnHeaderName - The visible header text (e.g., "Airmass")
- */
-export async function openColumnMenu(page, columnHeaderName) {
-  const header = page
-    .getByRole("columnheader")
-    .filter({ hasText: columnHeaderName });
-  // Open via keyboard: on narrow columns the ⋮ button can overflow under the
-  // column-resize handle, which intercepts mouse clicks.
-  await header.locator("button").focus();
-  await page.keyboard.press("Enter");
-}
-
-/**
- * Applies a filter to a column.
- *
- * @param {import('@playwright/test').Page} page
- * @param {string} columnHeaderName
- * @param {string|string[]} values - Single value or array of values to filter by
- */
-export async function applyFilter(page, columnHeaderName, values) {
-  await openColumnMenu(page, columnHeaderName);
-  const valueArray = Array.isArray(values) ? values : [values];
-  for (const val of valueArray) {
-    await page.getByRole("checkbox", { name: val }).click();
-  }
-  await page.getByRole("button", { name: "Apply" }).click();
-  // The Apply button uses e.stopPropagation(), so the Radix dropdown doesn't
-  // auto-close on click. Press Escape to ensure it's dismissed before continuing.
-  await page.keyboard.press("Escape");
-}
-
-/**
- * Groups the table by a column.
- *
- * @param {import('@playwright/test').Page} page
- * @param {string} columnHeaderName
- */
-export async function groupBy(page, columnHeaderName) {
-  await openColumnMenu(page, columnHeaderName);
-  await page.getByText(/Group by/).click();
-}
-
-/**
- * Returns the cell of `row` under the column with visible header `headerName`.
- *
- * @param {import('@playwright/test').Page} page
- * @param {import('@playwright/test').Locator} row - A table-body row locator
- * @param {string} headerName - The visible header text (e.g., "Flags")
- * @returns {Promise<import('@playwright/test').Locator>}
- */
-export async function cellByHeader(page, row, headerName) {
-  const headers = page.getByRole("columnheader");
-  // While a column dropdown menu is open (or still closing), the rest of the
-  // page is aria-hidden and role queries match nothing — wait it out.
-  await expect(headers.filter({ hasText: headerName }).first()).toBeVisible();
-  const headerTexts = await headers.allInnerTexts();
-  const idx = headerTexts.findIndex((t) => t.includes(headerName));
-  expect(idx).toBeGreaterThan(-1);
-  return row.locator("td").nth(idx);
-}
+// Generic table interactions live in datatable-helpers.js so there is one
+// implementation per interaction. Re-exported here, with the names the
+// data-log specs already use, so call sites stay unchanged.
+export {
+  openColumnMenu,
+  clearColumnFilter,
+  cellByHeader,
+  applyColumnFilter as applyFilter,
+  groupByColumn as groupBy,
+} from "./datatable-helpers.js";

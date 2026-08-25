@@ -5,6 +5,7 @@ export const TEST_DAYOBS_INT = 20260101;
 export const PLOTS_URL = `/nightlydigest/plots?startDayobs=${TEST_DAYOBS}&endDayobs=${TEST_DAYOBS}&telescope=Simonyi`;
 export const DIGEST_URL = `/nightlydigest/?startDayobs=${TEST_DAYOBS}&endDayobs=${TEST_DAYOBS}&telescope=Simonyi`;
 export const DATALOG_URL = `/nightlydigest/data-log?startDayobs=${TEST_DAYOBS}&endDayobs=${TEST_DAYOBS}&telescope=Simonyi`;
+export const CONTEXTFEED_URL = `/nightlydigest/context-feed?startDayobs=${TEST_DAYOBS}&endDayobs=${TEST_DAYOBS}&telescope=Simonyi`;
 
 // Full time range UTC boundaries for dayobs=20260101:
 export const FULL_START = 1767268800000;

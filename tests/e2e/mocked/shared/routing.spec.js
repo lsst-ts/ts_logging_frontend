@@ -3,10 +3,12 @@ import { test, expect } from "@playwright/test";
 import { setupApiMocks } from "../../helpers/mock-api.js";
 import { waitForPlotsLoad } from "../../helpers/plots-helpers.js";
 import { waitForDataLogLoad } from "../../helpers/datalog-helpers.js";
+import { waitForContextFeedLoad } from "../../helpers/contextfeed-helpers.js";
 import {
   TEST_DAYOBS,
   PLOTS_URL,
   DATALOG_URL,
+  CONTEXTFEED_URL,
   FULL_START,
   FULL_END,
 } from "../../helpers/constants.js";
@@ -21,6 +23,11 @@ const PAGES = [
     name: "data-log",
     url: DATALOG_URL,
     waitForLoad: waitForDataLogLoad,
+  },
+  {
+    name: "context-feed",
+    url: CONTEXTFEED_URL,
+    waitForLoad: waitForContextFeedLoad,
   },
 ];
 

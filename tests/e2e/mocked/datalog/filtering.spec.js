@@ -24,18 +24,6 @@ test.describe("Data-log page — filtering", () => {
     await waitForDataLogLoad(page);
   });
 
-  test("filter by single value shows correct row count", async ({ page }) => {
-    await applyFilter(page, "Filter", "y_10");
-    await expect(page.locator("[data-slot='table-body'] tr")).toHaveCount(6);
-  });
-
-  test("filter by multiple values shows correct row count", async ({
-    page,
-  }) => {
-    await applyFilter(page, "Filter", ["y_10", "g_10"]);
-    await expect(page.locator("[data-slot='table-body'] tr")).toHaveCount(12);
-  });
-
   test("Clear button in filter dropdown removes that filter and its URL param", async ({
     page,
   }) => {
@@ -47,29 +35,6 @@ test.describe("Data-log page — filtering", () => {
     await page.getByRole("button", { name: "Clear" }).click();
     await expect(page.locator("[data-slot='table-body'] tr")).toHaveCount(30);
     await expect(page).not.toHaveURL(/physical_filter=/);
-  });
-
-  test("Reset Table button clears all filters and URL params", async ({
-    page,
-  }) => {
-    await applyFilter(page, "Filter", "y_10");
-    await page.getByRole("button", { name: "Reset Table" }).click();
-
-    await expect(page.locator("[data-slot='table-body'] tr")).toHaveCount(30);
-    await expect(page).not.toHaveURL(/physical_filter=/);
-  });
-
-  test("applying a filter updates the URL", async ({ page }) => {
-    await applyFilter(page, "Filter", "y_10");
-    await expect(page).toHaveURL(/physical_filter=y_10/);
-  });
-
-  test("filter param in URL pre-filters the table on load", async ({
-    page,
-  }) => {
-    await page.goto(`${DATALOG_URL}&physical_filter=y_10`);
-    await waitForDataLogLoad(page);
-    await expect(page.locator("[data-slot='table-body'] tr")).toHaveCount(6);
   });
 
   test("unchecking a filter value removes it and its URL param", async ({
@@ -86,15 +51,6 @@ test.describe("Data-log page — filtering", () => {
 
     await expect(page.locator("[data-slot='table-body'] tr")).toHaveCount(30);
     await expect(page).not.toHaveURL(/physical_filter=/);
-  });
-
-  test("filter dropdown values are sorted alphabetically", async ({ page }) => {
-    await openColumnMenu(page, "Filter");
-    const labels = await page
-      .getByRole("menu")
-      .locator("label")
-      .allInnerTexts();
-    expect(labels).toEqual(["g_10", "i_10", "r_10", "y_10", "z_10"]);
   });
 
   test("repeated URL param form applies a multi-value filter", async ({

@@ -3,9 +3,11 @@ import { test, expect } from "@playwright/test";
 import { setupApiMocks } from "../../helpers/mock-api.js";
 import { waitForPlotsLoad } from "../../helpers/plots-helpers.js";
 import { waitForDataLogLoad } from "../../helpers/datalog-helpers.js";
+import { waitForContextFeedLoad } from "../../helpers/contextfeed-helpers.js";
 import {
   PLOTS_URL,
   DATALOG_URL,
+  CONTEXTFEED_URL,
   FULL_START,
   FULL_END,
 } from "../../helpers/constants.js";
@@ -51,12 +53,48 @@ async function timelineDragPixels(page, targetStartMs, targetEndMs) {
   );
 }
 
+// `selection` describes the "N of M <things> selected" readout in the
+// SelectedTimeRangeBar, which counts whatever each page lists.
 const PAGES = [
-  { name: "plots", url: PLOTS_URL, waitForLoad: waitForPlotsLoad },
-  { name: "data-log", url: DATALOG_URL, waitForLoad: waitForDataLogLoad },
+  {
+    name: "plots",
+    url: PLOTS_URL,
+    waitForLoad: waitForPlotsLoad,
+    selection: {
+      timezone: "TAI",
+      full: "30 of 30 exposures selected",
+      narrowTo: "00:09  2026-01-02",
+      narrowed: "10 of 30 exposures selected",
+    },
+  },
+  {
+    name: "data-log",
+    url: DATALOG_URL,
+    waitForLoad: waitForDataLogLoad,
+    selection: {
+      timezone: "TAI",
+      full: "30 of 30 exposures selected",
+      narrowTo: "00:09  2026-01-02",
+      narrowed: "10 of 30 exposures selected",
+    },
+  },
+  {
+    // The context-feed fixture holds 12 events between 20:00 and 22:10 UTC;
+    // ending at 21:05 keeps the first six.
+    name: "context-feed",
+    url: CONTEXTFEED_URL,
+    waitForLoad: waitForContextFeedLoad,
+    selection: {
+      // Context Feed leaves SelectedTimeRangeBar on its default UTC label.
+      timezone: "UTC",
+      full: "12 of 12 events selected",
+      narrowTo: "21:05  2026-01-01",
+      narrowed: "6 of 12 events selected",
+    },
+  },
 ];
 
-for (const { name, url, waitForLoad } of PAGES) {
+for (const { name, url, waitForLoad, selection } of PAGES) {
   // ---------------------------------------------------------------------------
 
   test.describe(`${name} — Time range synchronisation`, () => {
@@ -146,7 +184,9 @@ for (const { name, url, waitForLoad } of PAGES) {
     });
 
     test("shows the label and default start/end inputs", async ({ page }) => {
-      await expect(page.getByText("Selected Time Range (TAI):")).toBeVisible();
+      await expect(
+        page.getByText(`Selected Time Range (${selection.timezone}):`),
+      ).toBeVisible();
       const bar = page
         .locator("[data-slot='card']")
         .filter({ hasText: "Selected Time Range" });
@@ -158,22 +198,22 @@ for (const { name, url, waitForLoad } of PAGES) {
       );
     });
 
-    test("shows 30 of 30 exposures selected with full time range", async ({
+    test("shows everything selected with the full time range", async ({
       page,
     }) => {
-      await expect(page.getByText("30 of 30 exposures selected")).toBeVisible();
+      await expect(page.getByText(selection.full)).toBeVisible();
     });
 
-    test("narrowing the end time reduces the exposure count", async ({
+    test("narrowing the end time reduces the selected count", async ({
       page,
     }) => {
       const bar = page
         .locator("[data-slot='card']")
         .filter({ hasText: "Selected Time Range" });
       const endInput = bar.locator("input[type='text']").last();
-      await endInput.fill("00:09  2026-01-02");
+      await endInput.fill(selection.narrowTo);
       await endInput.press("Enter");
-      await expect(page.getByText("10 of 30 exposures selected")).toBeVisible();
+      await expect(page.getByText(selection.narrowed)).toBeVisible();
     });
   });
 }

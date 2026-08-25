@@ -1,10 +1,7 @@
 // @ts-check
 import { test, expect } from "@playwright/test";
 import { setupApiMocks } from "../../helpers/mock-api.js";
-import {
-  generateDataLogMock,
-  generateDataLogMockMultiBand,
-} from "../../helpers/mock-generators.js";
+import { generateDataLogMock } from "../../helpers/mock-generators.js";
 import {
   waitForDataLogLoad,
   openColumnMenu,
@@ -142,33 +139,5 @@ test.describe("Data-log page — boolean and negative values", () => {
     const firstRow = page.locator("[data-slot='table-body'] tr").first();
     const cell = await cellByHeader(page, firstRow, "Outside Air Temp");
     await expect(cell).toHaveText("-5.50");
-  });
-});
-
-test.describe("Data-log page — filter menu visibility by unique values", () => {
-  test("column with a single unique value offers no filter section", async ({
-    page,
-  }) => {
-    // Default fixture: all 30 records are y_10
-    await setupApiMocks(page);
-    await page.goto(DATALOG_URL);
-    await waitForDataLogLoad(page);
-
-    await openColumnMenu(page, "Filter");
-    const menu = page.getByRole("menu");
-    await expect(menu.getByText("Sort by asc.")).toBeVisible();
-    await expect(menu.getByText("Filter:")).toHaveCount(0);
-  });
-
-  test("column with multiple unique values offers a filter section", async ({
-    page,
-  }) => {
-    await setupApiMocks(page, { "data-log": generateDataLogMockMultiBand(30) });
-    await page.goto(DATALOG_URL);
-    await waitForDataLogLoad(page);
-
-    await openColumnMenu(page, "Filter");
-    const menu = page.getByRole("menu");
-    await expect(menu.getByText("Filter:")).toBeVisible();
   });
 });
