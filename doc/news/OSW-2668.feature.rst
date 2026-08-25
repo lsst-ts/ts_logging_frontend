@@ -1,0 +1,1 @@
+Allow the backend API root to be overridden at build time with the ``VITE_BACKEND_URL``.

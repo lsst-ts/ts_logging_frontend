@@ -27,6 +27,10 @@ COPY --from=version_bumper /home/saluser/develop/package.json package.json
 COPY --from=version_bumper /home/saluser/develop/package-lock.json package-lock.json
 
 RUN npm ci
+
+ARG VITE_BACKEND_URL
+ENV VITE_BACKEND_URL=${VITE_BACKEND_URL}
+
 RUN npx vite build
 
 VOLUME /usr/src/app/dist
