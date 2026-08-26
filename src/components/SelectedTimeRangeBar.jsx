@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import EditableDateTimeInput from "@/components/EditableDateTimeInput.jsx";
 
 function SelectedTimeRangeBar({
@@ -6,17 +7,18 @@ function SelectedTimeRangeBar({
   setSelectedTimeRange,
   fullTimeRange,
   rightContent,
+  rightContentLoading = false,
   timezone = "UTC",
 }) {
   if (!selectedTimeRange[0] || !selectedTimeRange[1]) return null;
 
   return (
     <div className="@container">
-      <Card className="flex flex-col @[700px]:grid @[700px]:grid-cols-1 items-center bg-teal-900 text-stone-100 py-2 @[700px]:py-3 rounded-sm shadow-stone-900 shadow-md border-none px-3 gap-1 @[700px]:gap-0">
-        <span className="font-thin text-sm select-none @[700px]:col-start-1 @[700px]:row-start-1 @[700px]:self-center @[700px]:justify-self-start">
+      <Card className="flex flex-col @[700px]:grid @[700px]:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center bg-teal-900 text-stone-100 py-2 @[700px]:py-3 rounded-sm shadow-stone-900 shadow-md border-none px-3 gap-2 @[700px]:gap-x-4 @[700px]:gap-y-0">
+        <span className="font-thin text-sm select-none @[700px]:justify-self-start">
           Selected Time Range ({timezone}):
         </span>
-        <span className="text-white font-thin flex flex-col @sm:flex-row items-center gap-1 @sm:gap-0 @[700px]:col-start-1 @[700px]:row-start-1 @[700px]:justify-self-center">
+        <span className="text-white font-thin flex flex-col @sm:flex-row items-center gap-1 @sm:gap-0 @[700px]:justify-self-center">
           <EditableDateTimeInput
             value={selectedTimeRange[0]}
             onValidChange={(dt) =>
@@ -37,9 +39,13 @@ function SelectedTimeRangeBar({
             isStart={false}
           />
         </span>
-        {rightContent && (
-          <span className="font-thin text-sm select-none @[700px]:col-start-1 @[700px]:row-start-1 @[700px]:self-center @[700px]:justify-self-end">
-            {rightContent}
+        {(rightContentLoading || rightContent) && (
+          <span className="font-thin text-sm select-none w-full max-w-64 text-center break-words @[700px]:text-right @[700px]:justify-self-end">
+            {rightContentLoading ? (
+              <Skeleton className="h-5 w-full bg-teal-700 inline-block align-middle" />
+            ) : (
+              rightContent
+            )}
           </span>
         )}
       </Card>

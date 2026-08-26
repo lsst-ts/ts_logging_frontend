@@ -426,13 +426,8 @@ function Plots() {
             setSelectedTimeRange={setSelectedTimeRange}
             fullTimeRange={fullTimeRange}
             timezone="TAI"
-            rightContent={
-              loading ? (
-                <Skeleton className="h-5 w-64 bg-teal-700 inline-block" />
-              ) : (
-                `${filteredCount} of ${dataLogEntries.length} exposures selected`
-              )
-            }
+            rightContentLoading={loading}
+            rightContent={`${filteredCount} of ${dataLogEntries.length} exposures selected`}
           />
 
           {/* Plots Tips */}
