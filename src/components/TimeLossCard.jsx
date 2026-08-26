@@ -18,16 +18,11 @@ import TimeLossIcon from "../assets/TimeLossIcon.svg";
 
 import { OBSERVATORY_STATE_AVAILABILITY_STATUS } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
 
-// TODO: Check inconsistencies between how the obs status availability warning component is used in this card and the metrics card.
-
-// TODO: What happens if there is an error fetching obs status data?
-// Should we show a warning (with a different message) in the card like we do for when data is unavailable?
-
-// TODO: Use Asher's guidelines for when to user data-testid, data-slot, aria-label and roles rused for testing.
 export default function TimeLossCard({
   obsStatusFaultLoss,
   obsStatusWeatherLoss,
   obsStatusAvailability,
+  obsStatusFetchError = false,
   calculatedData,
   obsStatusLoading = false,
   calculatedFaultLoading = false,
@@ -69,9 +64,11 @@ export default function TimeLossCard({
           {!loading && (
             <ObservatoryStatusAvailabilityWarning
               availability={obsStatusAvailability}
+              fetchError={obsStatusFetchError}
               ariaLabel="Time Loss data availability warning"
               partialDetails="Time loss has been computed for the available dayobs."
               details="Weather loss is treated as 0.0 for dayobs without Observatory Status data."
+              errorDetails="Weather loss is treated as 0.0 because Observatory Status data could not be fetched."
             />
           )}
         </div>

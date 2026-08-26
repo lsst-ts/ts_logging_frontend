@@ -1,11 +1,4 @@
-import { TriangleAlert } from "lucide-react";
-
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from "@/components/ui/tooltip";
 import {
   Popover,
   PopoverTrigger,
@@ -20,6 +13,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 
 import ObservatoryStatusCumulativePlot from "@/components/ObservatoryStatusCumulativePlot";
+import ObservatoryStatusAvailabilityWarning from "@/components/ObservatoryStatusAvailabilityWarning";
 import { formatDayobsStrForDisplay } from "@/utils/timeUtils";
 import { OBSERVATORY_STATE_AVAILABILITY_STATUS } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
 
@@ -35,6 +29,7 @@ import InfoIcon from "../assets/InfoIcon.svg";
  * @param {Array} [props.almanacInfo=[]] Almanac night metadata used by the cumulative plot.
  * @param {Array} [props.intervals=[]] Observatory status intervals to display.
  * @param {Object} [props.availability] Availability metadata for the observatory-status feed.
+ * @param {boolean} [props.fetchError=false] Whether the Observatory Status request failed.
  * @param {Array} [props.openDomeTimes=[]] Open-dome intervals to overlay on the plot.
  * @param {[DateTime, DateTime]} props.fullTimeRange Visible time range for the chart.
  * @param {boolean} props.loading Whether the underlying data is still loading.
@@ -43,6 +38,7 @@ function ObservatoryStatusApplet({
   almanacInfo = [],
   intervals = [],
   availability,
+  fetchError = false,
   openDomeTimes = [],
   fullTimeRange,
   loading,
@@ -51,9 +47,11 @@ function ObservatoryStatusApplet({
   const obsAvailableFrom = availability?.available_from
     ? formatDayobsStrForDisplay(String(availability.available_from))
     : null;
-  const obsAvailabilityWarningText = `Observatory Status data is only available from ${
-    obsAvailableFrom ?? "the supported dayobs range"
-  }.`;
+  const obsAvailabilityWarningText = fetchError
+    ? "Observatory Status data could not be fetched."
+    : `Observatory Status data is only available from ${
+        obsAvailableFrom ?? "the supported dayobs range"
+      }.`;
 
   return (
     <Card className="border-none p-0 bg-stone-800 gap-2">
@@ -66,14 +64,11 @@ function ObservatoryStatusApplet({
               obsAvailabilityStatus ===
                 OBSERVATORY_STATE_AVAILABILITY_STATUS.PARTIAL && (
                 <div className="flex place-items-center-safe">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <TriangleAlert className="h-4 text-yellow-400 cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{obsAvailabilityWarningText}</p>
-                    </TooltipContent>
-                  </Tooltip>
+                  <ObservatoryStatusAvailabilityWarning
+                    availability={availability}
+                    ariaLabel="Observatory Status data availability warning"
+                    iconClassName="h-4 w-4"
+                  />
                 </div>
               )}
           </div>
@@ -95,8 +90,9 @@ function ObservatoryStatusApplet({
                   <div className="flex-grow w-full h-full">
                     <Skeleton className="h-full bg-stone-900" />
                   </div>
-                ) : obsAvailabilityStatus ===
-                  OBSERVATORY_STATE_AVAILABILITY_STATUS.NONE ? (
+                ) : fetchError ||
+                  obsAvailabilityStatus ===
+                    OBSERVATORY_STATE_AVAILABILITY_STATUS.NONE ? (
                   <div className="h-full place-content-center-safe">
                     <p className="text-3xl text-stone-400 text-center">
                       {obsAvailabilityWarningText}
@@ -161,7 +157,7 @@ function ObservatoryStatusApplet({
           <div className="flex-grow w-full h-full">
             <Skeleton className="h-full min-h-[180px] bg-stone-900" />
           </div>
-        ) : obsAvailabilityStatus === "none" ? (
+        ) : fetchError || obsAvailabilityStatus === "none" ? (
           <div className="h-full place-content-center-safe">
             <p className="text-stone-400 text-center">
               {obsAvailabilityWarningText}

@@ -16,6 +16,8 @@ import { formatDayobsStrForDisplay } from "@/utils/timeUtils";
  * @param {string} [props.ariaLabel] - Accessible name for the warning trigger.
  * @param {React.ReactNode} [props.partialDetails] - Extra text for partial data.
  * @param {React.ReactNode} [props.details] - Extra text for all unavailable states.
+ * @param {boolean} [props.fetchError=false] - Whether the data request failed.
+ * @param {React.ReactNode} [props.errorDetails] - Extra text for a fetch error.
  * @param {string} [props.iconClassName] - Tailwind classes for the warning icon.
  */
 export default function ObservatoryStatusAvailabilityWarning({
@@ -23,11 +25,15 @@ export default function ObservatoryStatusAvailabilityWarning({
   ariaLabel = "Observatory Status data availability warning",
   partialDetails = null,
   details = null,
+  fetchError = false,
+  errorDetails = null,
   iconClassName = "h-5 w-5",
 }) {
   const status =
     availability?.status ?? OBSERVATORY_STATE_AVAILABILITY_STATUS.NONE;
-  if (status === OBSERVATORY_STATE_AVAILABILITY_STATUS.FULL) return null;
+  if (!fetchError && status === OBSERVATORY_STATE_AVAILABILITY_STATUS.FULL) {
+    return null;
+  }
 
   const availableFrom = availability?.available_from
     ? formatDayobsStrForDisplay(String(availability.available_from))
@@ -47,22 +53,34 @@ export default function ObservatoryStatusAvailabilityWarning({
         </button>
       </TooltipTrigger>
       <TooltipContent>
-        <p>
-          Observatory Status data is only available from{" "}
-          <strong>{availableFrom}</strong>.
-          {isPartial && partialDetails && (
-            <>
-              <br />
-              {partialDetails}
-            </>
-          )}
-          {details && (
-            <>
-              <br />
-              {details}
-            </>
-          )}
-        </p>
+        {fetchError ? (
+          <p>
+            Observatory Status data could not be fetched.
+            {(errorDetails ?? details) && (
+              <>
+                <br />
+                {errorDetails ?? details}
+              </>
+            )}
+          </p>
+        ) : (
+          <p>
+            Observatory Status data is only available from{" "}
+            <strong>{availableFrom}</strong>.
+            {isPartial && partialDetails && (
+              <>
+                <br />
+                {partialDetails}
+              </>
+            )}
+            {details && (
+              <>
+                <br />
+                {details}
+              </>
+            )}
+          </p>
+        )}
       </TooltipContent>
     </Tooltip>
   );

@@ -66,6 +66,7 @@ export default function Digest() {
   const [obsStatusAvailability, setObsStatusAvailability] = useState(
     EMPTY_OBS_STATUS_AVAILABILITY,
   );
+  const [obsStatusFetchError, setObsStatusFetchError] = useState(false);
 
   const [exposuresLoading, setExposuresLoading] = useState(true);
   const [expectedExposuresLoading, setExpectedExposuresLoading] =
@@ -136,6 +137,7 @@ export default function Digest() {
     setObsStatusFaultLoss(0.0);
     setObsStatusWeatherLoss(0.0);
     setObsStatusAvailability(EMPTY_OBS_STATUS_AVAILABILITY);
+    setObsStatusFetchError(false);
 
     setStaticVisitMapLoading(true);
     setStaticVisitMaps(null);
@@ -285,6 +287,7 @@ export default function Digest() {
       .catch((err) => {
         if (!abortController.signal.aborted) {
           console.error("Error fetching observatory status:", err);
+          setObsStatusFetchError(true);
           addNotification({
             type: "error",
             source: "observatory-status",
@@ -461,6 +464,10 @@ export default function Digest() {
     [exposureFields, almanacInfo],
   );
 
+  const weatherLossForCalculations = obsStatusFetchError
+    ? 0.0
+    : obsStatusWeatherLoss;
+
   let efficiency = null;
   if (
     !almanacLoading &&
@@ -475,7 +482,7 @@ export default function Digest() {
         nightHours,
         sumOnSkyExpTime,
         totalExpTimeBetweenTwilights,
-        obsStatusWeatherLoss,
+        weatherLossForCalculations,
       );
     }
   }
@@ -544,7 +551,7 @@ export default function Digest() {
           onSkyTimeAccounting,
           totalExpTimeBetweenTwilights,
           elapsedTwilightHours,
-          obsStatusWeatherLoss,
+          weatherLossForCalculations,
         ),
         faultUnavailable: false,
         faultUnavailableReason: null,
@@ -555,7 +562,7 @@ export default function Digest() {
       elapsedTwilightHours,
       onSkyTimeAccounting,
       totalExpTimeBetweenTwilights,
-      obsStatusWeatherLoss,
+      weatherLossForCalculations,
       timeAccountingError,
     ]);
 
@@ -614,8 +621,10 @@ export default function Digest() {
             statusIndicator={
               <ObservatoryStatusAvailabilityWarning
                 availability={obsStatusAvailability}
+                fetchError={obsStatusFetchError}
                 ariaLabel="Efficiency data availability warning"
                 details="Weather loss is treated as 0.0 for dayobs without Observatory Status data."
+                errorDetails="Weather loss is treated as 0.0 because Observatory Status data could not be fetched."
               />
             }
           />
@@ -623,6 +632,7 @@ export default function Digest() {
             obsStatusFaultLoss={obsStatusFaultLoss}
             obsStatusWeatherLoss={obsStatusWeatherLoss}
             obsStatusAvailability={obsStatusAvailability}
+            obsStatusFetchError={obsStatusFetchError}
             calculatedData={calculatedFault}
             obsStatusLoading={obsStatusLoading}
             calculatedFaultLoading={faultLoading}
@@ -677,6 +687,7 @@ export default function Digest() {
               almanacInfo={almanacInfo}
               intervals={obsStatusIntervals}
               availability={obsStatusAvailability}
+              fetchError={obsStatusFetchError}
               openDomeTimes={openDomeTimes}
               fullTimeRange={fullTimeRange}
               loading={obsStatusLoading || exposuresLoading || almanacLoading}

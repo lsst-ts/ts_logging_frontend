@@ -156,6 +156,49 @@ test.describe("Digest page — Time Loss and Efficiency cards", () => {
     ).toHaveText(unavailableEfficiency ?? "");
   });
 
+  test("uses zero weather loss and fetch-error warnings when Obs Status fails", async ({
+    page,
+  }) => {
+    await setupApiMocks(page, {
+      almanac: ALMANAC_FOR_CALCULATED_FAULT,
+      exposures: EXPOSURES_FOR_ZERO_WEATHER_CALCULATIONS,
+    });
+    // Registered after setupApiMocks so this failed route takes precedence.
+    await page.route("**/nightlydigest/api/obs-status*", (route) =>
+      route.abort(),
+    );
+    await page.goto(DIGEST_URL);
+
+    const card = timeLossCard(page);
+    await expect(card.getByTestId("time-loss-fault")).toHaveText("NA");
+    await expect(card.getByTestId("time-loss-weather")).toHaveText("NA");
+    await expect(card.getByTestId("time-loss-calculated-fault")).toHaveText(
+      "6.50",
+    );
+    await expect(
+      metricsCard(page, "Open-shutter (-weather) efficiency").locator(
+        "[data-slot='metrics-card-value']",
+      ),
+    ).toHaveText("13 %");
+
+    await card
+      .getByRole("button", { name: "Time Loss data availability warning" })
+      .hover();
+    await expect(openTooltip(page)).toContainText(
+      "Observatory Status data could not be fetched.",
+    );
+    await expect(openTooltip(page)).toContainText(
+      "Weather loss is treated as 0.0 because Observatory Status data could not be fetched.",
+    );
+
+    await page
+      .getByRole("button", { name: "Efficiency data availability warning" })
+      .hover();
+    await expect(openTooltip(page)).toContainText(
+      "Observatory Status data could not be fetched.",
+    );
+  });
+
   test("shows an accessible warning for unavailable calculated fault data", async ({
     page,
   }) => {
