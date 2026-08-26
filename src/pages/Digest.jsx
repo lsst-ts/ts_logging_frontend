@@ -69,22 +69,22 @@ export default function Digest() {
     EMPTY_OBS_STATUS_AVAILABILITY,
   );
 
-  const [exposuresLoading, setExposuresLoading] = useState(false);
+  const [exposuresLoading, setExposuresLoading] = useState(true);
   const [expectedExposuresLoading, setExpectedExposuresLoading] =
-    useState(false);
-  const [almanacLoading, setAlmanacLoading] = useState(false);
-  const [narrativeLoading, setNarrativeLoading] = useState(false);
-  const [nightreportLoading, setNightreportLoading] = useState(false);
-  const [obsStatusLoading, setObsStatusLoading] = useState(false);
+    useState(true);
+  const [almanacLoading, setAlmanacLoading] = useState(true);
+  const [narrativeLoading, setNarrativeLoading] = useState(true);
+  const [nightreportLoading, setNightreportLoading] = useState(true);
+  const [obsStatusLoading, setObsStatusLoading] = useState(true);
   const [dayObsOpenDomeHours, setDayObsOpenDomeHours] = useState({});
   const [onSkyTimeAccounting, setOnSkyTimeAccounting] = useState({});
   const [openDomeError, setOpenDomeError] = useState(null);
   const [timeAccountingError, setTimeAccountingError] = useState(null);
 
   const [jiraTickets, setJiraTickets] = useState([]);
-  const [jiraLoading, setJiraLoading] = useState(false);
+  const [jiraLoading, setJiraLoading] = useState(true);
 
-  const [flagsLoading, setFlagsLoading] = useState(false);
+  const [flagsLoading, setFlagsLoading] = useState(true);
   const [almanacInfo, setAlmanacInfo] = useState([]);
   const [openDomeTimes, setOpenDomeTimes] = useState([]);
 
@@ -98,7 +98,7 @@ export default function Digest() {
   const onBarLeave = useCallback(() => setHoveredExposureIds(null), []);
 
   const [staticVisitMaps, setStaticVisitMaps] = useState(null);
-  const [staticVisitMapLoading, setStaticVisitMapLoading] = useState(false);
+  const [staticVisitMapLoading, setStaticVisitMapLoading] = useState(true);
   const [staticVisitMapError, setStaticVisitMapError] = useState(false);
 
   const {

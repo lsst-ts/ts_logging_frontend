@@ -1,0 +1,1 @@
+Start every page's loading flags as ``true`` so the Digest and Visit Maps pages show their loading skeletons on first paint instead of briefly flashing empty content and error banners.

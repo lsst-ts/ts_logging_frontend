@@ -41,7 +41,7 @@ function VisitMaps() {
   const instrument = TELESCOPES[telescope];
 
   const [interactiveMap, setInteractiveMap] = useState(null);
-  const [visitMapsLoading, setVisitMapsLoading] = useState(false);
+  const [visitMapsLoading, setVisitMapsLoading] = useState(true);
   const [tipsVisible, setTipsVisible] = useState(false);
 
   const {

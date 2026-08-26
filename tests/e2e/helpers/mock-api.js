@@ -22,6 +22,9 @@ const DEFAULT_MOCKS = {
   "exposure-flags": loadFixture("exposure-flags"),
   "jira-tickets": loadFixture("jira-tickets"),
   "static-visit-map": loadFixture("static-visit-map"),
+  // Interactive visit maps: null so the Visit Maps page renders its
+  // "no data" placeholder instead of a multi-megabyte Bokeh document
+  "multi-night-visit-maps": { interactive: null },
   version: { version: "test" },
   // Exposure log: empty by default so no flags/comments but no error toast
   "exposure-entries": { exposure_entries: [] },
