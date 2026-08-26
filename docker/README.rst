@@ -54,6 +54,22 @@ Optional Configuration
 - **Modify Ports**:
   If you need to change the exposed ports, update the `ports` section in `docker/docker-compose.yaml`.
 
+- **Point the Frontend at a Different Backend**:
+  By default the frontend derives the backend API root from the origin of the page it is served from, i.e. requests go to `/nightlydigest/api` on the same host, which nginx proxies to the backend container. To target a backend somewhere else, set `VITE_BACKEND_URL` to the full API root:
+  ::
+     VITE_BACKEND_URL=https://your-rsp-host.example.org/nightlydigest/api
+
+  Leave it blank (or omit it) to keep the default behaviour. Include the `/nightlydigest/api` path; the value is used as-is, so it should not have a trailing slash.
+
+  This value is read by Vite when the frontend starts or is built, not by the browser at runtime, so it must be set before the frontend comes up:
+
+  - For the Docker Compose dev stack, put it in `docker/.env`. The `frontend` service passes it through to the Vite dev server, so a `docker-compose up` restart is enough to apply a change.
+  - For the deployment image (`docker/Dockerfile-deploy`), pass it as a build argument, since the bundle is built into the image:
+    ::
+       docker build -f docker/Dockerfile-deploy --build-arg VITE_BACKEND_URL=https://your-rsp-host.example.org/nightlydigest/api .
+
+    Changing it requires rebuilding the image.
+
 Troubleshooting
 ===============
 - If you encounter issues with missing environment variables, ensure the `.env` file is correctly configured and located in the `docker/` directory.
