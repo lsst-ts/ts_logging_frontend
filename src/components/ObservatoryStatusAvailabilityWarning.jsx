@@ -16,7 +16,6 @@ import { formatDayobsStrForDisplay } from "@/utils/timeUtils";
  * @param {string} [props.ariaLabel] - Accessible name for the warning trigger.
  * @param {React.ReactNode} [props.partialDetails] - Extra text for partial data.
  * @param {React.ReactNode} [props.details] - Extra text for all unavailable states.
- * @param {string} [props.testId] - Optional test id for the warning trigger.
  * @param {string} [props.iconClassName] - Tailwind classes for the warning icon.
  */
 export default function ObservatoryStatusAvailabilityWarning({
@@ -24,7 +23,6 @@ export default function ObservatoryStatusAvailabilityWarning({
   ariaLabel = "Observatory Status data availability warning",
   partialDetails = null,
   details = null,
-  testId,
   iconClassName = "h-5 w-5",
 }) {
   const status =
@@ -40,7 +38,6 @@ export default function ObservatoryStatusAvailabilityWarning({
     <Tooltip>
       <TooltipTrigger asChild>
         <button
-          data-testid={testId}
           type="button"
           aria-label={ariaLabel}
           className="inline-flex shrink-0 cursor-help text-yellow-500"

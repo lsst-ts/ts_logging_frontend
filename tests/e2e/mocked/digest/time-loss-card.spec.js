@@ -12,6 +12,23 @@ const AVAILABLE_OBS_STATUS = (metrics = { fault_loss: 1.5, weather: 0.5 }) => ({
   totals: metrics,
 });
 
+const ALMANAC_FOR_CALCULATED_FAULT = {
+  almanac_info: [
+    {
+      dayobs: 20260102,
+      night_hours: 8,
+      elapsed_twilight_hours: 8,
+      twilight_evening_0deg: "2026-01-01 00:30:00",
+      twilight_evening_12deg: "2026-01-01 01:00:00",
+      twilight_morning_12deg: "2026-01-01 09:00:00",
+      twilight_morning_0deg: "2026-01-01 09:30:00",
+      moon_rise_time: "2026-01-01 04:00:00",
+      moon_set_time: "2025-12-31 16:00:00",
+      moon_illumination: "50%",
+    },
+  ],
+};
+
 // Non-zero exposure and accounting data ensure the weather-loss fallback is
 // exercised by both calculated values.
 const EXPOSURES_FOR_ZERO_WEATHER_CALCULATIONS = {
@@ -38,10 +55,12 @@ const EXPOSURES_FOR_ZERO_WEATHER_CALCULATIONS = {
 };
 
 test.describe("Digest page — Time Loss and Efficiency cards", () => {
-  test("shows Observatory Status fault and weather loss when fully available", async ({
+  test("shows Observatory Status and calculated fault loss when fully available", async ({
     page,
   }) => {
     await setupApiMocks(page, {
+      almanac: ALMANAC_FOR_CALCULATED_FAULT,
+      exposures: EXPOSURES_FOR_ZERO_WEATHER_CALCULATIONS,
       "obs-status": AVAILABLE_OBS_STATUS(),
     });
     await page.goto(DIGEST_URL);
@@ -50,9 +69,12 @@ test.describe("Digest page — Time Loss and Efficiency cards", () => {
     await expect(card.getByText("Time Loss", { exact: true })).toBeVisible();
     await expect(card.getByTestId("time-loss-fault")).toHaveText("1.50");
     await expect(card.getByTestId("time-loss-weather")).toHaveText("0.50");
+    await expect(card.getByTestId("time-loss-calculated-fault")).toHaveText(
+      "6.00",
+    );
   });
 
-  test("shows Fault and Weather loading skeletons while Obs Status loads", async ({
+  test("shows Fault, Weather and Calculated Fault loading skeletons while Obs Status loads", async ({
     page,
   }) => {
     await setupApiMocks(page);
@@ -63,14 +85,19 @@ test.describe("Digest page — Time Loss and Efficiency cards", () => {
     const card = timeLossCard(page);
     await expect(card.getByTestId("time-loss-fault-loading")).toBeVisible();
     await expect(card.getByTestId("time-loss-weather-loading")).toBeVisible();
+    await expect(
+      card.getByTestId("time-loss-calculated-fault-loading"),
+    ).toBeVisible();
     await expect(card.getByTestId("time-loss-fault")).toHaveCount(0);
     await expect(card.getByTestId("time-loss-weather")).toHaveCount(0);
+    await expect(card.getByTestId("time-loss-calculated-fault")).toHaveCount(0);
   });
 
   test("uses zero weather loss for calculated fault and efficiency when Obs Status is unavailable", async ({
     page,
   }) => {
     await setupApiMocks(page, {
+      almanac: ALMANAC_FOR_CALCULATED_FAULT,
       exposures: EXPOSURES_FOR_ZERO_WEATHER_CALCULATIONS,
       "obs-status": {
         ...AVAILABLE_OBS_STATUS({}),
@@ -92,7 +119,9 @@ test.describe("Digest page — Time Loss and Efficiency cards", () => {
     const unavailableCalculatedFault = await calculatedFault.textContent();
     const unavailableEfficiency = await efficiency.textContent();
 
-    await card.getByTestId("time-loss-availability-warning").hover();
+    await card
+      .getByRole("button", { name: "Time Loss data availability warning" })
+      .hover();
     const timeLossTooltip = openTooltip(page);
     await expect(timeLossTooltip).toContainText(
       "Observatory Status data is only available from the supported date range.",
@@ -101,7 +130,9 @@ test.describe("Digest page — Time Loss and Efficiency cards", () => {
       "Weather loss is treated as 0.0 for dayobs without Observatory Status data.",
     );
 
-    await page.getByTestId("efficiency-availability-warning").hover();
+    await page
+      .getByRole("button", { name: "Efficiency data availability warning" })
+      .hover();
     await expect(openTooltip(page)).toContainText(
       "Weather loss is treated as 0.0 for dayobs without Observatory Status data.",
     );
@@ -125,10 +156,35 @@ test.describe("Digest page — Time Loss and Efficiency cards", () => {
     ).toHaveText(unavailableEfficiency ?? "");
   });
 
+  test("shows an accessible warning for unavailable calculated fault data", async ({
+    page,
+  }) => {
+    await setupApiMocks(page, {
+      almanac: ALMANAC_FOR_CALCULATED_FAULT,
+      exposures: {
+        ...EXPOSURES_FOR_ZERO_WEATHER_CALCULATIONS,
+        time_accounting_error: "Time accounting data is unavailable.",
+      },
+      "obs-status": AVAILABLE_OBS_STATUS(),
+    });
+    await page.goto(DIGEST_URL);
+
+    const warning = timeLossCard(page).getByRole("button", {
+      name: "Calculated Fault unavailable",
+    });
+    await expect(warning).toBeVisible();
+    await warning.hover();
+    await expect(openTooltip(page)).toContainText(
+      "Fault unavailable: no time accounting data.",
+    );
+  });
+
   test("keeps partial Obs Status values visible with a time-loss warning", async ({
     page,
   }) => {
     await setupApiMocks(page, {
+      almanac: ALMANAC_FOR_CALCULATED_FAULT,
+      exposures: EXPOSURES_FOR_ZERO_WEATHER_CALCULATIONS,
       "obs-status": {
         ...AVAILABLE_OBS_STATUS({ fault_loss: 2.25, weather: 3.75 }),
         availability: { status: "partial", available_from: "20260102" },
@@ -139,8 +195,13 @@ test.describe("Digest page — Time Loss and Efficiency cards", () => {
     const card = timeLossCard(page);
     await expect(card.getByTestId("time-loss-fault")).toHaveText("2.25");
     await expect(card.getByTestId("time-loss-weather")).toHaveText("3.75");
+    await expect(card.getByTestId("time-loss-calculated-fault")).toHaveText(
+      "2.75",
+    );
 
-    await card.getByTestId("time-loss-availability-warning").hover();
+    await card
+      .getByRole("button", { name: "Time Loss data availability warning" })
+      .hover();
     const tooltip = openTooltip(page);
     await expect(tooltip).toContainText(
       "Observatory Status data is only available from 2026-01-02.",

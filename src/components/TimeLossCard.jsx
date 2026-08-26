@@ -18,6 +18,12 @@ import TimeLossIcon from "../assets/TimeLossIcon.svg";
 
 import { OBSERVATORY_STATE_AVAILABILITY_STATUS } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
 
+// TODO: Check inconsistencies between how the obs status availability warning component is used in this card and the metrics card.
+
+// TODO: What happens if there is an error fetching obs status data?
+// Should we show a warning (with a different message) in the card like we do for when data is unavailable?
+
+// TODO: Use Asher's guidelines for when to user data-testid, data-slot, aria-label and roles rused for testing.
 export default function TimeLossCard({
   obsStatusFaultLoss,
   obsStatusWeatherLoss,
@@ -64,7 +70,6 @@ export default function TimeLossCard({
             <ObservatoryStatusAvailabilityWarning
               availability={obsStatusAvailability}
               ariaLabel="Time Loss data availability warning"
-              testId="time-loss-availability-warning"
               partialDetails="Time loss has been computed for the available dayobs."
               details="Weather loss is treated as 0.0 for dayobs without Observatory Status data."
             />
@@ -120,21 +125,30 @@ export default function TimeLossCard({
 
           <div>(Calculated Fault):</div>
           {calculatedFaultLoading ? (
-            <Skeleton className="h-3 w-10 bg-teal-700" />
+            <Skeleton
+              data-testid="time-loss-calculated-fault-loading"
+              className="h-3 w-10 bg-teal-700"
+            />
           ) : faultDataUnavailable ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-1 cursor-help">
-                  <span>NA</span>
+            <div className="flex items-center gap-1">
+              <span>NA</span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="Calculated Fault unavailable"
+                    className="inline-flex shrink-0 cursor-help text-yellow-500"
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    <TriangleAlert className="h-5 w-5" />
+                  </button>
+                </TooltipTrigger>
 
-                  <TriangleAlert className="h-4 w-4 text-yellow-500" />
-                </div>
-              </TooltipTrigger>
-
-              <TooltipContent>
-                <p>{faultErrorMessage}</p>
-              </TooltipContent>
-            </Tooltip>
+                <TooltipContent>
+                  <p>{faultErrorMessage}</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
           ) : (
             <div data-testid="time-loss-calculated-fault">
               {formatHours(calculatedData)}

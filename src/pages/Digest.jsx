@@ -615,7 +615,6 @@ export default function Digest() {
               <ObservatoryStatusAvailabilityWarning
                 availability={obsStatusAvailability}
                 ariaLabel="Efficiency data availability warning"
-                testId="efficiency-availability-warning"
                 details="Weather loss is treated as 0.0 for dayobs without Observatory Status data."
               />
             }
