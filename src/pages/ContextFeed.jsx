@@ -119,13 +119,13 @@ function ContextFeed() {
   // Almanac data for timeline
   const [twilightValues, setTwilightValues] = useState([]);
   const [twilight0DegValues, setTwilight0DegValues] = useState([]);
-  const [almanacLoading, setAlmanacLoading] = useState(false);
+  const [almanacLoading, setAlmanacLoading] = useState(true);
 
   // Observatory status data
   const [obsStatusEntries, setObsStatusEntries] = useState([]);
   const [obsStatusMetrics, setObsStatusMetrics] = useState(null);
   const [obsStatusAvailability, setObsStatusAvailability] = useState(null);
-  const [obsStatusLoading, setObsStatusLoading] = useState(false);
+  const [obsStatusLoading, setObsStatusLoading] = useState(true);
 
   // Total night hours from almanac (for metrics total row)
   const [nightHours, setNightHours] = useState(null);
