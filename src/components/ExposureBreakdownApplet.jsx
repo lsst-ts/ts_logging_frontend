@@ -333,11 +333,13 @@ function ExposureBreakdownApplet({
                   highlight the corresponding exposures in the{" "}
                   <strong>Observing Conditions</strong> chart.
                 </li>
-                <li>
-                  In <strong>Science Program</strong> view, hover to see the
-                  BLOCK description (if available). Linked labels open the BLOCK
-                  documentation.
-                </li>
+                {!isScientificNightlyDigest && (
+                  <li>
+                    In <strong>Science Program</strong> view, hover to see the
+                    BLOCK description (if available). Linked labels open the
+                    BLOCK documentation.
+                  </li>
+                )}
                 <li>
                   Click a bar to open the <strong>Data Log</strong>, filtered by
                   that group.

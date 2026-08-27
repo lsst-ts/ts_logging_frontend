@@ -443,7 +443,9 @@ export default function Digest() {
       ...new Set(exposureFields.map((e) => e.science_program)),
     ];
 
-    if (blockKeys.length === 0) {
+    // BLOCK details only feed the exposure breakdown's Science Program labels,
+    // which the Scientific Nightly Digest renders as plain text.
+    if (isScientificNightlyDigest || blockKeys.length === 0) {
       return; // nothing to fetch
     }
     fetchBlockDetails(blockKeys, abortController)

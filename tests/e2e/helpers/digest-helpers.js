@@ -18,6 +18,22 @@ export function observatoryStatusCard(page) {
 }
 
 /**
+ * Opens an applet's info popover.
+ *
+ * Applet headers carry two icon-only popover triggers, download then info, and
+ * neither image has alt text, so the info one is the second button.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} title - The applet's CardTitle text.
+ */
+export async function openAppletInfo(page, title) {
+  await appletCard(page, title)
+    .locator("[data-slot='card-header'] button")
+    .nth(1)
+    .click();
+}
+
+/**
  * Locator for the metrics row at the top of the Digest page.
  *
  * It is the first grid on the page; the applet rows follow it.
