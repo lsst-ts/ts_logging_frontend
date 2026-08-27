@@ -66,7 +66,9 @@ const defaultDayObs = () =>
 export const baseSearchParamsSchema = z.object({
   startDayobs: dayobsInt.default(defaultDayObs),
   endDayobs: dayobsInt.default(defaultDayObs),
-  telescope: z.enum(["Simonyi", "AuxTel"]).default("Simonyi"),
+  telescope: z
+    .enum(isScientificNightlyDigest ? ["Simonyi"] : ["Simonyi", "AuxTel"])
+    .default("Simonyi"),
   // these are marked as optional because they are added automatically
   startTime: z.coerce.number().int().min(0).optional(),
   endTime: z.coerce.number().int().min(0).optional(),
