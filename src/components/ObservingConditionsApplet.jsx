@@ -36,6 +36,7 @@ import { useDOMClickDrag } from "@/hooks/useDOMClickDrag";
 import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
 import { RotateCcw } from "lucide-react";
 import { calculateZoom } from "@/utils/plotUtils";
+import { isScientificNightlyDigest } from "@/utils/appConfig";
 import {
   millisToDateTime,
   millisToHHmm,
@@ -240,11 +241,15 @@ function ObservingConditionsApplet({
 
   // Context menu items for navigation
   const contextMenuItems = [
-    {
-      label: "View Context Feed",
-      to: "/nightlydigest/context-feed",
-      search,
-    },
+    ...(isScientificNightlyDigest
+      ? []
+      : [
+          {
+            label: "View Context Feed",
+            to: "/nightlydigest/context-feed",
+            search,
+          },
+        ]),
     {
       label: "View Plots",
       to: "/nightlydigest/plots",
