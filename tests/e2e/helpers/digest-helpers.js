@@ -18,6 +18,25 @@ export function observatoryStatusCard(page) {
 }
 
 /**
+ * Locator for an applet card on the Digest page, matched on its CardTitle.
+ *
+ * Matching the title rather than the whole card avoids picking up metric cards
+ * that merely mention an applet's name in a tooltip.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} title - The applet's CardTitle text, e.g. "Visit Map".
+ * @returns {import('@playwright/test').Locator}
+ */
+export function appletCard(page, title) {
+  return page
+    .locator("[data-slot='card']")
+    .filter({
+      has: page.locator("[data-slot='card-title']", { hasText: title }),
+    })
+    .first();
+}
+
+/**
  * Waits until the Observatory Status applet has finished loading.
  *
  * The applet shows a skeleton while loading. Once loaded it either renders the
