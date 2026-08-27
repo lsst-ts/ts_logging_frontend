@@ -6,6 +6,7 @@ import {
   PSF_SIGMA_FACTOR,
 } from "@/utils/utils";
 import { matchValueOrInList } from "@/components/DataTable/tableUtils";
+import { isScientificNightlyDigest } from "@/utils/appConfig";
 
 const columnHelper = createColumnHelper();
 
@@ -41,24 +42,29 @@ function renderScienceProgram(info) {
 
 // Columns common to both telescopes
 const commonColumns = [
-  // Link to RubinTV
-  columnHelper.display({
-    id: "RubinTVLink",
-    header: "RubinTV",
-    cell: ({ row }) => (
-      <RubinTVLink
-        dayObs={row.original.day_obs}
-        seqNum={row.original.seq_num}
-        exposureName={row.original.exposure_name}
-      />
-    ),
-    size: 140,
-    minSize: 140,
-    filterType: null,
-    meta: {
-      tooltip: "Link to RubinTV. Opens in a new tab.",
-    },
-  }),
+  // Link to RubinTV. Omitted from the Scientific Nightly Digest, whose users
+  // cannot reach what it links to.
+  ...(isScientificNightlyDigest
+    ? []
+    : [
+        columnHelper.display({
+          id: "RubinTVLink",
+          header: "RubinTV",
+          cell: ({ row }) => (
+            <RubinTVLink
+              dayObs={row.original.day_obs}
+              seqNum={row.original.seq_num}
+              exposureName={row.original.exposure_name}
+            />
+          ),
+          size: 140,
+          minSize: 140,
+          filterType: null,
+          meta: {
+            tooltip: "Link to RubinTV. Opens in a new tab.",
+          },
+        }),
+      ]),
 
   // Identifying data
   columnHelper.accessor("exposure_name", {
