@@ -52,6 +52,7 @@ import {
   prepareMoonIntervals,
 } from "@/utils/timelineUtils";
 import { calculateChartData } from "@/utils/chartCalculations";
+import { isScientificNightlyDigest } from "@/utils/appConfig";
 import { PlotDataContext } from "@/contexts/PlotDataContext";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
 import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
@@ -162,11 +163,15 @@ function Plots() {
 
   // Context menu items
   const contextMenuItems = [
-    {
-      label: "View Context Feed",
-      to: "/nightlydigest/context-feed",
-      search,
-    },
+    ...(isScientificNightlyDigest
+      ? []
+      : [
+          {
+            label: "View Context Feed",
+            to: "/nightlydigest/context-feed",
+            search,
+          },
+        ]),
     {
       label: "View Data Log",
       to: "/nightlydigest/data-log",

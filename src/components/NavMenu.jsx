@@ -7,16 +7,21 @@ import {
 } from "@/components/ui/navigation-menu";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { buildNavigationWithSearchParams } from "@/utils/utils";
+import { isScientificNightlyDigest } from "@/utils/appConfig";
 
 const items = [
   { name: "digest", title: "Nightly Digest", url: "/nightlydigest/" },
   { name: "plots", title: "Plots", url: "/nightlydigest/plots" },
   { name: "data-log", title: "Data Log", url: "/nightlydigest/data-log" },
-  {
-    name: "context-feed",
-    title: "Context Feed",
-    url: "/nightlydigest/context-feed",
-  },
+  ...(isScientificNightlyDigest
+    ? []
+    : [
+        {
+          name: "context-feed",
+          title: "Context Feed",
+          url: "/nightlydigest/context-feed",
+        },
+      ]),
   {
     name: "visit-maps",
     title: "Visit Maps",
