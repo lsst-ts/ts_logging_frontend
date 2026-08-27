@@ -22,6 +22,7 @@ import {
   getAvailableDayObsRange,
 } from "./utils/retentionPolicyUtils";
 import { getDayobsStartUTC, getDayobsEndUTC } from "./utils/timeUtils";
+import { isScientificNightlyDigest } from "./utils/appConfig";
 
 export const GLOBAL_SEARCH_PARAMS = [
   "startDayobs",
@@ -268,7 +269,9 @@ const router = createRouter({
   routeTree: rootRoute.addChildren([
     dashboardRoute,
     dataLogRoute,
-    contextFeedRoute,
+    // The Context Feed is internal-only; the Scientific Nightly Digest has no
+    // route for it at all, so the path 404s rather than rendering the page.
+    ...(isScientificNightlyDigest ? [] : [contextFeedRoute]),
     plotsRoute,
     visitmapsRoute,
   ]),
