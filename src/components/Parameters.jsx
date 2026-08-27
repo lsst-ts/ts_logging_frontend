@@ -14,6 +14,7 @@ import { useHostConfig } from "@/contexts/HostConfigContext";
 
 import { getDisplayDateRange } from "@/utils/utils";
 import { utcDateToCalendarDate } from "@/utils/timeUtils";
+import { isScientificNightlyDigest } from "@/utils/appConfig";
 import { DateTime } from "luxon";
 
 export const TELESCOPES = Object.freeze({
@@ -51,26 +52,28 @@ function Parameters({
   return (
     <>
       {/* Inputs */}
-      <div className="pt-3">
-        <Label htmlFor="instrument" className="text-white text-base pb-1">
-          Telescope
-        </Label>
-        <Select value={instrument} onValueChange={onInstrumentChange}>
-          <SelectTrigger
-            id="instrument"
-            className="w-[200px] bg-white justify-between font-normal shadow-[4px_4px_4px_0px_#3CAE3F] focus-visible:ring-4 focus-visible:ring-green-500/50"
-          >
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {instruments.map((instr) => (
-              <SelectItem key={instr.value} value={instr.value}>
-                {instr.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {!isScientificNightlyDigest && (
+        <div className="pt-3">
+          <Label htmlFor="instrument" className="text-white text-base pb-1">
+            Telescope
+          </Label>
+          <Select value={instrument} onValueChange={onInstrumentChange}>
+            <SelectTrigger
+              id="instrument"
+              className="w-[200px] bg-white justify-between font-normal shadow-[4px_4px_4px_0px_#3CAE3F] focus-visible:ring-4 focus-visible:ring-green-500/50"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {instruments.map((instr) => (
+                <SelectItem key={instr.value} value={instr.value}>
+                  {instr.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
       <div className="pt-8">
         <Label htmlFor="dayobs" className="text-white text-base pb-1">
           Night (dayobs)
