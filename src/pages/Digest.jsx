@@ -199,11 +199,11 @@ export default function Digest() {
     setExposuresLoading(true);
     setExpectedExposuresLoading(true);
     setAlmanacLoading(true);
-    // Left false when the night report is not fetched, so allLoaded still settles.
+    // Left false for whatever SND does not fetch, so allLoaded still settles.
     if (!isScientificNightlyDigest) {
       setNightreportLoading(true);
+      setJiraLoading(true);
     }
-    setJiraLoading(true);
     setFlagsLoading(true);
     setObsStatusLoading(true);
     setExposureFields([]);
@@ -397,24 +397,28 @@ export default function Digest() {
         });
     }
 
-    fetchJiraTickets(startDayobs, queryEndDayobs, instrument, abortController)
-      .then((issues) => {
-        setJiraTickets(issues);
-      })
-      .catch((err) => {
-        if (!abortController.signal.aborted) {
-          console.error("Error fetching Jira tickets:", err);
-          addNotification({
-            type: "error",
-            source: "jira-tickets",
-          });
-        }
-      })
-      .finally(() => {
-        if (!abortController.signal.aborted) {
-          setJiraLoading(false);
-        }
-      });
+    // The Scientific Nightly Digest has no Jira tickets card, so nothing
+    // consumes this.
+    if (!isScientificNightlyDigest) {
+      fetchJiraTickets(startDayobs, queryEndDayobs, instrument, abortController)
+        .then((issues) => {
+          setJiraTickets(issues);
+        })
+        .catch((err) => {
+          if (!abortController.signal.aborted) {
+            console.error("Error fetching Jira tickets:", err);
+            addNotification({
+              type: "error",
+              source: "jira-tickets",
+            });
+          }
+        })
+        .finally(() => {
+          if (!abortController.signal.aborted) {
+            setJiraLoading(false);
+          }
+        });
+    }
 
     fetchExposureFlags(startDayobs, queryEndDayobs, instrument, abortController)
       .then((flags) => {
@@ -587,7 +591,11 @@ export default function Digest() {
           />
         )}
         {/* Metrics */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div
+          className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${
+            isScientificNightlyDigest ? "lg:grid-cols-3" : "lg:grid-cols-4"
+          }`}
+        >
           <MetricsCard
             icon={ShutterIcon}
             data={onSkyExpCount}
@@ -635,19 +643,21 @@ export default function Digest() {
             warningContent={warningContent}
             obsStatusLoading={obsStatusLoading}
           />
-          <DialogMetricsCard
-            icons={[JiraIconWhite, JiraIconBlue]}
-            data={newTicketsCount}
-            label="Jira tickets created"
-            metadata={`(${jiraTickets.length - newTicketsCount} updated)`}
-            tooltip="Jira tickets created or updated within the specified date range."
-            loading={jiraLoading}
-            dialogTitle="Jira Tickets"
-            dialogDescription="List of Jira tickets created or updated within the specified date range."
-            dialogContent={
-              <JiraTicketsTable loading={jiraLoading} tickets={jiraTickets} />
-            }
-          ></DialogMetricsCard>
+          {!isScientificNightlyDigest && (
+            <DialogMetricsCard
+              icons={[JiraIconWhite, JiraIconBlue]}
+              data={newTicketsCount}
+              label="Jira tickets created"
+              metadata={`(${jiraTickets.length - newTicketsCount} updated)`}
+              tooltip="Jira tickets created or updated within the specified date range."
+              loading={jiraLoading}
+              dialogTitle="Jira Tickets"
+              dialogDescription="List of Jira tickets created or updated within the specified date range."
+              dialogContent={
+                <JiraTicketsTable loading={jiraLoading} tickets={jiraTickets} />
+              }
+            ></DialogMetricsCard>
+          )}
         </div>
         {/* Applets */}
         <div className="flex flex-col gap-4">
