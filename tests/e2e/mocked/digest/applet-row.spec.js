@@ -1,6 +1,6 @@
 // @ts-check
 import { test, expect } from "@playwright/test";
-import { setupApiMocks } from "../../helpers/mock-api.js";
+import { recordRequests, setupApiMocks } from "../../helpers/mock-api.js";
 import { DIGEST_URL } from "../../helpers/constants.js";
 import {
   appletCard,
@@ -35,11 +35,7 @@ test.describe("Digest page — bottom applet row", () => {
   // SND skips this request entirely; tests/e2e/snd/digest-applets.spec.js
   // asserts its absence, and this is what keeps that assertion honest.
   test("the night report is fetched", async ({ page }) => {
-    const requests = [];
-    await page.route("**/nightlydigest/api/night-reports*", (route) => {
-      requests.push(route.request().url());
-      return route.fallback();
-    });
+    const requests = await recordRequests(page, "night-reports");
 
     await page.goto(DIGEST_URL);
     await waitForObservatoryStatusAppletLoad(page);

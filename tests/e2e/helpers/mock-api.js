@@ -69,3 +69,28 @@ export async function setupApiMocks(page, overrides = {}) {
     );
   }
 }
+
+/**
+ * Records requests to one API endpoint without changing how it responds.
+ *
+ * Routes registered later match first, so calling this after setupApiMocks
+ * observes the request and then hands it back to the mock via fallback().
+ * Use it to assert that a build variant does, or does not, hit an endpoint.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} endpoint - Endpoint name, e.g. "night-reports".
+ * @returns {Promise<string[]>} Array that fills with matching request URLs.
+ *
+ * @example
+ * const requests = await recordRequests(page, "jira-tickets");
+ * await page.goto(DIGEST_URL);
+ * expect(requests).toEqual([]);
+ */
+export async function recordRequests(page, endpoint) {
+  const urls = [];
+  await page.route(`**/nightlydigest/api/${endpoint}*`, (route) => {
+    urls.push(route.request().url());
+    return route.fallback();
+  });
+  return urls;
+}

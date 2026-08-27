@@ -1,6 +1,6 @@
 // @ts-check
 import { test, expect } from "@playwright/test";
-import { setupApiMocks } from "../helpers/mock-api.js";
+import { recordRequests, setupApiMocks } from "../helpers/mock-api.js";
 import { DIGEST_URL } from "../helpers/constants.js";
 import {
   appletCard,
@@ -20,11 +20,7 @@ test.describe("Scientific Nightly Digest — digest applets", () => {
   });
 
   test("the night report is never fetched", async ({ page }) => {
-    const requests = [];
-    await page.route("**/nightlydigest/api/night-reports*", (route) => {
-      requests.push(route.request().url());
-      return route.fallback();
-    });
+    const requests = await recordRequests(page, "night-reports");
 
     await page.goto(DIGEST_URL);
     await waitForObservatoryStatusAppletLoad(page);
