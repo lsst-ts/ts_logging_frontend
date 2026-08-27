@@ -228,6 +228,14 @@ test.describe("Sidebar — footer and toggle", () => {
     );
   });
 
+  // Only the Scientific Nightly Digest carries this link; see
+  // tests/e2e/snd/sidebar.spec.js.
+  test("there is no community forum link", async ({ page }) => {
+    await expect(
+      page.getByRole("link", { name: "LSST Community Forum" }),
+    ).toHaveCount(0);
+  });
+
   test("toggling collapses and restores the sidebar", async ({ page }) => {
     const toggle = page.getByRole("button", { name: "Toggle Sidebar" });
     // The sidebar slides off-canvas rather than unmounting, so its links stay
