@@ -22,7 +22,7 @@ function renderScienceProgram(info) {
   const block = blockMap?.[value];
 
   // If available, display BLOCK names as Zephyr/Jira links
-  if (block) {
+  if (block && !isScientificNightlyDigest) {
     return (
       <div className="p-1 rounded">
         <a
@@ -162,8 +162,9 @@ const commonColumns = [
     filterType: "string",
     meta: {
       urlParam: "science_program",
-      tooltip:
-        "Science program, linked to Zephyr/Jira where possible. Opens in a new tab.",
+      tooltip: isScientificNightlyDigest
+        ? "Science program."
+        : "Science program, linked to Zephyr/Jira where possible. Opens in a new tab.",
     },
   }),
   columnHelper.accessor("block_description", {
