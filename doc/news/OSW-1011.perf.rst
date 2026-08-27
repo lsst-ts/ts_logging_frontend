@@ -1,0 +1,1 @@
+Refactor NightSummary component to simplify logic on Report child component.
