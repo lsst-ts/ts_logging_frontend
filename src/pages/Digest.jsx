@@ -27,6 +27,7 @@ import {
   formatDayobsStrForDisplay,
   getDayobsStartUTC,
 } from "@/utils/timeUtils";
+import { isScientificNightlyDigest } from "@/utils/appConfig";
 import { useNotifications } from "@/hooks/useNotifications";
 import { NotificationBannerStack } from "@/components/NotificationBannerStack";
 import DialogMetricsCard from "@/components/dialog-metrics-card";
@@ -665,11 +666,17 @@ export default function Digest() {
               onBarLeave={onBarLeave}
             />
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <NightSummary
-              reports={reports}
-              nightreportLoading={nightreportLoading}
-            />
+          <div
+            className={`grid grid-cols-1 gap-4 ${
+              isScientificNightlyDigest ? "lg:grid-cols-2" : "lg:grid-cols-3"
+            }`}
+          >
+            {!isScientificNightlyDigest && (
+              <NightSummary
+                reports={reports}
+                nightreportLoading={nightreportLoading}
+              />
+            )}
             <ObservatoryStatusApplet
               almanacInfo={almanacInfo}
               intervals={obsStatusIntervals}
