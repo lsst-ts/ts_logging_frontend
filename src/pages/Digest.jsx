@@ -123,7 +123,10 @@ export default function Digest() {
     setExpectedExposuresLoading(true);
     setAlmanacLoading(true);
     setNarrativeLoading(true);
-    setNightreportLoading(true);
+    // Left false when the night report is not fetched, so allLoaded still settles.
+    if (!isScientificNightlyDigest) {
+      setNightreportLoading(true);
+    }
     setJiraLoading(true);
     setFlagsLoading(true);
     setObsStatusLoading(true);
@@ -327,30 +330,35 @@ export default function Digest() {
         }
       });
 
-    fetchNightreport(startDayobs, queryEndDayobs, abortController)
-      .then(([reports]) => {
-        const parsedReports = reports.map((report) => ({
-          ...report,
-          maintel_summary:
-            telescope === "Simonyi" ? report.maintel_summary : null,
-          auxtel_summary: telescope === "AuxTel" ? report.auxtel_summary : null,
-        }));
-        setReports(parsedReports);
-      })
-      .catch((err) => {
-        if (!abortController.signal.aborted) {
-          console.error("Error fetching night reports:", err);
-          addNotification({
-            type: "error",
-            source: "night-reports",
-          });
-        }
-      })
-      .finally(() => {
-        if (!abortController.signal.aborted) {
-          setNightreportLoading(false);
-        }
-      });
+    // The Scientific Nightly Digest has no night report applet, so nothing
+    // consumes this.
+    if (!isScientificNightlyDigest) {
+      fetchNightreport(startDayobs, queryEndDayobs, abortController)
+        .then(([reports]) => {
+          const parsedReports = reports.map((report) => ({
+            ...report,
+            maintel_summary:
+              telescope === "Simonyi" ? report.maintel_summary : null,
+            auxtel_summary:
+              telescope === "AuxTel" ? report.auxtel_summary : null,
+          }));
+          setReports(parsedReports);
+        })
+        .catch((err) => {
+          if (!abortController.signal.aborted) {
+            console.error("Error fetching night reports:", err);
+            addNotification({
+              type: "error",
+              source: "night-reports",
+            });
+          }
+        })
+        .finally(() => {
+          if (!abortController.signal.aborted) {
+            setNightreportLoading(false);
+          }
+        });
+    }
 
     fetchJiraTickets(startDayobs, queryEndDayobs, instrument, abortController)
       .then((issues) => {
