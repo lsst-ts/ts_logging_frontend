@@ -32,6 +32,22 @@ test.describe("Digest page — bottom applet row", () => {
     }
   });
 
+  // SND skips this request entirely; tests/e2e/snd/digest-applets.spec.js
+  // asserts its absence, and this is what keeps that assertion honest.
+  test("the night report is fetched", async ({ page }) => {
+    const requests = [];
+    await page.route("**/nightlydigest/api/night-reports*", (route) => {
+      requests.push(route.request().url());
+      return route.fallback();
+    });
+
+    await page.goto(DIGEST_URL);
+    await waitForObservatoryStatusAppletLoad(page);
+    await expect(appletCard(page, "Night Report")).toBeVisible();
+
+    expect(requests.length).toBeGreaterThan(0);
+  });
+
   test("the row is three columns, narrower than the two-up row above", async ({
     page,
   }) => {

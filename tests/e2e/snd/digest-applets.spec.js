@@ -19,6 +19,21 @@ test.describe("Scientific Nightly Digest — digest applets", () => {
     await expect(page.getByText(/^Night Reports?$/)).toHaveCount(0);
   });
 
+  test("the night report is never fetched", async ({ page }) => {
+    const requests = [];
+    await page.route("**/nightlydigest/api/night-reports*", (route) => {
+      requests.push(route.request().url());
+      return route.fallback();
+    });
+
+    await page.goto(DIGEST_URL);
+    await waitForObservatoryStatusAppletLoad(page);
+    // Other applets finishing is the signal that the page settled without it.
+    await expect(appletCard(page, "Visit Map")).toBeVisible();
+
+    expect(requests).toEqual([]);
+  });
+
   test("observatory status and visit map expand to half the row each", async ({
     page,
   }) => {
