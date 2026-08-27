@@ -9,6 +9,7 @@ services:
     image: nightlydigest-frontend-local
     environment:
       - VITE_BACKEND_URL=${VITE_BACKEND_URL:-}
+      - VITE_SCIENTIFIC_NIGHTLY_DIGEST=${VITE_SCIENTIFIC_NIGHTLY_DIGEST:-}
     ports:
       - "5173:5173"
     volumes:
