@@ -21,8 +21,8 @@ import {
   calculateEfficiency,
   calculateSumExpTimeBetweenTwilights,
   getBlockSourceLabel,
-  computeCalculatedFault,
-  isDictionaryEmpty,
+  // computeCalculatedFault,
+  // isDictionaryEmpty,
 } from "@/utils/utils";
 import { getDayobsStartUTC } from "@/utils/timeUtils";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -63,6 +63,7 @@ export default function Digest() {
   const [obsStatusIntervals, setObsStatusIntervals] = useState([]);
   const [obsStatusFaultLoss, setObsStatusFaultLoss] = useState(0.0);
   const [obsStatusWeatherLoss, setObsStatusWeatherLoss] = useState(0.0);
+  const [obsStatusDowntime, setObsStatusDowntime] = useState(0.0);
   const [obsStatusAvailability, setObsStatusAvailability] = useState(
     EMPTY_OBS_STATUS_AVAILABILITY,
   );
@@ -74,10 +75,10 @@ export default function Digest() {
   const [almanacLoading, setAlmanacLoading] = useState(true);
   const [nightreportLoading, setNightreportLoading] = useState(true);
   const [obsStatusLoading, setObsStatusLoading] = useState(true);
-  const [dayObsOpenDomeHours, setDayObsOpenDomeHours] = useState({});
-  const [onSkyTimeAccounting, setOnSkyTimeAccounting] = useState({});
-  const [openDomeError, setOpenDomeError] = useState(null);
-  const [timeAccountingError, setTimeAccountingError] = useState(null);
+  // const [dayObsOpenDomeHours, setDayObsOpenDomeHours] = useState({});
+  // const [onSkyTimeAccounting, setOnSkyTimeAccounting] = useState({});
+  // const [openDomeError, setOpenDomeError] = useState(null);
+  // const [timeAccountingError, setTimeAccountingError] = useState(null);
 
   const [jiraTickets, setJiraTickets] = useState([]);
   const [jiraLoading, setJiraLoading] = useState(true);
@@ -136,6 +137,7 @@ export default function Digest() {
     setObsStatusIntervals([]);
     setObsStatusFaultLoss(0.0);
     setObsStatusWeatherLoss(0.0);
+    setObsStatusDowntime(0.0);
     setObsStatusAvailability(EMPTY_OBS_STATUS_AVAILABILITY);
     setObsStatusFetchError(false);
 
@@ -143,62 +145,49 @@ export default function Digest() {
     setStaticVisitMaps(null);
     setStaticVisitMapError(false);
 
-    setDayObsOpenDomeHours({});
-    setOnSkyTimeAccounting({});
-    setOpenDomeError(null);
-    setTimeAccountingError(null);
+    // setDayObsOpenDomeHours({});
+    // setOnSkyTimeAccounting({});
+    // setOpenDomeError(null);
+    // setTimeAccountingError(null);
 
     clearNotifications();
 
     fetchExposures(startDayobs, queryEndDayobs, instrument, abortController)
-      .then(
-        ([
-          exposureFields,
-          exposuresNo,
-          exposureTime,
-          onSkyExpNo,
-          totalOnSkyExpTime,
-          domeTimes,
-          openDomeHours,
-          domeError,
-          nightOnSkyTimeAccounting,
-          accountingError,
-        ]) => {
-          setExposureFields(exposureFields);
-          setExposureCount(exposuresNo);
-          setSumExpTime(exposureTime);
-          setOnSkyExpCount(onSkyExpNo);
-          setSumOnSkyExpTime(totalOnSkyExpTime);
-          setExposuresLoading(false);
-          setOpenDomeTimes(domeTimes);
-          setDayObsOpenDomeHours(openDomeHours);
-          setOnSkyTimeAccounting(nightOnSkyTimeAccounting);
-          setOpenDomeError(domeError);
-          setTimeAccountingError(accountingError);
+      .then((data) => {
+        setExposureFields(data.exposures);
+        setExposureCount(data.exposures_count);
+        setSumExpTime(data.sum_exposure_time);
+        setOnSkyExpCount(data.on_sky_exposures_count);
+        setSumOnSkyExpTime(data.total_on_sky_exposure_time);
+        setExposuresLoading(false);
+        setOpenDomeTimes(data.open_dome_times);
+        // setDayObsOpenDomeHours(data.day_obs_open_dome_hours);
+        // setOnSkyTimeAccounting(data.night_on_sky_time_accounting);
+        // setOpenDomeError(data.open_dome_error);
+        // setTimeAccountingError(data.time_accounting_error);
 
-          if (exposuresNo === 0) {
-            addNotification({
-              type: "noData",
-              source: "consdb",
-              title: "No exposures found in ConsDB",
-              description:
-                "Parts of the dashboard that depend on exposure data will appear empty for the selected date range.",
-            });
-          }
-          if (domeError) {
-            addNotification({
-              type: "error",
-              source: "dome-times",
-            });
-          }
-          if (accountingError) {
-            addNotification({
-              type: "error",
-              source: "time-accounting",
-            });
-          }
-        },
-      )
+        if (data.exposures_count === 0) {
+          addNotification({
+            type: "noData",
+            source: "consdb",
+            title: "No exposures found in ConsDB",
+            description:
+              "Parts of the dashboard that depend on exposure data will appear empty for the selected date range.",
+          });
+        }
+        if (data.open_dome_error) {
+          addNotification({
+            type: "error",
+            source: "dome-times",
+          });
+        }
+        if (data.time_accounting_error) {
+          addNotification({
+            type: "error",
+            source: "time-accounting",
+          });
+        }
+      })
       .catch((err) => {
         if (!abortController.signal.aborted) {
           console.error("Error fetching exposures:", err);
@@ -259,7 +248,7 @@ export default function Digest() {
       includeEntries: true,
       includeIntervals: true,
       nightOnlyMetrics: true,
-      metrics: ["fault_loss", "weather"],
+      metrics: ["fault_loss", "weather", "downtime"],
       abortController,
     })
       .then((data) => {
@@ -273,6 +262,9 @@ export default function Digest() {
         );
         setObsStatusWeatherLoss(
           typeof metrics.weather === "number" ? metrics.weather : 0.0,
+        );
+        setObsStatusDowntime(
+          typeof metrics.downtime === "number" ? metrics.downtime : 0.0,
         );
         setObsStatusAvailability({
           status:
@@ -450,14 +442,14 @@ export default function Digest() {
     [almanacInfo],
   );
 
-  const elapsedTwilightHours = useMemo(
-    () =>
-      almanacInfo?.reduce(
-        (acc, day) => acc + (day.elapsed_twilight_hours ?? 0),
-        0,
-      ) ?? 0,
-    [almanacInfo],
-  );
+  // const elapsedTwilightHours = useMemo(
+  //   () =>
+  //     almanacInfo?.reduce(
+  //       (acc, day) => acc + (day.elapsed_twilight_hours ?? 0),
+  //       0,
+  //     ) ?? 0,
+  //   [almanacInfo],
+  // );
 
   const totalExpTimeBetweenTwilights = useMemo(
     () => calculateSumExpTimeBetweenTwilights(exposureFields, almanacInfo),
@@ -489,82 +481,82 @@ export default function Digest() {
 
   const efficiencyText = efficiency >= 0 ? `${efficiency} %` : "N/A";
   const newTicketsCount = jiraTickets.filter((tix) => tix.isNew).length;
-  const almanacUnavailable = !almanacLoading && !almanacInfo?.length;
+  // const almanacUnavailable = !almanacLoading && !almanacInfo?.length;
 
-  const faultLoading = useMemo(
-    () => almanacLoading || obsStatusLoading || exposuresLoading,
-    [almanacLoading, obsStatusLoading, exposuresLoading],
-  );
+  // const faultLoading = useMemo(
+  //   () => almanacLoading || obsStatusLoading || exposuresLoading,
+  //   [almanacLoading, obsStatusLoading, exposuresLoading],
+  // );
 
-  const domeTotals = useMemo(() => {
-    if (openDomeError) {
-      return null;
-    }
+  // const domeTotals = useMemo(() => {
+  //   if (openDomeError) {
+  //     return null;
+  //   }
 
-    if (!dayObsOpenDomeHours || isDictionaryEmpty(dayObsOpenDomeHours)) {
-      return {
-        nightHours: 0.0,
-        openHours: 0.0,
-        closedHours: 0.0,
-      };
-    }
+  //   if (!dayObsOpenDomeHours || isDictionaryEmpty(dayObsOpenDomeHours)) {
+  //     return {
+  //       nightHours: 0.0,
+  //       openHours: 0.0,
+  //       closedHours: 0.0,
+  //     };
+  //   }
 
-    return Object.values(dayObsOpenDomeHours).reduce(
-      (sum, hours) => ({
-        nightHours: sum.nightHours + (hours.night_hours ?? 0.0),
-        openHours: sum.openHours + (hours.open_hours ?? 0.0),
-        closedHours: sum.closedHours + (hours.closed_hours ?? 0.0),
-      }),
-      { nightHours: 0.0, openHours: 0.0, closedHours: 0.0 },
-    );
-  }, [dayObsOpenDomeHours, openDomeError]);
+  //   return Object.values(dayObsOpenDomeHours).reduce(
+  //     (sum, hours) => ({
+  //       nightHours: sum.nightHours + (hours.night_hours ?? 0.0),
+  //       openHours: sum.openHours + (hours.open_hours ?? 0.0),
+  //       closedHours: sum.closedHours + (hours.closed_hours ?? 0.0),
+  //     }),
+  //     { nightHours: 0.0, openHours: 0.0, closedHours: 0.0 },
+  //   );
+  // }, [dayObsOpenDomeHours, openDomeError]);
 
-  const { calculatedFault, faultUnavailable, faultUnavailableReason } =
-    useMemo(() => {
-      const unavailable = (reason) => ({
-        calculatedFault: null,
-        faultUnavailable: true,
-        faultUnavailableReason: reason,
-      });
+  // const { calculatedFault, faultUnavailable, faultUnavailableReason } =
+  //   useMemo(() => {
+  //     const unavailable = (reason) => ({
+  //       calculatedFault: null,
+  //       faultUnavailable: true,
+  //       faultUnavailableReason: reason,
+  //     });
 
-      if (almanacUnavailable && timeAccountingError) {
-        return unavailable(
-          "Fault unavailable: no almanac or time accounting data.",
-        );
-      }
-      if (almanacUnavailable) {
-        return unavailable("Fault unavailable: no almanac data.");
-      }
-      if (timeAccountingError) {
-        return unavailable("Fault unavailable: no time accounting data.");
-      }
-      if (!onSkyTimeAccounting || isDictionaryEmpty(onSkyTimeAccounting)) {
-        return {
-          calculatedFault: 0.0,
-          faultUnavailable: false,
-          faultUnavailableReason: null,
-        };
-      }
+  //     if (almanacUnavailable && timeAccountingError) {
+  //       return unavailable(
+  //         "Fault unavailable: no almanac or time accounting data.",
+  //       );
+  //     }
+  //     if (almanacUnavailable) {
+  //       return unavailable("Fault unavailable: no almanac data.");
+  //     }
+  //     if (timeAccountingError) {
+  //       return unavailable("Fault unavailable: no time accounting data.");
+  //     }
+  //     if (!onSkyTimeAccounting || isDictionaryEmpty(onSkyTimeAccounting)) {
+  //       return {
+  //         calculatedFault: 0.0,
+  //         faultUnavailable: false,
+  //         faultUnavailableReason: null,
+  //       };
+  //     }
 
-      return {
-        calculatedFault: computeCalculatedFault(
-          onSkyTimeAccounting,
-          totalExpTimeBetweenTwilights,
-          elapsedTwilightHours,
-          weatherLossForCalculations,
-        ),
-        faultUnavailable: false,
-        faultUnavailableReason: null,
-      };
-    }, [
-      almanacUnavailable,
-      domeTotals,
-      elapsedTwilightHours,
-      onSkyTimeAccounting,
-      totalExpTimeBetweenTwilights,
-      weatherLossForCalculations,
-      timeAccountingError,
-    ]);
+  //     return {
+  //       calculatedFault: computeCalculatedFault(
+  //         onSkyTimeAccounting,
+  //         totalExpTimeBetweenTwilights,
+  //         elapsedTwilightHours,
+  //         weatherLossForCalculations,
+  //       ),
+  //       faultUnavailable: false,
+  //       faultUnavailableReason: null,
+  //     };
+  //   }, [
+  //     almanacUnavailable,
+  //     domeTotals,
+  //     elapsedTwilightHours,
+  //     onSkyTimeAccounting,
+  //     totalExpTimeBetweenTwilights,
+  //     weatherLossForCalculations,
+  //     timeAccountingError,
+  //   ]);
 
   const allLoaded =
     !exposuresLoading &&
@@ -631,13 +623,14 @@ export default function Digest() {
           <TimeLossCard
             obsStatusFaultLoss={obsStatusFaultLoss}
             obsStatusWeatherLoss={obsStatusWeatherLoss}
+            obsStatusDowntime={obsStatusDowntime}
             obsStatusAvailability={obsStatusAvailability}
             obsStatusFetchError={obsStatusFetchError}
-            calculatedData={calculatedFault}
+            // calculatedData={calculatedFault}
             obsStatusLoading={obsStatusLoading}
-            calculatedFaultLoading={faultLoading}
-            faultDataUnavailable={faultUnavailable}
-            faultErrorMessage={faultUnavailableReason}
+            // calculatedFaultLoading={faultLoading}
+            // faultDataUnavailable={faultUnavailable}
+            // faultErrorMessage={faultUnavailableReason}
           />
           <DialogMetricsCard
             icons={[JiraIconWhite, JiraIconBlue]}

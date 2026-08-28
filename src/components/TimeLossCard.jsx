@@ -5,11 +5,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from "@/components/ui/tooltip";
+// import {
+//   Tooltip,
+//   TooltipTrigger,
+//   TooltipContent,
+// } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
 import ObservatoryStatusAvailabilityWarning from "@/components/ObservatoryStatusAvailabilityWarning";
 
@@ -21,16 +21,17 @@ import { OBSERVATORY_STATE_AVAILABILITY_STATUS } from "@/constants/OBSERVATORY_S
 export default function TimeLossCard({
   obsStatusFaultLoss,
   obsStatusWeatherLoss,
+  obsStatusDowntime,
   obsStatusAvailability,
   obsStatusFetchError = false,
-  calculatedData,
+  // calculatedData,
   obsStatusLoading = false,
-  calculatedFaultLoading = false,
-  faultDataUnavailable = false,
-  faultErrorMessage = null,
+  // calculatedFaultLoading = false,
+  // faultDataUnavailable = false,
+  // faultErrorMessage = null,
   onClick = false,
 }) {
-  const loading = obsStatusLoading || calculatedFaultLoading;
+  const loading = obsStatusLoading; //|| calculatedFaultLoading;
   const isClickable = onClick && !loading;
 
   const heading = "Time Loss";
@@ -119,39 +120,28 @@ export default function TimeLossCard({
               </span>
             </div>
           )}
-
-          <div>(Calculated Fault):</div>
-          {calculatedFaultLoading ? (
+          <div>Downtime:</div>
+          {obsStatusLoading ? (
             <Skeleton
-              data-testid="time-loss-calculated-fault-loading"
+              data-testid="time-loss-downtime-loading"
               className="h-3 w-10 bg-teal-700"
             />
-          ) : faultDataUnavailable ? (
-            <div className="flex items-center gap-1">
-              <span>NA</span>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    aria-label="Calculated Fault unavailable"
-                    className="inline-flex shrink-0 cursor-help text-yellow-500"
-                    onClick={(event) => event.stopPropagation()}
-                  >
-                    <TriangleAlert className="h-5 w-5" />
-                  </button>
-                </TooltipTrigger>
-
-                <TooltipContent>
-                  <p>{faultErrorMessage}</p>
-                </TooltipContent>
-              </Tooltip>
+          ) : isFullyAvailable ? (
+            <div data-testid="time-loss-downtime">
+              {formatHours(obsStatusDowntime)}
             </div>
           ) : (
-            <div data-testid="time-loss-calculated-fault">
-              {formatHours(calculatedData)}
+            <div
+              data-testid="time-loss-downtime"
+              className="flex items-center gap-1 cursor-help"
+            >
+              <span>
+                {isNotAvailable ? "NA" : formatHours(obsStatusDowntime)}
+              </span>
             </div>
           )}
         </div>
+
         {/* Info Icon */}
         <Popover>
           <PopoverTrigger
@@ -185,21 +175,12 @@ export default function TimeLossCard({
               status.
               <br />
               <br />
-              <strong>Calculated Fault Loss</strong>
+              <strong>Observatory Status Downtime</strong>
               <br />
-              Total available observing time – exposure time – overhead time* –
-              time lost to weather**.
-              <br />
-              <br />
-              <em>
-                *overhead time = expected slew and settle time, including a
-                potential additional overhead of up to 2 minutes per visit.
-              </em>
-              <br />
-              <em>
-                **weather loss is derived from Observatory Status data when
-                available, and treated as 0.0 when not available.
-              </em>
+              Sum of all observing time with an active <strong>
+                DOWNTIME
+              </strong>{" "}
+              status.
             </p>
           </PopoverContent>
         </Popover>

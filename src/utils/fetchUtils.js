@@ -73,18 +73,19 @@ const fetchExposures = async (start, end, instrument, abortController) => {
   try {
     const url = `${backendLocation}/exposures?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
     const data = await fetchData(url, abortController);
-    return [
-      data.exposures,
-      data.exposures_count,
-      data.sum_exposure_time,
-      data.on_sky_exposures_count,
-      data.total_on_sky_exposure_time,
-      data.open_dome_times,
-      data.day_obs_open_dome_hours,
-      data.open_dome_error,
-      data.night_on_sky_time_accounting,
-      data.time_accounting_error,
-    ];
+    return data;
+    // return [
+    //   data.exposures,
+    //   data.exposures_count,
+    //   data.sum_exposure_time,
+    //   data.on_sky_exposures_count,
+    //   data.total_on_sky_exposure_time,
+    //   data.open_dome_times,
+    //   data.day_obs_open_dome_hours,
+    //   data.open_dome_error,
+    //   data.night_on_sky_time_accounting,
+    //   data.time_accounting_error,
+    // ];
   } catch (err) {
     if (err.name !== "AbortError") {
       console.error("Error fetching exposures:", err);
