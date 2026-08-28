@@ -1,17 +1,10 @@
-import { TriangleAlert } from "lucide-react";
-
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-// import {
-//   Tooltip,
-//   TooltipTrigger,
-//   TooltipContent,
-// } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
-import ObservatoryStatusAvailabilityWarning from "@/components/ObservatoryStatusAvailabilityWarning";
+import WarningTooltip from "@/components/WarningTooltip";
 
 import InfoIcon from "../assets/InfoIcon.svg";
 import TimeLossIcon from "../assets/TimeLossIcon.svg";
@@ -23,15 +16,11 @@ export default function TimeLossCard({
   obsStatusWeatherLoss,
   obsStatusDowntime,
   obsStatusAvailability,
-  obsStatusFetchError = false,
-  // calculatedData,
+  warningContent = null,
   obsStatusLoading = false,
-  // calculatedFaultLoading = false,
-  // faultDataUnavailable = false,
-  // faultErrorMessage = null,
   onClick = false,
 }) {
-  const loading = obsStatusLoading; //|| calculatedFaultLoading;
+  const loading = obsStatusLoading;
   const isClickable = onClick && !loading;
 
   const heading = "Time Loss";
@@ -60,17 +49,12 @@ export default function TimeLossCard({
     >
       {/* Heading & Icon */}
       <div className="flex flex-row justify-between h-12">
-        <div className="flex items-center gap-1">
+        <div className="flex gap-2 h-8 place-items-center-safe">
           <div className="text-2xl">{heading}</div>
           {!loading && (
-            <ObservatoryStatusAvailabilityWarning
-              availability={obsStatusAvailability}
-              fetchError={obsStatusFetchError}
-              ariaLabel="Time Loss data availability warning"
-              partialDetails="Time loss has been computed for the available dayobs."
-              details="Weather loss is treated as 0.0 for dayobs without Observatory Status data."
-              errorDetails="Weather loss is treated as 0.0 because Observatory Status data could not be fetched."
-            />
+            <WarningTooltip ariaLabel="Time Loss data availability warning">
+              {warningContent}
+            </WarningTooltip>
           )}
         </div>
         <img src={TimeLossIcon} alt={heading} />
@@ -155,8 +139,7 @@ export default function TimeLossCard({
           <PopoverContent className="bg-black text-white text-sm border-yellow-700 w-100">
             <p>
               Observing hours (<strong>-12°</strong>) lost to fault or weather
-              according to Observatory Status records, and fault loss calculated
-              from exposures.
+              according to Observatory Status records.
               <br />
               <br />
               <strong>Observatory Status Fault Loss</strong>

@@ -3,9 +3,11 @@ import { test, expect } from "@playwright/test";
 import { setupApiMocks } from "../../helpers/mock-api.js";
 import { DIGEST_URL } from "../../helpers/constants.js";
 import {
-  timeLossCard,
+  metricsCard,
   tooltipForTrigger,
 } from "../../helpers/digest-helpers.js";
+
+const EFFICIENCY_LABEL = "Open-shutter (-weather) efficiency";
 
 const AVAILABLE_OBS_STATUS = (
   metrics = { fault_loss: 1.5, weather: 0.5, downtime: 0.25 },
@@ -17,40 +19,52 @@ const AVAILABLE_OBS_STATUS = (
   totals: metrics,
 });
 
-test.describe("Digest page — Time Loss card", () => {
-  test("shows Observatory Status losses when fully available", async ({
-    page,
-  }) => {
-    await setupApiMocks(page, {
-      "obs-status": AVAILABLE_OBS_STATUS(),
-    });
-    await page.goto(DIGEST_URL);
+const ALMANAC_FOR_EFFICIENCY = {
+  almanac_info: [
+    {
+      dayobs: 20260102,
+      night_hours: 8,
+      elapsed_twilight_hours: 8,
+      twilight_evening_12deg: "2026-01-01 01:00:00",
+      twilight_morning_12deg: "2026-01-01 09:00:00",
+    },
+  ],
+};
 
-    const card = timeLossCard(page);
-    await expect(card.getByText("Time Loss", { exact: true })).toBeVisible();
-    await expect(card.getByTestId("time-loss-fault")).toHaveText("1.50");
-    await expect(card.getByTestId("time-loss-weather")).toHaveText("0.50");
-    await expect(card.getByTestId("time-loss-downtime")).toHaveText("0.25");
-    await expect(
-      card.getByRole("button", { name: "Time Loss data availability warning" }),
-    ).toHaveCount(0);
+const EXPOSURES_FOR_EFFICIENCY = {
+  exposures: [
+    {
+      day_obs: "20260101",
+      obs_start: "2026-01-01T02:00:00.000Z",
+      exp_time: 3600,
+      can_see_sky: true,
+    },
+  ],
+  exposures_count: 1,
+  sum_exposure_time: 3600,
+  on_sky_exposures_count: 1,
+  total_on_sky_exposure_time: 3600,
+  open_dome_times: [],
+};
+
+function efficiencyCard(page) {
+  return metricsCard(page, EFFICIENCY_LABEL);
+}
+
+function availabilityWarning(page) {
+  return efficiencyCard(page).getByRole("button", {
+    name: "Efficiency data availability warning",
   });
+}
 
-  test("shows Fault, Weather, and Downtime loading skeletons while Obs Status loads", async ({
+test.describe("Digest page — Efficiency card", () => {
+  test("does not show an availability warning when data is fully available", async ({
     page,
   }) => {
-    await setupApiMocks(page);
-    // Registered after setupApiMocks so this pending route takes precedence.
-    await page.route("**/nightlydigest/api/obs-status*", () => {});
+    await setupApiMocks(page, { "obs-status": AVAILABLE_OBS_STATUS() });
     await page.goto(DIGEST_URL);
 
-    const card = timeLossCard(page);
-    await expect(card.getByTestId("time-loss-fault-loading")).toBeVisible();
-    await expect(card.getByTestId("time-loss-weather-loading")).toBeVisible();
-    await expect(card.getByTestId("time-loss-downtime-loading")).toBeVisible();
-    await expect(card.getByTestId("time-loss-fault")).toHaveCount(0);
-    await expect(card.getByTestId("time-loss-weather")).toHaveCount(0);
-    await expect(card.getByTestId("time-loss-downtime")).toHaveCount(0);
+    await expect(availabilityWarning(page)).toHaveCount(0);
   });
 
   test("explains partially available Observatory Status data", async ({
@@ -58,23 +72,14 @@ test.describe("Digest page — Time Loss card", () => {
   }) => {
     await setupApiMocks(page, {
       "obs-status": {
-        ...AVAILABLE_OBS_STATUS({
-          fault_loss: 2.25,
-          weather: 3.75,
-          downtime: 0.5,
-        }),
+        ...AVAILABLE_OBS_STATUS(),
         availability: { status: "partial", available_from: "20260225" },
       },
     });
     await page.goto(DIGEST_URL);
 
-    const card = timeLossCard(page);
-    await expect(card.getByTestId("time-loss-fault")).toHaveText("2.25");
-    await expect(card.getByTestId("time-loss-weather")).toHaveText("3.75");
-    await expect(card.getByTestId("time-loss-downtime")).toHaveText("0.50");
-    const warning = card.getByRole("button", {
-      name: "Time Loss data availability warning",
-    });
+    const warning = availabilityWarning(page);
+    await expect(warning).toHaveCount(1);
     await warning.hover();
     const tooltip = await tooltipForTrigger(page, warning);
     await expect(tooltip).toContainText(
@@ -85,9 +90,7 @@ test.describe("Digest page — Time Loss card", () => {
     );
   });
 
-  test("shows unavailable values and a warning when Observatory Status has no data", async ({
-    page,
-  }) => {
+  test("explains when Observatory Status has no data", async ({ page }) => {
     await setupApiMocks(page, {
       "obs-status": {
         entries: [],
@@ -99,14 +102,8 @@ test.describe("Digest page — Time Loss card", () => {
     });
     await page.goto(DIGEST_URL);
 
-    const card = timeLossCard(page);
-    await expect(card.getByTestId("time-loss-fault")).toHaveText("NA");
-    await expect(card.getByTestId("time-loss-weather")).toHaveText("NA");
-    await expect(card.getByTestId("time-loss-downtime")).toHaveText("NA");
-
-    const warning = card.getByRole("button", {
-      name: "Time Loss data availability warning",
-    });
+    const warning = availabilityWarning(page);
+    await expect(warning).toHaveCount(1);
     await warning.hover();
     const tooltip = await tooltipForTrigger(page, warning);
     await expect(tooltip).toContainText(
@@ -120,26 +117,41 @@ test.describe("Digest page — Time Loss card", () => {
   test("uses zero weather loss when Observatory Status cannot be fetched", async ({
     page,
   }) => {
-    await setupApiMocks(page);
+    await setupApiMocks(page, {
+      almanac: ALMANAC_FOR_EFFICIENCY,
+      exposures: EXPOSURES_FOR_EFFICIENCY,
+    });
     await page.route("**/nightlydigest/api/obs-status*", (route) =>
       route.abort(),
     );
     await page.goto(DIGEST_URL);
 
-    const card = timeLossCard(page);
-    await expect(card.getByTestId("time-loss-fault")).toHaveText("NA");
-    await expect(card.getByTestId("time-loss-weather")).toHaveText("NA");
-    await expect(card.getByTestId("time-loss-downtime")).toHaveText("NA");
-    const warning = card.getByRole("button", {
-      name: "Time Loss data availability warning",
-    });
+    await expect(
+      efficiencyCard(page).locator("[data-slot='metrics-card-value']"),
+    ).toHaveText("13 %");
+    const warning = availabilityWarning(page);
+    await expect(warning).toHaveCount(1);
     await warning.hover();
-    await expect(await tooltipForTrigger(page, warning)).toContainText(
+    await expect(await tooltipForTrigger(page, warning)).toHaveText(
       "Observatory Status data could not be fetched.",
     );
   });
 
-  test("combines Almanac and partial Observatory Status warnings", async ({
+  test("explains the zero-weather fallback in its info popover", async ({
+    page,
+  }) => {
+    await setupApiMocks(page);
+    await page.goto(DIGEST_URL);
+
+    await efficiencyCard(page).locator("button").click();
+    await expect(
+      page.getByText(
+        "If Observatory Status data cannot be fetched, weather loss is treated as",
+      ),
+    ).toBeVisible();
+  });
+
+  test("shows NA and combines Almanac and partial Observatory Status warnings", async ({
     page,
   }) => {
     await setupApiMocks(page, {
@@ -151,10 +163,10 @@ test.describe("Digest page — Time Loss card", () => {
     await page.route("**/nightlydigest/api/almanac*", (route) => route.abort());
     await page.goto(DIGEST_URL);
 
-    const card = timeLossCard(page);
-    const warning = card.getByRole("button", {
-      name: "Time Loss data availability warning",
-    });
+    await expect(
+      efficiencyCard(page).locator("[data-slot='metrics-card-value']"),
+    ).toHaveText("NA");
+    const warning = availabilityWarning(page);
     await expect(warning).toHaveCount(1);
     await warning.hover();
     const tooltip = await tooltipForTrigger(page, warning);
@@ -163,6 +175,22 @@ test.describe("Digest page — Time Loss card", () => {
     );
     await expect(tooltip).toContainText(
       "Fault, Weather, and Downtime losses are treated as 0 where data is unavailable.",
+    );
+  });
+
+  test("shows NA when Almanac data cannot be fetched", async ({ page }) => {
+    await setupApiMocks(page, { "obs-status": AVAILABLE_OBS_STATUS() });
+    await page.route("**/nightlydigest/api/almanac*", (route) => route.abort());
+    await page.goto(DIGEST_URL);
+
+    await expect(
+      efficiencyCard(page).locator("[data-slot='metrics-card-value']"),
+    ).toHaveText("NA");
+    const warning = availabilityWarning(page);
+    await expect(warning).toHaveCount(1);
+    await warning.hover();
+    await expect(await tooltipForTrigger(page, warning)).toHaveText(
+      "Almanac data could not be fetched.",
     );
   });
 
@@ -176,9 +204,7 @@ test.describe("Digest page — Time Loss card", () => {
     );
     await page.goto(DIGEST_URL);
 
-    const warning = timeLossCard(page).getByRole("button", {
-      name: "Time Loss data availability warning",
-    });
+    const warning = availabilityWarning(page);
     await expect(warning).toHaveCount(1);
     await warning.hover();
     await expect(await tooltipForTrigger(page, warning)).toHaveText(

@@ -6,6 +6,7 @@ import {
   observatoryStatusCard,
   observatoryStatusTooltip,
   hoverStateMarker,
+  tooltipForTrigger,
   waitForObservatoryStatusAppletLoad,
 } from "../../helpers/digest-helpers.js";
 
@@ -214,7 +215,7 @@ test.describe("Observatory Status applet — partial availability", () => {
     });
     await expect(warning).toBeVisible();
     await warning.hover();
-    await expect(page.getByRole("tooltip")).toContainText(
+    await expect(await tooltipForTrigger(page, warning)).toContainText(
       "Observatory Status data is only available from 2026-01-02.",
     );
   });
@@ -277,6 +278,21 @@ test.describe("Observatory Status applet — fetch failure", () => {
     const card = observatoryStatusCard(page);
     await expect(
       card.getByText("Observatory Status data could not be fetched."),
+    ).toBeVisible();
+    await expect(card.locator("svg")).toHaveCount(0);
+  });
+
+  test("shows an Almanac fetch-error message instead of the plot", async ({
+    page,
+  }) => {
+    await setupApiMocks(page);
+    // Registered after setupApiMocks so this failed route takes precedence.
+    await page.route("**/nightlydigest/api/almanac*", (route) => route.abort());
+    await page.goto(DIGEST_URL);
+
+    const card = observatoryStatusCard(page);
+    await expect(
+      card.getByText("Almanac data could not be fetched."),
     ).toBeVisible();
     await expect(card.locator("svg")).toHaveCount(0);
   });

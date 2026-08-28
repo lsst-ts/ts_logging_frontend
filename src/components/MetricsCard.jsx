@@ -28,7 +28,7 @@ export default function MetricsCard({
       }`}
     >
       <div className="flex flex-row justify-between h-12">
-        <div className="flex items-center gap-1 text-2xl">
+        <div className="flex gap-2 text-2xl h-8 place-items-center-safe">
           {loading ? (
             <Skeleton className="h-6 w-20 bg-teal-700" />
           ) : (

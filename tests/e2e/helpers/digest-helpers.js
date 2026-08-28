@@ -41,6 +41,23 @@ export function metricsCard(page, label) {
 }
 
 /**
+ * Gets the tooltip currently associated with a warning trigger.
+ *
+ * Multiple card warnings can be open at once, so a page-wide tooltip locator
+ * is ambiguous. Radix connects the active trigger to its tooltip through
+ * `aria-describedby`.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {import('@playwright/test').Locator} trigger
+ * @returns {Promise<import('@playwright/test').Locator>}
+ */
+export async function tooltipForTrigger(page, trigger) {
+  await expect(trigger).toHaveAttribute("aria-describedby", /\S+/);
+  const tooltipId = await trigger.getAttribute("aria-describedby");
+  return page.locator(`[role="tooltip"][id="${tooltipId}"]`);
+}
+
+/**
  * Waits until the Observatory Status applet has finished loading.
  *
  * The applet shows a skeleton while loading. Once loaded it either renders the
