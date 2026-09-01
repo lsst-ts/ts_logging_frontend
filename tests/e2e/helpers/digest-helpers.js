@@ -24,7 +24,7 @@ export function observatoryStatusCard(page) {
  * @returns {import('@playwright/test').Locator}
  */
 export function timeLossCard(page) {
-  return page.getByTestId("time-loss-card");
+  return page.locator("[data-slot='time-loss-card']");
 }
 
 /**

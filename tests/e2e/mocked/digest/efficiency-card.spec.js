@@ -107,7 +107,7 @@ test.describe("Digest page — Efficiency card", () => {
     await warning.hover();
     const tooltip = await tooltipForTrigger(page, warning);
     await expect(tooltip).toContainText(
-      "Observatory Status data is only available from the supported date range.",
+      "Observatory Status data is only available from the supported dayobs range.",
     );
     await expect(tooltip).toContainText(
       "Fault, Weather, and Downtime losses are treated as 0 where data is unavailable.",

@@ -11,6 +11,24 @@ import TimeLossIcon from "../assets/TimeLossIcon.svg";
 
 import { OBSERVATORY_STATE_AVAILABILITY_STATUS } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
 
+/**
+ * Displays the observing time lost to fault, weather, and downtime according
+ * to Observatory Status records.
+ *
+ * When Observatory Status data is only partially available (or unavailable),
+ * the affected values are shown as `NA` and a warning tooltip is rendered in
+ * the header. The card is clickable only when `onClick` is provided and data
+ * is not still loading.
+ *
+ * @param {Object} props
+ * @param {number} [props.obsStatusFaultLoss] Fault loss in hours.
+ * @param {number} [props.obsStatusWeatherLoss] Weather loss in hours.
+ * @param {number} [props.obsStatusDowntime] Downtime in hours.
+ * @param {Object} [props.obsStatusAvailability] Availability metadata for the observatory-status feed.
+ * @param {React.ReactNode} [props.warningContent=null] Content for the header warning tooltip.
+ * @param {boolean} [props.obsStatusLoading=false] Whether Observatory Status data is still loading.
+ * @param {Function|boolean} [props.onClick=false] Click handler for the card, or `false` to disable.
+ */
 export default function TimeLossCard({
   obsStatusFaultLoss,
   obsStatusWeatherLoss,
@@ -41,7 +59,7 @@ export default function TimeLossCard({
   return (
     // Card
     <div
-      data-testid="time-loss-card"
+      data-slot="time-loss-card"
       onClick={isClickable ? onClick : undefined}
       className={`flex flex-col justify-between bg-teal-900 text-white font-light p-4 rounded-lg shadow-[4px_4px_4px_0px_#0369A1] transition hover:opacity-90 ${
         isClickable ? "cursor-pointer" : ""
@@ -66,18 +84,18 @@ export default function TimeLossCard({
           <div>Fault:</div>
           {obsStatusLoading ? (
             <Skeleton
-              data-testid="time-loss-fault-loading"
+              data-slot="time-loss-fault-loading"
               className="h-3 w-10 bg-teal-700"
             />
           ) : // Show data when availabile
           isFullyAvailable ? (
-            <div data-testid="time-loss-fault">
+            <div data-slot="time-loss-fault">
               {formatHours(obsStatusFaultLoss)}
             </div>
           ) : (
             <div
-              data-testid="time-loss-fault"
-              className="flex items-center gap-1 cursor-help"
+              data-slot="time-loss-fault"
+              className="flex items-center gap-1"
             >
               <span>
                 {isNotAvailable ? "NA" : formatHours(obsStatusFaultLoss)}
@@ -87,17 +105,17 @@ export default function TimeLossCard({
           <div>Weather:</div>
           {obsStatusLoading ? (
             <Skeleton
-              data-testid="time-loss-weather-loading"
+              data-slot="time-loss-weather-loading"
               className="h-3 w-10 bg-teal-700"
             />
           ) : isFullyAvailable ? (
-            <div data-testid="time-loss-weather">
+            <div data-slot="time-loss-weather">
               {formatHours(obsStatusWeatherLoss)}
             </div>
           ) : (
             <div
-              data-testid="time-loss-weather"
-              className="flex items-center gap-1 cursor-help"
+              data-slot="time-loss-weather"
+              className="flex items-center gap-1"
             >
               <span>
                 {isNotAvailable ? "NA" : formatHours(obsStatusWeatherLoss)}
@@ -107,17 +125,17 @@ export default function TimeLossCard({
           <div>Downtime:</div>
           {obsStatusLoading ? (
             <Skeleton
-              data-testid="time-loss-downtime-loading"
+              data-slot="time-loss-downtime-loading"
               className="h-3 w-10 bg-teal-700"
             />
           ) : isFullyAvailable ? (
-            <div data-testid="time-loss-downtime">
+            <div data-slot="time-loss-downtime">
               {formatHours(obsStatusDowntime)}
             </div>
           ) : (
             <div
-              data-testid="time-loss-downtime"
-              className="flex items-center gap-1 cursor-help"
+              data-slot="time-loss-downtime"
+              className="flex items-center gap-1"
             >
               <span>
                 {isNotAvailable ? "NA" : formatHours(obsStatusDowntime)}

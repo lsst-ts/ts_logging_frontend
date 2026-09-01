@@ -15,11 +15,49 @@ import { Skeleton } from "@/components/ui/skeleton";
 import ObservatoryStatusCumulativePlot from "@/components/ObservatoryStatusCumulativePlot";
 import WarningTooltip from "@/components/WarningTooltip";
 import { formatDayobsStrForDisplay } from "@/utils/timeUtils";
+import { getObsStatusFetchErrorText } from "@/utils/observatoryStatusUtils";
 import { OBSERVATORY_STATE_AVAILABILITY_STATUS } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
 
 import FullScreenIcon from "../assets/FullScreenIcon.svg";
 import DownloadIcon from "../assets/DownloadIcon.svg";
 import InfoIcon from "../assets/InfoIcon.svg";
+
+/**
+ * Builds the warning text shown by the Observatory Status applet when its
+ * data cannot be displayed.
+ *
+ * Fetch errors take precedence over availability gaps: the cumulative plot
+ * cannot render without its source data, so an error message is returned
+ * whenever either request failed. Otherwise, when both requests succeeded but
+ * Obs Status covers only part of the requested range, an availability message
+ * is returned.
+ *
+ * @param {Object} options
+ * @param {boolean} [options.almanacFetchError=false] Whether the Almanac request failed.
+ * @param {boolean} [options.obsStatusFetchError=false] Whether the Observatory Status request failed.
+ * @param {Object} [options.availability] Availability metadata for the observatory-status feed.
+ * @returns {string} The warning text to display.
+ */
+function getObsAvailabilityWarningText({
+  almanacFetchError,
+  obsStatusFetchError,
+  availability,
+}) {
+  // Fetch errors take precedence: the plot cannot render without its data.
+  const fetchErrorText = getObsStatusFetchErrorText({
+    almanacFetchError,
+    obsStatusFetchError,
+  });
+  if (fetchErrorText) return fetchErrorText;
+
+  // Both requests succeeded, but Obs Status covers only part of the range.
+  const obsAvailableFrom = availability?.available_from
+    ? formatDayobsStrForDisplay(String(availability.available_from))
+    : null;
+  return `Observatory Status data is only available from ${
+    obsAvailableFrom ?? "the supported dayobs range"
+  }.`;
+}
 
 /**
  * Render the observatory status dashboard applet with availability warnings,
@@ -46,19 +84,11 @@ function ObservatoryStatusApplet({
   loading,
 }) {
   const obsAvailabilityStatus = availability?.status ?? null;
-  const obsAvailableFrom = availability?.available_from
-    ? formatDayobsStrForDisplay(String(availability.available_from))
-    : null;
-  const obsAvailabilityWarningText =
-    almanacFetchError && fetchError
-      ? "Almanac and Observatory Status data could not be fetched."
-      : almanacFetchError
-        ? "Almanac data could not be fetched."
-        : fetchError
-          ? "Observatory Status data could not be fetched."
-          : `Observatory Status data is only available from ${
-              obsAvailableFrom ?? "the supported dayobs range"
-            }.`;
+  const obsAvailabilityWarningText = getObsAvailabilityWarningText({
+    almanacFetchError,
+    obsStatusFetchError: fetchError,
+    availability,
+  });
 
   return (
     <Card className="border-none p-0 bg-stone-800 gap-2">
@@ -168,7 +198,8 @@ function ObservatoryStatusApplet({
           </div>
         ) : almanacFetchError ||
           fetchError ||
-          obsAvailabilityStatus === "none" ? (
+          obsAvailabilityStatus ===
+            OBSERVATORY_STATE_AVAILABILITY_STATUS.NONE ? (
           <div className="h-full place-content-center-safe">
             <p className="text-stone-400 text-center">
               {obsAvailabilityWarningText}

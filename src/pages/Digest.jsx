@@ -22,6 +22,7 @@ import {
   calculateSumExpTimeBetweenTwilights,
   getBlockSourceLabel,
 } from "@/utils/utils";
+import { getObsStatusFetchErrorText } from "@/utils/observatoryStatusUtils";
 import {
   formatDayobsStrForDisplay,
   getDayobsStartUTC,
@@ -45,6 +46,24 @@ const EMPTY_OBS_STATUS_AVAILABILITY = {
   available_from: null,
 };
 
+/**
+ * Builds the warning content shown on the Time Loss and Efficiency metric
+ * cards when Observatory Status or Almanac data is incomplete.
+ *
+ * Fetch errors take precedence over availability gaps. When both requests
+ * fail, a single concise message is returned. When only Almanac fails, the
+ * Obs Status availability warning is preserved alongside the error, since the
+ * loss metrics still describe the available data. When only Obs Status fails,
+ * only the error is shown (weather loss falls back to zero for the efficiency
+ * calculation). With no fetch errors, a warning is shown only when Obs Status
+ * covers part (or none) of the requested range.
+ *
+ * @param {Object} options
+ * @param {boolean} [options.almanacFetchError=false] Whether the Almanac request failed.
+ * @param {boolean} [options.obsStatusFetchError=false] Whether the Observatory Status request failed.
+ * @param {Object} [options.obsStatusAvailability] Availability metadata for the observatory-status feed.
+ * @returns {React.ReactNode|null} The warning content, or `null` when data is fully available.
+ */
 function getDigestWarningContent({
   almanacFetchError,
   obsStatusFetchError,
@@ -65,17 +84,24 @@ function getDigestWarningContent({
       {availableFrom ? (
         <code>{availableFrom}</code>
       ) : (
-        "the supported date range"
+        "the supported dayobs range"
       )}
-      . Fault, Weather, and Downtime losses are treated as <code>0</code> where
+      .
+      <br />
+      Fault, Weather, and Downtime losses are treated as <code>0</code> where
       data is unavailable.
     </>
   );
 
+  const fetchErrorText = getObsStatusFetchErrorText({
+    almanacFetchError,
+    obsStatusFetchError,
+  });
+
   // When both sources fail, use one concise message rather than stacking two
   // separate warnings on the Time Loss card.
   if (almanacFetchError && obsStatusFetchError) {
-    return <>Almanac and Observatory Status data could not be fetched.</>;
+    return <>{fetchErrorText}</>;
   }
 
   // Preserve a successful Obs Status availability warning alongside an
@@ -83,7 +109,7 @@ function getDigestWarningContent({
   if (almanacFetchError) {
     return (
       <>
-        Almanac data could not be fetched.
+        {fetchErrorText}
         {availabilityWarning && <> {availabilityWarning}</>}
       </>
     );
@@ -92,7 +118,7 @@ function getDigestWarningContent({
   // An Obs Status fetch failure falls back to zero weather loss for the
   // efficiency calculation, rather than being treated as an availability gap.
   if (obsStatusFetchError) {
-    return <>Observatory Status data could not be fetched.</>;
+    return <>{fetchErrorText}</>;
   }
 
   // With no fetch errors, show a warning only when Obs Status is limited.

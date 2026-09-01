@@ -609,8 +609,6 @@ const computeCalculatedFault = (
 
   // Ignore tiny negative values caused by floating-point rounding in hour math.
   const EPSILON_HOURS = 1 / 3600; // 1 second
-  // keeping this log to see weatherLoss value
-  // as it's not displayed in the page anymore
   const faultTimeHours =
     elapsedNightHours -
     expTimeHours -

@@ -207,3 +207,29 @@ export function formatTimeForTooltip(timeStr) {
   });
   return dt.toFormat("HH:mm:ss");
 }
+
+/**
+ * Returns the shared fetch-error message for the Observatory Status and
+ * Almanac requests. Used by both the Digest metric cards and the Observatory
+ * Status applet so the wording stays consistent.
+ *
+ * @param {Object} options
+ * @param {boolean} [options.almanacFetchError=false] Whether the Almanac request failed.
+ * @param {boolean} [options.obsStatusFetchError=false] Whether the Observatory Status request failed.
+ * @returns {string|null} The error message, or `null` when neither request failed.
+ */
+export function getObsStatusFetchErrorText({
+  almanacFetchError = false,
+  obsStatusFetchError = false,
+}) {
+  if (almanacFetchError && obsStatusFetchError) {
+    return "Almanac and Observatory Status data could not be fetched.";
+  }
+  if (almanacFetchError) {
+    return "Almanac data could not be fetched.";
+  }
+  if (obsStatusFetchError) {
+    return "Observatory Status data could not be fetched.";
+  }
+  return null;
+}

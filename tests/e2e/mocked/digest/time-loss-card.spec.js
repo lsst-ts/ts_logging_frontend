@@ -28,9 +28,15 @@ test.describe("Digest page — Time Loss card", () => {
 
     const card = timeLossCard(page);
     await expect(card.getByText("Time Loss", { exact: true })).toBeVisible();
-    await expect(card.getByTestId("time-loss-fault")).toHaveText("1.50");
-    await expect(card.getByTestId("time-loss-weather")).toHaveText("0.50");
-    await expect(card.getByTestId("time-loss-downtime")).toHaveText("0.25");
+    await expect(card.locator("[data-slot='time-loss-fault']")).toHaveText(
+      "1.50",
+    );
+    await expect(card.locator("[data-slot='time-loss-weather']")).toHaveText(
+      "0.50",
+    );
+    await expect(card.locator("[data-slot='time-loss-downtime']")).toHaveText(
+      "0.25",
+    );
     await expect(
       card.getByRole("button", { name: "Time Loss data availability warning" }),
     ).toHaveCount(0);
@@ -45,12 +51,22 @@ test.describe("Digest page — Time Loss card", () => {
     await page.goto(DIGEST_URL);
 
     const card = timeLossCard(page);
-    await expect(card.getByTestId("time-loss-fault-loading")).toBeVisible();
-    await expect(card.getByTestId("time-loss-weather-loading")).toBeVisible();
-    await expect(card.getByTestId("time-loss-downtime-loading")).toBeVisible();
-    await expect(card.getByTestId("time-loss-fault")).toHaveCount(0);
-    await expect(card.getByTestId("time-loss-weather")).toHaveCount(0);
-    await expect(card.getByTestId("time-loss-downtime")).toHaveCount(0);
+    await expect(
+      card.locator("[data-slot='time-loss-fault-loading']"),
+    ).toBeVisible();
+    await expect(
+      card.locator("[data-slot='time-loss-weather-loading']"),
+    ).toBeVisible();
+    await expect(
+      card.locator("[data-slot='time-loss-downtime-loading']"),
+    ).toBeVisible();
+    await expect(card.locator("[data-slot='time-loss-fault']")).toHaveCount(0);
+    await expect(card.locator("[data-slot='time-loss-weather']")).toHaveCount(
+      0,
+    );
+    await expect(card.locator("[data-slot='time-loss-downtime']")).toHaveCount(
+      0,
+    );
   });
 
   test("explains partially available Observatory Status data", async ({
@@ -69,9 +85,15 @@ test.describe("Digest page — Time Loss card", () => {
     await page.goto(DIGEST_URL);
 
     const card = timeLossCard(page);
-    await expect(card.getByTestId("time-loss-fault")).toHaveText("2.25");
-    await expect(card.getByTestId("time-loss-weather")).toHaveText("3.75");
-    await expect(card.getByTestId("time-loss-downtime")).toHaveText("0.50");
+    await expect(card.locator("[data-slot='time-loss-fault']")).toHaveText(
+      "2.25",
+    );
+    await expect(card.locator("[data-slot='time-loss-weather']")).toHaveText(
+      "3.75",
+    );
+    await expect(card.locator("[data-slot='time-loss-downtime']")).toHaveText(
+      "0.50",
+    );
     const warning = card.getByRole("button", {
       name: "Time Loss data availability warning",
     });
@@ -100,9 +122,15 @@ test.describe("Digest page — Time Loss card", () => {
     await page.goto(DIGEST_URL);
 
     const card = timeLossCard(page);
-    await expect(card.getByTestId("time-loss-fault")).toHaveText("NA");
-    await expect(card.getByTestId("time-loss-weather")).toHaveText("NA");
-    await expect(card.getByTestId("time-loss-downtime")).toHaveText("NA");
+    await expect(card.locator("[data-slot='time-loss-fault']")).toHaveText(
+      "NA",
+    );
+    await expect(card.locator("[data-slot='time-loss-weather']")).toHaveText(
+      "NA",
+    );
+    await expect(card.locator("[data-slot='time-loss-downtime']")).toHaveText(
+      "NA",
+    );
 
     const warning = card.getByRole("button", {
       name: "Time Loss data availability warning",
@@ -110,7 +138,7 @@ test.describe("Digest page — Time Loss card", () => {
     await warning.hover();
     const tooltip = await tooltipForTrigger(page, warning);
     await expect(tooltip).toContainText(
-      "Observatory Status data is only available from the supported date range.",
+      "Observatory Status data is only available from the supported dayobs range.",
     );
     await expect(tooltip).toContainText(
       "Fault, Weather, and Downtime losses are treated as 0 where data is unavailable.",
@@ -127,9 +155,15 @@ test.describe("Digest page — Time Loss card", () => {
     await page.goto(DIGEST_URL);
 
     const card = timeLossCard(page);
-    await expect(card.getByTestId("time-loss-fault")).toHaveText("NA");
-    await expect(card.getByTestId("time-loss-weather")).toHaveText("NA");
-    await expect(card.getByTestId("time-loss-downtime")).toHaveText("NA");
+    await expect(card.locator("[data-slot='time-loss-fault']")).toHaveText(
+      "NA",
+    );
+    await expect(card.locator("[data-slot='time-loss-weather']")).toHaveText(
+      "NA",
+    );
+    await expect(card.locator("[data-slot='time-loss-downtime']")).toHaveText(
+      "NA",
+    );
     const warning = card.getByRole("button", {
       name: "Time Loss data availability warning",
     });

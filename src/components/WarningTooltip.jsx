@@ -27,7 +27,7 @@ export default function WarningTooltip({
         <button
           type="button"
           aria-label={ariaLabel}
-          className="inline-flex shrink-0 cursor-help text-yellow-500"
+          className="inline-flex shrink-0 cursor-help text-yellow-400"
           onClick={(event) => event.stopPropagation()}
         >
           <TriangleAlert className={iconClassName} />
