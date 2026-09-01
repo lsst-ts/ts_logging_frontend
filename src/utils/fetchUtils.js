@@ -1,5 +1,42 @@
 const httpProtocol = window.location.protocol;
 const host = window.location.host;
+
+const INSTRUMENT_ENDPOINTS = [
+  "data-log",
+  "exposures",
+  "exposure-flags",
+  "exposure-entries",
+  "static-visit-map",
+];
+
+const DAYOBS_ENDPOINTS = [
+  "exposures",
+  "expected-exposures",
+  "almanac",
+  "obs-status",
+  "data-log",
+  "exposure-flags",
+];
+
+function parseEndpointForStaticFile(url) {
+  const newUrlParts = [backendLocation];
+  const endpoint = url.split("?")[0].split("/").pop();
+  const queryParams = new URLSearchParams(url.split("?")[1]);
+  newUrlParts.push("/", endpoint);
+  if (INSTRUMENT_ENDPOINTS.includes(endpoint)) {
+    newUrlParts.push("/", queryParams.get("instrument"));
+  }
+  if (DAYOBS_ENDPOINTS.includes(endpoint)) {
+    const dayObsStart = queryParams.get("dayObsStart");
+    const dayObsEnd = queryParams.get("dayObsEnd");
+    const fileName = `${dayObsStart}_${dayObsEnd}`;
+    newUrlParts.push("/", fileName);
+  }
+
+  console.log(url, "->", newUrlParts.join(""));
+  return newUrlParts.join("");
+}
+
 /**
  * The base URL for the backend API endpoints.
  *
@@ -25,7 +62,7 @@ const backendLocation =
  * and should be handled by the caller.
  */
 const fetchData = async (url, abortController) => {
-  const res = await fetch(url, {
+  const res = await fetch(parseEndpointForStaticFile(url), {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
