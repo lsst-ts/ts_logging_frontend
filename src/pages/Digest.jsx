@@ -10,7 +10,6 @@ import {
   fetchExposures,
   fetchExpectedExposures,
   fetchAlmanac,
-  fetchNarrativeLog,
   fetchObsStatusFromRubinNights,
   fetchNightreport,
   fetchExposureFlags,
@@ -22,10 +21,12 @@ import {
   calculateEfficiency,
   calculateSumExpTimeBetweenTwilights,
   getBlockSourceLabel,
-  computeCalculatedFault,
-  isDictionaryEmpty,
 } from "@/utils/utils";
-import { getDayobsStartUTC } from "@/utils/timeUtils";
+import { getObsStatusFetchErrorText } from "@/utils/observatoryStatusUtils";
+import {
+  formatDayobsStrForDisplay,
+  getDayobsStartUTC,
+} from "@/utils/timeUtils";
 import { useNotifications } from "@/hooks/useNotifications";
 import { NotificationBannerStack } from "@/components/NotificationBannerStack";
 import DialogMetricsCard from "@/components/dialog-metrics-card";
@@ -37,11 +38,91 @@ import NightSummary from "@/components/NightSummary.jsx";
 import ObservatoryStatusApplet from "@/components/ObservatoryStatusApplet";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
 import VisitMapStaticApplet from "@/components/VisitMapStaticApplet.jsx";
+import WarningTooltip from "@/components/WarningTooltip";
+import { OBSERVATORY_STATE_AVAILABILITY_STATUS } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
 
 const EMPTY_OBS_STATUS_AVAILABILITY = {
   status: "none",
   available_from: null,
 };
+
+/**
+ * Builds the warning content shown on the Time Loss and Efficiency metric
+ * cards when Observatory Status or Almanac data is incomplete.
+ *
+ * Fetch errors take precedence over availability gaps. When both requests
+ * fail, a single concise message is returned. When only Almanac fails, the
+ * Obs Status availability warning is preserved alongside the error, since the
+ * loss metrics still describe the available data. When only Obs Status fails,
+ * only the error is shown (weather loss falls back to zero for the efficiency
+ * calculation). With no fetch errors, a warning is shown only when Obs Status
+ * covers part (or none) of the requested range.
+ *
+ * @param {Object} options
+ * @param {boolean} [options.almanacFetchError=false] Whether the Almanac request failed.
+ * @param {boolean} [options.obsStatusFetchError=false] Whether the Observatory Status request failed.
+ * @param {Object} [options.obsStatusAvailability] Availability metadata for the observatory-status feed.
+ * @returns {React.ReactNode|null} The warning content, or `null` when data is fully available.
+ */
+function getDigestWarningContent({
+  almanacFetchError,
+  obsStatusFetchError,
+  obsStatusAvailability,
+}) {
+  const availabilityStatus = obsStatusAvailability?.status;
+  // A successful Obs Status response can still cover only part (or none) of
+  // the selected range. These are availability warnings, not fetch errors.
+  const hasLimitedObsStatusData =
+    availabilityStatus === OBSERVATORY_STATE_AVAILABILITY_STATUS.PARTIAL ||
+    availabilityStatus === OBSERVATORY_STATE_AVAILABILITY_STATUS.NONE;
+  const availableFrom = obsStatusAvailability?.available_from
+    ? formatDayobsStrForDisplay(String(obsStatusAvailability.available_from))
+    : null;
+  const availabilityWarning = hasLimitedObsStatusData && (
+    <>
+      Observatory Status data is only available from{" "}
+      {availableFrom ? (
+        <code>{availableFrom}</code>
+      ) : (
+        "the supported dayobs range"
+      )}
+      .
+      <br />
+      Where unavailable, status data is treated as <code>0</code>.
+    </>
+  );
+
+  const fetchErrorText = getObsStatusFetchErrorText({
+    almanacFetchError,
+    obsStatusFetchError,
+  });
+
+  // When both sources fail, use one concise message rather than stacking two
+  // separate warnings on the Time Loss card.
+  if (almanacFetchError && obsStatusFetchError) {
+    return <>{fetchErrorText}</>;
+  }
+
+  // Preserve a successful Obs Status availability warning alongside an
+  // Almanac failure, since it still describes the available loss metrics.
+  if (almanacFetchError) {
+    return (
+      <>
+        {fetchErrorText}
+        {availabilityWarning && <> {availabilityWarning}</>}
+      </>
+    );
+  }
+
+  // An Obs Status fetch failure falls back to zero weather loss for the
+  // efficiency calculation, rather than being treated as an availability gap.
+  if (obsStatusFetchError) {
+    return <>{fetchErrorText}</>;
+  }
+
+  // With no fetch errors, show a warning only when Obs Status is limited.
+  return availabilityWarning;
+}
 
 export default function Digest() {
   const { startDayobs, endDayobs, telescope } = useSearch({
@@ -52,8 +133,6 @@ export default function Digest() {
   const { selectedTimeRange, setSelectedTimeRange, fullTimeRange } =
     useTimeRangeFromURL("/");
 
-  // const [narrativeWeatherLoss, setNarrativeWeatherLoss] = useState(0.0);
-  const [narrativeFaultLoss, setNarrativeFaultLoss] = useState(0.0);
   const [exposureFields, setExposureFields] = useState([]);
   const [exposureCount, setExposureCount] = useState(0);
   const [sumExpTime, setSumExpTime] = useState(0.0);
@@ -65,21 +144,19 @@ export default function Digest() {
   const [obsStatusIntervals, setObsStatusIntervals] = useState([]);
   const [obsStatusFaultLoss, setObsStatusFaultLoss] = useState(0.0);
   const [obsStatusWeatherLoss, setObsStatusWeatherLoss] = useState(0.0);
+  const [obsStatusDowntime, setObsStatusDowntime] = useState(0.0);
   const [obsStatusAvailability, setObsStatusAvailability] = useState(
     EMPTY_OBS_STATUS_AVAILABILITY,
   );
+  const [obsStatusFetchError, setObsStatusFetchError] = useState(false);
+  const [almanacFetchError, setAlmanacFetchError] = useState(false);
 
   const [exposuresLoading, setExposuresLoading] = useState(true);
   const [expectedExposuresLoading, setExpectedExposuresLoading] =
     useState(true);
   const [almanacLoading, setAlmanacLoading] = useState(true);
-  const [narrativeLoading, setNarrativeLoading] = useState(true);
   const [nightreportLoading, setNightreportLoading] = useState(true);
   const [obsStatusLoading, setObsStatusLoading] = useState(true);
-  const [dayObsOpenDomeHours, setDayObsOpenDomeHours] = useState({});
-  const [onSkyTimeAccounting, setOnSkyTimeAccounting] = useState({});
-  const [openDomeError, setOpenDomeError] = useState(null);
-  const [timeAccountingError, setTimeAccountingError] = useState(null);
 
   const [jiraTickets, setJiraTickets] = useState([]);
   const [jiraLoading, setJiraLoading] = useState(true);
@@ -121,7 +198,6 @@ export default function Digest() {
     setExposuresLoading(true);
     setExpectedExposuresLoading(true);
     setAlmanacLoading(true);
-    setNarrativeLoading(true);
     setNightreportLoading(true);
     setJiraLoading(true);
     setFlagsLoading(true);
@@ -131,10 +207,6 @@ export default function Digest() {
     setSumOnSkyExpTime(0.0);
     setSumExpTime(0);
     setJiraTickets([]);
-    // TODO: OSW-2430 Replace Narrative log with weatherloss
-    // from obs status in the Time Loss card
-    // setNarrativeWeatherLoss(0.0);
-    setNarrativeFaultLoss(0.0);
     setExposureCount(0);
     setReports([]);
     setOnSkyExpCount(0);
@@ -143,70 +215,49 @@ export default function Digest() {
     setObsStatusIntervals([]);
     setObsStatusFaultLoss(0.0);
     setObsStatusWeatherLoss(0.0);
+    setObsStatusDowntime(0.0);
     setObsStatusAvailability(EMPTY_OBS_STATUS_AVAILABILITY);
+    setObsStatusFetchError(false);
+    setAlmanacFetchError(false);
 
     setStaticVisitMapLoading(true);
     setStaticVisitMaps(null);
     setStaticVisitMapError(false);
 
-    setDayObsOpenDomeHours({});
-    setOnSkyTimeAccounting({});
-    setOpenDomeError(null);
-    setTimeAccountingError(null);
-
     clearNotifications();
 
     fetchExposures(startDayobs, queryEndDayobs, instrument, abortController)
-      .then(
-        ([
-          exposureFields,
-          exposuresNo,
-          exposureTime,
-          onSkyExpNo,
-          totalOnSkyExpTime,
-          domeTimes,
-          openDomeHours,
-          domeError,
-          nightOnSkyTimeAccounting,
-          accountingError,
-        ]) => {
-          setExposureFields(exposureFields);
-          setExposureCount(exposuresNo);
-          setSumExpTime(exposureTime);
-          setOnSkyExpCount(onSkyExpNo);
-          setSumOnSkyExpTime(totalOnSkyExpTime);
-          setExposuresLoading(false);
-          setOpenDomeTimes(domeTimes);
-          setDayObsOpenDomeHours(openDomeHours);
-          setOnSkyTimeAccounting(nightOnSkyTimeAccounting);
-          setOpenDomeError(domeError);
-          setTimeAccountingError(accountingError);
-          // placeholder usage of openDomeTimes to pass eslint
-          // for now, it is unused right now
-          console.log(openDomeTimes);
-          if (exposuresNo === 0) {
-            addNotification({
-              type: "noData",
-              source: "consdb",
-              title: "No exposures found in ConsDB",
-              description:
-                "Parts of the dashboard that depend on exposure data will appear empty for the selected date range.",
-            });
-          }
-          if (domeError) {
-            addNotification({
-              type: "error",
-              source: "dome-times",
-            });
-          }
-          if (accountingError) {
-            addNotification({
-              type: "error",
-              source: "time-accounting",
-            });
-          }
-        },
-      )
+      .then((data) => {
+        setExposureFields(data.exposures);
+        setExposureCount(data.exposures_count);
+        setSumExpTime(data.sum_exposure_time);
+        setOnSkyExpCount(data.on_sky_exposures_count);
+        setSumOnSkyExpTime(data.total_on_sky_exposure_time);
+        setExposuresLoading(false);
+        setOpenDomeTimes(data.open_dome_times);
+
+        if (data.exposures_count === 0) {
+          addNotification({
+            type: "noData",
+            source: "consdb",
+            title: "No exposures found in ConsDB",
+            description:
+              "Parts of the dashboard that depend on exposure data will appear empty for the selected date range.",
+          });
+        }
+        if (data.open_dome_error) {
+          addNotification({
+            type: "error",
+            source: "dome-times",
+          });
+        }
+        if (data.time_accounting_error) {
+          addNotification({
+            type: "error",
+            source: "time-accounting",
+          });
+        }
+      })
       .catch((err) => {
         if (!abortController.signal.aborted) {
           console.error("Error fetching exposures:", err);
@@ -249,6 +300,7 @@ export default function Digest() {
       .catch((err) => {
         if (!abortController.signal.aborted) {
           console.error("Error fetching almanac data:", err);
+          setAlmanacFetchError(true);
           addNotification({
             type: "error",
             source: "almanac",
@@ -261,32 +313,13 @@ export default function Digest() {
         }
       });
 
-    fetchNarrativeLog(startDayobs, queryEndDayobs, instrument, abortController)
-      .then((data) => {
-        setNarrativeFaultLoss(data.time_lost_to_faults);
-      })
-      .catch((err) => {
-        if (!abortController.signal.aborted) {
-          console.error("Error fetching narrative log:", err);
-          addNotification({
-            type: "error",
-            source: "time-loss",
-          });
-        }
-      })
-      .finally(() => {
-        if (!abortController.signal.aborted) {
-          setNarrativeLoading(false);
-        }
-      });
-
     fetchObsStatusFromRubinNights({
       start: startDayobs,
       end: endDayobs,
       includeEntries: true,
       includeIntervals: true,
       nightOnlyMetrics: true,
-      metrics: ["fault_loss", "weather"],
+      metrics: ["fault_loss", "weather", "downtime"],
       abortController,
     })
       .then((data) => {
@@ -301,6 +334,9 @@ export default function Digest() {
         setObsStatusWeatherLoss(
           typeof metrics.weather === "number" ? metrics.weather : 0.0,
         );
+        setObsStatusDowntime(
+          typeof metrics.downtime === "number" ? metrics.downtime : 0.0,
+        );
         setObsStatusAvailability({
           status:
             typeof availability.status === "string"
@@ -314,6 +350,7 @@ export default function Digest() {
       .catch((err) => {
         if (!abortController.signal.aborted) {
           console.error("Error fetching observatory status:", err);
+          setObsStatusFetchError(true);
           addNotification({
             type: "error",
             source: "observatory-status",
@@ -476,19 +513,14 @@ export default function Digest() {
     [almanacInfo],
   );
 
-  const elapsedTwilightHours = useMemo(
-    () =>
-      almanacInfo?.reduce(
-        (acc, day) => acc + (day.elapsed_twilight_hours ?? 0),
-        0,
-      ) ?? 0,
-    [almanacInfo],
-  );
-
   const totalExpTimeBetweenTwilights = useMemo(
     () => calculateSumExpTimeBetweenTwilights(exposureFields, almanacInfo),
     [exposureFields, almanacInfo],
   );
+
+  const weatherLossForCalculations = obsStatusFetchError
+    ? 0.0
+    : obsStatusWeatherLoss;
 
   let efficiency = null;
   if (
@@ -504,96 +536,24 @@ export default function Digest() {
         nightHours,
         sumOnSkyExpTime,
         totalExpTimeBetweenTwilights,
-        obsStatusWeatherLoss,
+        weatherLossForCalculations,
       );
     }
   }
 
-  const efficiencyText = efficiency >= 0 ? `${efficiency} %` : "N/A";
+  const efficiencyText = Number.isFinite(efficiency) ? `${efficiency} %` : "NA";
   const newTicketsCount = jiraTickets.filter((tix) => tix.isNew).length;
-  const almanacUnavailable = !almanacLoading && !almanacInfo?.length;
-
-  const faultLoading = useMemo(
-    () => almanacLoading || obsStatusLoading || exposuresLoading,
-    [almanacLoading, obsStatusLoading, exposuresLoading],
-  );
-
-  const domeTotals = useMemo(() => {
-    if (openDomeError) {
-      return null;
-    }
-
-    if (!dayObsOpenDomeHours || isDictionaryEmpty(dayObsOpenDomeHours)) {
-      return {
-        nightHours: 0.0,
-        openHours: 0.0,
-        closedHours: 0.0,
-      };
-    }
-
-    return Object.values(dayObsOpenDomeHours).reduce(
-      (sum, hours) => ({
-        nightHours: sum.nightHours + (hours.night_hours ?? 0.0),
-        openHours: sum.openHours + (hours.open_hours ?? 0.0),
-        closedHours: sum.closedHours + (hours.closed_hours ?? 0.0),
-      }),
-      { nightHours: 0.0, openHours: 0.0, closedHours: 0.0 },
-    );
-  }, [dayObsOpenDomeHours, openDomeError]);
-
-  const { calculatedFault, faultUnavailable, faultUnavailableReason } =
-    useMemo(() => {
-      const unavailable = (reason) => ({
-        calculatedFault: null,
-        faultUnavailable: true,
-        faultUnavailableReason: reason,
-      });
-
-      if (almanacUnavailable && timeAccountingError) {
-        return unavailable(
-          "Fault unavailable: no almanac or time accounting data.",
-        );
-      }
-      if (almanacUnavailable) {
-        return unavailable("Fault unavailable: no almanac data.");
-      }
-      if (timeAccountingError) {
-        return unavailable("Fault unavailable: no time accounting data.");
-      }
-      if (!onSkyTimeAccounting || isDictionaryEmpty(onSkyTimeAccounting)) {
-        return {
-          calculatedFault: 0.0,
-          faultUnavailable: false,
-          faultUnavailableReason: null,
-        };
-      }
-
-      return {
-        calculatedFault: computeCalculatedFault(
-          onSkyTimeAccounting,
-          totalExpTimeBetweenTwilights,
-          elapsedTwilightHours,
-          obsStatusWeatherLoss,
-        ),
-        faultUnavailable: false,
-        faultUnavailableReason: null,
-      };
-    }, [
-      almanacUnavailable,
-      domeTotals,
-      elapsedTwilightHours,
-      onSkyTimeAccounting,
-      totalExpTimeBetweenTwilights,
-      obsStatusWeatherLoss,
-      timeAccountingError,
-    ]);
+  const warningContent = getDigestWarningContent({
+    almanacFetchError,
+    obsStatusFetchError,
+    obsStatusAvailability,
+  });
 
   const allLoaded =
     !exposuresLoading &&
     !expectedExposuresLoading &&
     !almanacLoading &&
     !obsStatusLoading &&
-    !narrativeLoading &&
     !nightreportLoading &&
     !jiraLoading &&
     !flagsLoading &&
@@ -639,19 +599,32 @@ export default function Digest() {
             icon={<EfficiencyChart value={efficiency} />}
             data={efficiencyText}
             label="Open-shutter (-weather) efficiency"
-            tooltip="Efficiency computed as total on-sky exposure time / ( time between 12° twilights - time lost to weather as recorded in Observatory Status ). Exposures started outside the twilights are not counted in total time."
-            loading={almanacLoading || exposuresLoading || narrativeLoading}
+            tooltip={
+              <>
+                Efficiency computed as total on-sky exposure time / ( time
+                between <code>-12°</code> twilights <code>-</code> time lost to
+                weather* ). Exposures started outside the twilights are not
+                counted in total time.
+                <br />
+                <br />
+                *If Observatory Status data is not available, weather loss is
+                treated as <code>0</code>.
+              </>
+            }
+            loading={almanacLoading || exposuresLoading || obsStatusLoading}
+            statusIndicator={
+              <WarningTooltip ariaLabel="Efficiency data availability warning">
+                {warningContent}
+              </WarningTooltip>
+            }
           />
           <TimeLossCard
-            narrativeLogData={narrativeFaultLoss}
-            obsStatusData={obsStatusFaultLoss}
+            obsStatusFaultLoss={obsStatusFaultLoss}
+            obsStatusWeatherLoss={obsStatusWeatherLoss}
+            obsStatusDowntime={obsStatusDowntime}
             obsStatusAvailability={obsStatusAvailability}
-            calculatedData={calculatedFault}
-            narrativeLogloading={narrativeLoading}
+            warningContent={warningContent}
             obsStatusLoading={obsStatusLoading}
-            calculatedFaultLoading={faultLoading}
-            faultDataUnavailable={faultUnavailable}
-            faultErrorMessage={faultUnavailableReason}
           />
           <DialogMetricsCard
             icons={[JiraIconWhite, JiraIconBlue]}
@@ -701,6 +674,8 @@ export default function Digest() {
               almanacInfo={almanacInfo}
               intervals={obsStatusIntervals}
               availability={obsStatusAvailability}
+              fetchError={obsStatusFetchError}
+              almanacFetchError={almanacFetchError}
               openDomeTimes={openDomeTimes}
               fullTimeRange={fullTimeRange}
               loading={obsStatusLoading || exposuresLoading || almanacLoading}

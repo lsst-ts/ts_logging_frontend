@@ -1,11 +1,4 @@
-import { TriangleAlert } from "lucide-react";
-
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from "@/components/ui/tooltip";
 import {
   Popover,
   PopoverTrigger,
@@ -20,12 +13,51 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 
 import ObservatoryStatusCumulativePlot from "@/components/ObservatoryStatusCumulativePlot";
+import WarningTooltip from "@/components/WarningTooltip";
 import { formatDayobsStrForDisplay } from "@/utils/timeUtils";
+import { getObsStatusFetchErrorText } from "@/utils/observatoryStatusUtils";
 import { OBSERVATORY_STATE_AVAILABILITY_STATUS } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
 
 import FullScreenIcon from "../assets/FullScreenIcon.svg";
 import DownloadIcon from "../assets/DownloadIcon.svg";
 import InfoIcon from "../assets/InfoIcon.svg";
+
+/**
+ * Builds the warning text shown by the Observatory Status applet when its
+ * data cannot be displayed.
+ *
+ * Fetch errors take precedence over availability gaps: the cumulative plot
+ * cannot render without its source data, so an error message is returned
+ * whenever either request failed. Otherwise, when both requests succeeded but
+ * Obs Status covers only part of the requested range, an availability message
+ * is returned.
+ *
+ * @param {Object} options
+ * @param {boolean} [options.almanacFetchError=false] Whether the Almanac request failed.
+ * @param {boolean} [options.obsStatusFetchError=false] Whether the Observatory Status request failed.
+ * @param {Object} [options.availability] Availability metadata for the observatory-status feed.
+ * @returns {string} The warning text to display.
+ */
+function getObsAvailabilityWarningText({
+  almanacFetchError,
+  obsStatusFetchError,
+  availability,
+}) {
+  // Fetch errors take precedence: the plot cannot render without its data.
+  const fetchErrorText = getObsStatusFetchErrorText({
+    almanacFetchError,
+    obsStatusFetchError,
+  });
+  if (fetchErrorText) return fetchErrorText;
+
+  // Both requests succeeded, but Obs Status covers only part of the range.
+  const obsAvailableFrom = availability?.available_from
+    ? formatDayobsStrForDisplay(String(availability.available_from))
+    : null;
+  return `Observatory Status data is only available from ${
+    obsAvailableFrom ?? "the supported dayobs range"
+  }.`;
+}
 
 /**
  * Render the observatory status dashboard applet with availability warnings,
@@ -35,6 +67,8 @@ import InfoIcon from "../assets/InfoIcon.svg";
  * @param {Array} [props.almanacInfo=[]] Almanac night metadata used by the cumulative plot.
  * @param {Array} [props.intervals=[]] Observatory status intervals to display.
  * @param {Object} [props.availability] Availability metadata for the observatory-status feed.
+ * @param {boolean} [props.fetchError=false] Whether the Observatory Status request failed.
+ * @param {boolean} [props.almanacFetchError=false] Whether the Almanac request failed.
  * @param {Array} [props.openDomeTimes=[]] Open-dome intervals to overlay on the plot.
  * @param {[DateTime, DateTime]} props.fullTimeRange Visible time range for the chart.
  * @param {boolean} props.loading Whether the underlying data is still loading.
@@ -43,17 +77,18 @@ function ObservatoryStatusApplet({
   almanacInfo = [],
   intervals = [],
   availability,
+  fetchError = false,
+  almanacFetchError = false,
   openDomeTimes = [],
   fullTimeRange,
   loading,
 }) {
   const obsAvailabilityStatus = availability?.status ?? null;
-  const obsAvailableFrom = availability?.available_from
-    ? formatDayobsStrForDisplay(String(availability.available_from))
-    : null;
-  const obsAvailabilityWarningText = `Observatory Status data is only available from ${
-    obsAvailableFrom ?? "the supported dayobs range"
-  }.`;
+  const obsAvailabilityWarningText = getObsAvailabilityWarningText({
+    almanacFetchError,
+    obsStatusFetchError: fetchError,
+    availability,
+  });
 
   return (
     <Card className="border-none p-0 bg-stone-800 gap-2">
@@ -66,14 +101,12 @@ function ObservatoryStatusApplet({
               obsAvailabilityStatus ===
                 OBSERVATORY_STATE_AVAILABILITY_STATUS.PARTIAL && (
                 <div className="flex place-items-center-safe">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <TriangleAlert className="h-4 text-yellow-400 cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{obsAvailabilityWarningText}</p>
-                    </TooltipContent>
-                  </Tooltip>
+                  <WarningTooltip
+                    ariaLabel="Observatory Status data availability warning"
+                    iconClassName="h-4"
+                  >
+                    {obsAvailabilityWarningText}
+                  </WarningTooltip>
                 </div>
               )}
           </div>
@@ -95,8 +128,10 @@ function ObservatoryStatusApplet({
                   <div className="flex-grow w-full h-full">
                     <Skeleton className="h-full bg-stone-900" />
                   </div>
-                ) : obsAvailabilityStatus ===
-                  OBSERVATORY_STATE_AVAILABILITY_STATUS.NONE ? (
+                ) : almanacFetchError ||
+                  fetchError ||
+                  obsAvailabilityStatus ===
+                    OBSERVATORY_STATE_AVAILABILITY_STATUS.NONE ? (
                   <div className="h-full place-content-center-safe">
                     <p className="text-3xl text-stone-400 text-center">
                       {obsAvailabilityWarningText}
@@ -161,7 +196,10 @@ function ObservatoryStatusApplet({
           <div className="flex-grow w-full h-full">
             <Skeleton className="h-full min-h-[180px] bg-stone-900" />
           </div>
-        ) : obsAvailabilityStatus === "none" ? (
+        ) : almanacFetchError ||
+          fetchError ||
+          obsAvailabilityStatus ===
+            OBSERVATORY_STATE_AVAILABILITY_STATUS.NONE ? (
           <div className="h-full place-content-center-safe">
             <p className="text-stone-400 text-center">
               {obsAvailabilityWarningText}

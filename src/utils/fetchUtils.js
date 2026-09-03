@@ -52,39 +52,25 @@ const fetchData = async (url, abortController) => {
  * @param {string} end - Exclusive end dayobs in `YYYYMMDD` format.
  * @param {string} instrument - Instrument name for the backend query.
  * @param {AbortController} abortController - AbortController used to cancel the request.
- * @returns {Promise<[
- *   Object[],
- *   number,
- *   number,
- *   number,
- *   number,
- *   (Object[]|null),
- *   (Object<string, Object>|null),
- *   (string|null),
- *   (Object<string, number>|null),
- *   (string|null)
- * ]>} Promise resolving to:
- *   `[exposures, exposuresCount, totalExposureTime, onSkyExposuresCount,
- *   totalOnSkyExposureTime, openDomeTimes, dayObsOpenDomeHours,
- *   openDomeError, nightOnSkyTimeAccounting, timeAccountingError]`.
+ * @returns {Promise<{
+ *   exposures: Object[],
+ *   exposures_count: number,
+ *   sum_exposure_time: number,
+ *   on_sky_exposures_count: number,
+ *   total_on_sky_exposure_time: number,
+ *   open_dome_times: (Object[]|null),
+ *   day_obs_open_dome_hours: (Object<string, Object>|null),
+ *   open_dome_error: (string|null),
+ *   night_on_sky_time_accounting: (Object<string, number>|null),
+ *   time_accounting_error: (string|null)
+ * }>} Promise resolving to the parsed exposure API response without transformation.
  * @throws {Error} Throws if the request fails and was not aborted.
  */
 const fetchExposures = async (start, end, instrument, abortController) => {
   try {
     const url = `${backendLocation}/exposures?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
     const data = await fetchData(url, abortController);
-    return [
-      data.exposures,
-      data.exposures_count,
-      data.sum_exposure_time,
-      data.on_sky_exposures_count,
-      data.total_on_sky_exposure_time,
-      data.open_dome_times,
-      data.day_obs_open_dome_hours,
-      data.open_dome_error,
-      data.night_on_sky_time_accounting,
-      data.time_accounting_error,
-    ];
+    return data;
   } catch (err) {
     if (err.name !== "AbortError") {
       console.error("Error fetching exposures:", err);

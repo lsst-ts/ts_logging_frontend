@@ -1,77 +1,65 @@
-import { TriangleAlert } from "lucide-react";
-
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
+import WarningTooltip from "@/components/WarningTooltip";
 
 import InfoIcon from "../assets/InfoIcon.svg";
 import TimeLossIcon from "../assets/TimeLossIcon.svg";
 
-import { formatDayobsStrForDisplay } from "@/utils/timeUtils";
 import { OBSERVATORY_STATE_AVAILABILITY_STATUS } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
 
+/**
+ * Displays the observing time lost to fault, weather, and downtime according
+ * to Observatory Status records.
+ *
+ * When Observatory Status data is only partially available (or unavailable),
+ * the affected values are shown as `NA` and a warning tooltip is rendered in
+ * the header. The card is clickable only when `onClick` is provided and data
+ * is not still loading.
+ *
+ * @param {Object} props
+ * @param {number} [props.obsStatusFaultLoss] Fault loss in hours.
+ * @param {number} [props.obsStatusWeatherLoss] Weather loss in hours.
+ * @param {number} [props.obsStatusDowntime] Downtime in hours.
+ * @param {Object} [props.obsStatusAvailability] Availability metadata for the observatory-status feed.
+ * @param {React.ReactNode} [props.warningContent=null] Content for the header warning tooltip.
+ * @param {boolean} [props.obsStatusLoading=false] Whether Observatory Status data is still loading.
+ * @param {Function|boolean} [props.onClick=false] Click handler for the card, or `false` to disable.
+ */
 export default function TimeLossCard({
-  narrativeLogData,
-  obsStatusData,
+  obsStatusFaultLoss,
+  obsStatusWeatherLoss,
+  obsStatusDowntime,
   obsStatusAvailability,
-  calculatedData,
-  narrativeLogloading = false,
+  warningContent = null,
   obsStatusLoading = false,
-  calculatedFaultLoading = false,
-  faultDataUnavailable = false,
-  faultErrorMessage = null,
   onClick = false,
 }) {
-  const loading =
-    narrativeLogloading || obsStatusLoading || calculatedFaultLoading;
+  const loading = obsStatusLoading;
   const isClickable = onClick && !loading;
 
-  const heading = "Fault Loss";
+  const heading = "Time Loss";
 
   const availability = obsStatusAvailability ?? {};
   const availabilityStatus =
     availability.status ?? OBSERVATORY_STATE_AVAILABILITY_STATUS.NONE;
-  const availableFrom = availability.available_from
-    ? formatDayobsStrForDisplay(String(availability.available_from))
-    : null;
-
   const formatHours = (value) =>
-    typeof value === "number" ? value.toFixed(2) : "NA";
+    typeof value === "number" && Number.isFinite(value)
+      ? value.toFixed(2)
+      : "NA";
 
   const isFullyAvailable =
     availabilityStatus === OBSERVATORY_STATE_AVAILABILITY_STATUS.FULL;
   const isNotAvailable =
     availabilityStatus === OBSERVATORY_STATE_AVAILABILITY_STATUS.NONE;
 
-  // Tooltip to be shown over obs status data if data
-  // partially or fully unavailable due to user querying
-  // before/around when the data started being recorded.
-  const tooltipText = isNotAvailable ? (
-    <>
-      Observatory Status data is only available from{" "}
-      <strong>{availableFrom ?? "the supported date range"}</strong>.
-    </>
-  ) : (
-    <>
-      Observatory Status data is only available from{" "}
-      <strong>{availableFrom ?? "the supported date range"}</strong>
-      .
-      <br />
-      Fault time loss has been computed for the available dayobs.
-    </>
-  );
-
   return (
     // Card
     <div
+      data-slot="time-loss-card"
       onClick={isClickable ? onClick : undefined}
       className={`flex flex-col justify-between bg-teal-900 text-white font-light p-4 rounded-lg shadow-[4px_4px_4px_0px_#0369A1] transition hover:opacity-90 ${
         isClickable ? "cursor-pointer" : ""
@@ -79,66 +67,83 @@ export default function TimeLossCard({
     >
       {/* Heading & Icon */}
       <div className="flex flex-row justify-between h-12">
-        <div className="text-2xl">{heading}</div>
+        <div className="flex gap-2 h-8 place-items-center-safe">
+          <div className="text-2xl">{heading}</div>
+          {!loading && (
+            <WarningTooltip ariaLabel="Time Loss data availability warning">
+              {warningContent}
+            </WarningTooltip>
+          )}
+        </div>
         <img src={TimeLossIcon} alt={heading} />
       </div>
       {/* Data & Info Icon */}
       <div className="flex flex-row justify-between">
         {/* Data */}
         <div className="grid grid-cols-[auto_1fr] items-center gap-x-4 text-md">
-          <div>Obs. Status:</div>
+          <div>Fault:</div>
           {obsStatusLoading ? (
-            <Skeleton className="h-3 w-10 bg-teal-700" />
+            <Skeleton
+              data-slot="time-loss-fault-loading"
+              className="h-3 w-10 bg-teal-700"
+            />
           ) : // Show data when availabile
           isFullyAvailable ? (
-            <div>{formatHours(obsStatusData)}</div>
+            <div data-slot="time-loss-fault">
+              {formatHours(obsStatusFaultLoss)}
+            </div>
           ) : (
-            // Show tooltip and warning icon for no/partial data
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-1 cursor-help">
-                  <span>
-                    {isNotAvailable ? "NA" : formatHours(obsStatusData)}
-                  </span>
-
-                  <TriangleAlert className="h-4 w-4 text-yellow-500" />
-                </div>
-              </TooltipTrigger>
-
-              <TooltipContent>
-                <p>{tooltipText}</p>
-              </TooltipContent>
-            </Tooltip>
+            <div
+              data-slot="time-loss-fault"
+              className="flex items-center gap-1"
+            >
+              <span>
+                {isNotAvailable ? "NA" : formatHours(obsStatusFaultLoss)}
+              </span>
+            </div>
           )}
-
-          <div>Narrative Log:</div>
-          {narrativeLogloading ? (
-            <Skeleton className="h-3 w-10 bg-teal-700" />
+          <div>Weather:</div>
+          {obsStatusLoading ? (
+            <Skeleton
+              data-slot="time-loss-weather-loading"
+              className="h-3 w-10 bg-teal-700"
+            />
+          ) : isFullyAvailable ? (
+            <div data-slot="time-loss-weather">
+              {formatHours(obsStatusWeatherLoss)}
+            </div>
           ) : (
-            formatHours(narrativeLogData)
+            <div
+              data-slot="time-loss-weather"
+              className="flex items-center gap-1"
+            >
+              <span>
+                {isNotAvailable ? "NA" : formatHours(obsStatusWeatherLoss)}
+              </span>
+            </div>
           )}
-
-          <div>Calculated:</div>
-          {calculatedFaultLoading ? (
-            <Skeleton className="h-3 w-10 bg-teal-700" />
-          ) : faultDataUnavailable ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-1 cursor-help">
-                  <span>NA</span>
-
-                  <TriangleAlert className="h-4 w-4 text-yellow-500" />
-                </div>
-              </TooltipTrigger>
-
-              <TooltipContent>
-                <p>{faultErrorMessage}</p>
-              </TooltipContent>
-            </Tooltip>
+          <div>Downtime:</div>
+          {obsStatusLoading ? (
+            <Skeleton
+              data-slot="time-loss-downtime-loading"
+              className="h-3 w-10 bg-teal-700"
+            />
+          ) : isFullyAvailable ? (
+            <div data-slot="time-loss-downtime">
+              {formatHours(obsStatusDowntime)}
+            </div>
           ) : (
-            <div>{formatHours(calculatedData)}</div>
+            <div
+              data-slot="time-loss-downtime"
+              className="flex items-center gap-1"
+            >
+              <span>
+                {isNotAvailable ? "NA" : formatHours(obsStatusDowntime)}
+              </span>
+            </div>
           )}
         </div>
+
         {/* Info Icon */}
         <Popover>
           <PopoverTrigger
@@ -151,33 +156,31 @@ export default function TimeLossCard({
           </PopoverTrigger>
           <PopoverContent className="bg-black text-white text-sm border-yellow-700 w-100">
             <p>
-              Observing hours lost to faults as recorded in the Narrative Log
-              and Observatory Status, and calculated from exposures.
+              Observing time (<code>-12°</code>) per Observatory Status records.
               <br />
               <br />
-              <strong>Observatory Status Fault Loss</strong>
+              <strong>Fault Loss</strong>
               <br />
-              Sum of all observing time with an active <code>FAULT</code>{" "}
-              status, except during <code>DOWNTIME</code>.
-              <br />
-              <br />
-              <strong>Narrative Log Fault Loss</strong>
-              <br />
-              Sum of all time lost to fault as recorded in the Narrative Log.
+              Sum of all observing time with an active <strong>
+                FAULT
+              </strong>{" "}
+              status, except during <strong>DOWNTIME</strong>.
               <br />
               <br />
-              <strong>Calculated Fault Loss</strong>
+              <strong>Weather</strong>
               <br />
-              Total available observing time – exposure time – overhead time* –
-              time lost to weather**.
+              Sum of all observing time with an active <strong>
+                WEATHER
+              </strong>{" "}
+              status.
               <br />
               <br />
-              <em>
-                *overhead time = expected slew and settle time, including a
-                potential additional overhead of up to 2 minutes per visit.
-              </em>
+              <strong>Downtime</strong>
               <br />
-              <em>**weather loss is derived from Observatory Status data.</em>
+              Sum of all observing time with an active <strong>
+                DOWNTIME
+              </strong>{" "}
+              status.
             </p>
           </PopoverContent>
         </Popover>

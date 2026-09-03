@@ -6,6 +6,7 @@ import {
   observatoryStatusCard,
   observatoryStatusTooltip,
   hoverStateMarker,
+  tooltipForTrigger,
   waitForObservatoryStatusAppletLoad,
 } from "../../helpers/digest-helpers.js";
 
@@ -209,10 +210,12 @@ test.describe("Observatory Status applet — partial availability", () => {
 
   test("shows a warning icon with an explanatory tooltip", async ({ page }) => {
     const card = observatoryStatusCard(page);
-    const warning = card.locator("svg.text-yellow-400");
+    const warning = card.getByRole("button", {
+      name: "Observatory Status data availability warning",
+    });
     await expect(warning).toBeVisible();
     await warning.hover();
-    await expect(page.getByRole("tooltip")).toContainText(
+    await expect(await tooltipForTrigger(page, warning)).toContainText(
       "Observatory Status data is only available from 2026-01-02.",
     );
   });
@@ -260,5 +263,37 @@ test.describe("Observatory Status applet — no availability", () => {
     // No plot in the fullscreen dialog when availability is "none" — verify by
     // the absence of the plot's unique y-axis label.
     await expect(dialog.getByText("Cumulative Hours")).toHaveCount(0);
+  });
+});
+
+test.describe("Observatory Status applet — fetch failure", () => {
+  test("shows a fetch-error message instead of the plot", async ({ page }) => {
+    await setupApiMocks(page);
+    // Registered after setupApiMocks so this failed route takes precedence.
+    await page.route("**/nightlydigest/api/obs-status*", (route) =>
+      route.abort(),
+    );
+    await page.goto(DIGEST_URL);
+
+    const card = observatoryStatusCard(page);
+    await expect(
+      card.getByText("Observatory Status data could not be fetched."),
+    ).toBeVisible();
+    await expect(card.locator("svg")).toHaveCount(0);
+  });
+
+  test("shows an Almanac fetch-error message instead of the plot", async ({
+    page,
+  }) => {
+    await setupApiMocks(page);
+    // Registered after setupApiMocks so this failed route takes precedence.
+    await page.route("**/nightlydigest/api/almanac*", (route) => route.abort());
+    await page.goto(DIGEST_URL);
+
+    const card = observatoryStatusCard(page);
+    await expect(
+      card.getByText("Almanac data could not be fetched."),
+    ).toBeVisible();
+    await expect(card.locator("svg")).toHaveCount(0);
   });
 });

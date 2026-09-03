@@ -1,0 +1,1 @@
+Replace the Narrative Log fault loss value with Observatory Status weather loss in the Time Loss card.

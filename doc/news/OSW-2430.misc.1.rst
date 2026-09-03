@@ -1,0 +1,1 @@
+Replace the calculated fault loss value with Observatory Status downtime in the Time Loss card.
