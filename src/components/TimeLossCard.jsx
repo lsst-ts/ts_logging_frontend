@@ -156,11 +156,10 @@ export default function TimeLossCard({
           </PopoverTrigger>
           <PopoverContent className="bg-black text-white text-sm border-yellow-700 w-100">
             <p>
-              Observing hours (<strong>-12°</strong>) lost to fault or weather
-              according to Observatory Status records.
+              Observing time (<code>-12°</code>) per Observatory Status records.
               <br />
               <br />
-              <strong>Observatory Status Fault Loss</strong>
+              <strong>Fault Loss</strong>
               <br />
               Sum of all observing time with an active <strong>
                 FAULT
@@ -168,7 +167,7 @@ export default function TimeLossCard({
               status, except during <strong>DOWNTIME</strong>.
               <br />
               <br />
-              <strong>Observatory Status Weather Loss</strong>
+              <strong>Weather</strong>
               <br />
               Sum of all observing time with an active <strong>
                 WEATHER
@@ -176,7 +175,7 @@ export default function TimeLossCard({
               status.
               <br />
               <br />
-              <strong>Observatory Status Downtime</strong>
+              <strong>Downtime</strong>
               <br />
               Sum of all observing time with an active <strong>
                 DOWNTIME

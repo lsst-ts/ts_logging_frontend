@@ -86,7 +86,7 @@ test.describe("Digest page — Efficiency card", () => {
       "Observatory Status data is only available from 2026-02-25.",
     );
     await expect(tooltip).toContainText(
-      "Fault, Weather, and Downtime losses are treated as 0 where data is unavailable.",
+      "Where unavailable, status data is treated as 0.",
     );
   });
 
@@ -110,7 +110,7 @@ test.describe("Digest page — Efficiency card", () => {
       "Observatory Status data is only available from the supported dayobs range.",
     );
     await expect(tooltip).toContainText(
-      "Fault, Weather, and Downtime losses are treated as 0 where data is unavailable.",
+      "Where unavailable, status data is treated as 0.",
     );
   });
 
@@ -146,7 +146,7 @@ test.describe("Digest page — Efficiency card", () => {
     await efficiencyCard(page).locator("button").click();
     await expect(
       page.getByText(
-        "If Observatory Status data cannot be fetched, weather loss is treated as",
+        "If Observatory Status data is not available, weather loss is treated as",
       ),
     ).toBeVisible();
   });
@@ -174,7 +174,7 @@ test.describe("Digest page — Efficiency card", () => {
       "Almanac data could not be fetched. Observatory Status data is only available from 2026-02-25.",
     );
     await expect(tooltip).toContainText(
-      "Fault, Weather, and Downtime losses are treated as 0 where data is unavailable.",
+      "Where unavailable, status data is treated as 0.",
     );
   });
 

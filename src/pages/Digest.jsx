@@ -88,8 +88,7 @@ function getDigestWarningContent({
       )}
       .
       <br />
-      Fault, Weather, and Downtime losses are treated as <code>0</code> where
-      data is unavailable.
+      Where unavailable, status data is treated as <code>0</code>.
     </>
   );
 
@@ -603,13 +602,12 @@ export default function Digest() {
             tooltip={
               <>
                 Efficiency computed as total on-sky exposure time / ( time
-                between 12° twilights - time lost to weather as recorded in
-                Observatory Status or treated as <code>0</code> when not
-                available ). Exposures started outside the twilights are not
+                between <code>-12°</code> twilights <code>-</code> time lost to
+                weather* ). Exposures started outside the twilights are not
                 counted in total time.
                 <br />
                 <br />
-                If Observatory Status data cannot be fetched, weather loss is
+                *If Observatory Status data is not available, weather loss is
                 treated as <code>0</code>.
               </>
             }
