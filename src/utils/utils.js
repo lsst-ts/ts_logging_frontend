@@ -40,6 +40,12 @@ export const SITE_CONFIGURATION = Object.freeze({
     hostDisplayName: "Tuscon",
     retentionDays: 7,
   },
+  // TODO: replace with the real Scientific Nightly Digest hostname.
+  "<SND PLACEHOLDER>": {
+    rubinTVSiteSuffix: undefined,
+    hostDisplayName: "Scientific Nightly Digest",
+    retentionDays: 7,
+  },
 });
 
 const DEFAULT_PIXEL_SCALE_MEDIAN = 0.2; // default median pixel scale in arcsec/pixel

@@ -38,11 +38,46 @@ export default function Layout({ children }) {
     telescope ? TELESCOPES[telescope] : "LSSTCam",
   );
 
+  const { host, getAvailableDayObsRange, retentionDays } = useHostConfig();
+  const { addNotification } = useNotifications();
+  const dayObsRange = getAvailableDayObsRange();
+
   const setDayObsRange = (start, end) => {
     setQuery("startDayobs", parseInt(start));
     setQuery("endDayobs", parseInt(end));
     setQuery("startTime", undefined);
     setQuery("endTime", undefined);
+  };
+
+  /**
+   * Largest number of nights selectable for a given dayobs.
+   *
+   * The range counts backwards from the selected dayobs, so it cannot reach
+   * further back than the retention window's earliest available dayobs.
+   *
+   * @param {Date} dayobs - The selected dayobs (end of the range).
+   * @returns {number|null} The maximum number of nights, or null when the site
+   *                        has no retention policy and any range is allowed.
+   */
+  const maxNoOfNights = (dayobs) => {
+    if (!dayObsRange.min) return null;
+    const minDate = dayObsIntToDateTime(dayObsRange.min);
+    const selectedDate = DateTime.fromJSDate(dayobs, { zone: "utc" });
+    return Math.max(1, Math.floor(selectedDate.diff(minDate, "days").days) + 1);
+  };
+
+  /**
+   * Constrain a nights count to at least 1 and to the retention window.
+   *
+   * @param {number|string} nightsCount - The requested number of nights.
+   * @param {Date} dayobs - The selected dayobs (end of the range).
+   * @returns {number} The clamped number of nights.
+   */
+  const clampNoOfNights = (nightsCount, dayobs) => {
+    const nights = Math.floor(Number(nightsCount));
+    const atLeastOne = Number.isFinite(nights) ? Math.max(1, nights) : 1;
+    const max = maxNoOfNights(dayobs);
+    return max === null ? atLeastOne : Math.min(atLeastOne, max);
   };
 
   const calculateDayObsRange = (dayobs, noOfNights) => {
@@ -55,13 +90,24 @@ export default function Layout({ children }) {
 
   const handleDayobsChange = (date) => {
     setDayobs(date);
-    const [start, end] = calculateDayObsRange(date, noOfNights);
+    // Moving the dayobs closer to the start of the retention window shrinks
+    // the number of nights that still fit inside it.
+    const nights = clampNoOfNights(noOfNights, date);
+    setNoOfNights(nights);
+    const [start, end] = calculateDayObsRange(date, nights);
     setDayObsRange(start, end);
   };
 
   const handleNoOfNightsChange = (nightsCount) => {
-    setNoOfNights(nightsCount);
-    const [start, end] = calculateDayObsRange(dayobs, nightsCount);
+    // Let the field be cleared while typing, and leave the dayobs range alone
+    // until it holds a usable number again.
+    if (nightsCount === "" || !Number.isFinite(Number(nightsCount))) {
+      setNoOfNights(nightsCount);
+      return;
+    }
+    const nights = clampNoOfNights(nightsCount, dayobs);
+    setNoOfNights(nights);
+    const [start, end] = calculateDayObsRange(dayobs, nights);
     setDayObsRange(start, end);
   };
 
@@ -69,10 +115,6 @@ export default function Layout({ children }) {
     setInstrument(inst);
     setQuery("telescope", getKeyByValue(TELESCOPES, inst));
   };
-
-  const { host, getAvailableDayObsRange, retentionDays } = useHostConfig();
-  const { addNotification } = useNotifications();
-  const dayObsRange = getAvailableDayObsRange();
 
   useEffect(() => {
     if (!retentionDays) return;
