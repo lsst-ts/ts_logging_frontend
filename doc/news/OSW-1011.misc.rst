@@ -1,1 +1,0 @@
-Add fullscreen feature to Night Summary applet.
