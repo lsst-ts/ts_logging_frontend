@@ -1,0 +1,2 @@
+Implement Scientific Nightly Digest conditional data and UI display.
+
