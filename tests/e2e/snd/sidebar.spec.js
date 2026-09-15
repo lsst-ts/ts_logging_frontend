@@ -27,4 +27,20 @@ test.describe("Scientific Nightly Digest — sidebar footer", () => {
     const version = await footer.getByText(/^Nightly Digest/).boundingBox();
     expect(forum.y).toBeLessThan(version.y);
   });
+
+  test("points at the forum's Support category on hover", async ({ page }) => {
+    const link = page
+      .locator("[data-slot='sidebar-footer']")
+      .getByRole("link", { name: "LSST Community Forum" });
+    const tooltip = page.locator("[data-slot='tooltip-content']");
+
+    await expect(tooltip).toHaveCount(0);
+
+    await link.hover();
+
+    await expect(tooltip).toBeVisible();
+    await expect(tooltip).toContainText(
+      "Questions? Please ask in the Support category of the Rubin Community Forum, and Rubin staff will respond.",
+    );
+  });
 });
