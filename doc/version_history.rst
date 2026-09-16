@@ -1,3 +1,37 @@
+v0.24.0 (2026-09-15)
+====================
+
+New Features
+------------
+
+- Allow the backend API root to be overridden at build time with the ``VITE_BACKEND_URL``. (`OSW-2668 <https://rubinobs.atlassian.net//browse/OSW-2668>`_)
+
+
+Bug Fixes
+---------
+
+- Start every page's loading flags as ``true`` so the Digest and Visit Maps pages show their loading skeletons on first paint instead of briefly flashing empty content and error banners. (`OSW-2798 <https://rubinobs.atlassian.net//browse/OSW-2798>`_)
+- Fix Dockerfile-deploy to use npm ci instead of npm install. (`OSW-2801 <https://rubinobs.atlassian.net//browse/OSW-2801>`_)
+
+
+Performance Enhancement
+-----------------------
+
+- Refactor NightSummary component to simplify logic on Report child component. (`OSW-1011 <https://rubinobs.atlassian.net//browse/OSW-1011>`_)
+- Stop table column filters taking a new identity on every render, which rebuilt the filtered, grouped and faceted row models and collapsed expanded groups. (`OSW-2805 <https://rubinobs.atlassian.net//browse/OSW-2805>`_)
+
+
+Other Changes and Additions
+---------------------------
+
+- Add e2e tests for night reports applet. (`OSW-1011 <https://rubinobs.atlassian.net//browse/OSW-1011>`_)
+- Add fullscreen feature to Night Summary applet. (`OSW-1011 <https://rubinobs.atlassian.net//browse/OSW-1011>`_)
+- Replace the calculated fault loss value with Observatory Status downtime in the Time Loss card. (`OSW-2430 <https://rubinobs.atlassian.net//browse/OSW-2430>`_)
+- Replace the Narrative Log fault loss value with Observatory Status weather loss in the Time Loss card. (`OSW-2430 <https://rubinobs.atlassian.net//browse/OSW-2430>`_)
+- Add alpha-release branch target for automatic develop image builds. (`OSW-2801 <https://rubinobs.atlassian.net//browse/OSW-2801>`_)
+- Upgrade TanStack Table from v8.21 to v9.1 (`OSW-2833 <https://rubinobs.atlassian.net//browse/OSW-2833>`_)
+
+
 v0.23.0 (2026-08-13)
 ====================
 
