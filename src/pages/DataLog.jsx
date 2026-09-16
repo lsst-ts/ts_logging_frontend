@@ -459,13 +459,8 @@ function DataLog() {
             setSelectedTimeRange={setSelectedTimeRange}
             fullTimeRange={fullTimeRange}
             timezone="TAI"
-            rightContent={
-              tableLoading || almanacLoading ? (
-                <Skeleton className="h-5 w-64 bg-teal-700 inline-block" />
-              ) : (
-                `${filteredDataLogTableData.length} of ${dataLogTableData.length} exposures selected`
-              )
-            }
+            rightContentLoading={tableLoading || almanacLoading}
+            rightContent={`${filteredDataLogTableData.length} of ${dataLogTableData.length} exposures selected`}
           />
 
           {/* Table Tips */}
