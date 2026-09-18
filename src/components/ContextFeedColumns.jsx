@@ -25,7 +25,7 @@ const columnHelper = createColumnHelper();
 function formatTimestamp(tsString, tsZone = "utc") {
   return formatTimestampCell(tsString, {
     zone: tsZone,
-    format: "yyyy-LL-dd HH:mm:ss.S",
+    format: "yyyy-LL-dd HH:mm:ss.SSS",
   });
 }
 

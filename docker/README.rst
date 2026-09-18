@@ -60,7 +60,7 @@ Optional Configuration
      ND_CACHING_DISABLE_NGINX=1
      ND_CACHING_DISABLE_REDIS=1
 
-  An missing, empty or `0` value leaves the layer enabled.
+  A missing, empty or `0` value leaves the layer enabled.
 
   With `ND_CACHING_DISABLE_NGINX` set, the proxy also replaces the upstream `Cache-Control` header with `no-store`, so the browser will not serve an API response from its own cache either.
 

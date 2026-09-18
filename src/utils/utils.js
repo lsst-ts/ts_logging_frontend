@@ -160,9 +160,9 @@ const MISSING_TIMESTAMP_DISPLAY = "--";
  * Formats a timestamp for table display.
  *
  * Missing timestamps (null, undefined, "" or 0) are rendered as "--" rather
- * than leaving the cell blank. Any other value is passed through untouched
- * unless a `format` is given and the value parses as a timestamp, so unhandled
- * strings stay visible rather than being hidden behind the placeholder.
+ * than leaving the cell blank. Strings that can be parsed as ISO timestamps
+ * are formatted according to `format` if present. Otherwise, the string
+ * is passed through untouched.
  *
  * Luxon only natively supports millisecond precision, not microseconds.
  * Will need to extract microseconds if this precision is required.
