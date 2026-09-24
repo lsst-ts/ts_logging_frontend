@@ -227,7 +227,7 @@ const mergeAllDataLogSources = (consDbRows, exposureLogRows, blockLookup) => {
 
         // Exposure log enrichment
         instrument: matchingExposure?.instrument ?? row.instrument ?? "na",
-        exposure_flag: matchingExposure?.exposure_flag ?? "none",
+        exposure_flag: matchingExposure?.exposure_flag ?? "na",
         message_text: matchingExposure?.message_text ?? "",
 
         // BLOCK enrichment
