@@ -217,16 +217,21 @@ const commonColumns = [
       tooltip: "Manually tagged by observers.",
     },
   }),
-  columnHelper.accessor("message_text", {
-    header: "Comments",
-    cell: (info) => formatCellValue(info.getValue()),
-    size: 120,
-    minSize: 120,
-    filterType: null,
-    meta: {
-      tooltip: "Comments from observers associated with flags.",
-    },
-  }),
+  // Observer comments. Omitted from the Scientific Nightly Digest.
+  ...(isScientificNightlyDigest
+    ? []
+    : [
+        columnHelper.accessor("message_text", {
+          header: "Comments",
+          cell: (info) => formatCellValue(info.getValue()),
+          size: 120,
+          minSize: 120,
+          filterType: null,
+          meta: {
+            tooltip: "Comments from observers associated with flags.",
+          },
+        }),
+      ]),
 
   // Instrument config and environment
   columnHelper.accessor("s_ra", {
