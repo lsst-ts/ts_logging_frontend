@@ -35,6 +35,21 @@ test.describe("Scientific Nightly Digest — data log", () => {
     await expect(popover.getByText("Exposure Id")).toBeVisible();
     await expect(popover.getByText("RubinTV")).toHaveCount(0);
   });
+
+  test("the table has no Comments column", async ({ page }) => {
+    await expect(columnHeader(page, "Exposure Id")).toBeVisible();
+    await expect(
+      page.getByRole("columnheader", { name: /Comments/ }),
+    ).toHaveCount(0);
+  });
+
+  test("Comments cannot be switched back on", async ({ page }) => {
+    await page.getByRole("button", { name: "Show / Hide Columns" }).click();
+
+    const popover = page.locator("[data-slot='popover-content']");
+    await expect(popover.getByText("Exposure Id")).toBeVisible();
+    await expect(popover.getByText("Comments", { exact: true })).toHaveCount(0);
+  });
 });
 
 // The lookup is still fetched: it fills the BLOCK Description column. Only the
