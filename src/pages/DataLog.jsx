@@ -9,10 +9,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import AppletHeader from "@/components/AppletHeader";
 import { TELESCOPES } from "@/components/Parameters";
 import DataLogTable from "@/components/DataLogTable.jsx";
 import TimelineChart from "@/components/TimelineChart";
-import PageHeader from "@/components/PageHeader";
 import TipsCard from "@/components/TipsCard";
 import SelectedTimeRangeBar from "@/components/SelectedTimeRangeBar";
 import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
@@ -350,7 +350,8 @@ function DataLog() {
         {/* Page Header, Timeline & Tips Banners */}
         <div className="flex flex-col gap-2">
           {/* Page title + buttons */}
-          <PageHeader
+          <AppletHeader
+            isPageHeader={true}
             title="Data Log"
             description="Exposure metadata and related fields from the ConsDB, Exposure Log, Transformed EFD, Zephyr & Jira."
             actions={

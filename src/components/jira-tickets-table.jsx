@@ -55,7 +55,7 @@ function JiraTicketsTable({
         </TableRow>
       </TableHeader>
 
-      <TableBody>
+      <TableBody className="overflow-y-auto">
         {loading ? (
           <TableRow>
             <TableCell colSpan={8} className="text-center">

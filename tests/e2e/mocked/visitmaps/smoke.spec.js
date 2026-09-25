@@ -17,7 +17,7 @@ test.describe("Visit Maps page — loading state", () => {
 
     await page.goto(VISITMAPS_URL);
 
-    // PageHeader uses CardTitle (a div, not a heading element); the page
+    // AppletHeader uses CardTitle (a div, not a heading element); the page
     // header is the first of the two on the page.
     await expect(
       page.locator("[data-slot='card-title']").first(),

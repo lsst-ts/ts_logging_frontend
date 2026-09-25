@@ -1,16 +1,20 @@
 import { useEffect, useState, useMemo } from "react";
-
 import { useSearch } from "@tanstack/react-router";
 
-import { Skeleton } from "@/components/ui/skeleton";
-import { NotificationBannerStack } from "@/components/NotificationBannerStack";
-import { useNotifications } from "@/hooks/useNotifications";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
-import PlotVisibilityPopover from "@/components/PlotVisibilityPopover";
-import PlotFormatPopover from "@/components/PlotFormatPopover";
+import AppletHeader from "@/components/AppletHeader";
+import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
+import { NotificationBannerStack } from "@/components/NotificationBannerStack";
 import { TELESCOPES } from "@/components/Parameters";
+import {
+  PLOT_DEFINITIONS,
+  BAND_COLORS,
+  PLOT_KEY_TIME,
+  PLOT_KEY_SEQUENCE,
+} from "@/components/PLOT_DEFINITIONS";
 import {
   CircleShape,
   TriangleShape,
@@ -19,42 +23,37 @@ import {
   StarShape,
   AsteriskShape,
 } from "@/components/plotDotShapes";
-
+import PlotFormatPopover from "@/components/PlotFormatPopover";
+import PlotVisibilityPopover from "@/components/PlotVisibilityPopover";
+import SelectedTimeRangeBar from "@/components/SelectedTimeRangeBar";
+import TipsCard from "@/components/TipsCard";
 import TimelineChart from "@/components/TimelineChart";
 import TimeseriesPlot from "@/components/TimeseriesPlot";
-import {
-  PLOT_DEFINITIONS,
-  BAND_COLORS,
-  PLOT_KEY_TIME,
-  PLOT_KEY_SEQUENCE,
-} from "@/components/PLOT_DEFINITIONS";
 
-import PageHeader from "@/components/PageHeader";
-import TipsCard from "@/components/TipsCard";
-import SelectedTimeRangeBar from "@/components/SelectedTimeRangeBar";
-
+import { calculateChartData } from "@/utils/chartCalculations";
 import {
   fetchAlmanac,
   fetchDataLogEntriesFromConsDB,
 } from "@/utils/fetchUtils";
 import {
-  DEFAULT_PIXEL_SCALE_MEDIAN,
-  PSF_SIGMA_FACTOR,
-  prettyTitleFromKey,
-} from "@/utils/utils";
+  prepareAlmanacData,
+  prepareMoonIntervals,
+} from "@/utils/timelineUtils";
 import {
   generateDayObsRange,
   isoToUTC,
   getDayobsStartUTC,
 } from "@/utils/timeUtils";
 import {
-  prepareAlmanacData,
-  prepareMoonIntervals,
-} from "@/utils/timelineUtils";
-import { calculateChartData } from "@/utils/chartCalculations";
+  DEFAULT_PIXEL_SCALE_MEDIAN,
+  PSF_SIGMA_FACTOR,
+  prettyTitleFromKey,
+} from "@/utils/utils";
+
 import { PlotDataContext } from "@/contexts/PlotDataContext";
+
+import { useNotifications } from "@/hooks/useNotifications";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
-import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
 
 function Plots() {
   // Routing and URL params
@@ -305,7 +304,8 @@ function Plots() {
   if (telescope === "AuxTel") {
     return (
       <div className="flex flex-col w-full p-8 gap-4">
-        <PageHeader
+        <AppletHeader
+          isPageHeader={true}
           title="Plots"
           description="An interactive visual overview of exposure metadata from the ConsDB and related sources."
         />
@@ -329,7 +329,8 @@ function Plots() {
         {/* Page Header, Timeline & Tips Banners */}
         <div className="flex flex-col gap-2">
           {/* Page title + buttons */}
-          <PageHeader
+          <AppletHeader
+            isPageHeader={true}
             title="Plots"
             description="An interactive visual overview of exposure metadata from the ConsDB and related sources."
             actions={

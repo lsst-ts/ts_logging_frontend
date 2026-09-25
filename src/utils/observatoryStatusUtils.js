@@ -5,7 +5,7 @@ import {
   STATUS_COLORS,
   SERIES_ORDER,
 } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
-import { formatDuration } from "@/utils/timeUtils";
+import { formatDuration, formatDayobsStrForDisplay } from "@/utils/timeUtils";
 
 /**
  * Determines the state change description (Old > New format) for a given entry.
@@ -185,14 +185,15 @@ export function parseStatusBitmask(status) {
  * Converts a status bitmask to a human-readable string.
  *
  * @param {number} status - Bitmask status value
+ * @param {string} [separator=" | "] - Separator placed between state labels
  * @returns {string} Human-readable status string (e.g., "Unknown", "Daytime | Operational")
  */
-export function statusBitmaskToString(status) {
+export function statusBitmaskToString(status, separator = " | ") {
   const states = parseStatusBitmask(status);
   if (states.length === 0) {
     return "Unknown";
   }
-  return states.map((s) => STATUS_LABELS[s] || s).join(" | ");
+  return states.map((s) => STATUS_LABELS[s] || s).join(separator);
 }
 
 /**
@@ -232,4 +233,41 @@ export function getObsStatusFetchErrorText({
     return "Observatory Status data could not be fetched.";
   }
   return null;
+}
+
+/**
+ * Builds the warning text shown by an Observatory Status applet when its data
+ * cannot be displayed.
+ *
+ * Fetch errors take precedence over availability gaps: the plots cannot render
+ * without their source data, so an error message is returned whenever either
+ * request failed. Otherwise, when both requests succeeded but Obs Status
+ * covers only part of the requested range, an availability message is
+ * returned.
+ *
+ * @param {Object} options
+ * @param {boolean} [options.almanacFetchError=false] Whether the Almanac request failed.
+ * @param {boolean} [options.obsStatusFetchError=false] Whether the Observatory Status request failed.
+ * @param {Object} [options.availability] Availability metadata for the observatory-status feed.
+ * @returns {string} The warning text to display.
+ */
+export function getObsAvailabilityWarningText({
+  almanacFetchError,
+  obsStatusFetchError,
+  availability,
+}) {
+  // Fetch errors take precedence: the plot cannot render without its data.
+  const fetchErrorText = getObsStatusFetchErrorText({
+    almanacFetchError,
+    obsStatusFetchError,
+  });
+  if (fetchErrorText) return fetchErrorText;
+
+  // Both requests succeeded, but Obs Status covers only part of the range.
+  const obsAvailableFrom = availability?.available_from
+    ? formatDayobsStrForDisplay(String(availability.available_from))
+    : null;
+  return `Observatory Status data is only available from ${
+    obsAvailableFrom ?? "the supported dayobs range"
+  }.`;
 }

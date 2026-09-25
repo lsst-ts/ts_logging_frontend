@@ -12,12 +12,15 @@ import { useState, useEffect, useCallback, useRef } from "react";
  * @param {Object} options.defaultColumnVisibility - Initial column visibility state
  * @param {string[]} options.defaultColumnOrder - Initial column order
  * @param {Array} options.defaultSorting - Initial sorting state
+ * @param {boolean|Object} options.defaultExpanded - Initial expanded state
+ *   (`true` expands all rows; an object maps row ids to booleans)
  * @returns {Object} State values and setters
  */
 export function useDataTableState({
   defaultColumnVisibility = {},
   defaultColumnOrder = [],
   defaultSorting = [],
+  defaultExpanded = {},
 }) {
   // Core table state
   const [columnVisibility, setColumnVisibility] = useState(
@@ -26,7 +29,7 @@ export function useDataTableState({
   const [columnOrder, setColumnOrder] = useState(defaultColumnOrder);
   const [sorting, setSorting] = useState(defaultSorting);
   const [grouping, setGrouping] = useState([]);
-  const [expanded, setExpanded] = useState({});
+  const [expanded, setExpanded] = useState(defaultExpanded);
 
   // Expandable cells state (for tracebacks, YAML, etc.)
   const [expandedRows, setExpandedRows] = useState({});
@@ -111,9 +114,14 @@ export function useDataTableState({
     setColumnOrder(defaultColumnOrder);
     setSorting(defaultSorting);
     setGrouping([]);
-    setExpanded({});
+    setExpanded(defaultExpanded);
     setExpandedRows({});
-  }, [defaultColumnVisibility, defaultColumnOrder, defaultSorting]);
+  }, [
+    defaultColumnVisibility,
+    defaultColumnOrder,
+    defaultSorting,
+    defaultExpanded,
+  ]);
 
   return {
     // Core table state

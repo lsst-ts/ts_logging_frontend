@@ -1,24 +1,29 @@
-function ToggleExpandCollapseRows({ table, expanded, setExpanded }) {
-  const grouping = table.state.grouping;
-
-  // Walk grouped row model recursively to collect
-  // expandable group row ids
-  function getAllGroupRowIds(rows) {
+function ToggleExpandCollapseRows({
+  table,
+  expanded,
+  setExpanded,
+  rowNoun = "Groups",
+}) {
+  // Walk the row model recursively to collect the ids of every expandable row
+  // (grouped rows, or parent rows with expandable sub-rows).
+  function getAllExpandableRowIds(rows) {
     const ids = [];
     for (const row of rows) {
-      if (row.getIsGrouped()) {
+      if (row.getCanExpand()) {
         ids.push(row.id);
         if (row.subRows?.length) {
-          ids.push(...getAllGroupRowIds(row.subRows));
+          ids.push(...getAllExpandableRowIds(row.subRows));
         }
+      } else if (row.subRows?.length) {
+        ids.push(...getAllExpandableRowIds(row.subRows));
       }
     }
     return ids;
   }
 
-  const allGroupRowIds = getAllGroupRowIds(table.getRowModel().rows);
-  const allExpanded = allGroupRowIds.every((id) => expanded[id]);
-  const isDisabled = grouping.length === 0;
+  const allExpandableRowIds = getAllExpandableRowIds(table.getRowModel().rows);
+  const allExpanded = allExpandableRowIds.every((id) => expanded[id]);
+  const isDisabled = allExpandableRowIds.length === 0;
 
   const handleClick = () => {
     if (isDisabled) return;
@@ -26,7 +31,7 @@ function ToggleExpandCollapseRows({ table, expanded, setExpanded }) {
       setExpanded({});
     } else {
       const newExpanded = {};
-      allGroupRowIds.forEach((id) => {
+      allExpandableRowIds.forEach((id) => {
         newExpanded[id] = true;
       });
       setExpanded(newExpanded);
@@ -46,7 +51,7 @@ function ToggleExpandCollapseRows({ table, expanded, setExpanded }) {
       disabled={isDisabled}
       className={`${baseClasses} ${stateClasses}`}
     >
-      {allExpanded ? "Collapse All Groups" : "Expand All Groups"}
+      {allExpanded ? `Collapse All ${rowNoun}` : `Expand All ${rowNoun}`}
     </button>
   );
 }

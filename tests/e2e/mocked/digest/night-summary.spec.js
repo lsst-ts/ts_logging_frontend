@@ -5,7 +5,7 @@ import { DIGEST_URL } from "../../helpers/constants.js";
 function nightSummaryCard(page) {
   return page.locator("[data-slot='card']").filter({
     has: page.locator("[data-slot='card-title']", {
-      hasText: /^Night Reports?$/,
+      hasText: /^Night Reports?/,
     }),
   });
 }

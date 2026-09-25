@@ -14,13 +14,19 @@ import * as echarts from "echarts";
  * @param {React.RefObject} containerRef - Ref to the chart container element.
  * @param {Object} options
  * @param {Function} [options.onResize] - Called with the ECharts instance after resize.
+ * @param {Function} [options.onXRangeChange] - Called with `[minMs, maxMs]` after an
+ *   x-axis brush, or with `null` when the x-zoom is reset. Used to sync the x-axis
+ *   zoom to an external source of truth (e.g. the URL time range).
  * @returns {{
  *   instanceRef: React.RefObject,
  *   xDomain: [number, number] | null,
  *   yDomain: [number, number] | null
  * }}
  */
-export function useEChartsBrushZoom(containerRef, { onResize }) {
+export function useEChartsBrushZoom(
+  containerRef,
+  { onResize, onXRangeChange },
+) {
   const instanceRef = useRef(null);
   const xDomainRef = useRef(null);
   const yDomainRef = useRef(null);
@@ -28,6 +34,7 @@ export function useEChartsBrushZoom(containerRef, { onResize }) {
     shift: false,
   });
   const onResizeRef = useRef(onResize);
+  const onXRangeChangeRef = useRef(onXRangeChange);
 
   const [xDomain, setXDomain] = useState(null);
   const [yDomain, setYDomain] = useState(null);
@@ -77,6 +84,10 @@ export function useEChartsBrushZoom(containerRef, { onResize }) {
     onResizeRef.current = onResize;
   }, [onResize]);
 
+  useEffect(() => {
+    onXRangeChangeRef.current = onXRangeChange;
+  }, [onXRangeChange]);
+
   // ── Init / destroy ────────────────────────────────────────────────────────
   useEffect(() => {
     const el = containerRef.current;
@@ -95,6 +106,7 @@ export function useEChartsBrushZoom(containerRef, { onResize }) {
       if (!params.areas.length) {
         setXDomain(null);
         setYDomain(null);
+        onXRangeChangeRef.current?.(null);
         return;
       }
 
@@ -111,6 +123,7 @@ export function useEChartsBrushZoom(containerRef, { onResize }) {
       }
 
       setXDomain([Math.min(x0, x1), Math.max(x0, x1)]);
+      onXRangeChangeRef.current?.([Math.min(x0, x1), Math.max(x0, x1)]);
 
       if (area.brushType === "rect") {
         setYDomain([Math.min(y0, y1), Math.max(y0, y1)]);
@@ -128,6 +141,7 @@ export function useEChartsBrushZoom(containerRef, { onResize }) {
     const handleDblClick = () => {
       setXDomain(null);
       setYDomain(null);
+      onXRangeChangeRef.current?.(null);
 
       instance.dispatchAction({
         type: "brush",

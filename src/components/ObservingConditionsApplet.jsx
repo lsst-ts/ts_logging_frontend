@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState, useCallback } from "react";
 import { useSearch } from "@tanstack/react-router";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import AppletHeader from "@/components/AppletHeader";
 import {
   Popover,
   PopoverTrigger,
@@ -645,60 +646,64 @@ function ObservingConditionsApplet({
 
   return (
     <Card className="border-none p-0 bg-stone-800 gap-2">
-      <CardHeader className="grid-cols-3 bg-teal-900 p-4 rounded-sm align-center gap-0">
-        <CardTitle className="text-white font-thin col-span-2">
-          Observing Conditions
-        </CardTitle>
-        <div className="flex flex-row gap-2 justify-end">
-          <Popover>
-            <PopoverTrigger className="self-end min-w-4">
-              <img src={DownloadIcon} />
-            </PopoverTrigger>
-            <PopoverContent className="bg-black text-white text-sm border-yellow-700">
-              This is a placeholder for the download/export button.
-            </PopoverContent>
-          </Popover>
-          <Popover>
-            <PopoverTrigger className="self-end min-w-4">
-              <img src={InfoIcon} />
-            </PopoverTrigger>
-            <PopoverContent className="bg-black text-white text-sm border-yellow-700 w-[300px]">
-              This chart visualizes Zero Point Median and PSF FWHM over the
-              selected dayobs range. It uses the following data columns from
-              ConsDB <code className="font-bold uppercase">exposure</code> and{" "}
-              <code className="font-bold uppercase">visit1_quicklook</code>{" "}
-              tables:
-              <br />
-              <br />
-              <ul>
-                <li>
-                  -{" "}
-                  <code className="font-bold uppercase">zero_point_median</code>{" "}
-                  → for zero points, filtered by{" "}
-                  <code className="font-bold uppercase">band</code>
-                </li>
-                <li>
-                  -{" "}
-                  <code className="font-bold uppercase">psf_sigma_median</code>{" "}
-                  * 2.355 * [
-                  <code className="font-bold uppercase">
-                    pixel_scale_median
-                  </code>{" "}
-                  or 0.2] → to calculate seeing
-                </li>
-                <li>
-                  - <code className="font-bold uppercase">obs_start</code> → for
-                  time axis and detecting <strong>nighttime</strong> gaps (
-                  <strong>where gap between exposures &gt; 5mins</strong>)
-                </li>
-              </ul>
-              <br />
-              Twilight periods (<strong>12 degree</strong>) are marked with blue
-              dashed lines.
-            </PopoverContent>
-          </Popover>
-        </div>
-      </CardHeader>
+      <AppletHeader
+        title="Observing Conditions"
+        actions={
+          <>
+            <Popover>
+              <PopoverTrigger className="self-end min-w-4">
+                <img src={DownloadIcon} />
+              </PopoverTrigger>
+              <PopoverContent className="bg-black text-white text-sm border-yellow-700">
+                This is a placeholder for the download/export button.
+              </PopoverContent>
+            </Popover>
+            <Popover>
+              <PopoverTrigger className="self-end min-w-4">
+                <img src={InfoIcon} />
+              </PopoverTrigger>
+              <PopoverContent className="bg-black text-white text-sm border-yellow-700 w-[300px]">
+                This chart visualizes Zero Point Median and PSF FWHM over the
+                selected dayobs range. It uses the following data columns from
+                ConsDB <code className="font-bold uppercase">exposure</code> and{" "}
+                <code className="font-bold uppercase">visit1_quicklook</code>{" "}
+                tables:
+                <br />
+                <br />
+                <ul>
+                  <li>
+                    -{" "}
+                    <code className="font-bold uppercase">
+                      zero_point_median
+                    </code>{" "}
+                    → for zero points, filtered by{" "}
+                    <code className="font-bold uppercase">band</code>
+                  </li>
+                  <li>
+                    -{" "}
+                    <code className="font-bold uppercase">
+                      psf_sigma_median
+                    </code>{" "}
+                    * 2.355 * [
+                    <code className="font-bold uppercase">
+                      pixel_scale_median
+                    </code>{" "}
+                    or 0.2] → to calculate seeing
+                  </li>
+                  <li>
+                    - <code className="font-bold uppercase">obs_start</code> →
+                    for time axis and detecting <strong>nighttime</strong> gaps
+                    (<strong>where gap between exposures &gt; 5mins</strong>)
+                  </li>
+                </ul>
+                <br />
+                Twilight periods (<strong>12 degree</strong>) are marked with
+                blue dashed lines.
+              </PopoverContent>
+            </Popover>
+          </>
+        }
+      />
       <CardContent className="flex flex-col gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 h-[320px] font-thin relative">
         {exposuresLoading || almanacLoading ? (
           <div className="flex-grow">

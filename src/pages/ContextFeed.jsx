@@ -23,19 +23,14 @@ import {
 } from "@/components/ui/tooltip";
 
 import TimelineChart from "@/components/TimelineChart";
-import ObservatoryStatusTimeline from "@/components/ObservatoryStatusTimeline";
+import ObservatoryStatusTimelineCardContents from "@/components/ObservatoryStatusTimelineCardContents";
 import ContextFeedTable from "@/components/ContextFeedTable.jsx";
 import { CATEGORY_INDEX_INFO } from "@/constants/CONTEXT_FEED_DEFINITIONS";
-import {
-  SERIES_ORDER,
-  METRIC_STATES,
-  STATUS_TIMELINE_DIMENSIONS,
-  STATUS_TIMELINE_MARGINS,
-} from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
-import { getStatusLabel } from "@/utils/observatoryStatusUtils";
+import { METRIC_STATES } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
 import { contextFeedColumns } from "@/components/ContextFeedColumns";
 import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
-import PageHeader from "@/components/PageHeader";
+import AppletHeader from "@/components/AppletHeader";
+
 import TipsCard from "@/components/TipsCard";
 import SelectedTimeRangeBar from "@/components/SelectedTimeRangeBar";
 import DownloadIcon from "../assets/DownloadIcon.svg";
@@ -460,7 +455,8 @@ function ContextFeed() {
         {/* Page Header, Timeline & Tips Banners */}
         <div className="flex flex-col gap-2">
           {/* Page title + buttons */}
-          <PageHeader
+          <AppletHeader
+            isPageHeader={true}
             title="Context Feed"
             description="Chronologically ordered log of exposures, scripts, errors and narrations."
             actions={
@@ -545,76 +541,20 @@ function ContextFeed() {
           {/* Observatory Status Timeline */}
           {timelineVisible && (
             <Card className="grid gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 font-thin shadow-stone-900 shadow-md">
-              {obsStatusLoading ? (
-                <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
-              ) : obsAvailabilityStatus === "none" ? (
-                <p className="text-sm text-stone-400 text-center py-4">
-                  {obsAvailabilityWarningText}
-                </p>
-              ) : (
-                <div className="flex flex-row min-w-0">
-                  {/* State Labels */}
-                  <div
-                    className="flex flex-col w-45"
-                    style={{
-                      // Centre the first label on the first chart row, which
-                      // sits one row height below the top margin
-                      paddingTop: `${
-                        STATUS_TIMELINE_MARGINS.top +
-                        STATUS_TIMELINE_DIMENSIONS.SERIES_ROW_HEIGHT / 2
-                      }px`,
-                    }}
-                  >
-                    {SERIES_ORDER.map((stateName) => (
-                      <div
-                        key={stateName}
-                        className="flex items-center justify-between"
-                        style={{
-                          height: `${STATUS_TIMELINE_DIMENSIONS.SERIES_ROW_HEIGHT}px`,
-                        }}
-                      >
-                        <span className="text-xs text-stone-200">
-                          {getStatusLabel(stateName)}
-                        </span>
-                        <span className="text-xs text-stone-200 tabular-nums">
-                          {!METRIC_STATES.includes(stateName)
-                            ? ""
-                            : obsStatusMetrics?.[stateName.toLowerCase()] !=
-                                null
-                              ? obsStatusMetrics[
-                                  stateName.toLowerCase()
-                                ].toFixed(2)
-                              : "—"}
-                        </span>
-                      </div>
-                    ))}
-                    <div
-                      className="flex items-center justify-between"
-                      style={{
-                        marginTop: `${STATUS_TIMELINE_DIMENSIONS.METRICS_TOTAL_ROW_GAP}px`,
-                      }}
-                    >
-                      <span className="text-base text-stone-200">
-                        Night Hours
-                      </span>
-                      <span className="text-base text-stone-400 tabular-nums">
-                        {nightHours != null ? nightHours.toFixed(2) : "—"}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <ObservatoryStatusTimeline
-                      entries={obsStatusEntries}
-                      twilightValues={twilightValues}
-                      twilight0DegValues={twilight0DegValues}
-                      fullTimeRange={fullTimeRange}
-                      selectedTimeRange={selectedTimeRange}
-                      setSelectedTimeRange={setSelectedTimeRange}
-                      brushGroup="context-feed"
-                    />
-                  </div>
-                </div>
-              )}
+              <ObservatoryStatusTimelineCardContents
+                entries={obsStatusEntries}
+                twilightValues={twilightValues}
+                twilight0DegValues={twilight0DegValues}
+                fullTimeRange={fullTimeRange}
+                selectedTimeRange={selectedTimeRange}
+                setSelectedTimeRange={setSelectedTimeRange}
+                brushGroup="context-feed"
+                obsStatusMetrics={obsStatusMetrics}
+                nightHours={nightHours}
+                loading={obsStatusLoading}
+                availabilityStatus={obsAvailabilityStatus}
+                warningText={obsAvailabilityWarningText}
+              />
             </Card>
           )}
 
