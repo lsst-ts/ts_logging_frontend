@@ -466,15 +466,14 @@ function TimeAccounting() {
                     <span className="font-bold">Double-Click</span> to reset.
                   </li>
                   <li>
-                    In the timeline, blue lines are 12° twilights, & dashed white
-                    lines are 0° twilights.
+                    In the timeline, blue lines are 12° twilights, & dashed
+                    white lines are 0° twilights.
                   </li>
                   <li>
-                    In the cumulative plots, events outside twilights are not shown.
+                    In the cumulative plots, events outside twilights are not
+                    shown.
                   </li>
-                  <li>
-                    All event times are UTC.
-                  </li>
+                  <li>All event times are UTC.</li>
                 </ul>
               </div>
             </TipsCard>

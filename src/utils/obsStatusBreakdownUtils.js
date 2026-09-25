@@ -66,12 +66,8 @@ export function buildNightDefinitions(almanacInfo = []) {
       // The almanac dayobs refers to the calendar day AFTER the night it
       // describes, so it is shifted back a day (see almanacDayobsForPlot).
       const dayObs = almanacDayobsForPlot(almanac.dayobs);
-      const startMs = utcDateTimeStrToMillis(
-        almanac.twilight_evening_12deg,
-      );
-      const endMs = utcDateTimeStrToMillis(
-        almanac.twilight_morning_12deg,
-      );
+      const startMs = utcDateTimeStrToMillis(almanac.twilight_evening_12deg);
+      const endMs = utcDateTimeStrToMillis(almanac.twilight_morning_12deg);
 
       if (
         !/^\d{8}$/.test(dayObs) ||
@@ -82,9 +78,7 @@ export function buildNightDefinitions(almanacInfo = []) {
         return null;
       }
 
-      const elapsedTwilightHours = Number(
-        almanac.elapsed_twilight_hours,
-      );
+      const elapsedTwilightHours = Number(almanac.elapsed_twilight_hours);
 
       return {
         dayObs,
@@ -130,8 +124,7 @@ export function isValidNighttimeStatus(status) {
   }
 
   return !INVALID_STATE_PAIRS.some(
-    ([first, second]) =>
-      (status & first) !== 0 && (status & second) !== 0,
+    ([first, second]) => (status & first) !== 0 && (status & second) !== 0,
   );
 }
 
@@ -150,9 +143,7 @@ export function getStatesFromMask(status) {
 
   // Preserve the breakdown-state ordering; UNKNOWN is never included and
   // therefore never appears at the start.
-  return BREAKDOWN_STATES.filter((state) =>
-    activeNames.includes(state.key),
-  );
+  return BREAKDOWN_STATES.filter((state) => activeNames.includes(state.key));
 }
 
 /**
@@ -291,15 +282,9 @@ export function calculateExactStatusDurations({
         continue;
       }
 
-      const hours =
-        (clippedEnd - clippedStart) * HOURS_PER_MILLISECOND;
+      const hours = (clippedEnd - clippedStart) * HOURS_PER_MILLISECOND;
 
-      addDuration(
-        exactDurations,
-        night.dayObs,
-        status,
-        hours,
-      );
+      addDuration(exactDurations, night.dayObs, status, hours);
     }
   }
 
@@ -338,9 +323,7 @@ export function getParentDuration(exactDurations, dayObs, stateBit) {
     (total, [statusString, hours]) => {
       const status = Number(statusString);
 
-      return (status & stateBit) !== 0
-        ? total + hours
-        : total;
+      return (status & stateBit) !== 0 ? total + hours : total;
     },
     0,
   );
@@ -353,10 +336,7 @@ export function getParentDuration(exactDurations, dayObs, stateBit) {
  * @returns {number}
  */
 function getTotal(values) {
-  return Object.values(values).reduce(
-    (total, value) => total + value,
-    0,
-  );
+  return Object.values(values).reduce((total, value) => total + value, 0);
 }
 
 /**
@@ -385,10 +365,7 @@ export function buildObservatoryStatusBreakdown({
   dayObsOpenDomeHours = {},
   obsStatusIntervals = [],
 }) {
-  const {
-    nights,
-    exactDurations,
-  } = calculateExactStatusDurations({
+  const { nights, exactDurations } = calculateExactStatusDurations({
     almanacInfo,
     obsStatusIntervals,
   });
@@ -402,9 +379,7 @@ export function buildObservatoryStatusBreakdown({
   const domeOpenValues = Object.fromEntries(
     nights.map((night) => [
       night.dayObs,
-      Number(
-        dayObsOpenDomeHours?.[night.dayObs]?.open_hours ?? 0,
-      ),
+      Number(dayObsOpenDomeHours?.[night.dayObs]?.open_hours ?? 0),
     ]),
   );
 
@@ -425,37 +400,27 @@ export function buildObservatoryStatusBreakdown({
   domeOpenRow.total = getTotal(domeOpenValues);
 
   const stateRows = BREAKDOWN_STATES.map((state) => {
-    const subRows = getCombinationsForState(state.bit).map(
-      (combination) => {
-        const values = Object.fromEntries(
-          dayObsValues.map((dayObs) => [
-            dayObs,
-            getExactDuration(
-              exactDurations,
-              dayObs,
-              combination.mask,
-            ),
-          ]),
-        );
+    const subRows = getCombinationsForState(state.bit).map((combination) => {
+      const values = Object.fromEntries(
+        dayObsValues.map((dayObs) => [
+          dayObs,
+          getExactDuration(exactDurations, dayObs, combination.mask),
+        ]),
+      );
 
-        return {
-          state: combination.label,
-          rowType: "combination",
-          statusMask: combination.mask,
-          ...values,
-          total: getTotal(values),
-        };
-      },
-    );
+      return {
+        state: combination.label,
+        rowType: "combination",
+        statusMask: combination.mask,
+        ...values,
+        total: getTotal(values),
+      };
+    });
 
     const values = Object.fromEntries(
       dayObsValues.map((dayObs) => [
         dayObs,
-        getParentDuration(
-          exactDurations,
-          dayObs,
-          state.bit,
-        ),
+        getParentDuration(exactDurations, dayObs, state.bit),
       ]),
     );
 
@@ -472,11 +437,7 @@ export function buildObservatoryStatusBreakdown({
   const unknownValues = Object.fromEntries(
     dayObsValues.map((dayObs) => [
       dayObs,
-      getExactDuration(
-        exactDurations,
-        dayObs,
-        OBSERVATORY_STATES.UNKNOWN,
-      ),
+      getExactDuration(exactDurations, dayObs, OBSERVATORY_STATES.UNKNOWN),
     ]),
   );
 
@@ -489,12 +450,7 @@ export function buildObservatoryStatusBreakdown({
   };
 
   return {
-    rows: [
-      nightHoursRow,
-      domeOpenRow,
-      ...stateRows,
-      unknownRow,
-    ],
+    rows: [nightHoursRow, domeOpenRow, ...stateRows, unknownRow],
     dayObsValues,
     nights,
   };

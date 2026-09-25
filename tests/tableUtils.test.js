@@ -53,9 +53,7 @@ describe("utils", () => {
         Simonyi: [
           { accessorKey: "science_program", meta: { urlParam: "program" } },
         ],
-        AuxTel: [
-          { accessorKey: "image_type", meta: { urlParam: "type" } },
-        ],
+        AuxTel: [{ accessorKey: "image_type", meta: { urlParam: "type" } }],
       };
 
       const result = getColumnUrlMappings(columns);
@@ -99,16 +97,12 @@ describe("utils", () => {
 
     it("returns true if value is included in list", () => {
       const row = mockRow("SCIENCE");
-      expect(
-        matchValueOrInList(row, "col", ["CALIB", "SCIENCE"]),
-      ).toBe(true);
+      expect(matchValueOrInList(row, "col", ["CALIB", "SCIENCE"])).toBe(true);
     });
 
     it("returns false if value not included in list", () => {
       const row = mockRow("SCIENCE");
-      expect(
-        matchValueOrInList(row, "col", ["CALIB", "BIAS"]),
-      ).toBe(false);
+      expect(matchValueOrInList(row, "col", ["CALIB", "BIAS"])).toBe(false);
     });
   });
 });

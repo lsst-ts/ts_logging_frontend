@@ -260,7 +260,9 @@ export const narrativeLogColumns = [
   }),
   columnHelper.accessor(
     (row) =>
-      row.time_lost === null || row.time_lost === undefined || row.time_lost === ""
+      row.time_lost === null ||
+      row.time_lost === undefined ||
+      row.time_lost === ""
         ? null
         : Number(row.time_lost),
     {
