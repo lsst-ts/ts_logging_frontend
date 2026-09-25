@@ -85,8 +85,7 @@ function NarrativeLogApplet({
     () =>
       entries.filter(
         (entry) =>
-          entry.time_lost_type === "fault" &&
-          Number(entry.time_lost) > 0,
+          entry.time_lost_type === "fault" && Number(entry.time_lost) > 0,
       ),
     [entries],
   );
@@ -109,7 +108,7 @@ function NarrativeLogApplet({
     setColumnFilters([]);
   };
 
-  return ( 
+  return (
     <Card className="@container border-none p-0 bg-stone-800 mt-2 gap-2">
       <AppletHeader
         title="Narrative Log Entries with Fault Time Loss"

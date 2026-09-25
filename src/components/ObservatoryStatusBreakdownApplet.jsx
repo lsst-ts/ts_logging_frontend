@@ -17,9 +17,7 @@ import {
   getObservatoryStatusDefaultColumnVisibility,
 } from "@/components/ObservatoryStatusBreakdownColumns";
 
-import {
-  buildObservatoryStatusBreakdown,
-} from "@/utils/obsStatusBreakdownUtils";
+import { buildObservatoryStatusBreakdown } from "@/utils/obsStatusBreakdownUtils";
 
 import DownloadIcon from "../assets/DownloadIcon.svg";
 import InfoIcon from "../assets/InfoIcon.svg";
@@ -43,34 +41,21 @@ function ObservatoryStatusBreakdownApplet({
         dayObsOpenDomeHours,
         obsStatusIntervals,
       }),
-    [
-      almanacInfo,
-      dayObsOpenDomeHours,
-      obsStatusIntervals,
-    ],
+    [almanacInfo, dayObsOpenDomeHours, obsStatusIntervals],
   );
 
   const columns = useMemo(
-    () =>
-      createObservatoryStatusColumns(
-        breakdown.dayObsValues,
-      ),
+    () => createObservatoryStatusColumns(breakdown.dayObsValues),
     [breakdown.dayObsValues],
   );
 
   const defaultColumnVisibility = useMemo(
-    () =>
-      getObservatoryStatusDefaultColumnVisibility(
-        breakdown.dayObsValues,
-      ),
+    () => getObservatoryStatusDefaultColumnVisibility(breakdown.dayObsValues),
     [breakdown.dayObsValues],
   );
 
   const defaultColumnOrder = useMemo(
-    () =>
-      getObservatoryStatusDefaultColumnOrder(
-        breakdown.dayObsValues,
-      ),
+    () => getObservatoryStatusDefaultColumnOrder(breakdown.dayObsValues),
     [breakdown.dayObsValues],
   );
 
@@ -100,9 +85,7 @@ function ObservatoryStatusBreakdownApplet({
                 <img src={InfoIcon} alt="Information" />
               </PopoverTrigger>
               <PopoverContent className="bg-black text-white text-sm border-yellow-700 w-[350px] cursor-pointer">
-                <p>
-                  A detailed breakdown of possible observatory states.
-                </p>
+                <p>A detailed breakdown of possible observatory states.</p>
               </PopoverContent>
             </Popover>
 
@@ -134,9 +117,7 @@ function ObservatoryStatusBreakdownApplet({
             <DataTable
               data={breakdown.rows}
               columns={columns}
-              defaultColumnVisibility={
-                defaultColumnVisibility
-              }
+              defaultColumnVisibility={defaultColumnVisibility}
               defaultColumnOrder={defaultColumnOrder}
               columnFilters={columnFilters}
               setColumnFilters={setColumnFilters}
@@ -159,9 +140,7 @@ function ObservatoryStatusBreakdownApplet({
                       .join(" ");
                   }
 
-                  if (
-                    row.original.rowType === "combination"
-                  ) {
+                  if (row.original.rowType === "combination") {
                     return "bg-stone-900/60 text-stone-400";
                   }
 

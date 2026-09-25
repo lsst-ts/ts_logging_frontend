@@ -119,7 +119,8 @@ export function createObservatoryStatusColumns(dayObsValues) {
       columnHelper.accessor(dayObs, {
         id: dayObs,
         header: formatDayobsStrForDisplay(dayObs),
-        cell: ({ getValue }) => formatHours(getValue(), { nullReplacement: "-" }),
+        cell: ({ getValue }) =>
+          formatHours(getValue(), { nullReplacement: "-" }),
         size: 120,
         minSize: 100,
         meta: {
