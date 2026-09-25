@@ -102,6 +102,6 @@ test.describe("Data-log page — exposure log flags and comments", () => {
     await groupBy(page, "Flags");
     await expect(page.getByText(/Flags: junk \(6\)/)).toBeVisible();
     await expect(page.getByText(/Flags: questionable \(6\)/)).toBeVisible();
-    await expect(page.getByText(/Flags: none \(18\)/)).toBeVisible();
+    await expect(page.getByText(/Flags: na \(18\)/)).toBeVisible();
   });
 });
