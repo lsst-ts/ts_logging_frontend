@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import * as echarts from "echarts";
 
 import {
@@ -13,6 +13,7 @@ import {
   STATUS_COLORS,
   STATUS_BAR_COLORS,
   STATUS_TIMELINE_DIMENSIONS,
+  STATUS_TIMELINE_VARIABLE_DIMENSIONS,
   STATUS_TIMELINE_MARGINS,
 } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
 import { useEChartsTimeline } from "@/hooks/useEChartsTimeline";
@@ -31,6 +32,8 @@ import { useEChartsTimeline } from "@/hooks/useEChartsTimeline";
  * @param {Function} props.setSelectedTimeRange
  * @param {number[]} [props.twilightValues=[]] - 12° twilight times in ms (solid line)
  * @param {number[]} [props.twilight0DegValues=[]] - 0° twilight times in ms (dashed line)
+ * @param {boolean} [props.fullScreen=false] - Whether rendered in the full-screen
+ *   variant, which uses larger dimensions.
  */
 function ObservatoryStatusTimeline({
   entries = [],
@@ -40,15 +43,24 @@ function ObservatoryStatusTimeline({
   twilightValues = [],
   twilight0DegValues = [],
   brushGroup,
+  fullScreen = false,
 }) {
   const containerRef = useRef(null);
   const markerDataRef = useRef([]);
   const markerSeriesIdxRef = useRef(-1);
 
+  const variableDimensions = useMemo(
+    () =>
+      fullScreen
+        ? STATUS_TIMELINE_VARIABLE_DIMENSIONS.FULL_SCREEN
+        : STATUS_TIMELINE_VARIABLE_DIMENSIONS.APPLET,
+    [fullScreen],
+  );
+
   // Grid data area = (N series + 1 buffer unit for min:-1) × row height,
   // plus top and bottom margins.
   const computedHeight =
-    (SERIES_ORDER.length + 1) * STATUS_TIMELINE_DIMENSIONS.SERIES_ROW_HEIGHT +
+    (SERIES_ORDER.length + 1) * variableDimensions.SERIES_ROW_HEIGHT +
     STATUS_TIMELINE_MARGINS.top +
     STATUS_TIMELINE_MARGINS.bottom;
 
@@ -143,8 +155,8 @@ function ObservatoryStatusTimeline({
         const dist = Math.sqrt(dx * dx + dy * dy);
         const radius =
           (data[i].hasNote
-            ? STATUS_TIMELINE_DIMENSIONS.MARKER_SIZE_WITH_NOTE
-            : STATUS_TIMELINE_DIMENSIONS.MARKER_SIZE) / 2;
+            ? variableDimensions.MARKER_SIZE_WITH_NOTE
+            : variableDimensions.MARKER_SIZE) / 2;
         if (dist < radius && dist < closestDist) {
           closestDist = dist;
           closestIdx = i;
@@ -376,7 +388,7 @@ function ObservatoryStatusTimeline({
 
             const startCoord = api.coord([startMs, catIdx]);
             const endCoord = api.coord([endMs, catIdx]);
-            const barH = STATUS_TIMELINE_DIMENSIONS.BAR_HEIGHT;
+            const barH = variableDimensions.BAR_HEIGHT;
 
             // Clip rect to the chart grid area to avoid overdraw
             const rectShape = echarts.graphic.clipRectByRect(
@@ -417,8 +429,8 @@ function ObservatoryStatusTimeline({
             params.data.hasNote ? "diamond" : "circle",
           symbolSize: (value, params) =>
             params.data.hasNote
-              ? STATUS_TIMELINE_DIMENSIONS.MARKER_SIZE_WITH_NOTE
-              : STATUS_TIMELINE_DIMENSIONS.MARKER_SIZE,
+              ? variableDimensions.MARKER_SIZE_WITH_NOTE
+              : variableDimensions.MARKER_SIZE,
           itemStyle: {
             color: (params) =>
               STATUS_COLORS[params.data.stateName] ?? STATUS_COLORS.UNKNOWN,
@@ -460,6 +472,7 @@ function ObservatoryStatusTimeline({
     updateGraphicElements,
     syncBrushToSelection,
     instanceRef,
+    variableDimensions,
   ]);
 
   // Re-run graphic elements when the relevant props change

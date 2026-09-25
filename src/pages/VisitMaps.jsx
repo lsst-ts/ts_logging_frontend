@@ -4,8 +4,8 @@ import { useSearch } from "@tanstack/react-router";
 
 import { Skeleton } from "@/components/ui/skeleton";
 
+import AppletHeader from "@/components/AppletHeader";
 import { TELESCOPES } from "@/components/Parameters";
-import PageHeader from "@/components/PageHeader";
 import TipsCard from "@/components/TipsCard";
 import DownloadIcon from "../assets/DownloadIcon.svg";
 import { VISIT_SHAPE, VISIT_SHAPE_INNER } from "@/components/PLOT_DEFINITIONS";
@@ -123,7 +123,8 @@ function VisitMaps() {
         {/* Page Header, legend and collapsible tips */}
         <div className="flex flex-col gap-2">
           {/* Page title + buttons */}
-          <PageHeader
+          <AppletHeader
+            isPageHeader={true}
             title="Visit Maps"
             description="Interactive sky-maps of visits collected during the night."
             actions={
@@ -326,7 +327,8 @@ function VisitMaps() {
 
         {/* Link to nightsum reports */}
         <div className="flex flex-col gap-2">
-          <PageHeader
+          <AppletHeader
+            isPageHeader={true}
             title="Survey Progress Reports"
             description="Scheduler-oriented night summaries."
           />

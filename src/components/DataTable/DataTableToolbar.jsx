@@ -27,6 +27,7 @@ function DataTableToolbar({
   const {
     showColumnVisibility = true,
     showExpandCollapseGroups = true,
+    expandRowNoun = "Groups",
     showReset = true,
     leftContent = null,
     centerContent = null,
@@ -43,6 +44,7 @@ function DataTableToolbar({
             table={table}
             expanded={expanded}
             setExpanded={setExpanded}
+            rowNoun={expandRowNoun}
           />
         )}
         {leftContent}

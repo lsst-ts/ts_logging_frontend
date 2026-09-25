@@ -698,6 +698,7 @@ export default function Digest() {
               />
             )}
             <ObservatoryStatusApplet
+              collapsable={false}
               almanacInfo={almanacInfo}
               intervals={obsStatusIntervals}
               availability={obsStatusAvailability}
@@ -705,6 +706,8 @@ export default function Digest() {
               almanacFetchError={almanacFetchError}
               openDomeTimes={openDomeTimes}
               fullTimeRange={fullTimeRange}
+              selectedTimeRange={selectedTimeRange}
+              setSelectedTimeRange={setSelectedTimeRange}
               loading={obsStatusLoading || exposuresLoading || almanacLoading}
             />
             <VisitMapStaticApplet

@@ -5,6 +5,7 @@ import {
 } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import WarningTooltip from "@/components/WarningTooltip";
+import { formatHours } from "@/utils/timeUtils";
 
 import InfoIcon from "../assets/InfoIcon.svg";
 import TimeLossIcon from "../assets/TimeLossIcon.svg";
@@ -46,10 +47,6 @@ export default function TimeLossCard({
   const availability = obsStatusAvailability ?? {};
   const availabilityStatus =
     availability.status ?? OBSERVATORY_STATE_AVAILABILITY_STATUS.NONE;
-  const formatHours = (value) =>
-    typeof value === "number" && Number.isFinite(value)
-      ? value.toFixed(2)
-      : "NA";
 
   const isFullyAvailable =
     availabilityStatus === OBSERVATORY_STATE_AVAILABILITY_STATUS.FULL;
