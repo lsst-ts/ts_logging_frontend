@@ -21,12 +21,10 @@ test.describe("Time Accounting — loading state", () => {
     await expect(
       page.getByText("Timeline of Observatory State Changes"),
     ).toBeVisible();
-    await expect(
-      page.locator('[data-slot="skeleton"]').first(),
-    ).toBeVisible();
-    await expect(
-      page.locator('[data-slot="obs-status-timeline"]'),
-    ).toHaveCount(0);
+    await expect(page.locator('[data-slot="skeleton"]').first()).toBeVisible();
+    await expect(page.locator('[data-slot="obs-status-timeline"]')).toHaveCount(
+      0,
+    );
   });
 });
 

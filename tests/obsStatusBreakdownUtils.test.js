@@ -41,49 +41,37 @@ describe("buildNightDefinitions", () => {
     expect(nights[0].dayObs).toBe("20260421");
     expect(nights[0].nightHours).toBe(11.0783);
 
-    expect(nights[0].startMs).toBe(
-      Date.parse("2026-04-21T23:09:22Z"),
-    );
+    expect(nights[0].startMs).toBe(Date.parse("2026-04-21T23:09:22Z"));
 
-    expect(nights[0].endMs).toBe(
-      Date.parse("2026-04-22T10:14:04Z"),
-    );
+    expect(nights[0].endMs).toBe(Date.parse("2026-04-22T10:14:04Z"));
   });
 });
 
 describe("nighttime status rules", () => {
   it("allows UNKNOWN by itself", () => {
-    expect(
-      isValidNighttimeStatus(OBSERVATORY_STATES.UNKNOWN),
-    ).toBe(true);
+    expect(isValidNighttimeStatus(OBSERVATORY_STATES.UNKNOWN)).toBe(true);
   });
 
   it("rejects DAYTIME completely", () => {
-    expect(
-      isValidNighttimeStatus(OBSERVATORY_STATES.DAYTIME),
-    ).toBe(false);
+    expect(isValidNighttimeStatus(OBSERVATORY_STATES.DAYTIME)).toBe(false);
 
     expect(
       isValidNighttimeStatus(
-        OBSERVATORY_STATES.DAYTIME |
-          OBSERVATORY_STATES.FAULT,
+        OBSERVATORY_STATES.DAYTIME | OBSERVATORY_STATES.FAULT,
       ),
     ).toBe(false);
   });
 
   it("rejects configured invalid combinations", () => {
     for (const [first, second] of INVALID_STATE_PAIRS) {
-      expect(
-        isValidNighttimeStatus(first | second),
-      ).toBe(false);
+      expect(isValidNighttimeStatus(first | second)).toBe(false);
     }
   });
 
   it("allows valid combinations", () => {
     expect(
       isValidNighttimeStatus(
-        OBSERVATORY_STATES.FAULT |
-          OBSERVATORY_STATES.WEATHER,
+        OBSERVATORY_STATES.FAULT | OBSERVATORY_STATES.WEATHER,
       ),
     ).toBe(true);
 
@@ -97,8 +85,7 @@ describe("nighttime status rules", () => {
 
     expect(
       isValidNighttimeStatus(
-        OBSERVATORY_STATES.OPERATIONAL |
-          OBSERVATORY_STATES.WEATHER,
+        OBSERVATORY_STATES.OPERATIONAL | OBSERVATORY_STATES.WEATHER,
       ),
     ).toBe(true);
   });
@@ -118,8 +105,7 @@ describe("generateValidCombinations", () => {
 
     expect(
       combinations.some(
-        (combination) =>
-          combination.mask === OBSERVATORY_STATES.UNKNOWN,
+        (combination) => combination.mask === OBSERVATORY_STATES.UNKNOWN,
       ),
     ).toBe(false);
   });
@@ -129,8 +115,7 @@ describe("generateValidCombinations", () => {
 
     expect(
       combinations.every(
-        (combination) =>
-          (combination.mask & OBSERVATORY_STATES.DAYTIME) === 0,
+        (combination) => (combination.mask & OBSERVATORY_STATES.DAYTIME) === 0,
       ),
     ).toBe(true);
   });
@@ -142,8 +127,7 @@ describe("generateValidCombinations", () => {
       combinations.some(
         (combination) =>
           combination.mask ===
-          (OBSERVATORY_STATES.OPERATIONAL |
-            OBSERVATORY_STATES.WEATHER),
+          (OBSERVATORY_STATES.OPERATIONAL | OBSERVATORY_STATES.WEATHER),
       ),
     ).toBe(true);
   });
@@ -155,8 +139,7 @@ describe("generateValidCombinations", () => {
       combinations.some(
         (combination) =>
           combination.mask ===
-          (OBSERVATORY_STATES.OPERATIONAL |
-            OBSERVATORY_STATES.FAULT),
+          (OBSERVATORY_STATES.OPERATIONAL | OBSERVATORY_STATES.FAULT),
       ),
     ).toBe(false);
   });
@@ -164,59 +147,53 @@ describe("generateValidCombinations", () => {
 
 describe("breakdown combination labels via statusBitmaskToString", () => {
   it("labels a single state", () => {
-    expect(
-      statusBitmaskToString(OBSERVATORY_STATES.FAULT, " + "),
-    ).toBe("Fault");
+    expect(statusBitmaskToString(OBSERVATORY_STATES.FAULT, " + ")).toBe(
+      "Fault",
+    );
   });
 
   it("labels combinations using full state names with + separator", () => {
     expect(
       statusBitmaskToString(
-        OBSERVATORY_STATES.FAULT |
-          OBSERVATORY_STATES.WEATHER,
+        OBSERVATORY_STATES.FAULT | OBSERVATORY_STATES.WEATHER,
         " + ",
       ),
     ).toBe("Fault + Weather");
   });
 
   it("labels UNKNOWN separately", () => {
-    expect(
-      statusBitmaskToString(OBSERVATORY_STATES.UNKNOWN, " + "),
-    ).toBe("Unknown");
+    expect(statusBitmaskToString(OBSERVATORY_STATES.UNKNOWN, " + ")).toBe(
+      "Unknown",
+    );
   });
 });
 
 describe("getCombinationsForState", () => {
   it("includes every valid combination containing Fault", () => {
-    const combinations = getCombinationsForState(
-      OBSERVATORY_STATES.FAULT,
-    );
+    const combinations = getCombinationsForState(OBSERVATORY_STATES.FAULT);
 
     expect(combinations).toHaveLength(8);
 
     expect(
       combinations.every(
-        (combination) =>
-          combination.mask & OBSERVATORY_STATES.FAULT,
+        (combination) => combination.mask & OBSERVATORY_STATES.FAULT,
       ),
     ).toBe(true);
   });
 
   it("includes Operational + Weather under both parents", () => {
-    const mask =
-      OBSERVATORY_STATES.OPERATIONAL |
-      OBSERVATORY_STATES.WEATHER;
+    const mask = OBSERVATORY_STATES.OPERATIONAL | OBSERVATORY_STATES.WEATHER;
 
     expect(
-      getCombinationsForState(
-        OBSERVATORY_STATES.OPERATIONAL,
-      ).some((combination) => combination.mask === mask),
+      getCombinationsForState(OBSERVATORY_STATES.OPERATIONAL).some(
+        (combination) => combination.mask === mask,
+      ),
     ).toBe(true);
 
     expect(
-      getCombinationsForState(
-        OBSERVATORY_STATES.WEATHER,
-      ).some((combination) => combination.mask === mask),
+      getCombinationsForState(OBSERVATORY_STATES.WEATHER).some(
+        (combination) => combination.mask === mask,
+      ),
     ).toBe(true);
   });
 });
@@ -240,22 +217,18 @@ describe("calculateExactStatusDurations", () => {
         // Starts before the night and ends after it.
         start_time_ms: nightStart - 60 * 60 * 1000,
         end_time_ms: nightEnd + 60 * 60 * 1000,
-        start_state:
-          OBSERVATORY_STATES.FAULT |
-          OBSERVATORY_STATES.WEATHER,
+        start_state: OBSERVATORY_STATES.FAULT | OBSERVATORY_STATES.WEATHER,
       },
     ];
 
-    const { exactDurations } =
-      calculateExactStatusDurations({
-        almanacInfo,
-        obsStatusIntervals: intervals,
-      });
+    const { exactDurations } = calculateExactStatusDurations({
+      almanacInfo,
+      obsStatusIntervals: intervals,
+    });
 
     expect(
       exactDurations["20260421"][
-        OBSERVATORY_STATES.FAULT |
-          OBSERVATORY_STATES.WEATHER
+        OBSERVATORY_STATES.FAULT | OBSERVATORY_STATES.WEATHER
       ],
     ).toBeCloseTo(11.0783333, 5);
   });
@@ -264,29 +237,25 @@ describe("calculateExactStatusDurations", () => {
     const start = Date.parse("2026-04-22T00:00:00Z");
     const end = Date.parse("2026-04-22T01:00:00Z");
 
-    const { exactDurations } =
-      calculateExactStatusDurations({
-        almanacInfo,
-        obsStatusIntervals: [
-          {
-            start_time_ms: start,
-            end_time_ms: end,
-            start_state: OBSERVATORY_STATES.FAULT,
-            end_state: OBSERVATORY_STATES.WEATHER,
-          },
-        ],
-      });
+    const { exactDurations } = calculateExactStatusDurations({
+      almanacInfo,
+      obsStatusIntervals: [
+        {
+          start_time_ms: start,
+          end_time_ms: end,
+          start_state: OBSERVATORY_STATES.FAULT,
+          end_state: OBSERVATORY_STATES.WEATHER,
+        },
+      ],
+    });
+
+    expect(exactDurations["20260421"][OBSERVATORY_STATES.FAULT]).toBeCloseTo(
+      1,
+      8,
+    );
 
     expect(
-      exactDurations["20260421"][
-        OBSERVATORY_STATES.FAULT
-      ],
-    ).toBeCloseTo(1, 8);
-
-    expect(
-      exactDurations["20260421"][
-        OBSERVATORY_STATES.WEATHER
-      ],
+      exactDurations["20260421"][OBSERVATORY_STATES.WEATHER],
     ).toBeUndefined();
   });
 
@@ -294,42 +263,39 @@ describe("calculateExactStatusDurations", () => {
     const start = Date.parse("2026-04-22T00:00:00Z");
     const end = Date.parse("2026-04-22T01:30:00Z");
 
-    const { exactDurations } =
-      calculateExactStatusDurations({
-        almanacInfo,
-        obsStatusIntervals: [
-          {
-            start_time_ms: start,
-            end_time_ms: end,
-            start_state: OBSERVATORY_STATES.UNKNOWN,
-            end_state: OBSERVATORY_STATES.UNKNOWN,
-          },
-        ],
-      });
-
-    expect(
-      exactDurations["20260421"][
-        OBSERVATORY_STATES.UNKNOWN
+    const { exactDurations } = calculateExactStatusDurations({
+      almanacInfo,
+      obsStatusIntervals: [
+        {
+          start_time_ms: start,
+          end_time_ms: end,
+          start_state: OBSERVATORY_STATES.UNKNOWN,
+          end_state: OBSERVATORY_STATES.UNKNOWN,
+        },
       ],
-    ).toBeCloseTo(1.5, 8);
+    });
+
+    expect(exactDurations["20260421"][OBSERVATORY_STATES.UNKNOWN]).toBeCloseTo(
+      1.5,
+      8,
+    );
   });
 
   it("completely ignores DAYTIME intervals", () => {
     const start = Date.parse("2026-04-22T00:00:00Z");
     const end = Date.parse("2026-04-22T01:00:00Z");
 
-    const { exactDurations } =
-      calculateExactStatusDurations({
-        almanacInfo,
-        obsStatusIntervals: [
-          {
-            start_time_ms: start,
-            end_time_ms: end,
-            start_state: OBSERVATORY_STATES.DAYTIME,
-            end_state: OBSERVATORY_STATES.UNKNOWN,
-          },
-        ],
-      });
+    const { exactDurations } = calculateExactStatusDurations({
+      almanacInfo,
+      obsStatusIntervals: [
+        {
+          start_time_ms: start,
+          end_time_ms: end,
+          start_state: OBSERVATORY_STATES.DAYTIME,
+          end_state: OBSERVATORY_STATES.UNKNOWN,
+        },
+      ],
+    });
 
     expect(exactDurations["20260421"]).toEqual({});
   });
@@ -338,20 +304,18 @@ describe("calculateExactStatusDurations", () => {
     const start = Date.parse("2026-04-22T00:00:00Z");
     const end = Date.parse("2026-04-22T01:00:00Z");
 
-    const { exactDurations } =
-      calculateExactStatusDurations({
-        almanacInfo,
-        obsStatusIntervals: [
-          {
-            start_time_ms: start,
-            end_time_ms: end,
-            start_state:
-              OBSERVATORY_STATES.OPERATIONAL |
-              OBSERVATORY_STATES.FAULT,
-            end_state: OBSERVATORY_STATES.UNKNOWN,
-          },
-        ],
-      });
+    const { exactDurations } = calculateExactStatusDurations({
+      almanacInfo,
+      obsStatusIntervals: [
+        {
+          start_time_ms: start,
+          end_time_ms: end,
+          start_state:
+            OBSERVATORY_STATES.OPERATIONAL | OBSERVATORY_STATES.FAULT,
+          end_state: OBSERVATORY_STATES.UNKNOWN,
+        },
+      ],
+    });
 
     expect(exactDurations["20260421"]).toEqual({});
   });
@@ -374,12 +338,11 @@ describe("buildObservatoryStatusBreakdown", () => {
   };
 
   it("creates the summary rows first", () => {
-    const { rows } =
-      buildObservatoryStatusBreakdown({
-        almanacInfo,
-        dayObsOpenDomeHours,
-        obsStatusIntervals: [],
-      });
+    const { rows } = buildObservatoryStatusBreakdown({
+      almanacInfo,
+      dayObsOpenDomeHours,
+      obsStatusIntervals: [],
+    });
 
     expect(rows[0].state).toBe("Night Hours");
     expect(rows[0].rowType).toBe("summary");
@@ -389,40 +352,35 @@ describe("buildObservatoryStatusBreakdown", () => {
   });
 
   it("uses elapsed_twilight_hours for Night Hours", () => {
-    const { rows } =
-      buildObservatoryStatusBreakdown({
-        almanacInfo,
-        dayObsOpenDomeHours,
-        obsStatusIntervals: [],
-      });
+    const { rows } = buildObservatoryStatusBreakdown({
+      almanacInfo,
+      dayObsOpenDomeHours,
+      obsStatusIntervals: [],
+    });
 
     expect(rows[0]["20260421"]).toBe(11);
     expect(rows[0].total).toBe(11);
   });
 
   it("uses open_hours for Dome Open", () => {
-    const { rows } =
-      buildObservatoryStatusBreakdown({
-        almanacInfo,
-        dayObsOpenDomeHours,
-        obsStatusIntervals: [],
-      });
+    const { rows } = buildObservatoryStatusBreakdown({
+      almanacInfo,
+      dayObsOpenDomeHours,
+      obsStatusIntervals: [],
+    });
 
     expect(rows[1]["20260421"]).toBe(10.5);
     expect(rows[1].total).toBe(10.5);
   });
 
   it("creates every possible combination even when duration is zero", () => {
-    const { rows } =
-      buildObservatoryStatusBreakdown({
-        almanacInfo,
-        dayObsOpenDomeHours,
-        obsStatusIntervals: [],
-      });
+    const { rows } = buildObservatoryStatusBreakdown({
+      almanacInfo,
+      dayObsOpenDomeHours,
+      obsStatusIntervals: [],
+    });
 
-    const faultRow = rows.find(
-      (row) => row.state === "Fault",
-    );
+    const faultRow = rows.find((row) => row.state === "Fault");
 
     expect(faultRow).toBeDefined();
 
@@ -431,42 +389,31 @@ describe("buildObservatoryStatusBreakdown", () => {
 
     // No intervals occurred, so every combination is still present
     // with zero duration.
-    expect(
-      faultRow.subRows.every(
-        (row) => row.total === 0,
-      ),
-    ).toBe(true);
+    expect(faultRow.subRows.every((row) => row.total === 0)).toBe(true);
   });
 
   it("attributes a combination to every applicable parent", () => {
     const start = Date.parse("2026-04-22T00:00:00Z");
     const end = Date.parse("2026-04-22T01:00:00Z");
 
-    const mask =
-      OBSERVATORY_STATES.FAULT |
-      OBSERVATORY_STATES.WEATHER;
+    const mask = OBSERVATORY_STATES.FAULT | OBSERVATORY_STATES.WEATHER;
 
-    const { rows } =
-      buildObservatoryStatusBreakdown({
-        almanacInfo,
-        dayObsOpenDomeHours,
-        obsStatusIntervals: [
-          {
-            start_time_ms: start,
-            end_time_ms: end,
-            start_state: mask,
-            end_state: OBSERVATORY_STATES.UNKNOWN,
-          },
-        ],
-      });
+    const { rows } = buildObservatoryStatusBreakdown({
+      almanacInfo,
+      dayObsOpenDomeHours,
+      obsStatusIntervals: [
+        {
+          start_time_ms: start,
+          end_time_ms: end,
+          start_state: mask,
+          end_state: OBSERVATORY_STATES.UNKNOWN,
+        },
+      ],
+    });
 
-    const faultRow = rows.find(
-      (row) => row.state === "Fault",
-    );
+    const faultRow = rows.find((row) => row.state === "Fault");
 
-    const weatherRow = rows.find(
-      (row) => row.state === "Weather",
-    );
+    const weatherRow = rows.find((row) => row.state === "Weather");
 
     const faultWeatherInFault = faultRow.subRows.find(
       (row) => row.state === "Fault + Weather",
@@ -484,16 +431,13 @@ describe("buildObservatoryStatusBreakdown", () => {
   });
 
   it("does not create combination children for Unknown", () => {
-    const { rows } =
-      buildObservatoryStatusBreakdown({
-        almanacInfo,
-        dayObsOpenDomeHours,
-        obsStatusIntervals: [],
-      });
+    const { rows } = buildObservatoryStatusBreakdown({
+      almanacInfo,
+      dayObsOpenDomeHours,
+      obsStatusIntervals: [],
+    });
 
-    const unknownRow = rows.find(
-      (row) => row.state === "Unknown",
-    );
+    const unknownRow = rows.find((row) => row.state === "Unknown");
 
     expect(unknownRow.subRows).toBeUndefined();
   });
@@ -506,16 +450,12 @@ describe("buildObservatoryStatusBreakdown", () => {
       twilight_morning_12deg: "2026-04-23 09:00:00",
     };
 
-    const { dayObsValues } =
-      buildObservatoryStatusBreakdown({
-        almanacInfo: [...almanacInfo, secondNight],
-        dayObsOpenDomeHours,
-        obsStatusIntervals: [],
-      });
+    const { dayObsValues } = buildObservatoryStatusBreakdown({
+      almanacInfo: [...almanacInfo, secondNight],
+      dayObsOpenDomeHours,
+      obsStatusIntervals: [],
+    });
 
-    expect(dayObsValues).toEqual([
-      "20260421",
-      "20260422",
-    ]);
+    expect(dayObsValues).toEqual(["20260421", "20260422"]);
   });
 });
