@@ -57,7 +57,7 @@ const commonColumns = [
               exposureName={row.original.exposure_name}
             />
           ),
-          size: 140,
+          size: 160,
           minSize: 140,
           filterType: null,
           meta: {
@@ -70,7 +70,7 @@ const commonColumns = [
   columnHelper.accessor("exposure_name", {
     header: "Exposure Name",
     cell: (info) => formatCellValue(info.getValue()),
-    size: 200,
+    size: 220,
     minSize: 200,
     filterType: null,
     meta: {
@@ -80,7 +80,7 @@ const commonColumns = [
   columnHelper.accessor("exposure_id", {
     header: "Exposure Id",
     cell: (info) => formatCellValue(info.getValue()),
-    size: 140,
+    size: 160,
     minSize: 140,
     filterType: null,
     meta: {
@@ -101,7 +101,7 @@ const commonColumns = [
   columnHelper.accessor("day_obs", {
     header: "Day Obs",
     cell: (info) => formatCellValue(info.getValue()),
-    size: 100,
+    size: 120,
     minSize: 100,
     filterFn: matchValueOrInList,
     filterType: "string",
@@ -114,7 +114,7 @@ const commonColumns = [
   columnHelper.accessor("obs_start", {
     header: "Obs Start (TAI)",
     cell: (info) => formatCellValue(info.getValue()),
-    size: 240,
+    size: 260,
     minSize: 240,
     filterType: "number-range",
     meta: {
@@ -125,7 +125,7 @@ const commonColumns = [
   columnHelper.accessor("obs_end", {
     header: "Obs End (TAI)",
     cell: (info) => formatCellValue(info.getValue()),
-    size: 240,
+    size: 250,
     minSize: 240,
     filterType: "number-range",
     meta: {
@@ -149,6 +149,7 @@ const commonColumns = [
     header: "Science Program",
     cell: renderScienceProgram,
     size: 160,
+    minSize: 100,
     filterFn: matchValueOrInList,
     filterType: "string",
     meta: {
@@ -171,7 +172,7 @@ const commonColumns = [
   columnHelper.accessor("img_type", {
     header: "Obs Type",
     cell: (info) => formatCellValue(info.getValue()),
-    size: 100,
+    size: 120,
     minSize: 100,
     filterFn: matchValueOrInList,
     filterType: "string",
@@ -183,7 +184,7 @@ const commonColumns = [
   columnHelper.accessor("observation_reason", {
     header: "Obs Reason",
     cell: (info) => formatCellValue(info.getValue()),
-    size: 160,
+    size: 240,
     minSize: 160,
     filterFn: matchValueOrInList,
     filterType: "string",
@@ -195,7 +196,7 @@ const commonColumns = [
   columnHelper.accessor("target_name", {
     header: "Target Name",
     cell: (info) => formatCellValue(info.getValue()),
-    size: 160,
+    size: 190,
     minSize: 160,
     filterFn: matchValueOrInList,
     filterType: "string",
@@ -237,7 +238,7 @@ const commonColumns = [
   columnHelper.accessor("s_ra", {
     header: "RA",
     cell: (info) => formatCellValue(info.getValue()),
-    size: 60,
+    size: 80,
     minSize: 60,
     filterType: "number-range",
     meta: {
@@ -248,7 +249,7 @@ const commonColumns = [
   columnHelper.accessor("s_dec", {
     header: "Dec",
     cell: (info) => formatCellValue(info.getValue()),
-    size: 70,
+    size: 90,
     minSize: 70,
     filterType: "number-range",
     meta: {
@@ -259,7 +260,7 @@ const commonColumns = [
   columnHelper.accessor("altitude", {
     header: "Alt",
     cell: (info) => formatCellValue(info.getValue()),
-    size: 70,
+    size: 90,
     minSize: 70,
     filterType: "number-range",
     meta: {
@@ -270,7 +271,7 @@ const commonColumns = [
   columnHelper.accessor("azimuth", {
     header: "Az",
     cell: (info) => formatCellValue(info.getValue()),
-    size: 60,
+    size: 80,
     minSize: 60,
     filterType: "number-range",
     meta: {
@@ -323,7 +324,7 @@ const commonColumns = [
   columnHelper.accessor("can_see_sky", {
     header: "Can See Sky",
     cell: (info) => formatCellValue(info.getValue()),
-    size: 110,
+    size: 130,
     minSize: 110,
     filterType: "string",
     filterFn: matchValueOrInList,

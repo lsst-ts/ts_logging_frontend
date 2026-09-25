@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { buildTimelineGraphicElements } from "@/utils/timelineUtils";
 import { buildCumulativePlotModel } from "@/utils/cumulativePlotModel";
 import { buildCumulativePlotOption } from "@/utils/cumulativePlotOption";
+import { millisToDateTime } from "@/utils/timeUtils";
 import {
   STATUS_CUMULATIVE_VARIABLE_DIMENSIONS,
   STATUS_CUMULATIVE_SERIES_ORDER,
@@ -15,18 +16,28 @@ import { useEChartsBrushZoom } from "@/hooks/useEChartsBrushZoom";
  * Render the cumulative observatory status chart as an ECharts plot with
  * state markers, open-dome overlays, and brush-based zoom interactions.
  *
+ * The x-axis zoom is driven by and written back to the shared
+ * `selectedTimeRange` (synced to the URL), so it stays in lock-step with the
+ * obs-status timeline and other plots on the page.
+ *
  * @param {Object} props
  * @param {Array} [props.almanacInfo=[]] Almanac data for night boundaries and twilight markers.
  * @param {Array} [props.intervals=[]] Observatory status intervals to convert into cumulative series.
  * @param {Array} [props.openDomeTimes=[]] Open-dome intervals to overlay on the plot.
  * @param {[DateTime, DateTime]} props.fullTimeRange Visible time range for the chart.
+ * @param {[DateTime, DateTime]} props.selectedTimeRange Currently selected time range.
+ * @param {Function} props.setSelectedTimeRange Update the selected time range.
  * @param {boolean} [props.fullScreen=false] Whether the plot is being rendered in fullscreen mode.
  */
 function ObservatoryStatusCumulativePlot({
+  accumulateAcrossNights = false,
+  plotTitle = "Cumulative Time in State",
   almanacInfo = [],
   intervals = [],
   openDomeTimes = [],
   fullTimeRange,
+  selectedTimeRange,
+  setSelectedTimeRange,
   fullScreen = false,
 }) {
   const containerRef = useRef(null);
@@ -63,8 +74,26 @@ function ObservatoryStatusCumulativePlot({
     [fullTimeRange, fullScreen],
   );
 
-  const { instanceRef, xDomain, yDomain } = useEChartsBrushZoom(containerRef, {
+  const handleXZoom = useCallback(
+    (nextRange) => {
+      if (!nextRange) {
+        setSelectedTimeRange(fullTimeRange);
+        return;
+      }
+      // The brush yields fractional millisecond coordinates, but the URL
+      // time-range params must be integers (matching the timeline).
+      const [minMs, maxMs] = nextRange;
+      setSelectedTimeRange([
+        millisToDateTime(Math.round(minMs)),
+        millisToDateTime(Math.round(maxMs)),
+      ]);
+    },
+    [setSelectedTimeRange, fullTimeRange],
+  );
+
+  const { instanceRef, yDomain } = useEChartsBrushZoom(containerRef, {
     onResize: updateGraphicElements,
+    onXRangeChange: handleXZoom,
   });
 
   // ── Tooltip hit detection (brush intercepts ECharts mouse events) ──────────
@@ -162,6 +191,7 @@ function ObservatoryStatusCumulativePlot({
       almanacInfo,
       intervals,
       openDomeTimes,
+      accumulateAcrossNights,
     );
     const markerData = [];
 
@@ -183,8 +213,22 @@ function ObservatoryStatusCumulativePlot({
       }
     }
 
+    // The X-axis zoom is external: driven by the shared selectedTimeRange.
+    // When that range spans the full window (no zoom), fall back to the
+    // night-based bounds so the chart still opens up on the first sunset.
+    const isFullRange =
+      selectedTimeRange?.[0]?.toMillis() === fullTimeRange?.[0]?.toMillis() &&
+      selectedTimeRange?.[1]?.toMillis() === fullTimeRange?.[1]?.toMillis();
+    const xDomain = isFullRange
+      ? undefined
+      : [
+          selectedTimeRange?.[0]?.toMillis(),
+          selectedTimeRange?.[1]?.toMillis(),
+        ];
+
     // Build the ECharts option and apply it to the instance.
     const option = buildCumulativePlotOption({
+      plotTitle,
       model,
       markerData,
       markerSize,
@@ -219,8 +263,8 @@ function ObservatoryStatusCumulativePlot({
     intervals,
     openDomeTimes,
     fullTimeRange,
+    selectedTimeRange,
     fullScreen,
-    xDomain,
     yDomain,
     updateGraphicElements,
     instanceRef,
