@@ -11,6 +11,12 @@ import Parameters from "@/components/Parameters";
 import { fetchBackendVersion } from "@/utils/fetchUtils";
 import { parseBackendVersion } from "@/utils/utils";
 import NavMenu from "@/components/NavMenu";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
+import { isScientificNightlyDigest } from "@/utils/appConfig";
 import RubinIcon from "../assets/RubinIcon.svg";
 import packageJson from "../../package.json";
 
@@ -78,6 +84,25 @@ export function AppSidebar({ ...props }) {
       </SidebarContent>
       <SidebarFooter className="pl-10 pr-8 py-8">
         <div className="text-xs text-gray-500">
+          {isScientificNightlyDigest && (
+            <p className="pb-3">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <a
+                    className="text-blue-500 hover:underline"
+                    target="_blank"
+                    href="https://community.lsst.org/c/support"
+                  >
+                    LSST Community Forum
+                  </a>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs">
+                  Questions? Please ask in the Support category of the Rubin
+                  Community Forum, and Rubin staff will respond.
+                </TooltipContent>
+              </Tooltip>
+            </p>
+          )}
           <p>
             Nightly Digest{" "}
             <strong>

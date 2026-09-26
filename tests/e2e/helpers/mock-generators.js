@@ -181,3 +181,68 @@ export function generateContextFeedMock(
     ],
   };
 }
+
+/**
+ * Generates an `/exposures` API response.
+ *
+ * The default fixture holds no exposures, so the digest page's applets render
+ * empty. Use this when a test needs real rows: grouped bars in the exposure
+ * breakdown, or a science_program that triggers the BLOCK details fetch.
+ *
+ * Rows are spaced a minute apart from 20:00 UTC on the given dayobs, and cycle
+ * through the given science programs.
+ *
+ * @param {number} count
+ * @param {{dayobs?: number, programs?: string[], overrides?: object}} [options]
+ * @returns {object} The `/exposures` response body.
+ */
+export function generateExposuresMock(
+  count,
+  {
+    dayobs = 20260101,
+    programs = ["BLOCK-320", "BLOCK-T17"],
+    overrides = {},
+  } = {},
+) {
+  const dayObsStr = String(dayobs);
+  const base = Date.UTC(
+    Number(dayObsStr.slice(0, 4)),
+    Number(dayObsStr.slice(4, 6)) - 1,
+    Number(dayObsStr.slice(6, 8)),
+    20,
+  );
+
+  const exposures = Array.from({ length: count }, (_, i) => {
+    const startMillis = base + i * 60_000;
+    return {
+      obs_id: `${dayobs}${String(i + 1).padStart(6, "0")}`,
+      seq_num: i + 1,
+      day_obs: dayobs,
+      instrument: "LSSTCam",
+      science_program: programs[i % programs.length],
+      img_type: i % 2 === 0 ? "science" : "bias",
+      observation_reason: "science",
+      target_name: `target_${i % 3}`,
+      physical_filter: "y_10",
+      band: "y",
+      exp_time: 30,
+      airmass: 1.2,
+      obs_start: new Date(startMillis).toISOString(),
+      obs_start_millis: startMillis,
+      ...overrides,
+    };
+  });
+
+  return {
+    exposures,
+    exposures_count: exposures.length,
+    sum_exposure_time: exposures.length * 30,
+    on_sky_exposures_count: exposures.length,
+    total_on_sky_exposure_time: exposures.length * 30,
+    open_dome_times: [],
+    day_obs_open_dome_hours: {},
+    open_dome_error: null,
+    night_on_sky_time_accounting: {},
+    time_accounting_error: null,
+  };
+}

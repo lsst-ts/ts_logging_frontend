@@ -6,6 +6,7 @@ import {
   PSF_SIGMA_FACTOR,
 } from "@/utils/utils";
 import { matchValueOrInList } from "@/components/DataTable/tableUtils";
+import { isScientificNightlyDigest } from "@/utils/appConfig";
 
 const columnHelper = createColumnHelper();
 
@@ -20,7 +21,7 @@ function renderScienceProgram(info) {
   const block = blockMap?.[value];
 
   // If available, display BLOCK names as Zephyr/Jira links
-  if (block) {
+  if (block && !isScientificNightlyDigest) {
     return (
       <div className="p-1 rounded">
         <a
@@ -41,24 +42,29 @@ function renderScienceProgram(info) {
 
 // Columns common to both telescopes
 const commonColumns = [
-  // Link to RubinTV
-  columnHelper.display({
-    id: "RubinTVLink",
-    header: "RubinTV",
-    cell: ({ row }) => (
-      <RubinTVLink
-        dayObs={row.original.day_obs}
-        seqNum={row.original.seq_num}
-        exposureName={row.original.exposure_name}
-      />
-    ),
-    size: 140,
-    minSize: 140,
-    filterType: null,
-    meta: {
-      tooltip: "Link to RubinTV. Opens in a new tab.",
-    },
-  }),
+  // Link to RubinTV. Omitted from the Scientific Nightly Digest, whose users
+  // cannot reach what it links to.
+  ...(isScientificNightlyDigest
+    ? []
+    : [
+        columnHelper.display({
+          id: "RubinTVLink",
+          header: "RubinTV",
+          cell: ({ row }) => (
+            <RubinTVLink
+              dayObs={row.original.day_obs}
+              seqNum={row.original.seq_num}
+              exposureName={row.original.exposure_name}
+            />
+          ),
+          size: 140,
+          minSize: 140,
+          filterType: null,
+          meta: {
+            tooltip: "Link to RubinTV. Opens in a new tab.",
+          },
+        }),
+      ]),
 
   // Identifying data
   columnHelper.accessor("exposure_name", {
@@ -147,8 +153,9 @@ const commonColumns = [
     filterType: "string",
     meta: {
       urlParam: "science_program",
-      tooltip:
-        "Science program, linked to Zephyr/Jira where possible. Opens in a new tab.",
+      tooltip: isScientificNightlyDigest
+        ? "Science program."
+        : "Science program, linked to Zephyr/Jira where possible. Opens in a new tab.",
     },
   }),
   columnHelper.accessor("block_description", {
@@ -210,16 +217,21 @@ const commonColumns = [
       tooltip: "Manually tagged by observers.",
     },
   }),
-  columnHelper.accessor("message_text", {
-    header: "Comments",
-    cell: (info) => formatCellValue(info.getValue()),
-    size: 120,
-    minSize: 120,
-    filterType: null,
-    meta: {
-      tooltip: "Comments from observers associated with flags.",
-    },
-  }),
+  // Observer comments. Omitted from the Scientific Nightly Digest.
+  ...(isScientificNightlyDigest
+    ? []
+    : [
+        columnHelper.accessor("message_text", {
+          header: "Comments",
+          cell: (info) => formatCellValue(info.getValue()),
+          size: 120,
+          minSize: 120,
+          filterType: null,
+          meta: {
+            tooltip: "Comments from observers associated with flags.",
+          },
+        }),
+      ]),
 
   // Instrument config and environment
   columnHelper.accessor("s_ra", {

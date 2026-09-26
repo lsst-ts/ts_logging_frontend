@@ -58,6 +58,67 @@ export async function tooltipForTrigger(page, trigger) {
 }
 
 /**
+ * Opens an applet's info popover.
+ *
+ * Applet headers carry two icon-only popover triggers, download then info, and
+ * neither image has alt text, so the info one is the second button.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} title - The applet's CardTitle text.
+ */
+export async function openAppletInfo(page, title) {
+  await appletCard(page, title)
+    .locator("[data-slot='card-header'] button")
+    .nth(1)
+    .click();
+}
+
+/**
+ * Locator for the metrics row at the top of the Digest page.
+ *
+ * It is the first grid on the page; the applet rows follow it.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @returns {import('@playwright/test').Locator}
+ */
+export function metricsRow(page) {
+  return page.locator("div.grid").first();
+}
+
+/**
+ * Locator for a metric card, matched on its label.
+ *
+ * MetricsCard renders a plain div rather than a Card, so the card is reached as
+ * a direct child of the metrics grid.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} label - The card's label, e.g. "Jira tickets created".
+ * @returns {import('@playwright/test').Locator}
+ */
+export function metricCard(page, label) {
+  return metricsRow(page).locator("> div").filter({ hasText: label }).first();
+}
+
+/**
+ * Locator for an applet card on the Digest page, matched on its CardTitle.
+ *
+ * Matching the title rather than the whole card avoids picking up metric cards
+ * that merely mention an applet's name in a tooltip.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} title - The applet's CardTitle text, e.g. "Visit Map".
+ * @returns {import('@playwright/test').Locator}
+ */
+export function appletCard(page, title) {
+  return page
+    .locator("[data-slot='card']")
+    .filter({
+      has: page.locator("[data-slot='card-title']", { hasText: title }),
+    })
+    .first();
+}
+
+/**
  * Waits until the Observatory Status applet has finished loading.
  *
  * The applet shows a skeleton while loading. Once loaded it either renders the

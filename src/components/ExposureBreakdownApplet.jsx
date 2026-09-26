@@ -24,6 +24,7 @@ import { ChartContainer } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BAND_COLORS } from "@/components/PLOT_DEFINITIONS";
 import BarChartYAxisTick from "@/components/BarChartYAxisTick";
+import { isScientificNightlyDigest } from "@/utils/appConfig";
 
 import InfoIcon from "../assets/InfoIcon.svg";
 import DownloadIcon from "../assets/DownloadIcon.svg";
@@ -63,7 +64,11 @@ function ExposureBreakdownApplet({
   onBarLeave,
 }) {
   const [plotBy, setPlotBy] = useState(PlotByValues.NUMBER);
-  const [groupBy, setGroupBy] = useState(GroupByValues.SCIENCE_PROGRAM);
+  const [groupBy, setGroupBy] = useState(
+    isScientificNightlyDigest
+      ? GroupByValues.IMG_TYPE
+      : GroupByValues.SCIENCE_PROGRAM,
+  );
   const [sortBy, setSortBy] = useState(SortByValues.HIGHEST_FIRST);
 
   // State for bar highlighting, tick label links,
@@ -328,11 +333,13 @@ function ExposureBreakdownApplet({
                   highlight the corresponding exposures in the{" "}
                   <strong>Observing Conditions</strong> chart.
                 </li>
-                <li>
-                  In <strong>Science Program</strong> view, hover to see the
-                  BLOCK description (if available). Linked labels open the BLOCK
-                  documentation.
-                </li>
+                {!isScientificNightlyDigest && (
+                  <li>
+                    In <strong>Science Program</strong> view, hover to see the
+                    BLOCK description (if available). Linked labels open the
+                    BLOCK documentation.
+                  </li>
+                )}
                 <li>
                   Click a bar to open the <strong>Data Log</strong>, filtered by
                   that group.
