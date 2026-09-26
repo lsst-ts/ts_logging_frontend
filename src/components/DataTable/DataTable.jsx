@@ -7,6 +7,7 @@ import { dataTableFeatures } from "./tableFeatures";
 import { useDataTableState } from "./useDataTableState";
 import DataTableHeader from "./DataTableHeader";
 import DataTableBody from "./DataTableBody";
+import DataTableFooter from "./DataTableFooter";
 import DataTableToolbar from "./DataTableToolbar";
 
 /**
@@ -19,6 +20,8 @@ import DataTableToolbar from "./DataTableToolbar";
  * @param {Object} props.defaultColumnVisibility - Initial column visibility
  * @param {string[]} props.defaultColumnOrder - Initial column order
  * @param {Array} props.defaultSorting - Initial sorting state
+ * @param {boolean|Object} props.defaultExpanded - Initial expanded state
+ *   (`true` expands all rows; object maps row ids to booleans)
  * @param {Array} props.columnFilters - Column filters (required)
  * @param {Function} props.setColumnFilters - Filter setter (required)
  * @param {Object} props.toolbar - Toolbar configuration
@@ -35,6 +38,7 @@ const DataTable = forwardRef(function DataTable(
     defaultColumnVisibility = {},
     defaultColumnOrder = [],
     defaultSorting = [],
+    defaultExpanded = {},
     columnFilters,
     setColumnFilters,
     toolbar = {},
@@ -65,7 +69,12 @@ const DataTable = forwardRef(function DataTable(
     defaultColumnVisibility,
     defaultColumnOrder,
     defaultSorting,
+    defaultExpanded,
   });
+
+  // Optional renderer for expandable sub-component rows.
+  // When provided, rows that can be expanded render their sub-component.
+  const subComponent = tableMeta?.subComponent;
 
   // Create table instance
   const table = useTable({
@@ -92,6 +101,17 @@ const DataTable = forwardRef(function DataTable(
     onExpandedChange: setExpanded,
     onColumnFiltersChange: setColumnFilters,
     columnResizeMode: "onChange",
+
+    // Tell TanStack that nested rows live in `subRows`.
+    getSubRows: (row) => row.subRows,
+
+    // Rows can be expanded either because they have a sub-component
+    // or because they contain nested subRows.
+    getRowCanExpand: (row) =>
+      Boolean(subComponent) || Boolean(row.subRows?.length),
+
+    // Expansion is managed explicitly by the parent...
+    autoResetExpanded: false,
   });
 
   // Expose imperative methods via ref
@@ -136,6 +156,7 @@ const DataTable = forwardRef(function DataTable(
               selected={selected}
               onSelectionChange={onSelectionChange}
             />
+            <DataTableFooter table={table} />
           </Table>
         </div>
       </div>

@@ -26,7 +26,9 @@ for (const {
       await columnHeader(page, tooltip.column)
         .locator("span.cursor-help")
         .hover();
-      await expect(page.getByText(tooltip.text)).toBeVisible();
+      await expect(
+        page.getByRole("tooltip").getByText(tooltip.text),
+      ).toBeVisible();
     });
 
     test("a column with several unique values offers a filter section", async ({

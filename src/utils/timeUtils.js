@@ -17,6 +17,21 @@ const isoToTAI = (isoStr) =>
   });
 
 /**
+ * Converts an ISO 8601 string that represents a TAI clock reading to a Luxon
+ * DateTime object in UTC (its corresponding UTC reading).
+ *
+ * TAI is ahead of UTC by `TAI_OFFSET_SECONDS` (currently 37), so this
+ * subtracts that offset from the parsed value.
+ *
+ * @param {string} isoStr - The ISO date-time string in TAI (e.g., "2025-08-27T12:34:56Z").
+ * @returns {DateTime} A Luxon DateTime object in UTC.
+ */
+const taiToUTC = (isoStr) =>
+  DateTime.fromISO(isoStr, { zone: "utc" }).minus({
+    seconds: TAI_OFFSET_SECONDS,
+  });
+
+/**
  * Converts an ISO 8601 string to a Luxon DateTime object in UTC.
  *
  * @param {string} isoStr - The ISO date-time string (e.g., "2025-08-27T12:34:56Z").
@@ -339,8 +354,24 @@ function getCurrentDayObs(format = "yyyyLLdd") {
   );
 }
 
+/**
+ * Formats a numeric hour value to two decimal places.
+ *
+ * @param {*} value - The hour value to format.
+ * @param {Object} [options]
+ * @param {string} [options.nullReplacement="NA"] - String to emit when the
+ *   value is not a finite number (e.g. "NA" for a card, "-" for a table).
+ * @returns {string} The formatted hours string.
+ */
+function formatHours(value, { nullReplacement = "NA" } = {}) {
+  return typeof value === "number" && Number.isFinite(value)
+    ? value.toFixed(2)
+    : nullReplacement;
+}
+
 export {
   isoToTAI,
+  taiToUTC,
   isoToUTC,
   isoToChile,
   getDayobsStartTAI,
@@ -365,4 +396,5 @@ export {
   formatTimestamp,
   formatDuration,
   getCurrentDayObs,
+  formatHours,
 };

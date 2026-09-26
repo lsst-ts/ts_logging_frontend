@@ -2,6 +2,7 @@
 import { test, expect } from "@playwright/test";
 import { setupApiMocks } from "../../helpers/mock-api.js";
 import { DIGEST_URL } from "../../helpers/constants.js";
+import { dragOn, getTimeParams } from "../../helpers/plots-helpers.js";
 import {
   observatoryStatusCard,
   observatoryStatusTooltip,
@@ -64,6 +65,32 @@ test.describe("Observatory Status applet — full availability", () => {
   test("renders the cumulative plot", async ({ page }) => {
     const card = observatoryStatusCard(page);
     await expect(card.locator("svg").first()).toBeVisible();
+  });
+
+  test("brush-zooming the plot adds startTime and endTime to the URL", async ({
+    page,
+  }) => {
+    const card = observatoryStatusCard(page);
+    const svg = card.locator("svg").first();
+    await expect(svg).toBeVisible();
+
+    await dragOn(page, svg, {
+      fromX: 0.4,
+      toX: 0.8,
+      fromY: 0.5,
+      toY: 0.5,
+    });
+
+    // The x-axis zoom is shared with the other plots via the URL time range.
+    // Both params must be integers (the URL schema rejects floats) and must be
+    // present and represent a non-empty zoomed range.
+    await expect(page).toHaveURL(/startTime=/);
+    const { startTime, endTime } = getTimeParams(page);
+    expect(startTime).not.toBeNull();
+    expect(endTime).not.toBeNull();
+    expect(Number.isInteger(startTime)).toBe(true);
+    expect(Number.isInteger(endTime)).toBe(true);
+    expect(endTime - startTime).not.toBe(0);
   });
 
   test("opens the fullscreen dialog with the cumulative plot", async ({

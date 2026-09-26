@@ -22,6 +22,11 @@ const items = [
     title: "Visit Maps",
     url: "/nightlydigest/visit-maps",
   },
+  {
+    name: "time-accounting",
+    title: "Time Accounting",
+    url: "/nightlydigest/time-accounting",
+  },
 ];
 
 export default function NavMenu() {
