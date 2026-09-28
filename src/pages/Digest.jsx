@@ -35,7 +35,7 @@ import { useSearch } from "@tanstack/react-router";
 import { TELESCOPES } from "@/components/Parameters";
 import ObservingConditionsApplet from "@/components/ObservingConditionsApplet";
 import NightSummary from "@/components/NightSummary.jsx";
-import ObservatoryStatusApplet from "@/components/ObservatoryStatusApplet";
+import ObservatoryStatusCumulativeApplet from "@/components/ObservatoryStatusCumulativeApplet";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
 import VisitMapStaticApplet from "@/components/VisitMapStaticApplet.jsx";
 import WarningTooltip from "@/components/WarningTooltip";
@@ -670,8 +670,7 @@ export default function Digest() {
               reports={reports}
               nightreportLoading={nightreportLoading}
             />
-            <ObservatoryStatusApplet
-              collapsable={false}
+            <ObservatoryStatusCumulativeApplet
               almanacInfo={almanacInfo}
               intervals={obsStatusIntervals}
               availability={obsStatusAvailability}

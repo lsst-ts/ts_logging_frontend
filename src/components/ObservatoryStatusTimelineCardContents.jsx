@@ -57,9 +57,7 @@ function ObservatoryStatusTimelineCardContents({
   }
 
   if (availabilityStatus === "none") {
-    return (
-      <p className="text-sm text-stone-400 text-center py-4">{warningText}</p>
-    );
+    return <p className="text-stone-400 text-center py-4">{warningText}</p>;
   }
 
   return (

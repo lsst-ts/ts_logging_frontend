@@ -102,9 +102,10 @@ test.describe("Observatory Status applet — full availability", () => {
       .click();
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
-    await expect(dialog).toContainText(
-      "Observatory Status - Cumulative Time in State",
-    );
+    // The dialog title is the plain applet title; the plot (with its own
+    // plotTitle) is rendered separately within it.
+    await expect(dialog).toContainText("Observatory Status");
+    await expect(dialog).toContainText("Cumulative Time in State");
     // "Cumulative Hours" is the plot's y-axis label — the clearest signal the
     // fullscreen plot rendered (the dialog also contains a close-button SVG).
     await expect(dialog.getByText("Cumulative Hours")).toBeVisible();

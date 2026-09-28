@@ -101,3 +101,48 @@ test.describe("Time Accounting — full availability", () => {
     expect(Number.isInteger(endTime)).toBe(true);
   });
 });
+
+test.describe("Time Accounting — no availability", () => {
+  test.beforeEach(async ({ page }) => {
+    await setupApiMocks(page, {
+      "obs-status": {
+        entries: [],
+        intervals: [],
+        metrics: {},
+        availability: { status: "none", available_from: null },
+        totals: {},
+      },
+    });
+    await page.goto(TIME_ACCOUNTING_URL);
+    await expect(
+      page
+        .getByText(
+          "Observatory Status data is only available from the supported dayobs range.",
+        )
+        .first(),
+    ).toBeVisible({ timeout: 15000 });
+  });
+
+  test("renders compact no-data state for the full-width cumulative applets", async ({
+    page,
+  }) => {
+    const singleNightCard = page
+      .locator("[data-slot='card']")
+      .filter({ hasText: "Observatory Status - Single Night Accumulations" });
+    await expect(singleNightCard).toBeVisible();
+
+    // The full-width Time Accounting applets use a compact no-data state that
+    // is much shorter than the data-populated 320px content (unlike the
+    // Digest cards, which keep their full height so the grid stays even).
+    const box = await singleNightCard.boundingBox();
+    expect(box.height).toBeLessThan(250);
+
+    // And it shows the availability warning rather than a plot.
+    await expect(
+      singleNightCard.getByText(
+        "Observatory Status data is only available from the supported dayobs range.",
+      ),
+    ).toBeVisible();
+    await expect(singleNightCard.locator("svg")).toHaveCount(0);
+  });
+});

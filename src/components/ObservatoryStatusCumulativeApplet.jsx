@@ -1,24 +1,26 @@
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+
 import { Button } from "@/components/ui/button";
-import AppletHeader from "@/components/AppletHeader";
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from "@/components/ui/popover";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
-
+import AppletHeader from "@/components/AppletHeader";
 import ObservatoryStatusCumulativePlot from "@/components/ObservatoryStatusCumulativePlot";
 import WarningTooltip from "@/components/WarningTooltip";
-import { getObsAvailabilityWarningText } from "@/utils/observatoryStatusUtils";
+
 import { OBSERVATORY_STATE_AVAILABILITY_STATUS } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
+import { getObsAvailabilityWarningText } from "@/utils/observatoryStatusUtils";
 
 import FullScreenIcon from "../assets/FullScreenIcon.svg";
 import DownloadIcon from "../assets/DownloadIcon.svg";
@@ -29,6 +31,12 @@ import InfoIcon from "../assets/InfoIcon.svg";
  * fullscreen detail viewing, and info/download overlays.
  *
  * @param {Object} props
+ * @param {boolean} [props.accumulateAcrossNights=false] Whether to accumulate time across nights.
+ * @param {string} [props.appletTitle] Applet header title.
+ * @param {string} [props.plotTitle] Plot title.
+ * @param {boolean} [props.collapsable=false] Whether to show the Show/Hide Graph toggle.
+ * @param {boolean} [props.compactEmptyState=false] When true, the no-data state renders
+ *   much shorter vertically instead of matching the data-populated height.
  * @param {Array} [props.almanacInfo=[]] Almanac night metadata used by the cumulative plot.
  * @param {Array} [props.intervals=[]] Observatory status intervals to display.
  * @param {Object} [props.availability] Availability metadata for the observatory-status feed.
@@ -40,11 +48,12 @@ import InfoIcon from "../assets/InfoIcon.svg";
  * @param {Function} props.setSelectedTimeRange Update the selected time range.
  * @param {boolean} props.loading Whether the underlying data is still loading.
  */
-function ObservatoryStatusApplet({
+function ObservatoryStatusCumulativeApplet({
   accumulateAcrossNights = false,
   appletTitle = "Observatory Status",
   plotTitle = "Cumulative Time in State",
-  collapsable = true,
+  collapsable = false,
+  compactEmptyState = false,
   almanacInfo = [],
   intervals = [],
   availability,
@@ -63,6 +72,12 @@ function ObservatoryStatusApplet({
     obsStatusFetchError: fetchError,
     availability,
   });
+
+  const isEmptyState =
+    !loading &&
+    (almanacFetchError ||
+      fetchError ||
+      obsAvailabilityStatus === OBSERVATORY_STATE_AVAILABILITY_STATUS.NONE);
 
   return (
     <Card className="@container border-none p-0 bg-stone-800 gap-2">
@@ -171,14 +186,19 @@ function ObservatoryStatusApplet({
                 onClick={() => setCardVisible((prev) => !prev)}
                 className="bg-stone-300 text-teal-900 font-sm h-6 rounded-md px-2 shadow-[3px_3px_3px_0px_#0d9488] cursor-pointer hover:bg-stone-200 hover:shadow-[4px_4px_8px_0px_#0d9488] transition-all duration-200"
               >
-                {cardVisible ? "Hide Graph" : "Show Graph"}
+                {cardVisible ? "Hide Plot" : "Show Plot"}
               </Button>
             )}
           </>
         }
       />
       {cardVisible && (
-        <CardContent className="flex flex-col gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 h-[320px] font-thin">
+        <CardContent
+          className={cn(
+            "flex flex-col gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 font-thin",
+            compactEmptyState && isEmptyState ? "h-[100px]" : "h-[320px]",
+          )}
+        >
           {loading ? (
             <div className="flex-grow w-full h-full">
               <Skeleton className="h-full min-h-[180px] bg-stone-900" />
@@ -210,4 +230,4 @@ function ObservatoryStatusApplet({
   );
 }
 
-export default ObservatoryStatusApplet;
+export default ObservatoryStatusCumulativeApplet;

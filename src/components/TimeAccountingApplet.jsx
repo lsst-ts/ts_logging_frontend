@@ -132,7 +132,7 @@ function TimeAccountingApplet({
   ];
 
   return (
-    <Card className="@container border-none p-0 bg-stone-800 mt-2 gap-2">
+    <Card className="@container border-none p-0 bg-stone-800 gap-2">
       <AppletHeader
         title="Time Accounting"
         actions={
