@@ -22,6 +22,7 @@ import {
   getAvailableDayObsRange,
 } from "./utils/retentionPolicyUtils";
 import { getDayobsStartUTC, getDayobsEndUTC } from "./utils/timeUtils";
+import { isScientificNightlyDigest } from "./utils/appConfig";
 
 export const GLOBAL_SEARCH_PARAMS = [
   "startDayobs",
@@ -65,7 +66,9 @@ const defaultDayObs = () =>
 export const baseSearchParamsSchema = z.object({
   startDayobs: dayobsInt.default(defaultDayObs),
   endDayobs: dayobsInt.default(defaultDayObs),
-  telescope: z.enum(["Simonyi", "AuxTel"]).default("Simonyi"),
+  telescope: z
+    .enum(isScientificNightlyDigest ? ["Simonyi"] : ["Simonyi", "AuxTel"])
+    .default("Simonyi"),
   // these are marked as optional because they are added automatically
   startTime: z.coerce.number().int().min(0).optional(),
   endTime: z.coerce.number().int().min(0).optional(),
@@ -268,7 +271,9 @@ const router = createRouter({
   routeTree: rootRoute.addChildren([
     dashboardRoute,
     dataLogRoute,
-    contextFeedRoute,
+    // The Context Feed is internal-only; the Scientific Nightly Digest has no
+    // route for it at all, so the path 404s rather than rendering the page.
+    ...(isScientificNightlyDigest ? [] : [contextFeedRoute]),
     plotsRoute,
     visitmapsRoute,
   ]),
