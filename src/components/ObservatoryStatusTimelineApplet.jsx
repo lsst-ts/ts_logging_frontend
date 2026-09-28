@@ -86,8 +86,9 @@ function ObservatoryStatusTimelineApplet({
         title="Timeline of Observatory State Changes"
         titleBadge={
           !loading &&
-          obsAvailabilityStatus ===
-            OBSERVATORY_STATE_AVAILABILITY_STATUS.PARTIAL ? (
+          (almanacFetchError ||
+            obsAvailabilityStatus ===
+              OBSERVATORY_STATE_AVAILABILITY_STATUS.PARTIAL) ? (
             <div className="flex place-items-center-safe">
               <WarningTooltip
                 ariaLabel="Observatory Status data availability warning"

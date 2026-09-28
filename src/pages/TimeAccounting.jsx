@@ -11,7 +11,7 @@ import {
 import { useSelectionSync } from "@/components/DataTable";
 import NarrativeLogApplet from "@/components/NarrativeLogApplet";
 import { NotificationBannerStack } from "@/components/NotificationBannerStack";
-import ObservatoryStatusApplet from "@/components/ObservatoryStatusApplet";
+import ObservatoryStatusCumulativeApplet from "@/components/ObservatoryStatusCumulativeApplet";
 import ObservatoryStatusBreakdownApplet from "@/components/ObservatoryStatusBreakdownApplet";
 import ObservatoryStatusTimelineApplet from "@/components/ObservatoryStatusTimelineApplet";
 import AppletHeader from "@/components/AppletHeader";
@@ -495,9 +495,11 @@ function TimeAccounting() {
             loading={obsStatusLoading}
           />
 
-          <ObservatoryStatusApplet
+          <ObservatoryStatusCumulativeApplet
             appletTitle={"Observatory Status - Single Night Accumulations"}
             plotTitle={"Nightly Cumulative Time in State"}
+            collapsable
+            compactEmptyState
             almanacInfo={almanacInfo}
             intervals={obsStatusIntervals}
             availability={obsStatusAvailability}
@@ -510,10 +512,12 @@ function TimeAccounting() {
             loading={obsStatusLoading || exposuresLoading || almanacLoading}
           />
 
-          <ObservatoryStatusApplet
+          <ObservatoryStatusCumulativeApplet
+            accumulateAcrossNights
             appletTitle={"Observatory Status - Multi Night Accumulations"}
             plotTitle={"Cumulative Time in State Across Nights"}
-            accumulateAcrossNights={true}
+            collapsable
+            compactEmptyState
             almanacInfo={almanacInfo}
             intervals={obsStatusIntervals}
             availability={obsStatusAvailability}
@@ -537,7 +541,9 @@ function TimeAccounting() {
             dayObsOpenDomeHours={dayObsOpenDomeHours}
             obsStatusIntervals={obsStatusIntervals}
             loading={obsStatusLoading}
+            availability={obsStatusAvailability}
             fetchError={obsStatusFetchError}
+            almanacFetchError={almanacFetchError}
             selected={selectedBreakdown}
             onSelectionChange={setSelectedBreakdown}
           />
