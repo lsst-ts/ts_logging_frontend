@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { cn } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,7 +10,6 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
-
 import DataTable from "@/components/DataTable/DataTable";
 import {
   createObservatoryStatusColumns,
@@ -17,6 +17,8 @@ import {
   getObservatoryStatusDefaultColumnVisibility,
 } from "@/components/ObservatoryStatusBreakdownColumns";
 
+import { OBSERVATORY_STATE_AVAILABILITY_STATUS } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
+import { getObsAvailabilityWarningText } from "@/utils/observatoryStatusUtils";
 import { buildObservatoryStatusBreakdown } from "@/utils/obsStatusBreakdownUtils";
 
 import DownloadIcon from "../assets/DownloadIcon.svg";
@@ -27,12 +29,21 @@ function ObservatoryStatusBreakdownApplet({
   dayObsOpenDomeHours = {},
   obsStatusIntervals = [],
   loading = false,
+  availability,
   fetchError = false,
+  almanacFetchError = false,
   selected = null,
   onSelectionChange,
 }) {
   const [tableVisible, setTableVisible] = useState(true);
   const [columnFilters, setColumnFilters] = useState([]);
+
+  const obsAvailabilityStatus = availability?.status ?? null;
+  const obsAvailabilityWarningText = getObsAvailabilityWarningText({
+    almanacFetchError,
+    obsStatusFetchError: fetchError,
+    availability,
+  });
 
   const breakdown = useMemo(
     () =>
@@ -59,8 +70,14 @@ function ObservatoryStatusBreakdownApplet({
     [breakdown.dayObsValues],
   );
 
+  const isEmptyState =
+    !loading &&
+    (almanacFetchError ||
+      fetchError ||
+      obsAvailabilityStatus === OBSERVATORY_STATE_AVAILABILITY_STATUS.NONE);
+
   return (
-    <Card className="@container border-none p-0 bg-stone-800 mt-2 gap-2">
+    <Card className="@container border-none p-0 bg-stone-800 gap-2">
       <AppletHeader
         title="Detailed Breakdown of Observatory States"
         actions={
@@ -103,15 +120,23 @@ function ObservatoryStatusBreakdownApplet({
       {tableVisible && (
         <CardContent
           id="obs-status-breakdown-table"
-          className="flex flex-col gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 font-thin"
+          className={cn(
+            "flex flex-col gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 font-thin",
+            isEmptyState && "h-[100px]",
+          )}
         >
           {loading ? (
             <div className="flex-grow w-full h-full">
               <Skeleton className="h-full min-h-[180px] bg-stone-900" />
             </div>
-          ) : fetchError ? (
-            <div className="p-4 text-red-300">
-              Observatory Status data could not be fetched.
+          ) : almanacFetchError ||
+            fetchError ||
+            obsAvailabilityStatus ===
+              OBSERVATORY_STATE_AVAILABILITY_STATUS.NONE ? (
+            <div className="place-content-center-safe h-[100px]">
+              <p className="text-stone-400 text-center">
+                {obsAvailabilityWarningText}
+              </p>
             </div>
           ) : (
             <DataTable
