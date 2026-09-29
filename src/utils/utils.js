@@ -3,6 +3,7 @@ import {
   TAI_OFFSET_SECONDS,
   ISO_DATETIME_FORMAT,
   getDayobsStartUTC,
+  getDayobsEndUTC,
   isoToTAI,
   isoToChile,
   isoToUTC,
@@ -339,6 +340,53 @@ const getRubinTVUrl = (telescope, dayObs, seqNum) => {
 };
 
 /**
+ * Generates the Nightly Digest Context Feed URL based on telescope, dayObs, and TAI obsStartTime.
+ *
+ * @param {string} telescope - The telescope name ("Simonyi" or "AuxTel").
+ * @param {string|number} dayObs - Observation day (e.g. 20260521)
+ * @param {string|number} obsStartTime - TAI start time in microseconds - this is the selected time
+ * @param {number} [windowSeconds=30] - Total size of time window in seconds (default: 30s, ±15s around selectedTime)
+ * @returns {string|null} Formatted URL string or null if missing required parameters.
+ */
+const getContextFeedUrl = (
+  telescope,
+  dayObs,
+  obsStartTime,
+  windowSeconds = 30,
+) => {
+  if (!dayObs || !obsStartTime) return null;
+
+  // 1. Parse ISO string directly into epoch milliseconds (UTC)
+  const utcMillis = DateTime.fromISO(obsStartTime, { zone: "utc" }).toMillis();
+  if (isNaN(utcMillis)) return null;
+
+  // 2. Convert TAI milliseconds to UTC microseconds (subtract 37s offset)
+  const LEAP_SECONDS_MS = TAI_OFFSET_SECONDS * 1000;
+  const utcSelectedMillis = utcMillis - LEAP_SECONDS_MS;
+  const utcSelectedMicros = utcSelectedMillis * 1000;
+
+  // 3. Compute startTime and endTime (default: ±15,000 ms around selectedTime)
+  const halfWindowMs = (windowSeconds / 2) * 1000;
+  const startTime = utcSelectedMillis - halfWindowMs;
+  const endTime = utcSelectedMillis + halfWindowMs;
+
+  const dayObsStr = String(dayObs);
+
+  const baseUrl =
+    "https://usdf-rsp-dev.slac.stanford.edu/nightlydigest/context-feed";
+  const params = new URLSearchParams({
+    startDayobs: dayObsStr,
+    endDayobs: dayObsStr,
+    telescope: telescope || "",
+    selectedTime: String(utcSelectedMicros),
+    startTime: String(startTime),
+    endTime: String(endTime),
+  });
+
+  return `${baseUrl}?${params.toString()}`;
+};
+
+/**
  * Retrieves the site configuration for a given host.
  *
  * @param {string} host - The hostname (without protocol) to look up.
@@ -632,6 +680,7 @@ export {
   mergeAllDataLogSources,
   mergeContextFeedSources,
   getRubinTVUrl,
+  getContextFeedUrl,
   getSiteConfig,
   buildNavigationWithSearchParams,
   getNightSummaryLink,
