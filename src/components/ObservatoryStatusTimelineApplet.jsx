@@ -19,12 +19,11 @@ import ObservatoryStatusTimelineCardContents from "@/components/ObservatoryStatu
 import { buildObsStatusSource } from "@/utils/appletStatus";
 
 import FullScreenIcon from "../assets/FullScreenIcon.svg";
-import DownloadIcon from "../assets/DownloadIcon.svg";
 import InfoIcon from "../assets/InfoIcon.svg";
 
 /**
  * Render the Observatory Status timeline as a full applet card with its own
- * header, full-screen viewing, and info/download overlays.
+ * header, full-screen viewing, and an info overlay.
  *
  * Observatory Status entries are required to draw the timeline; Almanac
  * (twilight) data is not required, so a missing Almanac only produces a
@@ -129,17 +128,6 @@ function ObservatoryStatusTimelineApplet({
               </CardContent>
             </DialogContent>
           </Dialog>
-          <Popover>
-            <PopoverTrigger
-              className="min-w-4 cursor-pointer"
-              aria-label="Download observatory status data"
-            >
-              <img src={DownloadIcon} alt="Download" />
-            </PopoverTrigger>
-            <PopoverContent className="bg-black text-white text-sm border-yellow-700">
-              This is a placeholder for the download/export button.
-            </PopoverContent>
-          </Popover>
           <Popover>
             <PopoverTrigger
               className="min-w-4 cursor-pointer"
