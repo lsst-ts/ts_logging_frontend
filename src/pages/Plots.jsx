@@ -11,6 +11,7 @@ import {
   renderHeaderWarning,
 } from "@/components/AppletCard";
 import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
+import DownloadButton from "@/components/DownloadButton";
 import { NotificationBannerStack } from "@/components/NotificationBannerStack";
 import { SOURCE } from "@/constants/DATA_SOURCES";
 import { resolveDisplayState } from "@/utils/displayState";
@@ -39,6 +40,11 @@ import TimeseriesPlot from "@/components/TimeseriesPlot";
 import { PlotDataContext } from "@/contexts/PlotDataContext";
 import { isScientificNightlyDigest } from "@/utils/appConfig";
 import { calculateChartData } from "@/utils/chartCalculations";
+import {
+  EXPOSURE_KEY_COLUMNS,
+  buildDownloadFilename,
+  toCsv,
+} from "@/utils/downloadUtils";
 import {
   fetchAlmanac,
   fetchDataLogEntriesFromConsDB,
@@ -356,6 +362,21 @@ function Plots() {
       )
     : processedNotifications;
 
+  // Download the key exposure fields plus each visible plot's values for
+  // every loaded exposure, ignoring the selected time range.
+  const handleDownload = () => ({
+    content: toCsv(dataLogEntries, [
+      ...EXPOSURE_KEY_COLUMNS,
+      ...visiblePlots.map((key) => ({ key })),
+    ]),
+    filename: buildDownloadFilename(
+      "plots",
+      { telescope, startDayobs, endDayobs },
+      "csv",
+    ),
+    mimeType: "text/csv",
+  });
+
   // Temporary display message for AuxTel queries
   if (telescope === "AuxTel") {
     return (
@@ -393,6 +414,10 @@ function Plots() {
             titleBadge={renderHeaderWarning(plotsState)}
             actions={
               <>
+                <DownloadButton
+                  onDownload={handleDownload}
+                  disabled={dataLogLoading || dataLogEntries.length === 0}
+                />
                 {/* Button to toggle timeline visibility */}
                 <Button
                   onClick={() => setTimelineVisible((prev) => !prev)}

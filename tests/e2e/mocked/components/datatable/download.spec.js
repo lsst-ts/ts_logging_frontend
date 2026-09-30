@@ -1,7 +1,5 @@
 // @ts-check
-import { readFile } from "node:fs/promises";
 import { test, expect } from "@playwright/test";
-import Papa from "papaparse";
 import { setupApiMocks } from "../../../helpers/mock-api.js";
 import {
   DATATABLE_PAGES,
@@ -9,27 +7,7 @@ import {
   openColumnMenu,
   tableRows,
 } from "../../../helpers/datatable-pages.js";
-
-/**
- * Clicks the page's download button and parses the downloaded CSV.
- *
- * @param {import('@playwright/test').Page} page
- * @returns {Promise<{filename: string, headers: string[], rows: Object[]}>}
- */
-async function downloadCsv(page) {
-  const [download] = await Promise.all([
-    page.waitForEvent("download"),
-    page.getByRole("button", { name: "Download CSV" }).click(),
-  ]);
-  const text = await readFile(await download.path(), "utf8");
-  const { data, meta } = Papa.parse(text, { header: true });
-
-  return {
-    filename: download.suggestedFilename(),
-    headers: meta.fields,
-    rows: data,
-  };
-}
+import { downloadCsv } from "../../../helpers/download-helpers.js";
 
 for (const {
   name,
