@@ -3,6 +3,19 @@ import Papa from "papaparse";
 const FILENAME_PREFIX = "nightlydigest";
 
 /**
+ * Columns identifying each exposure in exposure-based downloads.
+ */
+const EXPOSURE_KEY_COLUMNS = [
+  "exposure_id",
+  "exposure_name",
+  "obs_start",
+  "day_obs",
+  "seq_num",
+  "science_program",
+  "observation_reason",
+].map((key) => ({ key }));
+
+/**
  * Normalise a single value for CSV output.
  *
  * Nested objects and arrays are JSON-stringified so no information is lost;
@@ -76,4 +89,4 @@ const buildDownloadFilename = (
 ) =>
   `${FILENAME_PREFIX}_${source}_${telescope}_${startDayobs}-${endDayobs}.${ext}`;
 
-export { toCsv, downloadFile, buildDownloadFilename };
+export { EXPOSURE_KEY_COLUMNS, toCsv, downloadFile, buildDownloadFilename };
