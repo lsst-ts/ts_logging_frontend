@@ -9,11 +9,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 
 import TimelineChart from "@/components/TimelineChart";
 import ObservatoryStatusTimelineCardContents from "@/components/ObservatoryStatusTimelineCardContents";
@@ -26,7 +21,9 @@ import AppletHeader from "@/components/AppletHeader";
 
 import TipsCard from "@/components/TipsCard";
 import SelectedTimeRangeBar from "@/components/SelectedTimeRangeBar";
-import DownloadIcon from "../assets/DownloadIcon.svg";
+import DownloadButton from "@/components/DownloadButton";
+import { getTableDownloadData } from "@/components/DataTable/tableUtils";
+import { buildDownloadFilename, toCsv } from "@/utils/downloadUtils";
 import { getDayobsStartUTC } from "@/utils/timeUtils";
 import {
   fetchAlmanac,
@@ -411,6 +408,26 @@ function ContextFeed() {
     [contextFeedTableData, selectedTimeRange],
   );
 
+  const tableRef = useRef();
+
+  // Download the table's visible columns for every loaded event,
+  // ignoring the selected time range and any table filters or sorting.
+  const handleDownload = () => {
+    const { rows, columns } = getTableDownloadData(
+      tableRef.current.getTable(),
+      contextFeedTableData,
+    );
+    return {
+      content: toCsv(rows, columns),
+      filename: buildDownloadFilename(
+        "context-feed",
+        { telescope, startDayobs, endDayobs },
+        "csv",
+      ),
+      mimeType: "text/csv",
+    };
+  };
+
   const displayedNotifications = tableLoading
     ? processedNotifications.filter(
         (notification) => notification.type !== "error",
@@ -483,16 +500,10 @@ function ContextFeed() {
             description="Chronologically ordered log of exposures, scripts, errors and narrations."
             actions={
               <>
-                <Popover>
-                  <PopoverTrigger className="min-w-4 cursor-pointer">
-                    <img src={DownloadIcon} />
-                  </PopoverTrigger>
-                  <PopoverContent className="bg-black text-white text-sm border-yellow-700">
-                    This is a placeholder for the download/export button. Once
-                    implemented, clicking here will download the data shown in
-                    the table to a .csv file.
-                  </PopoverContent>
-                </Popover>
+                <DownloadButton
+                  onDownload={handleDownload}
+                  disabled={tableLoading || contextFeedTableData.length === 0}
+                />
                 {/* Button to toggle timeline visibility */}
                 <Button
                   onClick={() => setTimelineVisible((prev) => !prev)}
@@ -663,6 +674,7 @@ function ContextFeed() {
 
         {/* Table */}
         <ContextFeedTable
+          ref={tableRef}
           data={filteredData}
           dataLoading={tableLoading}
           columnFilters={columnFilters}
