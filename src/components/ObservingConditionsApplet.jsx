@@ -6,7 +6,7 @@ import {
   PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover";
-import DownloadIcon from "../assets/DownloadIcon.svg";
+import DownloadButton from "@/components/DownloadButton";
 import InfoIcon from "../assets/InfoIcon.svg";
 import { ChartContainer, ChartTooltip, ChartLegend } from "./ui/chart";
 import {
@@ -38,6 +38,11 @@ import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
 import { RotateCcw } from "lucide-react";
 import { calculateZoom } from "@/utils/plotUtils";
 import { isScientificNightlyDigest } from "@/utils/appConfig";
+import {
+  EXPOSURE_KEY_COLUMNS,
+  buildDownloadFilename,
+  toCsv,
+} from "@/utils/downloadUtils";
 import {
   ISO_DATETIME_FORMAT,
   millisToDateTime,
@@ -952,11 +957,53 @@ function ObservingConditionsBody({
 /** Shared card handles loading/errors; the body retains its empty plot shell. */
 function ObservingConditionsApplet(props) {
   const {
+    exposureFields,
     sources = {},
     required = [],
     exposuresLoading,
     almanacLoading,
   } = props;
+
+  const search = useSearch({ from: "/" });
+
+  const data = useMemo(
+    () =>
+      // fallback to empty array if exposureFields is undefined
+      (exposureFields ?? []).map((entry) => {
+        // Convert obs_start to a DateTime object and then to milliseconds
+        const obsStart = entry["obs_start"];
+        let obs_start_dt = undefined;
+        if (
+          typeof obsStart === "string" &&
+          DateTime.fromISO(obsStart).isValid
+        ) {
+          obs_start_dt = isoToUTC(obsStart).toMillis();
+        }
+        // calculate psf_median from psf_sigma_median and pixel_scale_median
+        const psfSigma = entry["psf_sigma_median"];
+        const pixelScale =
+          entry["pixel_scale_median"] ?? DEFAULT_PIXEL_SCALE_MEDIAN;
+        const psf_median = psfSigma
+          ? psfSigma * PSF_SIGMA_FACTOR * pixelScale
+          : null;
+        return { ...entry, obs_start_dt, psf_median };
+      }),
+    [exposureFields],
+  );
+
+  // Download the plotted values for every loaded exposure, ignoring the
+  // selected time range.
+  const handleDownload = () => ({
+    content: toCsv(data, [
+      ...EXPOSURE_KEY_COLUMNS,
+      { key: "psf_median" },
+      { key: "zero_point_median" },
+      { key: "physical_filter" },
+    ]),
+    filename: buildDownloadFilename("observing-conditions", search, "csv"),
+    mimeType: "text/csv",
+  });
+
   return (
     <AppletCard
       title="Observing Conditions"
@@ -970,14 +1017,10 @@ function ObservingConditionsApplet(props) {
       }
       actions={
         <>
-          <Popover>
-            <PopoverTrigger className="self-end min-w-4 cursor-pointer">
-              <img src={DownloadIcon} />
-            </PopoverTrigger>
-            <PopoverContent className="bg-black text-white text-sm border-yellow-700">
-              This is a placeholder for the download/export button.
-            </PopoverContent>
-          </Popover>
+          <DownloadButton
+            onDownload={handleDownload}
+            disabled={exposuresLoading || data.length === 0}
+          />
           <Popover>
             <PopoverTrigger className="self-end min-w-4 cursor-pointer">
               <img src={InfoIcon} />
