@@ -39,17 +39,19 @@ function TimelineApplet({
       }
       actions={
         <>
-          <Popover>
-            <PopoverTrigger
-              className="min-w-4 cursor-pointer"
-              aria-label={downloadAriaLabel}
-            >
-              <img src={DownloadIcon} alt="Download" />
-            </PopoverTrigger>
-            <PopoverContent className="bg-black text-white text-sm border-yellow-700">
-              This is a placeholder for the download/export button.
-            </PopoverContent>
-          </Popover>
+          {downloadAriaLabel && (
+            <Popover>
+              <PopoverTrigger
+                className="min-w-4 cursor-pointer"
+                aria-label={downloadAriaLabel}
+              >
+                <img src={DownloadIcon} alt="Download" />
+              </PopoverTrigger>
+              <PopoverContent className="bg-black text-white text-sm border-yellow-700">
+                This is a placeholder for the download/export button.
+              </PopoverContent>
+            </Popover>
+          )}
           <Popover>
             <PopoverTrigger
               className="min-w-4 cursor-pointer"
