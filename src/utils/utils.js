@@ -3,7 +3,6 @@ import {
   TAI_OFFSET_SECONDS,
   ISO_DATETIME_FORMAT,
   getDayobsStartUTC,
-  getDayobsEndUTC,
   isoToTAI,
   isoToChile,
   isoToUTC,
@@ -340,24 +339,26 @@ const getRubinTVUrl = (telescope, dayObs, seqNum) => {
 };
 
 /**
- * Generates the Nightly Digest Context Feed URL based on telescope, dayObs, and TAI obsStartTime.
+ * Generates the Nightly Digest Context Feed URL based on telescope, dayObs, and TAI obsSelectedTime
  *
  * @param {string} telescope - The telescope name ("Simonyi" or "AuxTel").
  * @param {string|number} dayObs - Observation day (e.g. 20260521)
- * @param {string|number} obsStartTime - TAI start time in microseconds - this is the selected time
+ * @param {string|number} ObsSelectedTime - TAI selected time in microseconds - this is the time of what you want centered
  * @param {number} [windowSeconds=30] - Total size of time window in seconds (default: 30s, ±15s around selectedTime)
  * @returns {string|null} Formatted URL string or null if missing required parameters.
  */
 const getContextFeedUrl = (
   telescope,
   dayObs,
-  obsStartTime,
+  ObsSelectedTime,
   windowSeconds = 30,
 ) => {
-  if (!dayObs || !obsStartTime) return null;
+  if (!dayObs || !ObsSelectedTime) return null;
 
   // 1. Parse ISO string directly into epoch milliseconds (UTC)
-  const utcMillis = DateTime.fromISO(obsStartTime, { zone: "utc" }).toMillis();
+  const utcMillis = DateTime.fromISO(ObsSelectedTime, {
+    zone: "utc",
+  }).toMillis();
   if (isNaN(utcMillis)) return null;
 
   // 2. Convert TAI milliseconds to UTC microseconds (subtract 37s offset)

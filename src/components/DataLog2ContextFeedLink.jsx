@@ -10,20 +10,15 @@ export default function DataLog2ContextFeedLink({
   dayObs,
   obsStartTime,
   exposureName,
-  windowSeconds = 90,
+  windowSeconds = 60,
 }) {
   if (!exposureId) return formatCellValue(exposureId);
 
   const telescope = exposureName
-    ? (telescopePrefixes[exposureName.slice(0, 2)] ?? "")
+    ? telescopePrefixes[exposureName.slice(0, 2)] ?? ""
     : "";
 
-  const url = getContextFeedUrl(
-    telescope,
-    dayObs,
-    obsStartTime,
-    windowSeconds
-  );
+  const url = getContextFeedUrl(telescope, dayObs, obsStartTime, windowSeconds);
   if (!url) return formatCellValue(exposureId);
 
   return (
