@@ -5,7 +5,7 @@ const telescopePrefixes = {
   AT: "AuxTel",
 };
 
-export default function DataLog2ContextFeedLink({
+export default function DataLogToContextFeedLink({
   exposureId,
   dayObs,
   obsStartTime,
