@@ -373,8 +373,7 @@ const getContextFeedUrl = (
 
   const dayObsStr = String(dayObs);
 
-  const baseUrl =
-    "https://usdf-rsp-dev.slac.stanford.edu/nightlydigest/context-feed";
+  const baseUrl = "/nightlydigest/context-feed";
   const params = new URLSearchParams({
     startDayobs: dayObsStr,
     endDayobs: dayObsStr,

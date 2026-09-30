@@ -666,7 +666,7 @@ describe("utils", () => {
       const urlString = getContextFeedUrl(telescope, dayObs, obsSelectedTime);
       expect(urlString).not.toBeNull();
 
-      const url = new URL(urlString);
+      const url = new URL(urlString, "http:/localhost");
       const params = url.searchParams;
 
       // 1. Base URL & standard query params
@@ -702,7 +702,7 @@ describe("utils", () => {
         obsSelectedTime,
         60,
       );
-      const url = new URL(urlString);
+      const url = new URL(urlString, "http://localhost");
       const params = url.searchParams;
 
       const selectedMillis = 1782820915413;
@@ -720,7 +720,7 @@ describe("utils", () => {
 
     it("handles missing or empty telescope gracefully", () => {
       const urlString = getContextFeedUrl(null, dayObs, obsSelectedTime);
-      const url = new URL(urlString);
+      const url = new URL(urlString, "http://localhost");
 
       expect(url.searchParams.get("telescope")).toBe("");
     });
