@@ -1,3 +1,5 @@
+import { forwardRef } from "react";
+
 import { DataTable, useUrlSync } from "@/components/DataTable";
 import {
   dataLogColumns,
@@ -17,15 +19,12 @@ import {
  * @param {Object} props.blockLookup - BLOCK data map
  * @param {string|null} props.selected - The selected key value (or null for none)
  * @param {Function} props.onSelectionChange - Callback when a row is clicked to select
+ * @param {React.Ref} ref - Forwarded to the DataTable (exposes `getTable`)
  */
-function DataLogTable({
-  telescope,
-  data,
-  dataLogLoading,
-  blockLookup,
-  selected,
-  onSelectionChange,
-}) {
+const DataLogTable = forwardRef(function DataLogTable(
+  { telescope, data, dataLogLoading, blockLookup, selected, onSelectionChange },
+  ref,
+) {
   // Get column filters synced with URL
   const { columnFilters, setColumnFilters, resetFilters } = useUrlSync({
     routePath: "/data-log",
@@ -39,6 +38,7 @@ function DataLogTable({
 
   return (
     <DataTable
+      ref={ref}
       data={data}
       columns={dataLogColumns[telescope]}
       isLoading={dataLogLoading}
@@ -58,6 +58,6 @@ function DataLogTable({
       onSelectionChange={onSelectionChange}
     />
   );
-}
+});
 
 export default DataLogTable;
