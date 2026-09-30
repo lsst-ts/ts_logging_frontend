@@ -8,7 +8,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 
 import InfoIcon from "../assets/InfoIcon.svg";
-import DownloadIcon from "../assets/DownloadIcon.svg";
 
 export default function VisitMapStaticApplet({
   mapData,
@@ -21,16 +20,6 @@ export default function VisitMapStaticApplet({
         title="Visit Map"
         actions={
           <>
-            <Popover>
-              <PopoverTrigger className="self-end min-w-4">
-                <img src={DownloadIcon} />
-              </PopoverTrigger>
-              <PopoverContent className="bg-black text-white text-sm border-yellow-700">
-                This is a placeholder for the download/export button. Once
-                implemented, clicking here will download this Applet's data to a
-                .csv file.
-              </PopoverContent>
-            </Popover>
             <Popover>
               <PopoverTrigger className="self-end min-w-4">
                 <img src={InfoIcon} />

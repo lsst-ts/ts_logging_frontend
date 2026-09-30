@@ -9,7 +9,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import BokehPlot from "@/components/BokehPlot";
 
 import InfoIcon from "../assets/InfoIcon.svg";
-import DownloadIcon from "../assets/DownloadIcon.svg";
 import { VISIT_SHAPE, VISIT_SHAPE_INNER } from "./PLOT_DEFINITIONS";
 
 function VisitMapApplet({ mapData, mapLoading }) {
@@ -19,16 +18,6 @@ function VisitMapApplet({ mapData, mapLoading }) {
         title="Visit Map"
         actions={
           <>
-            <Popover>
-              <PopoverTrigger className="self-end min-w-4">
-                <img src={DownloadIcon} />
-              </PopoverTrigger>
-              <PopoverContent className="bg-black text-white text-sm border-yellow-700">
-                This is a placeholder for the download/export button. Once
-                implemented, clicking here will download this Applet's data to a
-                .csv file.
-              </PopoverContent>
-            </Popover>
             <Popover>
               <PopoverTrigger className="self-end min-w-4">
                 <img src={InfoIcon} />

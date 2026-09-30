@@ -7,16 +7,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import AppletHeader from "@/components/AppletHeader";
 import { TELESCOPES } from "@/components/Parameters";
 import TipsCard from "@/components/TipsCard";
-import DownloadIcon from "../assets/DownloadIcon.svg";
 import { VISIT_SHAPE, VISIT_SHAPE_INNER } from "@/components/PLOT_DEFINITIONS";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from "@/components/ui/popover";
 
 import BokehPlot from "@/components/BokehPlot";
 import { NotificationBannerStack } from "@/components/NotificationBannerStack";
@@ -129,16 +123,6 @@ function VisitMaps() {
             description="Interactive sky-maps of visits collected during the night."
             actions={
               <>
-                <Popover>
-                  <PopoverTrigger className="min-w-4 cursor-pointer">
-                    <img src={DownloadIcon} />
-                  </PopoverTrigger>
-                  <PopoverContent className="bg-black text-white text-sm border-yellow-700">
-                    This is a placeholder for the download/export button. Once
-                    implemented, clicking here will download the data shown in
-                    the table to a .csv file.
-                  </PopoverContent>
-                </Popover>
                 {/* Button to toggle tips visibility */}
                 <Button
                   onClick={() => setTipsVisible((prev) => !prev)}

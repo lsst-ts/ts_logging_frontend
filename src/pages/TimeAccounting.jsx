@@ -2,11 +2,6 @@ import { useEffect, useState, useMemo } from "react";
 import { useSearch } from "@tanstack/react-router";
 
 import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 
 import { useSelectionSync } from "@/components/DataTable";
 import NarrativeLogApplet from "@/components/NarrativeLogApplet";
@@ -37,8 +32,6 @@ import { METRIC_STATES } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
 
 import { useNotifications } from "@/hooks/useNotifications";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
-
-import DownloadIcon from "../assets/DownloadIcon.svg";
 
 const EMPTY_OBS_STATUS_AVAILABILITY = {
   status: "none",
@@ -423,17 +416,6 @@ function TimeAccounting() {
             description="A smorgasbord of time accounting plots and metrics."
             actions={
               <>
-                <Popover>
-                  <PopoverTrigger className="min-w-4 cursor-pointer">
-                    <img src={DownloadIcon} />
-                  </PopoverTrigger>
-                  <PopoverContent className="bg-black text-white text-sm border-yellow-700">
-                    This is a placeholder for the download/export button. Once
-                    implemented, clicking here will download the data shown on
-                    this page to a .csv file.
-                  </PopoverContent>
-                </Popover>
-
                 {/* Button to toggle tips visibility */}
                 <Button
                   onClick={() => setTipsVisible((prev) => !prev)}

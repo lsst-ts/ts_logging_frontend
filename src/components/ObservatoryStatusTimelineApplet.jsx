@@ -20,7 +20,6 @@ import { getObsAvailabilityWarningText } from "@/utils/observatoryStatusUtils";
 import { OBSERVATORY_STATE_AVAILABILITY_STATUS } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
 
 import FullScreenIcon from "../assets/FullScreenIcon.svg";
-import DownloadIcon from "../assets/DownloadIcon.svg";
 import InfoIcon from "../assets/InfoIcon.svg";
 
 /**
@@ -120,17 +119,6 @@ function ObservatoryStatusTimelineApplet({
                 </CardContent>
               </DialogContent>
             </Dialog>
-            <Popover>
-              <PopoverTrigger
-                className="min-w-4 cursor-pointer"
-                aria-label="Download observatory status data"
-              >
-                <img src={DownloadIcon} alt="Download" />
-              </PopoverTrigger>
-              <PopoverContent className="bg-black text-white text-sm border-yellow-700">
-                This is a placeholder for the download/export button.
-              </PopoverContent>
-            </Popover>
             <Popover>
               <PopoverTrigger
                 className="min-w-4 cursor-pointer"
