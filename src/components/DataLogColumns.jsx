@@ -1,6 +1,6 @@
 import { createColumnHelper } from "@tanstack/react-table";
 import RubinTVLink from "@/components/RubinTVLink";
-import DataLog2ContextFeedLink from "@/components/DataLog2ContextFeedLink";
+import DataLogToContextFeedLink from "@/components/DataLogToContextFeedLink";
 import {
   formatCellValue,
   DEFAULT_PIXEL_SCALE_MEDIAN,
@@ -82,7 +82,7 @@ const commonColumns = [
   columnHelper.accessor("exposure_id", {
     header: "Exposure Id",
     cell: ({ row }) => (
-      <DataLog2ContextFeedLink
+      <DataLogToContextFeedLink
         exposureId={row.original.exposure_id}
         dayObs={row.original.day_obs}
         obsStartTime={row.original.obs_start}
