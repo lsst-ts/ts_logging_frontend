@@ -11,6 +11,7 @@ import {
   mergeAllDataLogSources,
   mergeContextFeedSources,
   getRubinTVUrl,
+  getContextFeedUrl,
   getSiteConfig,
   buildNavigationWithSearchParams,
   getNightSummaryLink,
@@ -632,6 +633,96 @@ describe("utils", () => {
       expect(() => getRubinTVUrl("AuxTel", "20240607", 2)).toThrowError(
         /^Unknown host for RubinTV URL: unknownhost.com$/,
       );
+    });
+  });
+
+  describe("getContextFeedUrl", () => {
+    const telescope = "Simonyi";
+    const dayObs = "20260630";
+    // ISO string representing 12:02:32.413 TAI
+    const obsSelectedTime = "2026-06-30T12:02:32.413Z";
+
+    beforeEach(() => {
+      vi.stubGlobal("window", {
+        location: {
+          host: "localhost",
+          hostname: "localhost",
+          origin: "http://localhost",
+        },
+      });
+    });
+
+    it("returns null if required parameters are missing", () => {
+      expect(getContextFeedUrl(telescope, null, obsSelectedTime)).toBeNull();
+      expect(getContextFeedUrl(telescope, dayObs, null)).toBeNull();
+      expect(getContextFeedUrl(telescope, "", obsSelectedTime)).toBeNull();
+    });
+
+    it("returns null for malformed or invalid date strings", () => {
+      expect(getContextFeedUrl(telescope, dayObs, "invalid-date")).toBeNull();
+    });
+
+    it("calculates correct default 30s window bounds and 37s TAI offset", () => {
+      const urlString = getContextFeedUrl(telescope, dayObs, obsSelectedTime);
+      expect(urlString).not.toBeNull();
+
+      const url = new URL(urlString);
+      const params = url.searchParams;
+
+      // 1. Base URL & standard query params
+      expect(urlString).toContain("/nightlydigest/context-feed");
+      expect(params.get("startDayobs")).toBe("20260630");
+      expect(params.get("endDayobs")).toBe("20260630");
+      expect(params.get("telescope")).toBe("Simonyi");
+
+      // 2. TAI to UTC 37s offset & microsecond precision check:
+      // 2026-06-30T12:02:32.413Z = 1782820952413 ms
+      // Less 37,000 ms (TAI offset) = 1782820915413 ms -> 1782820915413000 micros
+      const expectedUtcMillis = 1782820915413;
+      const expectedUtcMicros = expectedUtcMillis * 1000;
+      expect(params.get("selectedTime")).toBe(String(expectedUtcMicros));
+
+      // 3. Default 30s window bounds (±15,000 ms)
+      const expectedStartTime = expectedUtcMillis - 15000; // 1782820900413
+      const expectedEndTime = expectedUtcMillis + 15000; // 1782820930413
+
+      expect(params.get("startTime")).toBe(String(expectedStartTime));
+      expect(params.get("endTime")).toBe(String(expectedEndTime));
+
+      // Verify total window duration is 30,000 ms (30s)
+      const durationMs =
+        Number(params.get("endTime")) - Number(params.get("startTime"));
+      expect(durationMs).toBe(30000);
+    });
+
+    it("supports an explicit 60s window override", () => {
+      const urlString = getContextFeedUrl(
+        telescope,
+        dayObs,
+        obsSelectedTime,
+        60,
+      );
+      const url = new URL(urlString);
+      const params = url.searchParams;
+
+      const selectedMillis = 1782820915413;
+      // 60s window bounds (±30,000 ms)
+      const expectedStartTime = selectedMillis - 30000; // 1782820885413
+      const expectedEndTime = selectedMillis + 30000; // 1782820945413
+
+      expect(params.get("startTime")).toBe(String(expectedStartTime));
+      expect(params.get("endTime")).toBe(String(expectedEndTime));
+
+      const durationMs =
+        Number(params.get("endTime")) - Number(params.get("startTime"));
+      expect(durationMs).toBe(60000);
+    });
+
+    it("handles missing or empty telescope gracefully", () => {
+      const urlString = getContextFeedUrl(null, dayObs, obsSelectedTime);
+      const url = new URL(urlString);
+
+      expect(url.searchParams.get("telescope")).toBe("");
     });
   });
 
