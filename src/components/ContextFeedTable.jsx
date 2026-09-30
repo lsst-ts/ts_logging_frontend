@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { forwardRef, useImperativeHandle, useState, useRef } from "react";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
@@ -24,18 +24,30 @@ import {
  * @param {Object} props.blockLookup - BLOCK data map
  * @param {string|null} props.selected - The selected key value (or null for none)
  * @param {Function} props.onSelectionChange - Callback when a row is clicked to select
+ * @param {React.Ref} ref - Exposes `getTable` for the underlying DataTable
  */
-function ContextFeedTable({
-  data,
-  dataLoading,
-  columnFilters,
-  setColumnFilters,
-  resetFilters,
-  blockLookup,
-  selected,
-  onSelectionChange,
-}) {
+const ContextFeedTable = forwardRef(function ContextFeedTable(
+  {
+    data,
+    dataLoading,
+    columnFilters,
+    setColumnFilters,
+    resetFilters,
+    blockLookup,
+    selected,
+    onSelectionChange,
+  },
+  ref,
+) {
   const tableRef = useRef();
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      getTable: () => tableRef.current?.getTable(),
+    }),
+    [],
+  );
 
   // State for collapse all checkboxes
   const [collapseTracebacks, setCollapseTracebacks] = useState(true);
@@ -141,6 +153,6 @@ function ContextFeedTable({
       onSelectionChange={onSelectionChange}
     />
   );
-}
+});
 
 export default ContextFeedTable;

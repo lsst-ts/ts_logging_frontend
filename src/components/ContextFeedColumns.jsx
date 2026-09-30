@@ -47,6 +47,34 @@ function renderNameCell(info) {
   return formatCellValue(value);
 }
 
+// Links to scheduler config files are passed as html. Parse such a
+// description into its url and display text lines; returns null for any
+// other description, or if parsing fails.
+function parseDescriptionLink(description) {
+  if (!description.startsWith("<a href")) return null;
+
+  // Create a temporary element to store link in
+  // so that we can strip out the url and display text.
+  try {
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = description;
+
+    const aTag = tempDiv.querySelector("a");
+    if (!aTag) return null;
+
+    // Display text usually includes <br>
+    // so we split lines here to preserve break.
+    return {
+      href: aTag.getAttribute("href"),
+      lines: aTag.innerHTML.split(/<br\s*\/?>/i),
+    };
+  } catch (err) {
+    // Parsing failed, fallback to raw string.
+    console.error("Failed to parse link in description:", err);
+    return null;
+  }
+}
+
 // Handles links (<a> tags → styled link), plain text descriptions, and
 // expandable tracebacks (with copy/fullscreen).
 // Expansion tracked in `expandedRows` and toggled on click.
@@ -62,45 +90,26 @@ function renderDescriptionCell(info) {
     info.table.options.meta;
   const expanded = expandedRows[rowId]?.description ?? !collapseTracebacks;
 
-  // Links to scheduler config files are passed as html.
-  if (description.startsWith("<a href")) {
-    // Create a temporary element to store link in
-    // so that we can strip out the url and display text.
-    try {
-      const tempDiv = document.createElement("div");
-      tempDiv.innerHTML = description;
-
-      const aTag = tempDiv.querySelector("a");
-      if (aTag) {
-        const href = aTag.getAttribute("href");
-        const linkHtml = aTag.innerHTML;
-        // Display text usually includes <br>
-        // so we split lines here to preserve break.
-        const lines = linkHtml.split(/<br\s*\/?>/i);
-
-        return (
-          <div className="p-2 rounded">
-            <a
-              href={href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sky-500 underline hover:text-sky-300"
-            >
-              {/* Iterate over the link text lines */}
-              {lines.map((line, idx) => (
-                <React.Fragment key={idx}>
-                  {line}
-                  {idx < lines.length - 1 && <br />}
-                </React.Fragment>
-              ))}
-            </a>
-          </div>
-        );
-      }
-    } catch (err) {
-      // Parsing failed, fallback to raw string.
-      console.error("Failed to parse link in description:", err);
-    }
+  const link = parseDescriptionLink(description);
+  if (link) {
+    return (
+      <div className="p-2 rounded">
+        <a
+          href={link.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sky-500 underline hover:text-sky-300"
+        >
+          {/* Iterate over the link text lines */}
+          {link.lines.map((line, idx) => (
+            <React.Fragment key={idx}>
+              {line}
+              {idx < link.lines.length - 1 && <br />}
+            </React.Fragment>
+          ))}
+        </a>
+      </div>
+    );
   }
 
   if (!isTraceback) return formatCellValue(description);
@@ -337,6 +346,12 @@ export const defaultColumnOrder = [
   "timestampProcessEnd",
 ];
 
+// Format the "Time" column's value, a Unix timestamp in microseconds.
+function formatMicrosTimestamp(micros) {
+  if (!micros) return null;
+  return formatTimestamp(Math.floor(micros / 1000));
+}
+
 export const contextFeedColumns = [
   columnHelper.accessor("category_index", {
     header: "Category Index",
@@ -393,6 +408,7 @@ export const contextFeedColumns = [
     filterType: "string",
     meta: {
       tooltip: "Date of event.",
+      downloadValue: (value) => value,
     },
   }),
   columnHelper.accessor("event_dayobs", {
@@ -404,6 +420,7 @@ export const contextFeedColumns = [
     filterType: "string",
     meta: {
       tooltip: "Dayobs of event.",
+      downloadValue: (value) => value,
     },
   }),
   columnHelper.accessor(
@@ -421,17 +438,14 @@ export const contextFeedColumns = [
     {
       id: "time",
       header: "Time (UTC)",
-      cell: (info) => {
-        const micros = info.getValue();
-        if (!micros) return null;
-        return formatTimestamp(Math.floor(micros / 1000));
-      },
+      cell: (info) => formatMicrosTimestamp(info.getValue()),
       size: 220,
       minSize: 220,
       filterType: "number-range",
       meta: {
         tooltip: "Time (UTC) associated with event.",
         selectedKey: true,
+        downloadValue: (value) => formatMicrosTimestamp(value),
       },
     },
   ),
@@ -443,6 +457,7 @@ export const contextFeedColumns = [
     filterType: "number-range",
     meta: {
       tooltip: "Time (TAI) associated with event.",
+      downloadValue: (value) => formatTimestamp(value),
     },
   }),
   columnHelper.accessor("event_time_chile", {
@@ -453,6 +468,7 @@ export const contextFeedColumns = [
     filterType: "number-range",
     meta: {
       tooltip: "Time (Chile) associated with event.",
+      downloadValue: (value) => formatTimestamp(value, "America/Santiago"),
     },
   }),
   columnHelper.accessor("name", {
@@ -463,6 +479,7 @@ export const contextFeedColumns = [
     filterType: "string",
     meta: {
       tooltip: "Name of event and link to details (if available).",
+      downloadValue: (value) => (value ? formatCellValue(value) : ""),
     },
     cell: renderNameCell,
   }),
@@ -475,6 +492,11 @@ export const contextFeedColumns = [
     meta: {
       tooltip: "Description of event or expandable error traceback.",
       isExpandable: (row) => row.finalStatus === "Traceback",
+      downloadValue: (value) => {
+        if (!value) return "";
+        const link = parseDescriptionLink(value);
+        return link ? link.lines.join("\n") : formatCellValue(value);
+      },
     },
     cell: renderDescriptionCell,
   }),
@@ -496,6 +518,7 @@ export const contextFeedColumns = [
           config.length > 0
         );
       },
+      downloadValue: (value) => (value ? formatCellValue(value) : ""),
     },
     cell: renderConfigCell,
   }),
@@ -530,6 +553,7 @@ export const contextFeedColumns = [
     filterType: "number-range",
     meta: {
       tooltip: "Timestamp at start of process.",
+      downloadValue: (value) => formatTimestamp(value),
     },
   }),
   columnHelper.accessor("timestampConfigureStart", {
@@ -540,6 +564,7 @@ export const contextFeedColumns = [
     filterType: "number-range",
     meta: {
       tooltip: "Timestamp at start of configuration.",
+      downloadValue: (value) => formatTimestamp(value),
     },
   }),
   columnHelper.accessor("timestampConfigureEnd", {
@@ -550,6 +575,7 @@ export const contextFeedColumns = [
     filterType: "number-range",
     meta: {
       tooltip: "Timestamp at end of configuration.",
+      downloadValue: (value) => formatTimestamp(value),
     },
   }),
   columnHelper.accessor("timestampRunStart", {
@@ -560,6 +586,7 @@ export const contextFeedColumns = [
     filterType: "number-range",
     meta: {
       tooltip: "Timestamp at start of run.",
+      downloadValue: (value) => formatTimestamp(value),
     },
   }),
   columnHelper.accessor("timestampProcessEnd", {
@@ -570,6 +597,7 @@ export const contextFeedColumns = [
     filterType: "number-range",
     meta: {
       tooltip: "Timestamp at end of process.",
+      downloadValue: (value) => formatTimestamp(value),
     },
   }),
 ];

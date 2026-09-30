@@ -69,6 +69,9 @@ const CONTEXTFEED_BLOCK_LOOKUP = {
  *   resizeColumn a column whose size equals its minSize, so clamping is testable
  *   tooltip      a column with meta.tooltip, and text unique to that tooltip
  *   singleValue  a column with exactly one unique value under `mocks`
+ *   download     rows every loaded record gives the CSV under `mocks`, a
+ *                startTime/endTime window that shows fewer of them, and any
+ *                display-only column header the CSV should still include
  */
 
 /** @type {Array<Record<string, any>>} */
@@ -118,6 +121,16 @@ export const DATATABLE_PAGES = [
     },
     // The default fixture is 30 records all on y_10.
     singleValue: { column: "Filter", mocks: {} },
+    download: {
+      rows: 30,
+      // Records start at 2026-01-02T00:00:00Z, one per minute; this window
+      // shows the first 15.
+      window: {
+        startTime: 1767312000000,
+        endTime: 1767312000000 + 14 * 60_000,
+      },
+      displayOnlyHeader: "RubinTV",
+    },
     emptyMocks: { "data-log": { data_log: [] } },
     blocks: {
       mocks: {
@@ -202,6 +215,14 @@ export const DATATABLE_PAGES = [
     singleValue: {
       column: "Event Type",
       mocks: { "context-feed": generateContextFeedMock(5) },
+    },
+    download: {
+      // All 12 fixture events, including the 2 AuxTel ones that the default
+      // event type filter hides from the table.
+      rows: 12,
+      // 20:00 to 20:30 on 2026-01-01; events run until 22:10.
+      window: { startTime: 1767297600000, endTime: 1767299400000 },
+      displayOnlyHeader: null,
     },
     emptyMocks: { "context-feed": { data: [], cols: [] } },
     blocks: {

@@ -1,22 +1,19 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useSearch } from "@tanstack/react-router";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import AppletHeader from "@/components/AppletHeader";
+import DownloadButton from "@/components/DownloadButton";
 import { TELESCOPES } from "@/components/Parameters";
 import DataLogTable from "@/components/DataLogTable.jsx";
 import TimelineChart from "@/components/TimelineChart";
 import TipsCard from "@/components/TipsCard";
 import SelectedTimeRangeBar from "@/components/SelectedTimeRangeBar";
 import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
-import DownloadIcon from "../assets/DownloadIcon.svg";
+import { getTableDownloadData } from "@/components/DataTable/tableUtils";
+import { buildDownloadFilename, toCsv } from "@/utils/downloadUtils";
 import {
   fetchDataLogEntriesFromConsDB,
   fetchDataLogEntriesFromExposureLog,
@@ -331,6 +328,26 @@ function DataLog() {
     });
   }, [dataLogTableData, selectedTimeRange]);
 
+  const tableRef = useRef();
+
+  // Download the table's visible columns for every loaded exposure,
+  // ignoring the selected time range and any table filters or sorting.
+  const handleDownload = () => {
+    const { rows, columns } = getTableDownloadData(
+      tableRef.current.getTable(),
+      dataLogTableData,
+    );
+    return {
+      content: toCsv(rows, columns),
+      filename: buildDownloadFilename(
+        "data-log",
+        { telescope, startDayobs, endDayobs },
+        "csv",
+      ),
+      mimeType: "text/csv",
+    };
+  };
+
   const displayedNotifications =
     tableLoading || almanacLoading
       ? processedNotifications.filter(
@@ -356,16 +373,10 @@ function DataLog() {
             description="Exposure metadata and related fields from the ConsDB, Exposure Log, Transformed EFD, Zephyr & Jira."
             actions={
               <>
-                <Popover>
-                  <PopoverTrigger className="min-w-4 cursor-pointer">
-                    <img src={DownloadIcon} />
-                  </PopoverTrigger>
-                  <PopoverContent className="bg-black text-white text-sm border-yellow-700">
-                    This is a placeholder for the download/export button. Once
-                    implemented, clicking here will download the data shown in
-                    the table to a .csv file.
-                  </PopoverContent>
-                </Popover>
+                <DownloadButton
+                  onDownload={handleDownload}
+                  disabled={tableLoading || dataLogTableData.length === 0}
+                />
                 {/* Button to toggle timeline visibility */}
                 <Button
                   onClick={() => setTimelineVisible((prev) => !prev)}
@@ -492,6 +503,7 @@ function DataLog() {
 
         {/* Table */}
         <DataLogTable
+          ref={tableRef}
           telescope={telescope}
           data={filteredDataLogTableData}
           dataLogLoading={tableLoading}
