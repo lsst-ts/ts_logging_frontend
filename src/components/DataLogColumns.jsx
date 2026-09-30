@@ -2,6 +2,7 @@ import { createColumnHelper } from "@tanstack/react-table";
 import RubinTVLink from "@/components/RubinTVLink";
 import {
   formatCellValue,
+  getRubinTVLinkUrl,
   DEFAULT_PIXEL_SCALE_MEDIAN,
   PSF_SIGMA_FACTOR,
 } from "@/utils/utils";
@@ -62,6 +63,12 @@ const commonColumns = [
           filterType: null,
           meta: {
             tooltip: "Link to RubinTV. Opens in a new tab.",
+            downloadValue: (_value, row) =>
+              getRubinTVLinkUrl({
+                dayObs: row.day_obs,
+                seqNum: row.seq_num,
+                exposureName: row.exposure_name,
+              }).url,
           },
         }),
       ]),
@@ -141,6 +148,7 @@ const commonColumns = [
     filterType: "number-range",
     meta: {
       tooltip: "Spatially-averaged duration of exposure, accurate to 10ms.",
+      downloadValue: (value) => formatCellValue(value, { decimals: 2 }),
     },
   }),
 
@@ -157,6 +165,7 @@ const commonColumns = [
       tooltip: isScientificNightlyDigest
         ? "Science program."
         : "Science program, linked to Zephyr/Jira where possible. Opens in a new tab.",
+      downloadValue: (value) => (value ? formatCellValue(value) : ""),
     },
   }),
   columnHelper.accessor("block_description", {
@@ -167,6 +176,7 @@ const commonColumns = [
     filterType: "string",
     meta: {
       tooltip: "BLOCK descriptions from Zephyr/Jira.",
+      downloadValue: (value) => value,
     },
   }),
   columnHelper.accessor("img_type", {
