@@ -78,7 +78,7 @@ const commonColumns = [
       tooltip: "Official name of the exposure.",
     },
   }),
-columnHelper.accessor("exposure_id", {
+  columnHelper.accessor("exposure_id", {
     header: "Exposure Id",
     cell: ({ row }) => (
       <DataLog2ContextFeedLink
