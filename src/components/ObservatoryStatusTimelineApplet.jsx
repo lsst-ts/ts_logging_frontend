@@ -15,7 +15,6 @@ function ObservatoryStatusTimelineApplet({
       required={required}
       loading={loading}
       badgeAriaLabel="Observatory Status data availability warning"
-      downloadAriaLabel="Download observatory status data"
       infoAriaLabel="Observatory status information"
       information="A timeline of observatory status changes. Dragging over the chart selects a time range; double-clicking resets it. The selected range is reflected in the table below."
     >
