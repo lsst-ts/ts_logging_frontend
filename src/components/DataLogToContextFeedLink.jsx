@@ -1,9 +1,8 @@
-import { getContextFeedUrl, formatCellValue } from "@/utils/utils";
-
-const telescopePrefixes = {
-  MC: "Simonyi",
-  AT: "AuxTel",
-};
+import {
+  getContextFeedUrl,
+  formatCellValue,
+  TELESCOPE_PREFIXES,
+} from "@/utils/utils";
 
 export default function DataLogToContextFeedLink({
   exposureId,
@@ -15,7 +14,7 @@ export default function DataLogToContextFeedLink({
   if (!exposureId) return formatCellValue(exposureId);
 
   const telescope = exposureName
-    ? telescopePrefixes[exposureName.slice(0, 2)] ?? ""
+    ? TELESCOPE_PREFIXES[exposureName.slice(0, 2)] ?? ""
     : "";
 
   const url = getContextFeedUrl(telescope, dayObs, obsStartTime, windowSeconds);

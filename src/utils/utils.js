@@ -14,6 +14,11 @@ import { GLOBAL_SEARCH_PARAMS } from "@/routes";
 export const DEFAULT_EXTERNAL_INSTANCE_URL =
   "https://usdf-rsp.slac.stanford.edu";
 
+export const TELESCOPE_PREFIXES = {
+  MC: "Simonyi",
+  AT: "AuxTel",
+};
+
 export const SITE_CONFIGURATION = Object.freeze({
   "usdf-rsp.slac.stanford.edu": {
     rubinTVSiteSuffix: "summit-usdf",
