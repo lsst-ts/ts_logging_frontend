@@ -120,6 +120,32 @@ export function generateExposureLogMock(entries) {
 }
 
 /**
+ * Generates an `/exposures` API response.
+ *
+ * The exposure records come from generateDataLogMock, which already has the
+ * ConsDB exposure fields; the other fields match the empty default fixture.
+ *
+ * @param {number} count
+ * @param {object} [options] - Same options as generateDataLogMock
+ * @returns {object}
+ */
+export function generateExposuresMock(count, options = {}) {
+  const exposures = generateDataLogMock(count, options).data_log;
+  return {
+    exposures,
+    exposures_count: exposures.length,
+    sum_exposure_time: 0,
+    on_sky_exposures_count: 0,
+    total_on_sky_exposure_time: 0,
+    open_dome_times: [],
+    day_obs_open_dome_hours: {},
+    open_dome_error: null,
+    night_on_sky_time_accounting: {},
+    time_accounting_error: null,
+  };
+}
+
+/**
  * Generates a context-feed API response.
  *
  * Rows are spaced a minute apart from 20:00 UTC on the given dayobs, which
