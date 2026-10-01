@@ -37,7 +37,7 @@ test.describe("Scientific Nightly Digest — nav menu", () => {
     await page.goto(DIGEST_URL);
     await nav(page).getByRole("link", { name: "Data Log" }).click();
 
-    await expect(page).toHaveURL(/\/nightlydigest\/data-log/);
+    await expect(page).toHaveURL((url) => url.pathname === "/data-log");
     await expect(page).toHaveURL(new RegExp(`startDayobs=${TEST_DAYOBS}`));
     await expect(page).toHaveURL(/telescope=Simonyi/);
   });
