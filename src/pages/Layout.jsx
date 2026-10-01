@@ -7,6 +7,7 @@ import { SidebarToggle } from "@/components/SidebarToggle.jsx";
 import { AppSidebar } from "@/components/AppSidebar.jsx";
 import { TELESCOPES } from "@/components/Parameters";
 import { getKeyByValue } from "@/utils/utils";
+import { isScientificNightlyDigest } from "@/utils/appConfig";
 import { dayObsIntToDateTime } from "@/utils/timeUtils";
 import { useHostConfig } from "@/contexts/HostConfigContext";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -117,7 +118,7 @@ export default function Layout({ children }) {
   };
 
   useEffect(() => {
-    if (!retentionDays) return;
+    if (!retentionDays || isScientificNightlyDigest) return;
 
     addNotification({
       type: "systemNotice",
