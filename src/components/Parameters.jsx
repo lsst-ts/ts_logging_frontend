@@ -38,7 +38,7 @@ function Parameters({
   onInstrumentChange,
 }) {
   const displayRange = getDisplayDateRange(dayobs, noOfNights);
-  const { getAvailableDayObsRange } = useHostConfig();
+  const { getAvailableDayObsRange, retentionDays } = useHostConfig();
 
   const { min: minDayObs } = getAvailableDayObsRange();
 
@@ -78,8 +78,17 @@ function Parameters({
         <Label htmlFor="dayobs" className="text-white text-base pb-1">
           Night (dayobs)
         </Label>
+        {retentionDays && (
+          <small
+            id="dayobs-description"
+            className="text-xs text-white font-extralight block pb-1"
+          >
+            *within the previous {retentionDays} nights
+          </small>
+        )}
         <UTCDatePicker
           id="dayobs"
+          aria-describedby={retentionDays ? "dayobs-description" : undefined}
           selectedDate={dayobs}
           onDateChange={onDayobsChange}
           disabled={{
@@ -95,7 +104,9 @@ function Parameters({
           id="noOfNights-description"
           className="text-xs text-white font-extralight block pb-1"
         >
-          *up to and including selected dayobs
+          {retentionDays
+            ? `≤${retentionDays} nights up to and including the selected dayobs`
+            : "*up to and including selected dayobs"}
         </small>
         <Input
           type="number"
