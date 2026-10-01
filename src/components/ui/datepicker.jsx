@@ -17,6 +17,7 @@ export function DatePicker({
   buttonClassName,
   buttonContent,
   disabled,
+  today,
   ...props
 }) {
   return (
@@ -56,6 +57,7 @@ export function DatePicker({
               : undefined
           }
           disabled={disabled}
+          today={today}
           initialFocus
         />
       </PopoverContent>
