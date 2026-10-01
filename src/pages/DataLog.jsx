@@ -58,13 +58,13 @@ function DataLog() {
       : [
           {
             label: "View Context Feed",
-            to: "/nightlydigest/context-feed",
+            to: "/context-feed",
             search,
           },
         ]),
     {
       label: "View Plots",
-      to: "/nightlydigest/plots",
+      to: "/plots",
       search,
     },
   ];
