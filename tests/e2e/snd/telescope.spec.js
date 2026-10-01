@@ -20,7 +20,7 @@ test.describe("Scientific Nightly Digest — Simonyi only", () => {
 
   test("telescope=AuxTel in the URL is rejected", async ({ page }) => {
     await page.goto(
-      `/nightlydigest/?startDayobs=${TEST_DAYOBS}&endDayobs=${TEST_DAYOBS}&telescope=AuxTel`,
+      `./?startDayobs=${TEST_DAYOBS}&endDayobs=${TEST_DAYOBS}&telescope=AuxTel`,
     );
 
     await expect(page.getByText("Something went wrong")).toBeVisible();

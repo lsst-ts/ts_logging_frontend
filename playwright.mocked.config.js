@@ -43,7 +43,7 @@ export default defineConfig({
       testDir: "./tests/e2e/mocked",
       use: {
         ...devices["Desktop Chrome"],
-        baseURL: `http://localhost:${PORT}`,
+        baseURL: `http://localhost:${PORT}/nightlydigest/`,
       },
     },
     {
@@ -51,7 +51,7 @@ export default defineConfig({
       testDir: "./tests/e2e/snd",
       use: {
         ...devices["Desktop Chrome"],
-        baseURL: `http://localhost:${SND_PORT}`,
+        baseURL: `http://localhost:${SND_PORT}/nightlydigest/`,
       },
     },
   ],
