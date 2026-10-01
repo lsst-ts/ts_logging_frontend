@@ -17,11 +17,13 @@ export function DatePicker({
   buttonClassName,
   buttonContent,
   disabled,
+  ...props
 }) {
   return (
     <Popover>
       <PopoverTrigger asChild>
         <Button
+          {...props}
           variant={"outline"}
           className={cn(
             "w-[280px] justify-start text-left font-normal rounded-xs drop-shadow-lg drop-shadow-green-500",
