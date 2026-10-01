@@ -1,5 +1,5 @@
 // @ts-check
-import { test, expect } from "@playwright/test";
+import { test, expect } from "../helpers/snd-test.js";
 import { recordRequests, setupApiMocks } from "../helpers/mock-api.js";
 import { generateExposuresMock } from "../helpers/mock-generators.js";
 import { DIGEST_URL } from "../helpers/constants.js";
