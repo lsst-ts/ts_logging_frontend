@@ -246,18 +246,18 @@ function ObservingConditionsApplet({
       : [
           {
             label: "View Context Feed",
-            to: "/nightlydigest/context-feed",
+            to: "/context-feed",
             search,
           },
         ]),
     {
       label: "View Plots",
-      to: "/nightlydigest/plots",
+      to: "/plots",
       search,
     },
     {
       label: "View Data Log",
-      to: "/nightlydigest/data-log",
+      to: "/data-log",
       search,
     },
   ];

@@ -168,13 +168,13 @@ function Plots() {
       : [
           {
             label: "View Context Feed",
-            to: "/nightlydigest/context-feed",
+            to: "/context-feed",
             search,
           },
         ]),
     {
       label: "View Data Log",
-      to: "/nightlydigest/data-log",
+      to: "/data-log",
       search,
     },
   ];

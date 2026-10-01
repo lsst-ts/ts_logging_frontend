@@ -172,12 +172,12 @@ function ContextFeed() {
   const contextMenuItems = [
     {
       label: "View Data Log",
-      to: "/nightlydigest/data-log",
+      to: "/data-log",
       search,
     },
     {
       label: "View Plots",
-      to: "/nightlydigest/plots",
+      to: "/plots",
       search,
     },
   ];
