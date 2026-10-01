@@ -25,6 +25,10 @@ import { ChartContainer } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BAND_COLORS } from "@/components/PLOT_DEFINITIONS";
 import BarChartYAxisTick from "@/components/BarChartYAxisTick";
+import {
+  GroupByValues,
+  aggregateExposureBreakdown,
+} from "@/utils/exposureBreakdownUtils";
 
 import InfoIcon from "../assets/InfoIcon.svg";
 import DownloadIcon from "../assets/DownloadIcon.svg";
@@ -32,14 +36,6 @@ import DownloadIcon from "../assets/DownloadIcon.svg";
 const PlotByValues = Object.freeze({
   NUMBER: "Number",
   TIME: "Time",
-});
-
-const GroupByValues = Object.freeze({
-  OBSERVATION_REASON: "observation_reason",
-  IMG_TYPE: "img_type",
-  SCIENCE_PROGRAM: "science_program",
-  TARGET_NAME: "target_name",
-  FILTER: "physical_filter",
 });
 
 const SortByValues = Object.freeze({
@@ -163,65 +159,21 @@ function ExposureBreakdownApplet({
   // Memoize data handling computations
   const { chartData, chartConfig, totalFlaggedCount, totalFlaggedTime } =
     useMemo(() => {
-      const flaggedObsIds = new Set(flags.map((f) => f.obs_id));
-      const aggregatedMap = {};
+      const { groups, totalFlaggedCount, totalFlaggedTime } =
+        aggregateExposureBreakdown(exposureFields, flags, groupBy);
 
-      let totalFlaggedCount = 0;
-      let totalFlaggedTime = 0;
-
-      if (Array.isArray(exposureFields)) {
-        exposureFields.forEach((row) => {
-          const rawValue = row[groupBy];
-          const groupKey =
-            rawValue === null || rawValue === undefined || rawValue === ""
-              ? groupBy === GroupByValues.TARGET_NAME
-                ? "No target"
-                : "Unknown"
-              : rawValue;
-
-          const expTime = parseFloat(row.exp_time ?? 0);
-          const isFlagged = flaggedObsIds.has(row.exposure_name);
-
-          if (!aggregatedMap[groupKey]) {
-            aggregatedMap[groupKey] = {
-              groupKey,
-              unflagged: 0,
-              flagged: 0,
-              exposureIds: [],
-            };
-          }
-          aggregatedMap[groupKey].exposureIds.push(String(row.exposure_id));
-
-          if (plotBy === PlotByValues.TIME) {
-            if (isFlagged) {
-              const time = isNaN(expTime) ? 0 : expTime;
-              aggregatedMap[groupKey].flagged += time;
-              totalFlaggedTime += time;
-              totalFlaggedCount += 1;
-            } else {
-              aggregatedMap[groupKey].unflagged += isNaN(expTime) ? 0 : expTime;
-            }
-          } else {
-            if (isFlagged) {
-              aggregatedMap[groupKey].flagged += 1;
-              totalFlaggedCount += 1;
-            } else {
-              aggregatedMap[groupKey].unflagged += 1;
-            }
-          }
-        });
-      } else {
-        console.warn("exposureFields is not an array:", exposureFields);
-      }
-
-      let chartData = Object.values(aggregatedMap).map((entry) => {
-        const totalValue = entry.unflagged + entry.flagged;
+      const plotByTime = plotBy === PlotByValues.TIME;
+      let chartData = groups.map((group) => {
+        const unflagged = plotByTime
+          ? group.unflaggedTime
+          : group.unflaggedCount;
+        const flagged = plotByTime ? group.flaggedTime : group.flaggedCount;
         return {
-          groupKey: entry.groupKey,
-          unflagged: entry.unflagged,
-          flagged: entry.flagged,
-          exposureIds: entry.exposureIds,
-          totalValue,
+          groupKey: group.groupKey,
+          unflagged,
+          flagged,
+          exposureIds: group.exposureIds,
+          totalValue: unflagged + flagged,
         };
       });
 
