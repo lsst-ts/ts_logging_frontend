@@ -4,14 +4,14 @@ const host = window.location.host;
  * The base URL for the backend API endpoints.
  *
  * Uses `VITE_BACKEND_URL` if it was set at build time, otherwise combines the
- * HTTP protocol and host of the page to form the full API root path.
+ * HTTP protocol, host and base path of the page to form the full API root path.
  * Example: "https://example.com/nightlydigest/api"
  *
  * @type {string}
  */
 const backendLocation =
   import.meta.env.VITE_BACKEND_URL ||
-  `${httpProtocol}//${host}/nightlydigest/api`;
+  `${httpProtocol}//${host}${import.meta.env.BASE_URL}api`;
 
 /**
  * Fetches JSON data from the specified URL using a GET request.

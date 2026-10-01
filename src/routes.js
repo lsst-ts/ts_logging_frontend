@@ -277,7 +277,7 @@ const router = createRouter({
     plotsRoute,
     visitmapsRoute,
   ]),
-  basepath: "/nightlydigest",
+  basepath: import.meta.env.BASE_URL,
 
   // Converts search object to query string
   stringifySearch: (searchObj) => {
