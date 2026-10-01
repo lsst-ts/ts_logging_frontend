@@ -6,8 +6,16 @@ import {
 } from "../src/utils/retentionPolicyUtils";
 import { DateTime } from "luxon";
 
-vi.mock("../src/utils/utils", () => ({
+vi.mock("../src/utils/utils", async (importOriginal) => ({
+  ...(await importOriginal()),
   getSiteConfig: vi.fn(),
+}));
+
+const sndFlag = vi.hoisted(() => ({ value: false }));
+vi.mock("../src/utils/appConfig", () => ({
+  get isScientificNightlyDigest() {
+    return sndFlag.value;
+  },
 }));
 
 import { getSiteConfig } from "../src/utils/utils";
@@ -118,6 +126,34 @@ describe("getRetentionPolicy", () => {
     expect(result).toEqual({
       host: "test.example.com",
       retentionDays: null,
+    });
+  });
+
+  describe("Scientific Nightly Digest on localhost", () => {
+    beforeEach(async () => {
+      const actual = await vi.importActual("../src/utils/utils");
+      getSiteConfig.mockImplementation(actual.getSiteConfig);
+      globalThis.window = { location: { hostname: "localhost" } };
+    });
+
+    afterEach(() => {
+      sndFlag.value = false;
+    });
+
+    it("uses the SND dev site's retention policy when the flag is on", () => {
+      sndFlag.value = true;
+
+      expect(getRetentionPolicy()).toEqual({
+        host: "Scientific Nightly Digest Dev",
+        retentionDays: 7,
+      });
+    });
+
+    it("has no retention policy when the flag is off", () => {
+      expect(getRetentionPolicy()).toEqual({
+        host: "localhost",
+        retentionDays: null,
+      });
     });
   });
 });

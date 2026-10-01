@@ -3,7 +3,8 @@
  * @module retentionPolicyUtils
  */
 import { DateTime } from "luxon";
-import { getSiteConfig } from "./utils";
+import { getSiteConfig, SND_LOCAL_SITE } from "./utils";
+import { isScientificNightlyDigest } from "./appConfig";
 
 /**
  * Retrieves the retention policy for the current site based on hostname.
@@ -32,7 +33,10 @@ import { getSiteConfig } from "./utils";
  * // Returns: { host: "example.com", retentionDays: null }
  */
 export const getRetentionPolicy = () => {
-  const host = window.location.hostname;
+  const host =
+    isScientificNightlyDigest && window.location.hostname === "localhost"
+      ? SND_LOCAL_SITE
+      : window.location.hostname;
 
   try {
     const { hostDisplayName, retentionDays } = getSiteConfig(host);
