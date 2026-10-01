@@ -51,7 +51,7 @@ export default defineConfig({
       testDir: "./tests/e2e/snd",
       use: {
         ...devices["Desktop Chrome"],
-        baseURL: `http://localhost:${SND_PORT}/nightlydigest/`,
+        baseURL: `http://localhost:${SND_PORT}/`,
       },
     },
   ],
@@ -63,7 +63,7 @@ export default defineConfig({
     },
     {
       command: `npm run dev -- --port ${SND_PORT} --strictPort`,
-      url: `http://localhost:${SND_PORT}/nightlydigest/`,
+      url: `http://localhost:${SND_PORT}/`,
       reuseExistingServer: !process.env.CI,
       env: { VITE_SCIENTIFIC_NIGHTLY_DIGEST: "true" },
     },

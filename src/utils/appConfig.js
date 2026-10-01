@@ -1,11 +1,4 @@
-/**
- * Env vars are always strings, so "false" would be truthy if used directly.
- *
- * @param {string|undefined} value - The raw environment variable value.
- * @returns {boolean} True if the value spells out an affirmative.
- */
-const parseBooleanEnv = (value) =>
-  ["true", "1", "yes", "on"].includes(String(value).trim().toLowerCase());
+import { parseBooleanEnv } from "./parseBooleanEnv";
 
 /**
  * Whether this build is the Scientific Nightly Digest: a separate, public-facing
