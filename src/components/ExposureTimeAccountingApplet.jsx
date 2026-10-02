@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-
+import { cn } from "@/lib/utils";
 import { Cell, Bar, BarChart, XAxis, YAxis } from "recharts";
 
 import { Button } from "@/components/ui/button";
@@ -13,17 +13,20 @@ import {
 } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 
+import WarningTooltip from "@/components/WarningTooltip";
+import { getObsAvailabilityWarningText } from "@/utils/observatoryStatusUtils";
+import { OBSERVATORY_STATE_AVAILABILITY_STATUS } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
+
 import DownloadIcon from "../assets/DownloadIcon.svg";
 import InfoIcon from "../assets/InfoIcon.svg";
-import WarningIcon from "../assets/WarningIcon";
 
 /**
- * Time accounting logic for night analysis.
+ * Exposure time accounting logic for night analysis.
  *
  * Full documentation:
  *   - doc/time_accounting.rst
  *
- * See "Definitions and Assumptions for Time Accounting"
+ * See "Definitions and Assumptions for Exposure Time Accounting"
  * for detailed rules used in this component.
  *
  * @param {Object} props
@@ -36,9 +39,14 @@ import WarningIcon from "../assets/WarningIcon";
  * @param {boolean} props.faultDataUnavailable Whether fault data is unavailable.
  * @param {string} props.faultErrorMessage Message shown when fault data is unavailable.
  * @param {string} props.domeError Error message when dome data is unavailable.
+ * @param {boolean} props.exposuresError Whether the exposures fetch failed.
+ * @param {boolean} props.exposureTimeAccountingError Whether the exposure time-accounting data is unavailable.
+ * @param {Object} props.obsStatusAvailability Observatory status availability metadata.
+ * @param {boolean} props.obsStatusFetchError Whether the observatory status fetch failed.
+ * @param {boolean} props.almanacFetchError Whether the almanac fetch failed.
  */
 
-function TimeAccountingApplet({
+function ExposureTimeAccountingApplet({
   loading,
   onSkyTimeAccounting,
   sumOnSkyExpTime,
@@ -48,10 +56,65 @@ function TimeAccountingApplet({
   faultDataUnavailable,
   faultErrorMessage,
   domeError,
+  exposuresError,
+  exposureTimeAccountingError,
+  obsStatusAvailability,
+  obsStatusFetchError,
+  almanacFetchError,
 }) {
   const domeUnavailable = Boolean(domeError);
 
   const [cardVisible, setCardVisible] = useState(true);
+
+  const obsAvailabilityStatus = obsStatusAvailability?.status ?? null;
+
+  const warningItems = useMemo(() => {
+    const items = [];
+
+    // Calculated fault can't be computed when one of its inputs is missing.
+    if (faultDataUnavailable && faultErrorMessage) {
+      items.push(faultErrorMessage);
+    }
+
+    if (domeUnavailable) {
+      items.push("Dome data unavailable.");
+    }
+
+    // This applet can render most of its data for dates before obs-status
+    // data is available, so we only warn about the obs-status range gap
+    // rather than hiding the plot.
+    if (
+      obsAvailabilityStatus === OBSERVATORY_STATE_AVAILABILITY_STATUS.NONE ||
+      obsAvailabilityStatus === OBSERVATORY_STATE_AVAILABILITY_STATUS.PARTIAL
+    ) {
+      const availabilityWarning = getObsAvailabilityWarningText({
+        almanacFetchError,
+        obsStatusFetchError,
+        obsStatusAvailability,
+      });
+      if (availabilityWarning) items.push(availabilityWarning);
+    }
+
+    return items;
+  }, [
+    faultDataUnavailable,
+    faultErrorMessage,
+    domeUnavailable,
+    obsStatusFetchError,
+    almanacFetchError,
+    obsAvailabilityStatus,
+    obsStatusAvailability,
+  ]);
+
+  const dataFetchErrorText = useMemo(() => {
+    if (exposuresError) {
+      return "Exposure data could not be fetched.";
+    }
+    if (exposureTimeAccountingError) {
+      return "Exposure time accounting data could not be fetched.";
+    }
+    return null;
+  }, [exposuresError, exposureTimeAccountingError]);
 
   const [expPercent, nonExpPercent] = useMemo(() => {
     if (!elapsedTwilightHours || elapsedTwilightHours === 0) {
@@ -145,7 +208,23 @@ function TimeAccountingApplet({
   return (
     <Card className="@container border-none p-0 bg-stone-800 gap-2">
       <AppletHeader
-        title="Time Accounting"
+        title="Exposure Time Accounting"
+        titleBadge={
+          !loading && warningItems.length > 0 ? (
+            <div className="flex place-items-center-safe">
+              <WarningTooltip
+                ariaLabel="Exposure Time Accounting data availability warning"
+                iconClassName="h-4"
+              >
+                <div className="flex flex-col gap-1">
+                  {warningItems.map((item) => (
+                    <span key={item}>{item}</span>
+                  ))}
+                </div>
+              </WarningTooltip>
+            </div>
+          ) : undefined
+        }
         actions={
           <>
             <Popover>
@@ -225,26 +304,23 @@ function TimeAccountingApplet({
       />
 
       {cardVisible && (
-        <CardContent className="flex flex-col gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 h-[320px] font-thin">
+        <CardContent
+          className={cn(
+            "flex flex-col gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 font-thin",
+            dataFetchErrorText ? "h-[100px]" : "h-[320px]",
+          )}
+        >
           {loading ? (
             <div className="flex-grow grid grid-cols-3 w-full h-full gap-2">
               <Skeleton className="col-span-1 h-full min-h-[180px] bg-stone-900" />
               <Skeleton className="col-span-2 h-full min-h-[180px] bg-stone-900" />
             </div>
+          ) : dataFetchErrorText ? (
+            <div className="h-full place-content-center-safe">
+              <p className="text-stone-400 text-center">{dataFetchErrorText}</p>
+            </div>
           ) : (
             <div className="h-full w-full flex-grow min-w-0 grid grid-cols-3 grid-rows-6">
-              {faultDataUnavailable && (
-                <div className="col-span-3 flex mr-1 text-yellow-400 font-normal text-sm mb-0">
-                  <WarningIcon />
-                  <span> {faultErrorMessage}</span>
-                </div>
-              )}
-              {domeUnavailable && (
-                <div className="col-span-3 flex mr-1 text-yellow-400 font-normal text-sm mb-1">
-                  <WarningIcon />
-                  <span> Dome data unavailable.</span>
-                </div>
-              )}
               <div className="col-span-1 flex flex-col items-center row-span-5">
                 {nonExpPercent > 0 && (
                   <div className="text-neutral-200 font-thin text-center">
@@ -364,4 +440,4 @@ function TimeAccountingApplet({
     </Card>
   );
 }
-export default TimeAccountingApplet;
+export default ExposureTimeAccountingApplet;

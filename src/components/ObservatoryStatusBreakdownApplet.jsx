@@ -16,6 +16,7 @@ import {
   getObservatoryStatusDefaultColumnOrder,
   getObservatoryStatusDefaultColumnVisibility,
 } from "@/components/ObservatoryStatusBreakdownColumns";
+import WarningTooltip from "@/components/WarningTooltip";
 
 import { OBSERVATORY_STATE_AVAILABILITY_STATUS } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
 import { getObsAvailabilityWarningText } from "@/utils/observatoryStatusUtils";
@@ -102,6 +103,20 @@ function ObservatoryStatusBreakdownApplet({
     <Card className="@container border-none p-0 bg-stone-800 gap-2">
       <AppletHeader
         title="Detailed Breakdown of Observatory States"
+        titleBadge={
+          !loading &&
+          obsAvailabilityStatus ===
+            OBSERVATORY_STATE_AVAILABILITY_STATUS.PARTIAL ? (
+            <div className="flex place-items-center-safe">
+              <WarningTooltip
+                ariaLabel="Observatory Status data availability warning"
+                iconClassName="h-4"
+              >
+                {obsAvailabilityWarningText}
+              </WarningTooltip>
+            </div>
+          ) : undefined
+        }
         actions={
           <>
             <Popover>

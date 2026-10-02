@@ -40,12 +40,10 @@ import ObservatoryStatusCumulativeApplet from "@/components/ObservatoryStatusCum
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
 import VisitMapStaticApplet from "@/components/VisitMapStaticApplet.jsx";
 import WarningTooltip from "@/components/WarningTooltip";
-import { OBSERVATORY_STATE_AVAILABILITY_STATUS } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
-
-const EMPTY_OBS_STATUS_AVAILABILITY = {
-  status: "none",
-  available_from: null,
-};
+import {
+  OBSERVATORY_STATE_AVAILABILITY_STATUS,
+  EMPTY_OBS_STATUS_AVAILABILITY,
+} from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
 
 /**
  * Builds the warning content shown on the Time Loss and Efficiency metric
@@ -257,12 +255,6 @@ export default function Digest() {
           addNotification({
             type: "error",
             source: "dome-times",
-          });
-        }
-        if (data.time_accounting_error) {
-          addNotification({
-            type: "error",
-            source: "time-accounting",
           });
         }
       })
