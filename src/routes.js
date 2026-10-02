@@ -294,12 +294,13 @@ const router = createRouter({
   routeTree: rootRoute.addChildren([
     dashboardRoute,
     dataLogRoute,
-    // The Context Feed is internal-only; the Scientific Nightly Digest has no
-    // route for it at all, so the path 404s rather than rendering the page.
+    // The Context Feed & the Time Accounting pages are internal-only;
+    // the Scientific Nightly Digest has no routes for them at all, so
+    // the paths 404s rather than rendering the page.
     ...(isScientificNightlyDigest ? [] : [contextFeedRoute]),
     plotsRoute,
     visitmapsRoute,
-    timeAccountingRoute,
+    ...(isScientificNightlyDigest ? [] : [timeAccountingRoute]),
   ]),
   basepath: import.meta.env.BASE_URL,
 
