@@ -409,9 +409,6 @@ function TimeAccounting() {
         (notification) => notification.type !== "error",
       );
 
-  console.log("nightHours: ", nightHours);
-  console.log("domeTotals: ", domeTotals);
-
   return (
     <>
       <div className="flex flex-col w-full h-full p-8 gap-4">
