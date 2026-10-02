@@ -30,7 +30,7 @@ export function getDataLogUrl(
   telescope = "Simonyi",
   endDayobs = dayobs,
 ) {
-  return `/nightlydigest/data-log?startDayobs=${dayobs}&endDayobs=${endDayobs}&telescope=${telescope}`;
+  return `data-log?startDayobs=${dayobs}&endDayobs=${endDayobs}&telescope=${telescope}`;
 }
 
 // Generic table interactions live in datatable-helpers.js so there is one
