@@ -3,6 +3,7 @@ import { test, expect } from "@playwright/test";
 import { setupApiMocks } from "../../helpers/mock-api.js";
 import { DIGEST_URL } from "../../helpers/constants.js";
 import { dragOn, getTimeParams } from "../../helpers/plots-helpers.js";
+import { downloadCsv } from "../../helpers/download-helpers.js";
 import {
   observatoryStatusCard,
   observatoryStatusTooltip,
@@ -125,16 +126,40 @@ test.describe("Observatory Status applet — full availability", () => {
     ).toBeVisible();
   });
 
-  test("opens the download placeholder popover", async ({ page }) => {
-    const card = observatoryStatusCard(page);
-    await card
-      .getByRole("button", { name: "Download observatory status data" })
-      .click();
-    await expect(
-      page.getByText("This is a placeholder for the download/export button.", {
-        exact: true,
-      }),
-    ).toBeVisible();
+  test("downloads the raw intervals as CSV", async ({ page }) => {
+    const button = observatoryStatusCard(page).getByRole("button", {
+      name: "Download CSV",
+    });
+
+    const { filename, headers, rows } = await downloadCsv(page, button);
+
+    // The applet reads the dayobs range and telescope from whichever route
+    // it's on; a missing param would show up here as "undefined".
+    expect(filename).toBe(
+      "nightlydigest_observatory-status-intervals_Simonyi_20260101-20260101.csv",
+    );
+    expect(headers).toEqual([
+      "start_time_ms",
+      "end_time_ms",
+      "start_state",
+      "end_state",
+      "start_note",
+      "end_note",
+      "start_labels",
+      "end_labels",
+    ]);
+    expect(rows).toEqual([
+      {
+        start_time_ms: "1767232800000",
+        end_time_ms: "1767243600000",
+        start_state: "2",
+        end_state: "2",
+        start_note: "",
+        end_note: "",
+        start_labels: "OPERATIONAL",
+        end_labels: "OPERATIONAL",
+      },
+    ]);
   });
 
   test("hovering a marker shows tooltip with time, state and duration", async ({
