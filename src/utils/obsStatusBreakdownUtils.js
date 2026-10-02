@@ -455,3 +455,41 @@ export function buildObservatoryStatusBreakdown({
     nights,
   };
 }
+
+/**
+ * Filter the breakdown rows to only those with active (non-zero) duration.
+ *
+ * Summary rows are always kept. State parent rows with a zero total are
+ * removed entirely (all of their combinations are also zero). For parent
+ * rows that have some active time, only their zero-duration combination
+ * children are removed. Rows are returned in their original order.
+ *
+ * @param {Array<object>} rows - Rows produced by buildObservatoryStatusBreakdown.
+ * @returns {Array<object>} Rows filtered to active states/combinations.
+ */
+export function filterToActiveStates(rows = []) {
+  return rows
+    .map((row) => {
+      // Summary rows are always shown.
+      if (row.rowType === "summary") {
+        return row;
+      }
+
+      // State parents: drop entirely when they have no active time.
+      if (row.rowType === "state") {
+        if (!row.total) {
+          return null;
+        }
+
+        const activeSubRows = (row.subRows ?? []).filter(
+          (subRow) => subRow.total,
+        );
+
+        return { ...row, subRows: activeSubRows };
+      }
+
+      // Combination rows (top-level or within a kept parent).
+      return row.total ? row : null;
+    })
+    .filter(Boolean);
+}

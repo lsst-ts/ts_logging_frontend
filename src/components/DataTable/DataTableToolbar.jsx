@@ -14,6 +14,9 @@ import ToggleExpandCollapseRows from "@/components/toggle-expand-collapse-rows";
  * @param {boolean} props.config.showExpandCollapseGroups - Show expand/collapse button
  * @param {boolean} props.config.showReset - Show reset button
  * @param {React.ReactNode} props.config.leftContent - Custom content for left section
+ * @param {React.ReactNode} props.config.afterColumnVisibility - Custom content
+ *   rendered after the column-visibility button and before the expand/collapse
+ *   button.
  * @param {React.ReactNode} props.config.centerContent - Custom content for center section
  * @param {React.ReactNode} props.config.rightContent - Custom content for right section
  */
@@ -30,6 +33,7 @@ function DataTableToolbar({
     expandRowNoun = "Groups",
     showReset = true,
     leftContent = null,
+    afterColumnVisibility = null,
     centerContent = null,
     rightContent = null,
   } = config;
@@ -39,6 +43,7 @@ function DataTableToolbar({
       {/* Left section */}
       <div className="flex gap-4">
         {showColumnVisibility && <ColumnVisibilityPopover table={table} />}
+        {afterColumnVisibility}
         {showExpandCollapseGroups && (
           <ToggleExpandCollapseRows
             table={table}

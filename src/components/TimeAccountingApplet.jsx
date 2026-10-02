@@ -25,6 +25,17 @@ import WarningIcon from "../assets/WarningIcon";
  *
  * See "Definitions and Assumptions for Time Accounting"
  * for detailed rules used in this component.
+ *
+ * @param {Object} props
+ * @param {boolean} props.loading Whether the underlying data is still loading.
+ * @param {Object} props.onSkyTimeAccounting On-sky time accounting metrics.
+ * @param {number} props.sumOnSkyExpTime Total on-sky exposure time in seconds.
+ * @param {number} props.elapsedTwilightHours Completed 12° twilight hours in the selected range.
+ * @param {number} props.closedDomeHours Closed-dome hours during the night.
+ * @param {number} props.calculatedFaultHours Calculated fault hours.
+ * @param {boolean} props.faultDataUnavailable Whether fault data is unavailable.
+ * @param {string} props.faultErrorMessage Message shown when fault data is unavailable.
+ * @param {string} props.domeError Error message when dome data is unavailable.
  */
 
 function TimeAccountingApplet({
@@ -138,7 +149,7 @@ function TimeAccountingApplet({
         actions={
           <>
             <Popover>
-              <PopoverTrigger className="min-w-4 pointer-cursor">
+              <PopoverTrigger className="min-w-4 cursor-pointer">
                 <img src={DownloadIcon} />
               </PopoverTrigger>
               <PopoverContent className="bg-black text-white text-sm border-yellow-700">
@@ -146,7 +157,7 @@ function TimeAccountingApplet({
               </PopoverContent>
             </Popover>
             <Popover>
-              <PopoverTrigger className="min-w-4 pointer-cursor">
+              <PopoverTrigger className="min-w-4 cursor-pointer">
                 <img src={InfoIcon} />
               </PopoverTrigger>
               <PopoverContent className="bg-black text-white text-sm border-yellow-700 w-[400px]">

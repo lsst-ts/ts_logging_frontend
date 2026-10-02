@@ -19,24 +19,46 @@ import {
 
 import { OBSERVATORY_STATE_AVAILABILITY_STATUS } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
 import { getObsAvailabilityWarningText } from "@/utils/observatoryStatusUtils";
-import { buildObservatoryStatusBreakdown } from "@/utils/obsStatusBreakdownUtils";
+import {
+  buildObservatoryStatusBreakdown,
+  filterToActiveStates,
+} from "@/utils/obsStatusBreakdownUtils";
 
 import DownloadIcon from "../assets/DownloadIcon.svg";
 import InfoIcon from "../assets/InfoIcon.svg";
 
+/**
+ * Render the Detailed Breakdown of Observatory States as a table applet with its
+ * own header and info/download overlays.
+ *
+ * Displays the per-state time breakdown across the night, with expandable
+ * summary rows and a column filter toolbar.
+ *
+ * @param {Object} props
+ * @param {Function} props.onSelectionChange Callback invoked when the table row selection changes.
+ * @param {Object} props.availability Availability metadata for the observatory-status feed.
+ * @param {Array} [props.almanacInfo=[]] Almanac night metadata used by the breakdown.
+ * @param {Object} [props.dayObsOpenDomeHours={}] Day-obs open-dome hours, keyed by day-obs value.
+ * @param {Array} [props.obsStatusIntervals=[]] Observatory status intervals to break down.
+ * @param {boolean} [props.loading=false] Whether the underlying data is still loading.
+ * @param {boolean} [props.fetchError=false] Whether the Observatory Status request failed.
+ * @param {boolean} [props.almanacFetchError=false] Whether the Almanac request failed.
+ * @param {Array} [props.selected=null] Currently selected rows.
+ */
 function ObservatoryStatusBreakdownApplet({
+  onSelectionChange,
+  availability,
   almanacInfo = [],
   dayObsOpenDomeHours = {},
   obsStatusIntervals = [],
   loading = false,
-  availability,
   fetchError = false,
   almanacFetchError = false,
   selected = null,
-  onSelectionChange,
 }) {
   const [tableVisible, setTableVisible] = useState(true);
   const [columnFilters, setColumnFilters] = useState([]);
+  const [showOnlyActive, setShowOnlyActive] = useState(true);
 
   const obsAvailabilityStatus = availability?.status ?? null;
   const obsAvailabilityWarningText = getObsAvailabilityWarningText({
@@ -85,7 +107,7 @@ function ObservatoryStatusBreakdownApplet({
             <Popover>
               <PopoverTrigger
                 className="min-w-4 cursor-pointer"
-                aria-label="Download Narrative Log data"
+                aria-label="Download Observatory Status Breakdown data"
               >
                 <img src={DownloadIcon} alt="Download" />
               </PopoverTrigger>
@@ -97,7 +119,7 @@ function ObservatoryStatusBreakdownApplet({
             <Popover>
               <PopoverTrigger
                 className="min-w-4 cursor-pointer"
-                aria-label="Narrative Log information"
+                aria-label="Observatory Status Breakdown information"
               >
                 <img src={InfoIcon} alt="Information" />
               </PopoverTrigger>
@@ -140,16 +162,41 @@ function ObservatoryStatusBreakdownApplet({
             </div>
           ) : (
             <DataTable
-              data={breakdown.rows}
+              data={
+                showOnlyActive
+                  ? filterToActiveStates(breakdown.rows)
+                  : breakdown.rows
+              }
               columns={columns}
               defaultColumnVisibility={defaultColumnVisibility}
               defaultColumnOrder={defaultColumnOrder}
+              defaultExpanded={true}
               columnFilters={columnFilters}
               setColumnFilters={setColumnFilters}
               selected={selected}
               onSelectionChange={onSelectionChange}
+              onReset={() => setShowOnlyActive(true)}
               toolbar={{
                 expandRowNoun: "States",
+                afterColumnVisibility: (
+                  <button
+                    type="button"
+                    onClick={() => setShowOnlyActive((prev) => !prev)}
+                    className="btn h-10 w-[160px] bg-teal-800 justify-between
+                      font-normal text-[12px] text-white
+                      border-2 border-white rounded-md
+                      cursor-pointer
+                      shadow-[4px_4px_4px_0px_#3CAE3F]
+                      hover:shadow-[6px_6px_8px_0px_#3CAE3F] hover:scale-[1.02] hover:bg-teal-700
+                      transition-all duration-200
+                      focus-visible:ring-4
+                      focus-visible:ring-green-500/50"
+                  >
+                    {showOnlyActive
+                      ? "Show All States"
+                      : "Show Only Active States"}
+                  </button>
+                ),
               }}
               tableMeta={{
                 getRowClassName: (row) => {

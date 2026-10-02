@@ -28,34 +28,34 @@ import InfoIcon from "../assets/InfoIcon.svg";
  * header, full-screen viewing, and info/download overlays.
  *
  * @param {Object} props
- * @param {Array} [props.entries=[]] Observatory status entries.
- * @param {number[]} [props.twilightValues=[]] 12° twilight times in ms.
- * @param {number[]} [props.twilight0DegValues=[]] 0° twilight times in ms.
  * @param {[DateTime, DateTime]} props.fullTimeRange
  * @param {[DateTime, DateTime]} props.selectedTimeRange
  * @param {Function} props.setSelectedTimeRange
- * @param {string} [props.brushGroup] Shared brush-group id for cross-instance sync.
+ * @param {string} props.brushGroup Shared brush-group id for cross-instance sync.
+ * @param {Object} props.availability Availability metadata for the observatory-status feed.
+ * @param {boolean} props.loading Whether the underlying data is still loading.
+ * @param {Array} [props.entries=[]] Observatory status entries.
+ * @param {number[]} [props.twilightValues=[]] 12° twilight times in ms.
+ * @param {number[]} [props.twilight0DegValues=[]] 0° twilight times in ms.
  * @param {Object} [props.obsStatusMetrics={}] Per-state hour metrics.
  * @param {number} [props.nightHours=null] Total night hours.
- * @param {Object} [props.availability] Availability metadata for the observatory-status feed.
  * @param {boolean} [props.fetchError=false] Whether the Observatory Status request failed.
  * @param {boolean} [props.almanacFetchError=false] Whether the Almanac request failed.
- * @param {boolean} props.loading Whether the underlying data is still loading.
  */
 function ObservatoryStatusTimelineApplet({
-  entries = [],
-  twilightValues = [],
-  twilight0DegValues = [],
   fullTimeRange,
   selectedTimeRange,
   setSelectedTimeRange,
   brushGroup,
+  availability,
+  loading,
+  entries = [],
+  twilightValues = [],
+  twilight0DegValues = [],
   obsStatusMetrics = {},
   nightHours = null,
-  availability,
   fetchError = false,
   almanacFetchError = false,
-  loading,
 }) {
   const [visible, setVisible] = useState(true);
   const obsAvailabilityStatus = availability?.status ?? null;
@@ -86,9 +86,8 @@ function ObservatoryStatusTimelineApplet({
         title="Timeline of Observatory State Changes"
         titleBadge={
           !loading &&
-          (almanacFetchError ||
-            obsAvailabilityStatus ===
-              OBSERVATORY_STATE_AVAILABILITY_STATUS.PARTIAL) ? (
+          obsAvailabilityStatus ===
+            OBSERVATORY_STATE_AVAILABILITY_STATUS.PARTIAL ? (
             <div className="flex place-items-center-safe">
               <WarningTooltip
                 ariaLabel="Observatory Status data availability warning"

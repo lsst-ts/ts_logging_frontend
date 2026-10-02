@@ -8,6 +8,11 @@ import AppletHeader from "@/components/AppletHeader";
 import InfoIcon from "../assets/InfoIcon.svg";
 import DownloadIcon from "../assets/DownloadIcon.svg";
 
+/**
+ * Render a generic applet card with a header and content area.
+ *
+ * No props; subclasses typically pass header content via children.
+ */
 function Applet() {
   return (
     <Card className="border-none p-0 bg-stone-800 gap-2">

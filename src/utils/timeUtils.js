@@ -361,12 +361,22 @@ function getCurrentDayObs(format = "yyyyLLdd") {
  * @param {Object} [options]
  * @param {string} [options.nullReplacement="NA"] - String to emit when the
  *   value is not a finite number (e.g. "NA" for a card, "-" for a table).
+ * @param {string} [options.zeroReplacement=null] - When provided, emit this
+ *   string for a finite value of exactly zero (e.g. "-" for inactive
+ *   table cells) instead of "0.00".
  * @returns {string} The formatted hours string.
  */
-function formatHours(value, { nullReplacement = "NA" } = {}) {
-  return typeof value === "number" && Number.isFinite(value)
-    ? value.toFixed(2)
-    : nullReplacement;
+function formatHours(
+  value,
+  { nullReplacement = "NA", zeroReplacement = null } = {},
+) {
+  if (!(typeof value === "number" && Number.isFinite(value))) {
+    return nullReplacement;
+  }
+  if (zeroReplacement != null && value === 0) {
+    return zeroReplacement;
+  }
+  return value.toFixed(2);
 }
 
 export {

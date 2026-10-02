@@ -1,4 +1,5 @@
 import { createColumnHelper } from "@tanstack/react-table";
+import { ChevronRightIcon, ChevronDownIcon } from "lucide-react";
 
 import { formatDayobsStrForDisplay, formatHours } from "@/utils/timeUtils";
 
@@ -66,10 +67,14 @@ function renderStateCell({ row, getValue }) {
       <span>{getValue()}</span>
       {canExpand && (
         <span
-          className="text-white text-3xl flex-shrink-0 leading-none"
+          className="text-white flex-shrink-0 leading-none"
           aria-label={isExpanded ? "Collapse" : "Expand"}
         >
-          {isExpanded ? "▾" : "▸"}
+          {isExpanded ? (
+            <ChevronDownIcon size={16} />
+          ) : (
+            <ChevronRightIcon size={16} />
+          )}
         </span>
       )}
     </div>
@@ -88,7 +93,7 @@ export function createObservatoryStatusColumns(dayObsValues) {
       id: "state",
       header: "State",
       cell: renderStateCell,
-      size: 120,
+      size: 220,
       minSize: 100,
     }),
 
@@ -107,7 +112,8 @@ export function createObservatoryStatusColumns(dayObsValues) {
     columnHelper.accessor("total", {
       id: "total",
       header: "Total",
-      cell: ({ getValue }) => formatHours(getValue(), { nullReplacement: "-" }),
+      cell: ({ getValue }) =>
+        formatHours(getValue(), { nullReplacement: "-", zeroReplacement: "-" }),
       size: 120,
       minSize: 100,
       meta: {
@@ -120,7 +126,10 @@ export function createObservatoryStatusColumns(dayObsValues) {
         id: dayObs,
         header: formatDayobsStrForDisplay(dayObs),
         cell: ({ getValue }) =>
-          formatHours(getValue(), { nullReplacement: "-" }),
+          formatHours(getValue(), {
+            nullReplacement: "-",
+            zeroReplacement: "-",
+          }),
         size: 120,
         minSize: 100,
         meta: {

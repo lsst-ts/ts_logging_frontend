@@ -19,13 +19,13 @@ import {
  * ObservatoryStatusTimelineApplet for the Time Accounting page.
  *
  * @param {Object} props
- * @param {Array} [props.entries=[]] Observatory status entries.
- * @param {number[]} [props.twilightValues=[]] 12° twilight times in ms.
- * @param {number[]} [props.twilight0DegValues=[]] 0° twilight times in ms.
  * @param {[DateTime, DateTime]} props.fullTimeRange
  * @param {[DateTime, DateTime]} props.selectedTimeRange
  * @param {Function} props.setSelectedTimeRange
- * @param {string} [props.brushGroup] Shared brush-group id for cross-instance sync.
+ * @param {string} props.brushGroup Shared brush-group id for cross-instance sync.
+ * @param {Array} [props.entries=[]] Observatory status entries.
+ * @param {number[]} [props.twilightValues=[]] 12° twilight times in ms.
+ * @param {number[]} [props.twilight0DegValues=[]] 0° twilight times in ms.
  * @param {Object} [props.obsStatusMetrics={}] Per-state hour metrics.
  * @param {number} [props.nightHours=null] Total night hours.
  * @param {boolean} [props.loading=false] Whether data is loading.
@@ -34,13 +34,13 @@ import {
  * @param {boolean} [props.fullScreen=false] Whether rendered in the full-screen variant.
  */
 function ObservatoryStatusTimelineCardContents({
-  entries = [],
-  twilightValues = [],
-  twilight0DegValues = [],
   fullTimeRange,
   selectedTimeRange,
   setSelectedTimeRange,
   brushGroup,
+  entries = [],
+  twilightValues = [],
+  twilight0DegValues = [],
   obsStatusMetrics = {},
   nightHours = null,
   loading = false,

@@ -5,8 +5,6 @@ import { useSearch } from "@tanstack/react-router";
 import { NotificationBannerStack } from "@/components/NotificationBannerStack";
 import { useNotifications } from "@/hooks/useNotifications";
 
-import { TriangleAlert } from "lucide-react";
-
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
@@ -16,17 +14,15 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from "@/components/ui/tooltip";
 
 import TimelineChart from "@/components/TimelineChart";
 import ObservatoryStatusTimelineCardContents from "@/components/ObservatoryStatusTimelineCardContents";
 import ContextFeedTable from "@/components/ContextFeedTable.jsx";
 import { CATEGORY_INDEX_INFO } from "@/constants/CONTEXT_FEED_DEFINITIONS";
-import { METRIC_STATES } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
+import {
+  METRIC_STATES,
+  OBSERVATORY_STATE_AVAILABILITY_STATUS,
+} from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
 import { contextFeedColumns } from "@/components/ContextFeedColumns";
 import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
 import AppletHeader from "@/components/AppletHeader";
@@ -48,6 +44,7 @@ import { mergeContextFeedSources, getBlockSourceLabel } from "@/utils/utils";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
 import { prepareAlmanacData } from "@/utils/timelineUtils";
 import { useUrlSync, useSelectionSync } from "@/components/DataTable";
+import WarningTooltip from "@/components/WarningTooltip";
 
 // This filters out the non-selected telescope's exposures, queues and
 // narrative logs from the default display.
@@ -81,6 +78,10 @@ const filterDefaultEventsByTelescope = (telescope) => {
   return eventTypes;
 };
 
+/**
+ * Render the Context Feed page: a chronologically ordered log of exposures,
+ * scripts, errors and narrations, with related timelines and tables.
+ */
 function ContextFeed() {
   // Subscribe component to URL params
   const search = useSearch({
@@ -458,6 +459,20 @@ function ContextFeed() {
           <AppletHeader
             isPageHeader={true}
             title="Context Feed"
+            titleBadge={
+              !obsStatusLoading &&
+              obsAvailabilityStatus ===
+                OBSERVATORY_STATE_AVAILABILITY_STATUS.PARTIAL ? (
+                <div className="flex place-items-center-safe">
+                  <WarningTooltip
+                    ariaLabel="Observatory Status data availability warning"
+                    iconClassName="h-4"
+                  >
+                    {obsAvailabilityWarningText}
+                  </WarningTooltip>
+                </div>
+              ) : undefined
+            }
             description="Chronologically ordered log of exposures, scripts, errors and narrations."
             actions={
               <>
@@ -522,22 +537,6 @@ function ContextFeed() {
             </TipsCard>
           )}
 
-          {/* Partial availability warning above timelines */}
-          {timelineVisible &&
-            !obsStatusLoading &&
-            obsAvailabilityStatus === "partial" && (
-              <div className="flex items-center">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <TriangleAlert className="h-5 w-5 text-yellow-400 cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{obsAvailabilityWarningText}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-            )}
-
           {/* Observatory Status Timeline */}
           {timelineVisible && (
             <Card className="grid gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 font-thin shadow-stone-900 shadow-md">
@@ -590,6 +589,7 @@ function ContextFeed() {
                                 toggleEvents(key, !!checked)
                               }
                               style={{ borderColor: info.color }}
+                              className="cursor-pointer"
                             />
                             <span className="text-xs text-stone-200">
                               {info.label}

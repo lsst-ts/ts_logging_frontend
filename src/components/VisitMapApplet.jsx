@@ -12,6 +12,13 @@ import InfoIcon from "../assets/InfoIcon.svg";
 import DownloadIcon from "../assets/DownloadIcon.svg";
 import { VISIT_SHAPE, VISIT_SHAPE_INNER } from "./PLOT_DEFINITIONS";
 
+/**
+ * Render the visit map as an interactive Bokeh plot applet with its own header.
+ *
+ * @param {Object} props
+ * @param {Object} props.mapData Bokeh plot data for the visit map.
+ * @param {boolean} props.mapLoading Whether the map data is still loading.
+ */
 function VisitMapApplet({ mapData, mapLoading }) {
   return (
     <Card className="border-none p-0 bg-stone-800 gap-2">
@@ -20,7 +27,7 @@ function VisitMapApplet({ mapData, mapLoading }) {
         actions={
           <>
             <Popover>
-              <PopoverTrigger className="self-end min-w-4">
+              <PopoverTrigger className="self-end min-w-4 cursor-pointer">
                 <img src={DownloadIcon} />
               </PopoverTrigger>
               <PopoverContent className="bg-black text-white text-sm border-yellow-700">
@@ -30,7 +37,7 @@ function VisitMapApplet({ mapData, mapLoading }) {
               </PopoverContent>
             </Popover>
             <Popover>
-              <PopoverTrigger className="self-end min-w-4">
+              <PopoverTrigger className="self-end min-w-4 cursor-pointer">
                 <img src={InfoIcon} />
               </PopoverTrigger>
               <PopoverContent className="bg-black text-white text-sm border-yellow-700 flex flex-col max-w-5xl mx-auto gap-y-2">

@@ -125,6 +125,10 @@ function getDigestWarningContent({
   return availabilityWarning;
 }
 
+/**
+ * Render the night digest page: night summary, observatory status, observing
+ * conditions, exposure breakdown, visit maps and Jira tickets.
+ */
 export default function Digest() {
   const { startDayobs, endDayobs, telescope } = useSearch({
     from: "__root__",

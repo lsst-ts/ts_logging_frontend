@@ -81,7 +81,7 @@ function SelectObsDay({ days, selectedDay, onChange }) {
         className={
           "!h-[1rem] text-sidebar-foreground text-xs px-2 py-0" +
           " inline-flex bg-white justify-between font-normal" +
-          " focus-visible:ring-4 focus-visible:ring-green-500/50"
+          " cursor-pointer focus-visible:ring-4 focus-visible:ring-green-500/50"
         }
       >
         <SelectValue />
@@ -124,6 +124,14 @@ function handleDownload(reports) {
   console.log(textContent);
 }
 
+/**
+ * Render the night summary applet with a list of per-night reports and a
+ * day selector, plus download to text.
+ *
+ * @param {Object} props
+ * @param {Array} [props.reports=[]] Nightly (day) summary reports.
+ * @param {boolean} [props.nightreportLoading=false] Whether reports are loading.
+ */
 function NightSummary({ reports = [], nightreportLoading = false }) {
   const [selectedDay, setSelectedDay] = useState(null);
 
@@ -226,7 +234,7 @@ function NightSummary({ reports = [], nightreportLoading = false }) {
           <>
             <Dialog>
               <DialogTrigger
-                className="self-end min-w-4"
+                className="self-end min-w-4 cursor-pointer"
                 aria-label={`Open ${appletTitle.toLowerCase()} in fullscreen`}
               >
                 <img src={FullScreenIcon} alt="Fullscreen" />
@@ -244,7 +252,7 @@ function NightSummary({ reports = [], nightreportLoading = false }) {
             </Dialog>
             <Popover>
               <PopoverTrigger
-                className="self-end min-w-4"
+                className="self-end min-w-4 cursor-pointer"
                 aria-label={`Download ${appletTitle.toLowerCase()} data`}
               >
                 <img
@@ -260,7 +268,7 @@ function NightSummary({ reports = [], nightreportLoading = false }) {
             </Popover>
             <Popover>
               <PopoverTrigger
-                className="self-end min-w-4"
+                className="self-end min-w-4 cursor-pointer"
                 aria-label={`${
                   appletTitle.charAt(0).toUpperCase() +
                   appletTitle.slice(1).toLowerCase()

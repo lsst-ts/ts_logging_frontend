@@ -158,6 +158,7 @@ function renderRowWithChildren({
   const customRowClassName = table.options.meta?.getRowClassName?.(row) ?? "";
 
   const rowClassName = [
+    onSelectionChange ? "cursor-pointer" : "",
     isSelected
       ? "bg-black/40 shadow-[inset_4px_0_0_0_white] border-t-2 border-b-2 border-white"
       : "",

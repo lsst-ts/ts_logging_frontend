@@ -19,6 +19,15 @@ function parseTimeLostField(timeLost) {
   return "N/A";
 }
 
+/**
+ * Render a table of Jira tickets.
+ *
+ * @param {Object} props
+ * @param {Array} props.tickets Jira tickets to display.
+ * @param {boolean} [props.loading=false] Whether the tickets are still loading.
+ * @param {string[]} [props.strikethroughStatuses=["Done"]] Ticket statuses rendered
+ *   with a strikethrough.
+ */
 function JiraTicketsTable({
   tickets,
   loading = false,

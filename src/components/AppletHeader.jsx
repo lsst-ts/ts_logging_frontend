@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardHeader, CardTitle } from "@/components/ui/card";
 
 /**
  * Reusable dark teal header bar used consistently across the app, for both
@@ -11,26 +11,25 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card";
  * arbitrary actions are on the right.
  *
  * @param {Object} props
- * @param {string} [props.isPageHeader] - true renders the full page-header content;
- *   false renders the compact applet-header content. The variant also
- *   controls the responsive breakpoint.
  * @param {string} props.title - Header title.
  * @param {string} [props.description] - Optional subtitle rendered after the title.
  * @param {React.ReactNode} [props.titleBadge] - Optional node rendered next to the
  *   title (e.g. a warning icon).
  * @param {React.ReactNode} [props.actions] - Optional right-aligned action nodes
  *   (buttons, popovers, toggles such as "Show Tips" / "Show Graph").
+ * @param {boolean} [props.isPageHeader] - true renders the full page-header content;
+ *   false renders the compact applet-header content. The variant also
+ *   controls the responsive breakpoint.
  */
 function AppletHeader({
-  isPageHeader = false,
   title,
   description,
   titleBadge,
   actions,
+  isPageHeader = false,
 }) {
   return (
     <div className="@container">
-      {/* <Card className="border-none p-0 bg-stone-800 mt-2"> */}
       <CardHeader
         className={cn(
           "flex flex-col gap-2 p-3 bg-teal-900 rounded-sm shadow-stone-900 shadow-md",
@@ -42,12 +41,12 @@ function AppletHeader({
         {/* Page header has title and description, whereas applet headers just have a title */}
         {isPageHeader ? (
           <CardTitle className="flex flex-row text-white font-thin min-w-0 gap-2">
-            <span className="flex flex-row shrink-0 gap-2">
-              <span className="font-normal">{`${title}:`}</span>
-              {titleBadge}
-            </span>
+            <span className="shrink-0 font-normal">{`${title}:`}</span>
             {description && (
-              <span className="break-words min-w-0">{description}</span>
+              <span className="flex flex-row gap-2">
+                <span className="break-words min-w-0">{description}</span>
+                {titleBadge}
+              </span>
             )}
           </CardTitle>
         ) : (
@@ -66,7 +65,6 @@ function AppletHeader({
           </div>
         )}
       </CardHeader>
-      {/* </Card> */}
     </div>
   );
 }

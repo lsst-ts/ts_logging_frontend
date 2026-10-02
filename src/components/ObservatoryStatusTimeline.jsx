@@ -26,23 +26,24 @@ import { useEChartsTimeline } from "@/hooks/useEChartsTimeline";
  * TimelineChart via the shared selectedTimeRange / setSelectedTimeRange props.
  *
  * @param {Object} props
- * @param {Array<{time: string, status: number, note: string, statusLabels: string, time_ms: number}>} props.entries
  * @param {[DateTime, DateTime]} props.fullTimeRange
  * @param {[DateTime, DateTime]} props.selectedTimeRange
  * @param {Function} props.setSelectedTimeRange
+ * @param {string} props.brushGroup Shared brush-group id for brush-sync across instances.
+ * @param {Array<{time: string, status: number, note: string, statusLabels: string, time_ms: number}>} [props.entries=[]]
  * @param {number[]} [props.twilightValues=[]] - 12° twilight times in ms (solid line)
  * @param {number[]} [props.twilight0DegValues=[]] - 0° twilight times in ms (dashed line)
  * @param {boolean} [props.fullScreen=false] - Whether rendered in the full-screen
  *   variant, which uses larger dimensions.
  */
 function ObservatoryStatusTimeline({
-  entries = [],
   fullTimeRange,
   selectedTimeRange,
   setSelectedTimeRange,
+  brushGroup,
+  entries = [],
   twilightValues = [],
   twilight0DegValues = [],
-  brushGroup,
   fullScreen = false,
 }) {
   const containerRef = useRef(null);

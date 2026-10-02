@@ -80,6 +80,50 @@ test.describe("Time Accounting — full availability", () => {
     await expect(table).toContainText("Dome Open");
   });
 
+  test("breakdown defaults to active states only, all expanded", async ({
+    page,
+  }) => {
+    const table = page.locator("#obs-status-breakdown-table");
+    await expect(table).toBeVisible();
+    // Show-only-active is on by default (button prompts to show all states).
+    await expect(
+      table.getByRole("button", { name: "Show All States" }),
+    ).toBeVisible();
+    // All rows are expanded by default.
+    await expect(
+      table.getByRole("button", { name: "Collapse All States" }),
+    ).toBeVisible();
+    // The active Operational state is present...
+    await expect(
+      table.getByText("Operational", { exact: true }).first(),
+    ).toBeVisible();
+    // ...while inactive states (e.g. Fault) are hidden.
+    await expect(table.getByText("Fault", { exact: true })).toHaveCount(0);
+  });
+
+  test("breakdown toggle shows all states and reset restores active only", async ({
+    page,
+  }) => {
+    const table = page.locator("#obs-status-breakdown-table");
+    await expect(table).toBeVisible();
+
+    await table.getByRole("button", { name: "Show All States" }).click();
+    await expect(
+      table.getByRole("button", { name: "Show Only Active States" }),
+    ).toBeVisible();
+    // Inactive states now appear.
+    await expect(
+      table.getByText("Fault", { exact: true }).first(),
+    ).toBeVisible();
+
+    await table.getByRole("button", { name: "Reset Table" }).click();
+    // Reset returns to the show-only-active default and hides inactive states.
+    await expect(
+      table.getByRole("button", { name: "Show All States" }),
+    ).toBeVisible();
+    await expect(table.getByText("Fault", { exact: true })).toHaveCount(0);
+  });
+
   test("selecting on the timeline adds integer startTime and endTime to the URL", async ({
     page,
   }) => {

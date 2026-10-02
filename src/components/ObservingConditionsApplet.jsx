@@ -227,6 +227,20 @@ const renderCustomLegend = (props) => (
   </div>
 );
 
+/**
+ * Render the observing conditions applet with charts of the site conditions
+ * over the selected time range.
+ *
+ * @param {Object} props
+ * @param {boolean} props.exposuresLoading Whether exposure data is loading.
+ * @param {Object} props.exposureFields Exposure field data.
+ * @param {boolean} props.almanacLoading Whether almanac data is loading.
+ * @param {Array} props.almanacInfo Almanac night metadata.
+ * @param {[DateTime, DateTime]} props.fullTimeRange Visible time range for the charts.
+ * @param {[DateTime, DateTime]} props.selectedTimeRange Currently selected time range.
+ * @param {Function} props.setSelectedTimeRange Update the selected time range.
+ * @param {Set|null} [props.hoveredExposureIds=null] Ids of hovered exposures, if any.
+ */
 function ObservingConditionsApplet({
   exposuresLoading,
   exposureFields,
@@ -656,7 +670,7 @@ function ObservingConditionsApplet({
         actions={
           <>
             <Popover>
-              <PopoverTrigger className="self-end min-w-4">
+              <PopoverTrigger className="self-end min-w-4 cursor-pointer">
                 <img src={DownloadIcon} />
               </PopoverTrigger>
               <PopoverContent className="bg-black text-white text-sm border-yellow-700">
@@ -664,7 +678,7 @@ function ObservingConditionsApplet({
               </PopoverContent>
             </Popover>
             <Popover>
-              <PopoverTrigger className="self-end min-w-4">
+              <PopoverTrigger className="self-end min-w-4 cursor-pointer">
                 <img src={InfoIcon} />
               </PopoverTrigger>
               <PopoverContent className="bg-black text-white text-sm border-yellow-700 w-[300px]">
@@ -727,7 +741,7 @@ function ObservingConditionsApplet({
                   setYMinFraction(0);
                   setYMaxFraction(1);
                 }}
-                className="absolute top-2 right-2 z-10 bg-stone-700 hover:bg-stone-600 text-white p-1.5 rounded opacity-80 hover:opacity-100 transition-opacity"
+                className="absolute top-2 right-2 z-10 bg-stone-700 hover:bg-stone-600 text-white p-1.5 rounded opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
                 title="Reset zoom"
                 aria-label="Reset zoom"
               >
