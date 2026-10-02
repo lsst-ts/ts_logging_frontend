@@ -144,7 +144,7 @@ export default function TimeLossCard({
         {/* Info Icon */}
         <Popover>
           <PopoverTrigger
-            className="self-end min-w-4"
+            className="self-end min-w-4 cursor-pointer"
             /* Prevents click from propagating to the card 
             to show the tooltip rather than open the dialog*/
             onClick={(e) => e.stopPropagation()}

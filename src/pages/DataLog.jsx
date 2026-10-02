@@ -35,6 +35,10 @@ import {
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
 import { useSelectionSync } from "@/components/DataTable";
 
+/**
+ * Render the Data Log page: merged exposure, script and narrative log data in a
+ * filterable table with selection, plus observatory status timelines.
+ */
 function DataLog() {
   // Routing and URL params
   const { startDayobs, endDayobs, telescope } = useSearch({

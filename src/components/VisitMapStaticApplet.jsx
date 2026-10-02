@@ -10,6 +10,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import InfoIcon from "../assets/InfoIcon.svg";
 import DownloadIcon from "../assets/DownloadIcon.svg";
 
+/**
+ * Render the visit map as a static image applet with its own header.
+ *
+ * @param {Object} props
+ * @param {string} props.mapData URL of the static visit map image.
+ * @param {boolean} props.mapLoading Whether the map is still loading.
+ * @param {boolean} [props.error=false] Whether the map data failed to load.
+ */
 export default function VisitMapStaticApplet({
   mapData,
   mapLoading,
@@ -22,7 +30,7 @@ export default function VisitMapStaticApplet({
         actions={
           <>
             <Popover>
-              <PopoverTrigger className="self-end min-w-4">
+              <PopoverTrigger className="self-end min-w-4 cursor-pointer">
                 <img src={DownloadIcon} />
               </PopoverTrigger>
               <PopoverContent className="bg-black text-white text-sm border-yellow-700">
@@ -32,7 +40,7 @@ export default function VisitMapStaticApplet({
               </PopoverContent>
             </Popover>
             <Popover>
-              <PopoverTrigger className="self-end min-w-4">
+              <PopoverTrigger className="self-end min-w-4 cursor-pointer">
                 <img src={InfoIcon} />
               </PopoverTrigger>
               <PopoverContent className="bg-black text-white text-sm border-yellow-700 flex flex-col max-w-5xl mx-auto gap-y-2">

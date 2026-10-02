@@ -53,16 +53,30 @@ const SortByValues = Object.freeze({
 const PLOT_YLABELS_MAXSIZE = 14;
 const BAR_SIZE = 35;
 
+/**
+ * Render a chart breaking down exposures by type, reason, and program.
+ *
+ * @param {Object} props
+ * @param {Object} props.exposureFields Exposure field data used to group the breakdown.
+ * @param {Object} props.exposureCount Count of exposures by group.
+ * @param {number} props.sumExpTime Total summed exposure time.
+ * @param {Object} props.flags Exposure flags data.
+ * @param {Function} props.onBarHover Callback fired with the hovered exposure ids.
+ * @param {Function} props.onBarLeave Callback fired when the pointer leaves a bar.
+ * @param {Object} [props.blockLookup={}] Dict of BLOCK objects from Zephyr/Jira.
+ * @param {boolean} [props.exposuresLoading=false] Whether exposure data is loading.
+ * @param {boolean} [props.flagsLoading=false] Whether flags data is loading.
+ */
 function ExposureBreakdownApplet({
   exposureFields,
   exposureCount,
   sumExpTime,
   flags,
+  onBarHover,
+  onBarLeave,
   blockLookup = {},
   exposuresLoading = false,
   flagsLoading = false,
-  onBarHover,
-  onBarLeave,
 }) {
   const [plotBy, setPlotBy] = useState(PlotByValues.NUMBER);
   const [groupBy, setGroupBy] = useState(
@@ -299,7 +313,7 @@ function ExposureBreakdownApplet({
         actions={
           <>
             <Popover>
-              <PopoverTrigger className="self-end min-w-4">
+              <PopoverTrigger className="self-end min-w-4 cursor-pointer">
                 <img src={DownloadIcon} />
               </PopoverTrigger>
               <PopoverContent className="bg-black text-white text-sm border-yellow-700">
@@ -309,7 +323,7 @@ function ExposureBreakdownApplet({
               </PopoverContent>
             </Popover>
             <Popover>
-              <PopoverTrigger className="self-end min-w-4">
+              <PopoverTrigger className="self-end min-w-4 cursor-pointer">
                 <img src={InfoIcon} />
               </PopoverTrigger>
               <PopoverContent className="bg-black text-white text-sm border-yellow-700 w-[300px]">
@@ -599,7 +613,7 @@ function ExposureBreakdownApplet({
                     <SelectTrigger
                       id="plotBy"
                       size="sm"
-                      className="w-[150px] bg-teal-800 justify-between font-normal text-[12px] text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50"
+                      className="w-[150px] bg-teal-800 justify-between font-normal text-[12px] text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50 cursor-pointer"
                       chevronDownIconClassName="text-white"
                     >
                       <SelectValue />
@@ -631,7 +645,7 @@ function ExposureBreakdownApplet({
                     <SelectTrigger
                       id="groupBy"
                       size="sm"
-                      className="w-[150px] bg-teal-800 justify-between font-normal text-[12px] text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50"
+                      className="w-[150px] bg-teal-800 justify-between font-normal text-[12px] text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50 cursor-pointer"
                       chevronDownIconClassName="text-white"
                     >
                       <SelectValue />
@@ -663,7 +677,7 @@ function ExposureBreakdownApplet({
                     <SelectTrigger
                       id="sortBy"
                       size="sm"
-                      className="w-[150px] bg-teal-800 justify-between font-normal text-[12px] text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50"
+                      className="w-[150px] bg-teal-800 justify-between font-normal text-[12px] text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50 cursor-pointer"
                       chevronDownIconClassName="text-white"
                     >
                       <SelectValue />

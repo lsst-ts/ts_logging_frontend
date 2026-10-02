@@ -9,6 +9,7 @@ import {
   buildNightDefinitions,
   buildObservatoryStatusBreakdown,
   calculateExactStatusDurations,
+  filterToActiveStates,
   generateValidCombinations,
   getCombinationsForState,
   isValidNighttimeStatus,
@@ -457,5 +458,121 @@ describe("buildObservatoryStatusBreakdown", () => {
     });
 
     expect(dayObsValues).toEqual(["20260421", "20260422"]);
+  });
+});
+
+describe("filterToActiveStates", () => {
+  it("returns rows unchanged when every row has active time", () => {
+    const rows = [
+      { state: "Night Hours", rowType: "summary", total: 11 },
+      {
+        state: "Fault",
+        rowType: "state",
+        total: 2,
+        subRows: [
+          { state: "Fault", rowType: "combination", total: 0 },
+          { state: "Fault + Weather", rowType: "combination", total: 2 },
+        ],
+      },
+    ];
+
+    const result = filterToActiveStates(rows);
+
+    expect(result).toHaveLength(2);
+    expect(result[0]).toEqual(rows[0]);
+    expect(result[1].state).toBe("Fault");
+    expect(result[1].subRows).toHaveLength(1);
+    expect(result[1].subRows[0].state).toBe("Fault + Weather");
+  });
+
+  it("keeps summary rows even when they are zero", () => {
+    const rows = [
+      { state: "Night Hours", rowType: "summary", total: 0 },
+      { state: "Dome Open", rowType: "summary", total: 0 },
+    ];
+
+    const result = filterToActiveStates(rows);
+
+    expect(result).toHaveLength(2);
+  });
+
+  it("removes state parent rows that have no active time", () => {
+    const rows = [
+      { state: "Dome Open", rowType: "summary", total: 3 },
+      {
+        state: "Fault",
+        rowType: "state",
+        total: 0,
+        subRows: [{ state: "Fault", rowType: "combination", total: 0 }],
+      },
+      {
+        state: "Weather",
+        rowType: "state",
+        total: 4,
+        subRows: [],
+      },
+    ];
+
+    const result = filterToActiveStates(rows);
+
+    expect(result.map((row) => row.state)).toEqual(["Dome Open", "Weather"]);
+  });
+
+  it("removes zero-duration combination children from active parents", () => {
+    const rows = [
+      {
+        state: "Fault",
+        rowType: "state",
+        total: 1,
+        subRows: [
+          { state: "Fault", rowType: "combination", total: 0 },
+          { state: "Fault + Weather", rowType: "combination", total: 1 },
+          { state: "Fault + Downtime", rowType: "combination", total: 0 },
+        ],
+      },
+    ];
+
+    const result = filterToActiveStates(rows);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].subRows.map((row) => row.state)).toEqual([
+      "Fault + Weather",
+    ]);
+  });
+
+  it("removes the Unknown row when it has no active time", () => {
+    const rows = [
+      { state: "Dome Open", rowType: "summary", total: 1 },
+      { state: "Unknown", rowType: "state", total: 0 },
+    ];
+
+    const result = filterToActiveStates(rows);
+
+    expect(result.map((row) => row.state)).toEqual(["Dome Open"]);
+  });
+
+  it("preserves the original row order", () => {
+    const rows = [
+      { state: "Night Hours", rowType: "summary", total: 11 },
+      {
+        state: "Fault",
+        rowType: "state",
+        total: 0,
+        subRows: [],
+      },
+      {
+        state: "Operational",
+        rowType: "state",
+        total: 8,
+        subRows: [],
+      },
+    ];
+
+    const result = filterToActiveStates(rows);
+
+    expect(result.map((row) => row.state)).toEqual([
+      "Night Hours",
+      "Operational",
+    ]);
   });
 });

@@ -45,6 +45,10 @@ const EMPTY_OBS_STATUS_AVAILABILITY = {
   available_from: null,
 };
 
+/**
+ * Render the Time Accounting page: a breakdown of how the observable time in
+ * the selected dayobs range was spent.
+ */
 function TimeAccounting() {
   // Subscribe component to URL params
   const search = useSearch({
@@ -235,9 +239,7 @@ function TimeAccounting() {
       end: endDayobs,
       includeEntries: true,
       includeIntervals: true,
-      // TODO: BACKEND CHANGE - fetch both night-only and include-day metrics
-      nightOnlyMetrics: false,
-      // TODO: BACKEND CHANGE - fetch all combination of metrics; how?
+      nightOnlyMetrics: true,
       metrics: METRIC_STATES.map((stateName) => stateName.toLowerCase()),
       abortController,
     })

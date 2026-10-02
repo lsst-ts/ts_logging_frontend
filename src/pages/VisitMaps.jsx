@@ -27,6 +27,10 @@ import { getNightSummaryLink } from "@/utils/utils";
 import { getDayobsStartUTC } from "@/utils/timeUtils";
 import { BAND_COLORS_TAILWIND } from "@/components/PLOT_DEFINITIONS";
 
+/**
+ * Render the Visit Maps page: interactive and static visit maps for the
+ * selected telescope and time range.
+ */
 function VisitMaps() {
   // Routing and URL params
   const { startDayobs, endDayobs, telescope } = useSearch({

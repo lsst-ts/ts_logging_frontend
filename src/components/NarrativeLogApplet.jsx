@@ -192,6 +192,7 @@ function NarrativeLogApplet({
               }}
               toolbar={{
                 showColumnVisibility: true,
+                showExpandCollapseGroups: false,
                 showReset: true,
               }}
               onReset={handleReset}

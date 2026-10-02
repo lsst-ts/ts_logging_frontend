@@ -55,6 +55,10 @@ import {
 import { useNotifications } from "@/hooks/useNotifications";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
 
+/**
+ * Render the Plots page: plotted data from the selected telescope and
+ * time range with dynamic plot selection and full-range timelines.
+ */
 function Plots() {
   // Routing and URL params
   const { startDayobs, endDayobs, telescope } = useSearch({ from: "/plots" });

@@ -1,3 +1,12 @@
+/**
+ * Render a button to expand or collapse all expandable rows in a TanStack table.
+ *
+ * @param {Object} props
+ * @param {Object} props.table - TanStack Table instance.
+ * @param {Object} props.expanded - Map of expanded row ids.
+ * @param {Function} props.setExpanded - Update the expanded row map.
+ * @param {string} [props.rowNoun="Groups"] - Noun used for the row group labels.
+ */
 function ToggleExpandCollapseRows({
   table,
   expanded,
@@ -22,7 +31,12 @@ function ToggleExpandCollapseRows({
   }
 
   const allExpandableRowIds = getAllExpandableRowIds(table.getRowModel().rows);
-  const allExpanded = allExpandableRowIds.every((id) => expanded[id]);
+  // `expanded` may be a boolean (`true` = expand all, `false` = collapse all)
+  // or an object map of row ids -> boolean.
+  const allExpanded =
+    expanded === true ||
+    (typeof expanded !== "boolean" &&
+      allExpandableRowIds.every((id) => expanded[id]));
   const isDisabled = allExpandableRowIds.length === 0;
 
   const handleClick = () => {
@@ -30,11 +44,10 @@ function ToggleExpandCollapseRows({
     if (allExpanded) {
       setExpanded({});
     } else {
-      const newExpanded = {};
-      allExpandableRowIds.forEach((id) => {
-        newExpanded[id] = true;
-      });
-      setExpanded(newExpanded);
+      // `true` expands all rows, including any rows that are added later
+      // when the active-only filter is toggled, so the expand/collapse
+      // state stays consistent as the visible data changes.
+      setExpanded(true);
     }
   };
 

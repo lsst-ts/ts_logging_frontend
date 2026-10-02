@@ -31,6 +31,11 @@ import InfoIcon from "../assets/InfoIcon.svg";
  * fullscreen detail viewing, and info/download overlays.
  *
  * @param {Object} props
+ * @param {[DateTime, DateTime]} props.fullTimeRange Visible time range for the chart.
+ * @param {[DateTime, DateTime]} props.selectedTimeRange Currently selected time range.
+ * @param {Function} props.setSelectedTimeRange Update the selected time range.
+ * @param {boolean} props.loading Whether the underlying data is still loading.
+ * @param {Object} props.availability Availability metadata for the observatory-status feed.
  * @param {boolean} [props.accumulateAcrossNights=false] Whether to accumulate time across nights.
  * @param {string} [props.appletTitle] Applet header title.
  * @param {string} [props.plotTitle] Plot title.
@@ -39,16 +44,16 @@ import InfoIcon from "../assets/InfoIcon.svg";
  *   much shorter vertically instead of matching the data-populated height.
  * @param {Array} [props.almanacInfo=[]] Almanac night metadata used by the cumulative plot.
  * @param {Array} [props.intervals=[]] Observatory status intervals to display.
- * @param {Object} [props.availability] Availability metadata for the observatory-status feed.
  * @param {boolean} [props.fetchError=false] Whether the Observatory Status request failed.
  * @param {boolean} [props.almanacFetchError=false] Whether the Almanac request failed.
  * @param {Array} [props.openDomeTimes=[]] Open-dome intervals to overlay on the plot.
- * @param {[DateTime, DateTime]} props.fullTimeRange Visible time range for the chart.
- * @param {[DateTime, DateTime]} props.selectedTimeRange Currently selected time range.
- * @param {Function} props.setSelectedTimeRange Update the selected time range.
- * @param {boolean} props.loading Whether the underlying data is still loading.
  */
 function ObservatoryStatusCumulativeApplet({
+  fullTimeRange,
+  selectedTimeRange,
+  setSelectedTimeRange,
+  loading,
+  availability,
   accumulateAcrossNights = false,
   appletTitle = "Observatory Status",
   plotTitle = "Cumulative Time in State",
@@ -56,14 +61,9 @@ function ObservatoryStatusCumulativeApplet({
   compactEmptyState = false,
   almanacInfo = [],
   intervals = [],
-  availability,
   fetchError = false,
   almanacFetchError = false,
   openDomeTimes = [],
-  fullTimeRange,
-  selectedTimeRange,
-  setSelectedTimeRange,
-  loading,
 }) {
   const [cardVisible, setCardVisible] = useState(true);
   const obsAvailabilityStatus = availability?.status ?? null;
@@ -101,7 +101,7 @@ function ObservatoryStatusCumulativeApplet({
           <>
             <Dialog>
               <DialogTrigger
-                className="min-w-4"
+                className="min-w-4 cursor-pointer"
                 aria-label="Open observatory status in fullscreen"
               >
                 <img src={FullScreenIcon} alt="Fullscreen" />
@@ -142,7 +142,7 @@ function ObservatoryStatusCumulativeApplet({
             </Dialog>
             <Popover>
               <PopoverTrigger
-                className="min-w-4"
+                className="min-w-4 cursor-pointer"
                 aria-label="Download observatory status data"
               >
                 <img src={DownloadIcon} alt="Download" />
@@ -153,7 +153,7 @@ function ObservatoryStatusCumulativeApplet({
             </Popover>
             <Popover>
               <PopoverTrigger
-                className="min-w-4"
+                className="min-w-4 cursor-pointer"
                 aria-label="Observatory status information"
               >
                 <img src={InfoIcon} alt="Information" />
