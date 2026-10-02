@@ -48,6 +48,21 @@ const toCsv = (rows, columns) => {
 };
 
 /**
+ * Build `toCsv` columns for every field found in a set of records, in the
+ * order each field first appears.
+ *
+ * @param {Array<Object>} records
+ * @returns {Array<{key: string}>}
+ */
+const columnsFromRecords = (records) => {
+  const keys = new Set();
+  for (const record of records) {
+    for (const key of Object.keys(record)) keys.add(key);
+  }
+  return [...keys].map((key) => ({ key }));
+};
+
+/**
  * Save text content to a file in the browser.
  *
  * @param {string} content - File content.
@@ -89,4 +104,10 @@ const buildDownloadFilename = (
 ) =>
   `${FILENAME_PREFIX}_${source}_${telescope}_${startDayobs}-${endDayobs}.${ext}`;
 
-export { EXPOSURE_KEY_COLUMNS, toCsv, downloadFile, buildDownloadFilename };
+export {
+  EXPOSURE_KEY_COLUMNS,
+  toCsv,
+  columnsFromRecords,
+  downloadFile,
+  buildDownloadFilename,
+};
