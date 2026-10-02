@@ -4,6 +4,7 @@ import { setupApiMocks } from "../../helpers/mock-api.js";
 import { TIME_ACCOUNTING_URL } from "../../helpers/constants.js";
 import { dragOn, getTimeParams } from "../../helpers/plots-helpers.js";
 import { waitForTimeAccountingLoad } from "../../helpers/time-accounting-helpers.js";
+import { downloadCsv } from "../../helpers/download-helpers.js";
 
 test.describe("Time Accounting — loading state", () => {
   test.beforeEach(async ({ page }) => {
@@ -71,6 +72,28 @@ test.describe("Time Accounting — full availability", () => {
       page.getByRole("button", { name: "Hide Graph" }).first(),
     ).toBeVisible();
   });
+
+  // The cumulative applet reads the dayobs range and telescope from whichever
+  // route it's on; a missing param would show up here as "undefined".
+  for (const title of [
+    "Observatory Status - Single Night Accumulations",
+    "Observatory Status - Multi Night Accumulations",
+  ]) {
+    test(`"${title}" downloads the raw intervals as CSV`, async ({ page }) => {
+      const button = page
+        .locator("[data-slot='card']")
+        .filter({ hasText: title })
+        .getByRole("button", { name: "Download CSV" });
+
+      const { filename, rows } = await downloadCsv(page, button);
+
+      expect(filename).toBe(
+        "nightlydigest_observatory-status-intervals_Simonyi_20260101-20260101.csv",
+      );
+      expect(rows).toHaveLength(1);
+      expect(rows[0].start_labels).toBe("OPERATIONAL");
+    });
+  }
 
   test("renders the observatory status breakdown table", async ({ page }) => {
     const table = page.locator("#obs-status-breakdown-table");
@@ -194,20 +217,6 @@ test.describe("Time Accounting — full availability", () => {
 
     await page.getByRole("button", { name: "Hide Tips" }).click();
     await expect(page.getByText("Timeline Tips")).toHaveCount(0);
-  });
-
-  test("opens the page-header download placeholder popover", async ({
-    page,
-  }) => {
-    const pageHeader = page
-      .locator("[data-slot='card-header']")
-      .filter({ hasText: "Time Accounting" });
-    await pageHeader.locator("button").first().click();
-    await expect(
-      page.getByText(
-        /clicking here will download the data shown on this page to a \.csv file/,
-      ),
-    ).toBeVisible();
   });
 });
 

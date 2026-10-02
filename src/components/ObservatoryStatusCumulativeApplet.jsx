@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSearch } from "@tanstack/react-router";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -15,11 +16,16 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { CardContent } from "@/components/ui/card";
 import AppletCard, { AppletStatusBody } from "@/components/AppletCard";
+import DownloadButton from "@/components/DownloadButton";
 import ObservatoryStatusCumulativePlot from "@/components/ObservatoryStatusCumulativePlot";
 import { buildObsStatusSource } from "@/utils/appletStatus";
+import {
+  buildDownloadFilename,
+  columnsFromRecords,
+  toCsv,
+} from "@/utils/downloadUtils";
 
 import FullScreenIcon from "../assets/FullScreenIcon.svg";
-import DownloadIcon from "../assets/DownloadIcon.svg";
 import InfoIcon from "../assets/InfoIcon.svg";
 
 /**
@@ -75,6 +81,22 @@ function ObservatoryStatusCumulativeApplet({
     </div>
   );
 
+  // The applet is used on more than one page, so read whichever route's
+  // search params are current.
+  const { startDayobs, endDayobs, telescope } = useSearch({ strict: false });
+
+  // Download the raw intervals for the whole loaded range, ignoring the
+  // selected time range.
+  const handleDownload = () => ({
+    content: toCsv(intervals, columnsFromRecords(intervals)),
+    filename: buildDownloadFilename(
+      "observatory-status-intervals",
+      { telescope, startDayobs, endDayobs },
+      "csv",
+    ),
+    mimeType: "text/csv",
+  });
+
   return (
     <AppletCard
       title={appletTitle}
@@ -125,17 +147,10 @@ function ObservatoryStatusCumulativeApplet({
               </CardContent>
             </DialogContent>
           </Dialog>
-          <Popover>
-            <PopoverTrigger
-              className="min-w-4 cursor-pointer"
-              aria-label="Download observatory status data"
-            >
-              <img src={DownloadIcon} alt="Download" />
-            </PopoverTrigger>
-            <PopoverContent className="bg-black text-white text-sm border-yellow-700">
-              This is a placeholder for the download/export button.
-            </PopoverContent>
-          </Popover>
+          <DownloadButton
+            onDownload={handleDownload}
+            disabled={loading || intervals.length === 0}
+          />
           <Popover>
             <PopoverTrigger
               className="min-w-4 cursor-pointer"

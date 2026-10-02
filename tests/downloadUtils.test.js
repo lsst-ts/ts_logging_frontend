@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 
 import {
   toCsv,
+  columnsFromRecords,
   downloadFile,
   buildDownloadFilename,
 } from "@/utils/downloadUtils";
@@ -67,6 +68,25 @@ describe("downloadUtils", () => {
 
     it("leaves numeric cells unescaped", () => {
       expect(toCsv([{ n: -0.52 }], [{ key: "n" }])).toBe("n\r\n-0.52");
+    });
+  });
+
+  describe("columnsFromRecords", () => {
+    it("lists every field across the records, in first-seen order", () => {
+      const records = [
+        { a: 1, b: 2 },
+        { b: 3, c: 4 },
+      ];
+
+      expect(columnsFromRecords(records)).toEqual([
+        { key: "a" },
+        { key: "b" },
+        { key: "c" },
+      ]);
+    });
+
+    it("returns no columns for no records", () => {
+      expect(columnsFromRecords([])).toEqual([]);
     });
   });
 
