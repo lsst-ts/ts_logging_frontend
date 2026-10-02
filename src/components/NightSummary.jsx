@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useSearch } from "@tanstack/react-router";
 import { CardContent } from "@/components/ui/card";
 import AppletCard, {
   EmptyDisplayState,
   useAppletState,
 } from "@/components/AppletCard";
+import DownloadButton from "@/components/DownloadButton";
 import {
   Popover,
   PopoverContent,
@@ -25,8 +27,9 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 
+import { buildDownloadFilename } from "@/utils/downloadUtils";
+
 import InfoIcon from "../assets/InfoIcon.svg";
-import DownloadIcon from "../assets/DownloadIcon.svg";
 import FullScreenIcon from "../assets/FullScreenIcon.svg";
 
 function scrollToNode(node) {
@@ -41,6 +44,12 @@ function scrollToNode(node) {
   });
 }
 
+// The detailed report shown for a night: the Simonyi summary, or the AuxTel
+// one if there is no Simonyi summary.
+function getTelescopeSummary(maintelSummary, auxTelSummary) {
+  return maintelSummary || auxTelSummary || "-";
+}
+
 function Report({
   day_obs: dayObs,
   summary,
@@ -51,12 +60,7 @@ function Report({
   observers_crew: observersCrew,
   reportRef,
 }) {
-  let telescopeSummary = "-";
-  if (maintelSummary) {
-    telescopeSummary = maintelSummary;
-  } else if (auxTelSummary) {
-    telescopeSummary = auxTelSummary;
-  }
+  const telescopeSummary = getTelescopeSummary(maintelSummary, auxTelSummary);
 
   return (
     <div
@@ -108,8 +112,7 @@ Weather:
 ${report.weather}
 
 Detailed report:
-${report.maintel_summary || ""}
-${report.auxtel_summary || ""}
+${getTelescopeSummary(report.maintel_summary, report.auxtel_summary)}
 
 Observers:
 ${(report.observers_crew || []).join(", ")}
@@ -117,14 +120,9 @@ ${(report.observers_crew || []).join(", ")}
 ${report.date_sent ? `Sent at ${report.date_sent}Z` : ""}`;
 }
 
-function handleDownload(reports) {
-  // TODO: Implement the download functionality
-  // See OSW-1343
-  console.log("TODO: download reports...");
-  const textContent = reports
-    .map(convertReportToText)
-    .join("-----------------\n");
-  console.log(textContent);
+// Concatenate the reports into one text file, separated by a rule.
+function buildNightReportsText(reports) {
+  return reports.map(convertReportToText).join("\n\n-----------------\n\n");
 }
 
 /**
@@ -163,6 +161,7 @@ function NightSummary({
   sources = {},
   required = [],
 }) {
+  const { startDayobs, endDayobs, telescope } = useSearch({ from: "/" });
   const [selectedDay, setSelectedDay] = useState(null);
 
   const [prevReports, setPrevReports] = useState(reports);
@@ -234,6 +233,17 @@ function NightSummary({
   const appletTitle =
     availableDays.length > 1 ? "Night Reports" : "Night Report";
 
+  // Download every report for the selected dates as one text file.
+  const handleDownload = () => ({
+    content: buildNightReportsText(reports),
+    filename: buildDownloadFilename(
+      "night-reports",
+      { telescope, startDayobs, endDayobs },
+      "txt",
+    ),
+    mimeType: "text/plain",
+  });
+
   return (
     <AppletCard
       title={appletTitle}
@@ -270,19 +280,11 @@ function NightSummary({
               </CardContent>
             </DialogContent>
           </Dialog>
-          <Popover>
-            <PopoverTrigger
-              className="self-end min-w-4 cursor-pointer"
-              aria-label={`Download ${appletTitle.toLowerCase()} data`}
-            >
-              <img src={DownloadIcon} onClick={() => handleDownload(reports)} />
-            </PopoverTrigger>
-            <PopoverContent className="bg-black text-white text-sm border-yellow-700">
-              This is a placeholder for the download/export button. Once
-              implemented, clicking here will download this Applet's data to a
-              .txt file.
-            </PopoverContent>
-          </Popover>
+          <DownloadButton
+            onDownload={handleDownload}
+            disabled={nightreportLoading || reports.length === 0}
+            label="Download TXT"
+          />
           <Popover>
             <PopoverTrigger
               className="self-end min-w-4 cursor-pointer"
