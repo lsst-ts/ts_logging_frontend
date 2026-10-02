@@ -8,6 +8,7 @@ import {
 } from "@/utils/observatoryStatusUtils";
 import {
   almanacDayobsForPlot,
+  formatHours,
   utcDateTimeStrToMillis,
 } from "@/utils/timeUtils";
 
@@ -453,5 +454,62 @@ export function buildObservatoryStatusBreakdown({
     rows: [nightHoursRow, domeOpenRow, ...stateRows, unknownRow],
     dayObsValues,
     nights,
+  };
+}
+
+/**
+ * Build the CSV rows and columns for downloading a breakdown.
+ *
+ * Only the base data is included: each exact state combination once (a
+ * combination appears under every state it contains in the table), in the
+ * order of VALID_NIGHTTIME_COMBINATIONS, followed by Unknown. The summary
+ * rows and the per-state parent totals are left out, as they are derived
+ * from these.
+ *
+ * @param {{rows: Array<object>, dayObsValues: Array<string>}} breakdown -
+ *   Output of buildObservatoryStatusBreakdown
+ * @returns {{
+ *   rows: Array<object>,
+ *   columns: Array<{key: string, header?: string}>
+ * }} Input for `toCsv`; values are hours to two decimal places
+ */
+export function buildBreakdownDownloadData({ rows, dayObsValues }) {
+  const combinationRows = new Map();
+  for (const row of rows) {
+    for (const subRow of row.subRows ?? []) {
+      combinationRows.set(subRow.statusMask, subRow);
+    }
+  }
+
+  const unknownRow = rows.find(
+    (row) =>
+      row.rowType === "state" && row.statusMask === OBSERVATORY_STATES.UNKNOWN,
+  );
+
+  // Format the hours as the table shows them, which also hides
+  // floating-point noise such as 0.9999999999999999.
+  const formatRow = (row) => ({
+    ...row,
+    total: formatHours(row.total, { nullReplacement: "" }),
+    ...Object.fromEntries(
+      dayObsValues.map((dayObs) => [
+        dayObs,
+        formatHours(row[dayObs], { nullReplacement: "" }),
+      ]),
+    ),
+  });
+
+  return {
+    rows: [
+      ...VALID_NIGHTTIME_COMBINATIONS.map((combination) =>
+        combinationRows.get(combination.mask),
+      ).filter(Boolean),
+      ...(unknownRow ? [unknownRow] : []),
+    ].map(formatRow),
+    columns: [
+      { key: "state", header: "State" },
+      { key: "total", header: "Total" },
+      ...dayObsValues.map((dayObs) => ({ key: dayObs })),
+    ],
   };
 }

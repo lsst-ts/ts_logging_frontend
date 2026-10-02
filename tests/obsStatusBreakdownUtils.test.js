@@ -6,6 +6,8 @@ import { statusBitmaskToString } from "@/utils/observatoryStatusUtils";
 
 import {
   INVALID_STATE_PAIRS,
+  VALID_NIGHTTIME_COMBINATIONS,
+  buildBreakdownDownloadData,
   buildNightDefinitions,
   buildObservatoryStatusBreakdown,
   calculateExactStatusDurations,
@@ -457,5 +459,80 @@ describe("buildObservatoryStatusBreakdown", () => {
     });
 
     expect(dayObsValues).toEqual(["20260421", "20260422"]);
+  });
+});
+
+describe("buildBreakdownDownloadData", () => {
+  const almanacInfo = [
+    {
+      dayobs: 20260422,
+      elapsed_twilight_hours: 11,
+      twilight_evening_12deg: "2026-04-21 23:00:00",
+      twilight_morning_12deg: "2026-04-22 10:00:00",
+    },
+  ];
+
+  // One hour of Fault + Weather, which the table lists under both parents.
+  const breakdown = buildObservatoryStatusBreakdown({
+    almanacInfo,
+    dayObsOpenDomeHours: { 20260421: { open_hours: 10.5 } },
+    obsStatusIntervals: [
+      {
+        start_time_ms: Date.parse("2026-04-22T00:00:00Z"),
+        end_time_ms: Date.parse("2026-04-22T01:00:00Z"),
+        start_state: OBSERVATORY_STATES.FAULT | OBSERVATORY_STATES.WEATHER,
+      },
+    ],
+  });
+
+  it("lists each combination once, in canonical order, then Unknown", () => {
+    const { rows } = buildBreakdownDownloadData(breakdown);
+
+    expect(rows.map((row) => row.state)).toEqual([
+      ...VALID_NIGHTTIME_COMBINATIONS.map((combination) => combination.label),
+      "Unknown",
+    ]);
+  });
+
+  it("leaves out the summary rows and the per-state totals", () => {
+    const { rows } = buildBreakdownDownloadData(breakdown);
+
+    expect(rows.every((row) => row.rowType !== "summary")).toBe(true);
+    // Unknown is the only state row; the others are combinations.
+    expect(rows.filter((row) => row.rowType === "state")).toHaveLength(1);
+  });
+
+  it("keeps each combination's hours per night and in total, as shown", () => {
+    const { rows } = buildBreakdownDownloadData(breakdown);
+    const faultWeather = rows.find(
+      (row) =>
+        row.statusMask ===
+        (OBSERVATORY_STATES.FAULT | OBSERVATORY_STATES.WEATHER),
+    );
+
+    // The raw value is 0.9999999999999999; formatHours rounds it as the
+    // table does.
+    expect(faultWeather["20260421"]).toBe("1.00");
+    expect(faultWeather.total).toBe("1.00");
+  });
+
+  it("does not change the table's own rows", () => {
+    buildBreakdownDownloadData(breakdown);
+    const faultRow = breakdown.rows.find((row) => row.state === "Fault");
+
+    expect(typeof faultRow.total).toBe("number");
+    expect(faultRow.subRows.every((row) => typeof row.total === "number")).toBe(
+      true,
+    );
+  });
+
+  it("has State and Total columns, then one per night", () => {
+    const { columns } = buildBreakdownDownloadData(breakdown);
+
+    expect(columns).toEqual([
+      { key: "state", header: "State" },
+      { key: "total", header: "Total" },
+      { key: "20260421" },
+    ]);
   });
 });

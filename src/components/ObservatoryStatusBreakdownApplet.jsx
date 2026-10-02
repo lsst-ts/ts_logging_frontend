@@ -1,9 +1,11 @@
 import { useMemo, useState } from "react";
+import { useSearch } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import AppletHeader from "@/components/AppletHeader";
+import DownloadButton from "@/components/DownloadButton";
 import {
   Popover,
   PopoverTrigger,
@@ -18,10 +20,13 @@ import {
 } from "@/components/ObservatoryStatusBreakdownColumns";
 
 import { OBSERVATORY_STATE_AVAILABILITY_STATUS } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
+import { buildDownloadFilename, toCsv } from "@/utils/downloadUtils";
 import { getObsAvailabilityWarningText } from "@/utils/observatoryStatusUtils";
-import { buildObservatoryStatusBreakdown } from "@/utils/obsStatusBreakdownUtils";
+import {
+  buildBreakdownDownloadData,
+  buildObservatoryStatusBreakdown,
+} from "@/utils/obsStatusBreakdownUtils";
 
-import DownloadIcon from "../assets/DownloadIcon.svg";
 import InfoIcon from "../assets/InfoIcon.svg";
 
 function ObservatoryStatusBreakdownApplet({
@@ -76,23 +81,36 @@ function ObservatoryStatusBreakdownApplet({
       fetchError ||
       obsAvailabilityStatus === OBSERVATORY_STATE_AVAILABILITY_STATUS.NONE);
 
+  const { startDayobs, endDayobs, telescope } = useSearch({
+    from: "/time-accounting",
+  });
+
+  // Download the hours for each exact state combination, per night.
+  const handleDownload = () => {
+    const { rows, columns } = buildBreakdownDownloadData(breakdown);
+    return {
+      content: toCsv(rows, columns),
+      filename: buildDownloadFilename(
+        "observatory-status-breakdown",
+        { telescope, startDayobs, endDayobs },
+        "csv",
+      ),
+      mimeType: "text/csv",
+    };
+  };
+
   return (
     <Card className="@container border-none p-0 bg-stone-800 gap-2">
       <AppletHeader
         title="Detailed Breakdown of Observatory States"
         actions={
           <>
-            <Popover>
-              <PopoverTrigger
-                className="min-w-4 cursor-pointer"
-                aria-label="Download Narrative Log data"
-              >
-                <img src={DownloadIcon} alt="Download" />
-              </PopoverTrigger>
-              <PopoverContent className="bg-black text-white text-sm border-yellow-700">
-                This is a placeholder for the download/export button.
-              </PopoverContent>
-            </Popover>
+            <DownloadButton
+              onDownload={handleDownload}
+              disabled={
+                loading || isEmptyState || breakdown.dayObsValues.length === 0
+              }
+            />
 
             <Popover>
               <PopoverTrigger
