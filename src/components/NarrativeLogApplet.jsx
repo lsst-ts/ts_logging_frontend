@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
+import { useSearch } from "@tanstack/react-router";
 
 import { Button } from "@/components/ui/button";
+import DownloadButton from "@/components/DownloadButton";
 import {
   Popover,
   PopoverTrigger,
@@ -17,9 +19,15 @@ import {
   narrativeLogColumns,
   defaultColumnVisibility,
   defaultColumnOrder,
+  formatComponentHierarchy,
 } from "@/components/NarrativeLogColumns";
 
-import DownloadIcon from "../assets/DownloadIcon.svg";
+import {
+  buildDownloadFilename,
+  columnsFromRecords,
+  toCsv,
+} from "@/utils/downloadUtils";
+
 import InfoIcon from "../assets/InfoIcon.svg";
 
 /**
@@ -171,6 +179,33 @@ function NarrativeLogApplet({
     setColumnFilters([]);
   };
 
+  const { startDayobs, endDayobs, telescope } = useSearch({
+    from: "/time-accounting",
+  });
+
+  // Download the entries shown, one row each with every field the backend
+  // returns. List fields are joined, and the component tree also gets a
+  // flat column in the table's "Parent: {Child}" format.
+  const handleDownload = () => {
+    const joinList = (value) =>
+      Array.isArray(value) ? value.join("; ") : value;
+    const rows = faultEntriesWithTimeLoss.map((entry) => ({
+      ...entry,
+      urls: joinList(entry.urls),
+      tags: joinList(entry.tags),
+      component: formatComponentHierarchy(entry.components_json),
+    }));
+    return {
+      content: toCsv(rows, columnsFromRecords(rows)),
+      filename: buildDownloadFilename(
+        "narrative-log",
+        { telescope, startDayobs, endDayobs },
+        "csv",
+      ),
+      mimeType: "text/csv",
+    };
+  };
+
   return (
     <AppletCard
       title="Narrative Log Entries with Fault Time Loss"
@@ -186,17 +221,10 @@ function NarrativeLogApplet({
       }
       actions={
         <>
-          <Popover>
-            <PopoverTrigger
-              className="min-w-4 cursor-pointer"
-              aria-label="Download Narrative Log data"
-            >
-              <img src={DownloadIcon} alt="Download" />
-            </PopoverTrigger>
-            <PopoverContent className="bg-black text-white text-sm border-yellow-700">
-              This is a placeholder for the download/export button.
-            </PopoverContent>
-          </Popover>
+          <DownloadButton
+            onDownload={handleDownload}
+            disabled={loading || faultEntriesWithTimeLoss.length === 0}
+          />
 
           <Popover>
             <PopoverTrigger
