@@ -31,6 +31,14 @@ export const OBSERVATORY_STATE_AVAILABILITY_STATUS = {
 };
 
 /**
+ * Observatory status availability object for cases where no data is available.
+ */
+export const EMPTY_OBS_STATUS_AVAILABILITY = {
+  status: "none",
+  available_from: null,
+};
+
+/**
  * Human-readable labels for each state
  */
 export const STATUS_LABELS = {
