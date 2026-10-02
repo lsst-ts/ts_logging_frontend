@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useSearch } from "@tanstack/react-router";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -9,10 +10,17 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import ObservatoryStatusBreakdownTable from "@/components/ObservatoryStatusBreakdownTable";
 import AppletCard from "@/components/AppletCard";
-import { buildObservatoryStatusBreakdown } from "@/utils/obsStatusBreakdownUtils";
-import { buildObsStatusSource } from "@/utils/appletStatus";
+import DownloadButton from "@/components/DownloadButton";
+import {
+  buildBreakdownDownloadData,
+  buildObservatoryStatusBreakdown,
+} from "@/utils/obsStatusBreakdownUtils";
+import {
+  buildObsStatusSource,
+  resolveAppletStatus,
+} from "@/utils/appletStatus";
+import { buildDownloadFilename, toCsv } from "@/utils/downloadUtils";
 
-import DownloadIcon from "../assets/DownloadIcon.svg";
 import InfoIcon from "../assets/InfoIcon.svg";
 
 /**
@@ -56,17 +64,39 @@ function ObservatoryStatusBreakdownApplet({
     [almanacInfo, dayObsOpenDomeHours, obsStatusIntervals],
   );
 
+  const sources = {
+    "obs-status": buildObsStatusSource(availability, fetchError),
+    almanac: { ok: !almanacFetchError },
+  };
+  const required = ["obs-status", "almanac"];
+  const { status } = resolveAppletStatus({ sources, required, loading });
+
+  const { startDayobs, endDayobs, telescope } = useSearch({
+    from: "/time-accounting",
+  });
+
+  // Download the hours for each exact state combination, per night.
+  const handleDownload = () => {
+    const { rows, columns } = buildBreakdownDownloadData(breakdown);
+    return {
+      content: toCsv(rows, columns),
+      filename: buildDownloadFilename(
+        "observatory-status-breakdown",
+        { telescope, startDayobs, endDayobs },
+        "csv",
+      ),
+      mimeType: "text/csv",
+    };
+  };
+
   return (
     <AppletCard
       title="Detailed Breakdown of Observatory States"
       id="obs-status-breakdown-table"
       open={tableVisible}
       loading={loading}
-      sources={{
-        "obs-status": buildObsStatusSource(availability, fetchError),
-        almanac: { ok: !almanacFetchError },
-      }}
-      required={["obs-status", "almanac"]}
+      sources={sources}
+      required={required}
       badgeAriaLabel="Observatory Status data availability warning"
       skeleton={
         <div className="flex-grow w-full h-full">
@@ -75,17 +105,12 @@ function ObservatoryStatusBreakdownApplet({
       }
       actions={
         <>
-          <Popover>
-            <PopoverTrigger
-              className="min-w-4 cursor-pointer"
-              aria-label="Download Observatory Status Breakdown data"
-            >
-              <img src={DownloadIcon} alt="Download" />
-            </PopoverTrigger>
-            <PopoverContent className="bg-black text-white text-sm border-yellow-700">
-              This is a placeholder for the download/export button.
-            </PopoverContent>
-          </Popover>
+          <DownloadButton
+            onDownload={handleDownload}
+            disabled={
+              status !== "ready" || breakdown.dayObsValues.length === 0
+            }
+          />
 
           <Popover>
             <PopoverTrigger
