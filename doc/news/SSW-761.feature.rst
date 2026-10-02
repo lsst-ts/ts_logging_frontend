@@ -1,0 +1,1 @@
+Enable data downloads: page and applet download buttons now save their data as CSV, or as text for night reports.
