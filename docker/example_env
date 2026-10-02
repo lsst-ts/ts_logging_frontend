@@ -10,7 +10,7 @@ LSST_DISABLE_BUCKET_VALIDATION=1
 
 # Overrides the backend API root. Leave blank to derive it from the page origin.
 VITE_BACKEND_URL=
-# It is required to be set if running the Scientific Nightly Digest (SND) locally
+# It is required to be set if running the Scientific Nightly Digest (SND) locally.
 # VITE_BACKEND_URL=http://localhost/nightlydigest/api
 
 # Set to true to build/run the SND. Leave blank for the normal Nightly Digest.
