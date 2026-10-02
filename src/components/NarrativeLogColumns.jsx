@@ -65,7 +65,7 @@ function toDateTimeMicros(value) {
 }
 
 // Format a component hierarchy for display.
-function formatComponentHierarchy(component) {
+export function formatComponentHierarchy(component) {
   if (!component?.name) return "";
   const children = Array.isArray(component.children)
     ? component.children.filter((child) => child?.name)
