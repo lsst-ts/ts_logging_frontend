@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useSearch } from "@tanstack/react-router";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -12,9 +13,14 @@ import AppletCard, {
   EmptyDisplayState,
   useAppletState,
 } from "@/components/AppletCard";
-import { buildObservatoryStatusBreakdown } from "@/utils/obsStatusBreakdownUtils";
+import DownloadButton from "@/components/DownloadButton";
+import {
+  buildBreakdownDownloadData,
+  buildObservatoryStatusBreakdown,
+} from "@/utils/obsStatusBreakdownUtils";
+import { resolveAppletStatus } from "@/utils/appletStatus";
+import { buildDownloadFilename, toCsv } from "@/utils/downloadUtils";
 
-import DownloadIcon from "../assets/DownloadIcon.svg";
 import InfoIcon from "../assets/InfoIcon.svg";
 
 /**
@@ -82,6 +88,26 @@ function ObservatoryStatusBreakdownApplet({
     [almanacInfo, dayObsOpenDomeHours, obsStatusIntervals],
   );
 
+  const { status } = resolveAppletStatus({ sources, required, loading });
+
+  const { startDayobs, endDayobs, telescope } = useSearch({
+    from: "/time-accounting",
+  });
+
+  // Download the hours for each exact state combination, per night.
+  const handleDownload = () => {
+    const { rows, columns } = buildBreakdownDownloadData(breakdown);
+    return {
+      content: toCsv(rows, columns),
+      filename: buildDownloadFilename(
+        "observatory-status-breakdown",
+        { telescope, startDayobs, endDayobs },
+        "csv",
+      ),
+      mimeType: "text/csv",
+    };
+  };
+
   return (
     <AppletCard
       title="Detailed Breakdown of Observatory States"
@@ -98,17 +124,10 @@ function ObservatoryStatusBreakdownApplet({
       }
       actions={
         <>
-          <Popover>
-            <PopoverTrigger
-              className="min-w-4 cursor-pointer"
-              aria-label="Download Observatory Status Breakdown data"
-            >
-              <img src={DownloadIcon} alt="Download" />
-            </PopoverTrigger>
-            <PopoverContent className="bg-black text-white text-sm border-yellow-700">
-              This is a placeholder for the download/export button.
-            </PopoverContent>
-          </Popover>
+          <DownloadButton
+            onDownload={handleDownload}
+            disabled={status !== "ready" || breakdown.dayObsValues.length === 0}
+          />
 
           <Popover>
             <PopoverTrigger
