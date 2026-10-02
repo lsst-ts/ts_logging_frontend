@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { setupApiMocks } from "../../helpers/mock-api.js";
+import { downloadFile } from "../../helpers/download-helpers.js";
 import { DIGEST_URL } from "../../helpers/constants.js";
 
 function nightSummaryCard(page) {
@@ -111,15 +112,29 @@ test.describe("Night Summary applet — with reports", () => {
     );
   });
 
-  test("opens the download placeholder popover", async ({ page }) => {
-    const card = nightSummaryCard(page);
-    await card
-      .getByRole("button", { name: /Download night reports? data/ })
-      .click();
+  test("downloads every report as one text file", async ({ page }) => {
+    const button = nightSummaryCard(page).getByRole("button", {
+      name: "Download TXT",
+    });
 
-    await expect(
-      page.getByText("This is a placeholder for the download/export button."),
-    ).toBeVisible();
+    const { filename, text } = await downloadFile(page, button);
+
+    expect(filename).toBe(
+      "nightlydigest_night-reports_Simonyi_20260101-20260101.txt",
+    );
+    expect(text.startsWith("Night of 20260101\n")).toBe(true);
+    expect(text).toContain("Low winds and intermittent thin clouds.");
+    expect(text).toContain("Observers:\nalice, bob");
+    // Like the applet, only the Simonyi summary is included.
+    expect(text).toContain(
+      "Detailed report:\nMain telescope observations completed successfully.\n",
+    );
+    expect(text).not.toContain("Aux telescope");
+    // Reports are separated by a rule on its own line, in order.
+    expect(text).toContain(
+      "Sent at 2026-01-02T09:15:00Z\n\n-----------------\n\nNight of 20260102\n",
+    );
+    expect(text.trimEnd().endsWith("Sent at 2026-01-03T09:20:00Z")).toBe(true);
   });
 
   test("opens the info popover", async ({ page }) => {
