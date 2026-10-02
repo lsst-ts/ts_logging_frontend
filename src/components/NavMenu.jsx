@@ -27,11 +27,15 @@ const items = [
     title: "Visit Maps",
     url: "/visit-maps",
   },
-  {
-    name: "time-accounting",
-    title: "Time Accounting",
-    url: "/nightlydigest/time-accounting",
-  },
+  ...(isScientificNightlyDigest
+    ? []
+    : [
+        {
+          name: "time-accounting",
+          title: "Time Accounting",
+          url: "/nightlydigest/time-accounting",
+        },
+      ]),
 ];
 
 /**

@@ -701,7 +701,7 @@ export default function Digest() {
                 nightreportLoading={nightreportLoading}
               />
             )}
-            <ObservatoryStatusApplet
+            <ObservatoryStatusCumulativeApplet
               almanacInfo={almanacInfo}
               intervals={obsStatusIntervals}
               availability={obsStatusAvailability}

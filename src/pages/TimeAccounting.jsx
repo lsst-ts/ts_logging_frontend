@@ -90,6 +90,7 @@ function TimeAccounting() {
   const [sumOnSkyExpTime, setSumOnSkyExpTime] = useState(null);
   const [openDomeError, setOpenDomeError] = useState(false);
   const [timeAccountingError, setTimeAccountingError] = useState(false);
+  const [exposuresError, setExposuresError] = useState(false);
 
   // TODO: From Context Feed
   // Almanac data for timeline
@@ -144,6 +145,7 @@ function TimeAccounting() {
     setSumOnSkyExpTime(null);
     setOpenDomeError(false);
     setTimeAccountingError(false);
+    setExposuresError(false);
 
     // TODO: From Context Feed
     setTwilightValues([]);
@@ -218,13 +220,20 @@ function TimeAccounting() {
             source: "dome-times",
           });
         }
+        if (data.time_accounting_error) {
+          addNotification({
+            type: "error",
+            source: "time-accounting",
+          });
+        }
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
-          console.error("Error fetching dome information:", err);
+          console.error("Error fetching exposures:", err);
+          setExposuresError(true);
           addNotification({
             type: "error",
-            source: "dome",
+            source: "exposures",
           });
         }
       })
@@ -359,16 +368,23 @@ function TimeAccounting() {
         faultUnavailableReason: reason,
       });
 
-      if (almanacUnavailable && timeAccountingError) {
-        return unavailable(
-          "Fault unavailable: no almanac or time accounting data.",
-        );
+      if (exposuresError) {
+        return unavailable("Exposures could not be fetched.");
       }
       if (almanacUnavailable) {
-        return unavailable("Fault unavailable: no almanac data.");
+        return unavailable(
+          "Fault data unable to be computed: no almanac data.",
+        );
       }
       if (timeAccountingError) {
-        return unavailable("Fault unavailable: no time accounting data.");
+        return unavailable(
+          "Fault data unable to be computed: no time accounting data.",
+        );
+      }
+      if (obsStatusFetchError) {
+        return unavailable(
+          "Fault data unable to be computed: no observatory status data.",
+        );
       }
       if (!onSkyTimeAccounting || isDictionaryEmpty(onSkyTimeAccounting)) {
         return {
@@ -395,7 +411,9 @@ function TimeAccounting() {
       onSkyTimeAccounting,
       totalExpTimeBetweenTwilights, // TODO: exposures.total_on_sky_exposure_time?
       obsStatusMetrics,
+      obsStatusFetchError,
       timeAccountingError,
+      exposuresError,
     ]);
 
   const allLoaded = !almanacLoading && !exposuresLoading && !obsStatusLoading;
