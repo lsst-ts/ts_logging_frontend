@@ -1,6 +1,13 @@
-import { DateTime } from "luxon";
 import { OBSERVATORY_STATES } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
-import { isoToUTC, getCurrentDayObs } from "@/utils/timeUtils";
+import { clipIntervalToNight } from "@/utils/observatoryStatusUtils";
+import {
+  isoToUTC,
+  getCurrentDayObs,
+  almanacDayobsForPlot,
+  utcDateTimeStrToMillis,
+} from "@/utils/timeUtils";
+
+const HOURS_PER_MILLISECOND = 1 / (60 * 60 * 1000);
 
 /**
  * Build day-break gaps between consecutive nights for the cumulative plot.
@@ -200,15 +207,21 @@ export function buildCumulativeStateSeries(intervals, nights, accumulate) {
 
     // Walk intervals in chronological order.
     for (const interval of nightIntervals) {
-      // Clip interval at the night boundaries.
-      const clippedAtSunset = interval.start_time_ms < sunsetMs;
-      const startMs = Math.max(interval.start_time_ms, sunsetMs);
-      const endMs = Math.min(interval.end_time_ms, sunriseMs);
+      const clipped = clipIntervalToNight(
+        interval.start_time_ms,
+        interval.end_time_ms,
+        sunsetMs,
+        sunriseMs,
+      );
 
       // Ignore intervals entirely outside the night.
-      if (endMs <= startMs) {
+      if (!clipped) {
         continue;
       }
+
+      const startMs = clipped.startMs;
+      const endMs = clipped.endMs;
+      const clippedAtSunset = interval.start_time_ms < sunsetMs;
 
       // Recalculate duration after clipping.
       const durationHours = (endMs - startMs) / (1000 * 60 * 60);
@@ -390,6 +403,12 @@ export function buildCumulativeStateSeries(intervals, nights, accumulate) {
 /**
  * Build a night metadata map from almanac data and open-dome intervals.
  *
+ * This is the single source of night-boundary metadata derived from the
+ * almanac, used by both the cumulative plots and the observatory-status
+ * breakdown. Each night carries the full scheduled hours (`nightHours`)
+ * and the completed hours (`elapsedHours`, `0` for future nights, partial
+ * for the current in-progress night).
+ *
  * @param {Array} almanacInfo Almanac records for each night.
  * @param {Array} [openDomeTimes=[]] Open-dome intervals to attach to each night.
  * @returns {Map} Night metadata keyed by dayobs.
@@ -400,17 +419,19 @@ export function buildNightMetadataMap(almanacInfo, openDomeTimes = []) {
   // Create all nights from almanac data.
   for (const night of almanacInfo) {
     // TODO: (OSW-2471) Remove once almanac dayobs values are corrected.
-    const correctedDayObs = Number(
-      DateTime.fromFormat(String(night.dayobs), "yyyyLLdd")
-        .minus({ days: 1 })
-        .toFormat("yyyyLLdd"),
-    );
+    const dayObs = Number(almanacDayobsForPlot(night.dayobs));
+    const sunsetMs = utcDateTimeStrToMillis(night.twilight_evening_12deg);
+    const sunriseMs = utcDateTimeStrToMillis(night.twilight_morning_12deg);
+    const elapsedTwilightHours = Number(night.elapsed_twilight_hours);
 
-    nights.set(correctedDayObs, {
-      dayObs: correctedDayObs,
-      sunsetMs: Date.parse(`${night.twilight_evening_12deg}Z`),
-      sunriseMs: Date.parse(`${night.twilight_morning_12deg}Z`),
+    nights.set(dayObs, {
+      dayObs,
+      sunsetMs,
+      sunriseMs,
       nightHours: night.night_hours,
+      elapsedHours: Number.isFinite(elapsedTwilightHours)
+        ? elapsedTwilightHours
+        : (sunriseMs - sunsetMs) * HOURS_PER_MILLISECOND,
       intervals: [],
     });
   }

@@ -5,11 +5,9 @@ import {
 import {
   parseStatusBitmask,
   statusBitmaskToString,
+  clipIntervalToNight,
 } from "@/utils/observatoryStatusUtils";
-import {
-  almanacDayobsForPlot,
-  utcDateTimeStrToMillis,
-} from "@/utils/timeUtils";
+import { buildNightMetadataMap } from "@/utils/cumulativePlotModel";
 
 /**
  * State keys that participate in the nighttime breakdown.
@@ -57,39 +55,30 @@ const HOURS_PER_MILLISECOND = 1 / (60 * 60 * 1000);
 /**
  * Build the observing-night boundaries from almanac records.
  *
+ * Derived from the shared `buildNightMetadataMap` (the single source of
+ * night-boundary data). The breakdown uses the completed (elapsed) night
+ * hours and validates/sorts the nights, which the plot path does not need.
+ *
  * @param {Array<object>} almanacInfo
  * @returns {Array<object>}
  */
 export function buildNightDefinitions(almanacInfo = []) {
-  return almanacInfo
-    .map((almanac) => {
-      // The almanac dayobs refers to the calendar day AFTER the night it
-      // describes, so it is shifted back a day (see almanacDayobsForPlot).
-      const dayObs = almanacDayobsForPlot(almanac.dayobs);
-      const startMs = utcDateTimeStrToMillis(almanac.twilight_evening_12deg);
-      const endMs = utcDateTimeStrToMillis(almanac.twilight_morning_12deg);
+  const nights = buildNightMetadataMap(almanacInfo);
 
-      if (
-        !/^\d{8}$/.test(dayObs) ||
-        !Number.isFinite(startMs) ||
-        !Number.isFinite(endMs) ||
-        endMs <= startMs
-      ) {
-        return null;
-      }
-
-      const elapsedTwilightHours = Number(almanac.elapsed_twilight_hours);
-
-      return {
-        dayObs,
-        startMs,
-        endMs,
-        nightHours: Number.isFinite(elapsedTwilightHours)
-          ? elapsedTwilightHours
-          : (endMs - startMs) * HOURS_PER_MILLISECOND,
-      };
-    })
-    .filter(Boolean)
+  return [...nights.values()]
+    .map((night) => ({
+      dayObs: String(night.dayObs),
+      startMs: night.sunsetMs,
+      endMs: night.sunriseMs,
+      nightHours: night.elapsedHours,
+    }))
+    .filter(
+      (night) =>
+        /^\d{8}$/.test(night.dayObs) &&
+        Number.isFinite(night.startMs) &&
+        Number.isFinite(night.endMs) &&
+        night.endMs > night.startMs,
+    )
     .sort((a, b) => a.dayObs.localeCompare(b.dayObs));
 }
 
@@ -275,14 +264,18 @@ export function calculateExactStatusDurations({
     }
 
     for (const night of nights) {
-      const clippedStart = Math.max(startMs, night.startMs);
-      const clippedEnd = Math.min(endMs, night.endMs);
+      const clipped = clipIntervalToNight(
+        startMs,
+        endMs,
+        night.startMs,
+        night.endMs,
+      );
 
-      if (clippedEnd <= clippedStart) {
+      if (!clipped) {
         continue;
       }
 
-      const hours = (clippedEnd - clippedStart) * HOURS_PER_MILLISECOND;
+      const hours = (clipped.endMs - clipped.startMs) * HOURS_PER_MILLISECOND;
 
       addDuration(exactDurations, night.dayObs, status, hours);
     }

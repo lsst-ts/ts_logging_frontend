@@ -271,3 +271,32 @@ export function getObsAvailabilityWarningText({
     obsAvailableFrom ?? "the supported dayobs range"
   }.`;
 }
+
+/**
+ * Clip an observatory-status interval to a night's boundaries.
+ *
+ * Returns the overlapping portion of the interval, or `null` when the
+ * interval does not overlap the night at all.
+ *
+ * @param {number} intervalStartMs Interval start, in ms since epoch.
+ * @param {number} intervalEndMs Interval end, in ms since epoch.
+ * @param {number} nightStartMs Night start boundary (sunset), in ms.
+ * @param {number} nightEndMs Night end boundary (sunrise), in ms.
+ * @returns {{startMs: number, endMs: number}|null} The clipped interval, or
+ *   `null` if the interval falls entirely outside the night.
+ */
+export function clipIntervalToNight(
+  intervalStartMs,
+  intervalEndMs,
+  nightStartMs,
+  nightEndMs,
+) {
+  const startMs = Math.max(intervalStartMs, nightStartMs);
+  const endMs = Math.min(intervalEndMs, nightEndMs);
+
+  if (endMs <= startMs) {
+    return null;
+  }
+
+  return { startMs, endMs };
+}
