@@ -126,7 +126,7 @@ test.describe("Exposure Time Accounting — availability warnings", () => {
     await expect(warning).toBeVisible({ timeout: 15000 });
     await warning.hover();
     await expect(await tooltipForTrigger(page, warning)).toContainText(
-      "Observatory Status data is only available from",
+      "Observatory Status data is only available from 2026-01-02.",
     );
   });
 

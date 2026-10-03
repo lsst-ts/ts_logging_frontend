@@ -90,7 +90,7 @@ function ExposureTimeAccountingApplet({
       const availabilityWarning = getObsAvailabilityWarningText({
         almanacFetchError,
         obsStatusFetchError,
-        obsStatusAvailability,
+        availability: obsStatusAvailability,
       });
       if (availabilityWarning) items.push(availabilityWarning);
     }

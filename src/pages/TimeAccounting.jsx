@@ -160,7 +160,7 @@ function TimeAccounting() {
 
     fetchAlmanac(startDayobs, queryEndDayobs, abortController)
       .then((almanac) => {
-        // Used in obs-status timeline
+        // Used in Obs Status Timeline
         const { twilightValues, twilight0DegValues } = prepareAlmanacData(
           almanac,
           { utc: true },
@@ -168,9 +168,8 @@ function TimeAccounting() {
         setTwilightValues(twilightValues);
         setTwilight0DegValues(twilight0DegValues);
 
-        // TODO: currently using the one from Digest, setNightHours is not used.
-        // TODO: From Context Feed
-        // Digest's is outside useEffect, and is const, not state.
+        // Total elapsed twilight (night) hours across the selected range,
+        // used in Obs Status Timeline and Exposure Accounting.
         setNightHours(
           almanac.reduce(
             (acc, day) => acc + (day.elapsed_twilight_hours ?? 0),
@@ -198,6 +197,7 @@ function TimeAccounting() {
 
     fetchExposures(startDayobs, queryEndDayobs, instrument, abortController)
       .then((data) => {
+        // Are exposures actually used anywhere?
         setExposures(data.exposures);
         setSumOnSkyExpTime(data.total_on_sky_exposure_time ?? null);
         setOpenDomeTimes(data.open_dome_times ?? []);
@@ -304,15 +304,6 @@ function TimeAccounting() {
     };
   }, [startDayobs, endDayobs, telescope]);
 
-  // TODO: From Digest
-  // Context Feed's is in useEffect and is state, not const.
-  const elapsedTwilightHours = useMemo(
-    () =>
-      almanacInfo?.reduce((acc, day) => acc + day.elapsed_twilight_hours, 0) ??
-      0,
-    [almanacInfo],
-  );
-
   // TODO: total_on_sky_exposure_time fetched from the backend would be ideal to use
   // here except that it does not clip at twilights, like this util.
   const totalExpTimeBetweenTwilights = useMemo(
@@ -320,38 +311,24 @@ function TimeAccounting() {
     [exposures, almanacInfo],
   );
 
-  const almanacUnavailable = !almanacLoading && !almanacInfo?.length;
-
-  const faultLoading = useMemo(
-    () => almanacLoading || obsStatusLoading || exposuresLoading,
-    [almanacLoading, obsStatusLoading, exposuresLoading],
-  );
-
-  // Compute total dome hours across the queried nights; used in the
-  // Exposure Time Accounting applet, both direcly passed in
-  // domeTotals.closedHours and in the calculatedFault computations.
-  const domeTotals = useMemo(() => {
+  // Total closed-dome hours across the queried nights, passed directly into
+  // the Exposure Time Accounting applet.
+  const domeClosedHours = useMemo(() => {
     if (openDomeError) {
       return null;
     }
 
     if (!dayObsOpenDomeHours || isDictionaryEmpty(dayObsOpenDomeHours)) {
-      return {
-        nightHours: 0.0,
-        openHours: 0.0,
-        closedHours: 0.0,
-      };
+      return 0.0;
     }
 
     return Object.values(dayObsOpenDomeHours).reduce(
-      (sum, hours) => ({
-        nightHours: sum.nightHours + (hours.night_hours ?? 0.0),
-        openHours: sum.openHours + (hours.open_hours ?? 0.0),
-        closedHours: sum.closedHours + (hours.closed_hours ?? 0.0),
-      }),
-      { nightHours: 0.0, openHours: 0.0, closedHours: 0.0 },
+      (sum, hours) => sum + (hours.closed_hours ?? 0.0),
+      0.0,
     );
   }, [dayObsOpenDomeHours, openDomeError]);
+
+  const almanacUnavailable = !almanacLoading && !almanacInfo?.length;
 
   // TODO: How much can be moved into ExposureTimeAccountingApplet?
   const { calculatedFault, faultUnavailable, faultUnavailableReason } =
@@ -384,7 +361,7 @@ function TimeAccounting() {
         calculatedFault: computeCalculatedFault(
           onSkyTimeAccounting,
           totalExpTimeBetweenTwilights,
-          elapsedTwilightHours,
+          nightHours,
           obsStatusMetrics?.weather ?? 0.0,
         ),
         faultUnavailable: false,
@@ -392,16 +369,25 @@ function TimeAccounting() {
       };
     }, [
       almanacUnavailable,
-      domeTotals,
-      elapsedTwilightHours,
+      nightHours,
       onSkyTimeAccounting,
       totalExpTimeBetweenTwilights,
       obsStatusMetrics,
-      obsStatusFetchError,
       exposureTimeAccountingError,
     ]);
 
-  const allLoaded = !almanacLoading && !exposuresLoading && !obsStatusLoading;
+  // Loading flag for the Exposure Time Accounting applet.
+  const exposureAccountingLoading = useMemo(
+    () => almanacLoading || obsStatusLoading || exposuresLoading,
+    [almanacLoading, obsStatusLoading, exposuresLoading],
+  );
+
+  // Loading flag for the full page; determines whether to show the notifications.
+  const allLoaded =
+    !almanacLoading &&
+    !exposuresLoading &&
+    !obsStatusLoading &&
+    !narrativeLogLoading;
 
   const displayedNotifications = allLoaded
     ? processedNotifications
@@ -554,11 +540,11 @@ function TimeAccounting() {
           />
 
           <ExposureTimeAccountingApplet
-            loading={faultLoading}
+            loading={exposureAccountingLoading}
             onSkyTimeAccounting={onSkyTimeAccounting}
             sumOnSkyExpTime={sumOnSkyExpTime}
-            elapsedTwilightHours={elapsedTwilightHours}
-            closedDomeHours={domeTotals?.closedHours ?? null}
+            elapsedTwilightHours={nightHours}
+            closedDomeHours={domeClosedHours}
             calculatedFaultHours={calculatedFault}
             // All of these are error messages and availability flags.
             // Seems excessive.
