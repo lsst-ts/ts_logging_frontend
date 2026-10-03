@@ -144,6 +144,68 @@ test.describe("Time Accounting — full availability", () => {
     expect(Number.isInteger(startTime)).toBe(true);
     expect(Number.isInteger(endTime)).toBe(true);
   });
+
+  test("hides and shows each cumulative observatory status plot", async ({
+    page,
+  }) => {
+    const singleNightCard = page
+      .locator("[data-slot='card']")
+      .filter({ hasText: "Observatory Status - Single Night Accumulations" });
+    await expect(singleNightCard.locator("svg").first()).toBeVisible();
+
+    await singleNightCard.getByRole("button", { name: "Hide Plot" }).click();
+    await expect(singleNightCard.locator("svg")).toHaveCount(0);
+    await expect(
+      singleNightCard.getByRole("button", { name: "Show Plot" }),
+    ).toBeVisible();
+
+    await singleNightCard.getByRole("button", { name: "Show Plot" }).click();
+    await expect(singleNightCard.locator("svg").first()).toBeVisible();
+  });
+
+  test("shows and hides the timeline tips", async ({ page }) => {
+    await page.getByRole("button", { name: "Show Tips" }).click();
+    await expect(page.getByText("Timeline Tips")).toBeVisible();
+    await expect(page.getByText(/blue lines are 12° twilights/)).toBeVisible();
+
+    await page.getByRole("button", { name: "Hide Tips" }).click();
+    await expect(page.getByText("Timeline Tips")).toHaveCount(0);
+  });
+
+  test("opens the page-header download placeholder popover", async ({
+    page,
+  }) => {
+    const pageHeader = page
+      .locator("[data-slot='card-header']")
+      .filter({ hasText: "Time Accounting" });
+    await pageHeader.locator("button").first().click();
+    await expect(
+      page.getByText(
+        /clicking here will download the data shown on this page to a \.csv file/,
+      ),
+    ).toBeVisible();
+  });
+});
+
+test.describe("Time Accounting — fetch errors", () => {
+  test("shows an error banner when the exposures request fails", async ({
+    page,
+  }) => {
+    await setupApiMocks(page);
+    // Registered after setupApiMocks so this failed route takes precedence.
+    await page.route("**/nightlydigest/api/exposures*", (route) =>
+      route.abort(),
+    );
+    await page.goto(TIME_ACCOUNTING_URL);
+    await waitForTimeAccountingLoad(page);
+
+    await expect(
+      page.getByText("One or more data sources are unavailable."),
+    ).toBeVisible({ timeout: 15000 });
+    await expect(
+      page.getByText(/Exposure data could not be fetched/),
+    ).toBeVisible();
+  });
 });
 
 test.describe("Time Accounting — no availability", () => {

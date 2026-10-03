@@ -216,11 +216,11 @@ function ExposureTimeAccountingApplet({
                 ariaLabel="Exposure Time Accounting data availability warning"
                 iconClassName="h-4"
               >
-                <div className="flex flex-col gap-1">
+                <span className="flex flex-col gap-1">
                   {warningItems.map((item) => (
                     <span key={item}>{item}</span>
                   ))}
-                </div>
+                </span>
               </WarningTooltip>
             </div>
           ) : undefined
