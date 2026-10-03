@@ -1,0 +1,254 @@
+// @ts-check
+import { test, expect } from "@playwright/test";
+import { setupApiMocks } from "../../helpers/mock-api.js";
+import { TIME_ACCOUNTING_URL } from "../../helpers/constants.js";
+import { dragOn, getTimeParams } from "../../helpers/plots-helpers.js";
+import { waitForTimeAccountingLoad } from "../../helpers/time-accounting-helpers.js";
+
+test.describe("Time Accounting — loading state", () => {
+  test.beforeEach(async ({ page }) => {
+    await setupApiMocks(page);
+    // Keep obs-status pending so the page stays in its loading state.
+    await page.route("**/nightlydigest/api/obs-status*", () => {});
+    await page.goto(TIME_ACCOUNTING_URL);
+  });
+
+  test("shows a skeleton while the observatory status data is loading", async ({
+    page,
+  }) => {
+    // The timeline applet header is always rendered, so check its card title,
+    // and confirm the chart itself is absent (still loading).
+    await expect(
+      page.getByText("Timeline of Observatory State Changes"),
+    ).toBeVisible();
+    await expect(page.locator('[data-slot="skeleton"]').first()).toBeVisible();
+    await expect(page.locator('[data-slot="obs-status-timeline"]')).toHaveCount(
+      0,
+    );
+  });
+});
+
+test.describe("Time Accounting — full availability", () => {
+  test.beforeEach(async ({ page }) => {
+    await setupApiMocks(page);
+    await page.goto(TIME_ACCOUNTING_URL);
+    await waitForTimeAccountingLoad(page);
+  });
+
+  test("renders the observatory status timeline applet", async ({ page }) => {
+    await expect(
+      page.getByText("Timeline of Observatory State Changes"),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Hide Timeline" }),
+    ).toBeVisible();
+  });
+
+  test("opens the timeline in fullscreen", async ({ page }) => {
+    await page
+      .getByRole("button", {
+        name: "Open observatory status timeline in fullscreen",
+      })
+      .click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    await expect(
+      dialog.locator('[data-slot="obs-status-timeline"]').first(),
+    ).toBeVisible();
+  });
+
+  test("renders both observatory status cumulative plot applets", async ({
+    page,
+  }) => {
+    await expect(
+      page.getByText("Observatory Status - Single Night Accumulations"),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Observatory Status - Multi Night Accumulations"),
+    ).toBeVisible();
+    // Each applet shows a Hide Graph toggle.
+    await expect(
+      page.getByRole("button", { name: "Hide Graph" }).first(),
+    ).toBeVisible();
+  });
+
+  test("renders the observatory status breakdown table", async ({ page }) => {
+    const table = page.locator("#obs-status-breakdown-table");
+    await expect(table).toBeVisible();
+    // Summary rows are the first rows of the breakdown table.
+    await expect(table).toContainText("Night Hours");
+    await expect(table).toContainText("Dome Open");
+  });
+
+  test("breakdown defaults to active states only, all expanded", async ({
+    page,
+  }) => {
+    const table = page.locator("#obs-status-breakdown-table");
+    await expect(table).toBeVisible();
+    // Show-only-active is on by default (button prompts to show all states).
+    await expect(
+      table.getByRole("button", { name: "Show All States" }),
+    ).toBeVisible();
+    // All rows are expanded by default.
+    await expect(
+      table.getByRole("button", { name: "Collapse All States" }),
+    ).toBeVisible();
+    // The active Operational state is present...
+    await expect(
+      table.getByText("Operational", { exact: true }).first(),
+    ).toBeVisible();
+    // ...while inactive states (e.g. Fault) are hidden.
+    await expect(table.getByText("Fault", { exact: true })).toHaveCount(0);
+  });
+
+  test("breakdown toggle shows all states and reset restores active only", async ({
+    page,
+  }) => {
+    const table = page.locator("#obs-status-breakdown-table");
+    await expect(table).toBeVisible();
+
+    await table.getByRole("button", { name: "Show All States" }).click();
+    await expect(
+      table.getByRole("button", { name: "Show Only Active States" }),
+    ).toBeVisible();
+    // Inactive states now appear.
+    await expect(
+      table.getByText("Fault", { exact: true }).first(),
+    ).toBeVisible();
+
+    await table.getByRole("button", { name: "Reset Table" }).click();
+    // Reset returns to the show-only-active default and hides inactive states.
+    await expect(
+      table.getByRole("button", { name: "Show All States" }),
+    ).toBeVisible();
+    await expect(table.getByText("Fault", { exact: true })).toHaveCount(0);
+  });
+
+  test("selecting on the timeline adds integer startTime and endTime to the URL", async ({
+    page,
+  }) => {
+    const timeline = page.locator('[data-slot="obs-status-timeline"]').first();
+    await expect(timeline).toBeVisible();
+
+    await dragOn(page, timeline, {
+      fromX: 0.25,
+      toX: 0.75,
+      fromY: 0.5,
+      toY: 0.5,
+    });
+
+    await expect(page).toHaveURL(/startTime=/);
+    const { startTime, endTime } = getTimeParams(page);
+    expect(startTime).not.toBeNull();
+    expect(endTime).not.toBeNull();
+    expect(Number.isInteger(startTime)).toBe(true);
+    expect(Number.isInteger(endTime)).toBe(true);
+  });
+
+  test("hides and shows each cumulative observatory status plot", async ({
+    page,
+  }) => {
+    const singleNightCard = page
+      .locator("[data-slot='card']")
+      .filter({ hasText: "Observatory Status - Single Night Accumulations" });
+    await expect(singleNightCard.locator("svg").first()).toBeVisible();
+
+    await singleNightCard.getByRole("button", { name: "Hide Plot" }).click();
+    await expect(singleNightCard.locator("svg")).toHaveCount(0);
+    await expect(
+      singleNightCard.getByRole("button", { name: "Show Plot" }),
+    ).toBeVisible();
+
+    await singleNightCard.getByRole("button", { name: "Show Plot" }).click();
+    await expect(singleNightCard.locator("svg").first()).toBeVisible();
+  });
+
+  test("shows and hides the timeline tips", async ({ page }) => {
+    await page.getByRole("button", { name: "Show Tips" }).click();
+    await expect(page.getByText("Timeline Tips")).toBeVisible();
+    await expect(page.getByText(/blue lines are 12° twilights/)).toBeVisible();
+
+    await page.getByRole("button", { name: "Hide Tips" }).click();
+    await expect(page.getByText("Timeline Tips")).toHaveCount(0);
+  });
+
+  test("opens the page-header download placeholder popover", async ({
+    page,
+  }) => {
+    const pageHeader = page
+      .locator("[data-slot='card-header']")
+      .filter({ hasText: "Time Accounting" });
+    await pageHeader.locator("button").first().click();
+    await expect(
+      page.getByText(
+        /clicking here will download the data shown on this page to a \.csv file/,
+      ),
+    ).toBeVisible();
+  });
+});
+
+test.describe("Time Accounting — fetch errors", () => {
+  test("shows an error banner when the exposures request fails", async ({
+    page,
+  }) => {
+    await setupApiMocks(page);
+    // Registered after setupApiMocks so this failed route takes precedence.
+    await page.route("**/nightlydigest/api/exposures*", (route) =>
+      route.abort(),
+    );
+    await page.goto(TIME_ACCOUNTING_URL);
+    await waitForTimeAccountingLoad(page);
+
+    await expect(
+      page.getByText("One or more data sources are unavailable."),
+    ).toBeVisible({ timeout: 15000 });
+    await expect(
+      page.getByText(/Exposure data could not be fetched/),
+    ).toBeVisible();
+  });
+});
+
+test.describe("Time Accounting — no availability", () => {
+  test.beforeEach(async ({ page }) => {
+    await setupApiMocks(page, {
+      "obs-status": {
+        entries: [],
+        intervals: [],
+        metrics: {},
+        availability: { status: "none", available_from: null },
+        totals: {},
+      },
+    });
+    await page.goto(TIME_ACCOUNTING_URL);
+    await expect(
+      page
+        .getByText(
+          "Observatory Status data is only available from the supported dayobs range.",
+        )
+        .first(),
+    ).toBeVisible({ timeout: 15000 });
+  });
+
+  test("renders compact no-data state for the full-width cumulative applets", async ({
+    page,
+  }) => {
+    const singleNightCard = page
+      .locator("[data-slot='card']")
+      .filter({ hasText: "Observatory Status - Single Night Accumulations" });
+    await expect(singleNightCard).toBeVisible();
+
+    // The full-width Time Accounting applets use a compact no-data state that
+    // is much shorter than the data-populated 320px content (unlike the
+    // Digest cards, which keep their full height so the grid stays even).
+    const box = await singleNightCard.boundingBox();
+    expect(box.height).toBeLessThan(250);
+
+    // And it shows the availability warning rather than a plot.
+    await expect(
+      singleNightCard.getByText(
+        "Observatory Status data is only available from the supported dayobs range.",
+      ),
+    ).toBeVisible();
+    await expect(singleNightCard.locator("svg")).toHaveCount(0);
+  });
+});

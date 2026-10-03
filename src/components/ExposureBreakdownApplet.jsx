@@ -14,7 +14,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import AppletHeader from "@/components/AppletHeader";
 import {
   Popover,
   PopoverContent,
@@ -52,16 +53,30 @@ const SortByValues = Object.freeze({
 const PLOT_YLABELS_MAXSIZE = 14;
 const BAR_SIZE = 35;
 
+/**
+ * Render a chart breaking down exposures by type, reason, and program.
+ *
+ * @param {Object} props
+ * @param {Object} props.exposureFields Exposure field data used to group the breakdown.
+ * @param {Object} props.exposureCount Count of exposures by group.
+ * @param {number} props.sumExpTime Total summed exposure time.
+ * @param {Object} props.flags Exposure flags data.
+ * @param {Function} props.onBarHover Callback fired with the hovered exposure ids.
+ * @param {Function} props.onBarLeave Callback fired when the pointer leaves a bar.
+ * @param {Object} [props.blockLookup={}] Dict of BLOCK objects from Zephyr/Jira.
+ * @param {boolean} [props.exposuresLoading=false] Whether exposure data is loading.
+ * @param {boolean} [props.flagsLoading=false] Whether flags data is loading.
+ */
 function ExposureBreakdownApplet({
   exposureFields,
   exposureCount,
   sumExpTime,
   flags,
+  onBarHover,
+  onBarLeave,
   blockLookup = {},
   exposuresLoading = false,
   flagsLoading = false,
-  onBarHover,
-  onBarLeave,
 }) {
   const [plotBy, setPlotBy] = useState(PlotByValues.NUMBER);
   const [groupBy, setGroupBy] = useState(
@@ -293,63 +308,65 @@ function ExposureBreakdownApplet({
 
   return (
     <Card className="border-none p-0 bg-stone-800 gap-2">
-      <CardHeader className="grid-cols-3 bg-teal-900 p-4 rounded-sm align-center gap-0">
-        <CardTitle className="text-white font-thin col-span-2">
-          Exposure Breakdown
-        </CardTitle>
-        <div className="flex flex-row gap-2 justify-end">
-          <Popover>
-            <PopoverTrigger className="self-end min-w-4">
-              <img src={DownloadIcon} />
-            </PopoverTrigger>
-            <PopoverContent className="bg-black text-white text-sm border-yellow-700">
-              This is a placeholder for the download/export button. Once
-              implemented, clicking here will download this Applet's data to a
-              .csv file.
-            </PopoverContent>
-          </Popover>
-          <Popover>
-            <PopoverTrigger className="self-end min-w-4">
-              <img src={InfoIcon} />
-            </PopoverTrigger>
-            <PopoverContent className="bg-black text-white text-sm border-yellow-700 w-[300px]">
-              This applet displays a breakdown of exposures taken during the
-              specified dayobs range, grouped by a selected field.
-              <br />
-              <br />
-              The chart can be configured to show either the{" "}
-              <strong>number of exposures</strong> or the{" "}
-              <strong>total exposure time (in seconds)</strong>.
-              <br />
-              <br />
-              When exposures are flagged as "junk" or "questionable", they are
-              shown in white at the end of the group’s bar.
-              <br />
-              <br />
-              <strong>Tips:</strong>
-              <ul className="list-disc pl-4 mt-1 space-y-1">
-                <li>
-                  Hover over a bar to view total and flagged values, and
-                  highlight the corresponding exposures in the{" "}
-                  <strong>Observing Conditions</strong> chart.
-                </li>
-                {!isScientificNightlyDigest && (
+      <AppletHeader
+        title="Exposure Breakdown"
+        actions={
+          <>
+            <Popover>
+              <PopoverTrigger className="self-end min-w-4 cursor-pointer">
+                <img src={DownloadIcon} />
+              </PopoverTrigger>
+              <PopoverContent className="bg-black text-white text-sm border-yellow-700">
+                This is a placeholder for the download/export button. Once
+                implemented, clicking here will download this Applet's data to a
+                .csv file.
+              </PopoverContent>
+            </Popover>
+            <Popover>
+              <PopoverTrigger className="self-end min-w-4 cursor-pointer">
+                <img src={InfoIcon} />
+              </PopoverTrigger>
+              <PopoverContent className="bg-black text-white text-sm border-yellow-700 w-[300px]">
+                This applet displays a breakdown of exposures taken during the
+                specified dayobs range, grouped by a selected field.
+                <br />
+                <br />
+                The chart can be configured to show either the{" "}
+                <strong>number of exposures</strong> or the{" "}
+                <strong>total exposure time (in seconds)</strong>.
+                <br />
+                <br />
+                When exposures are flagged as "junk" or "questionable", they are
+                shown in white at the end of the group’s bar.
+                <br />
+                <br />
+                <strong>Tips:</strong>
+                <ul className="list-disc pl-4 mt-1 space-y-1">
                   <li>
-                    In <strong>Science Program</strong> view, hover to see the
-                    BLOCK description (if available). Linked labels open the
-                    BLOCK documentation.
+                    Hover over a bar to view total and flagged values, and
+                    highlight the corresponding exposures in the{" "}
+                    <strong>Observing Conditions</strong> chart.
                   </li>
-                )}
-                <li>
-                  Click a bar to open the <strong>Data Log</strong>, filtered by
-                  that group.
-                </li>
-                <li>Scroll to see additional groups if all are not visible.</li>
-              </ul>
-            </PopoverContent>
-          </Popover>
-        </div>
-      </CardHeader>
+                  {!isScientificNightlyDigest && (
+                    <li>
+                      In <strong>Science Program</strong> view, hover to see the
+                      BLOCK description (if available). Linked labels open the
+                      BLOCK documentation.
+                    </li>
+                  )}
+                  <li>
+                    Click a bar to open the <strong>Data Log</strong>, filtered
+                    by that group.
+                  </li>
+                  <li>
+                    Scroll to see additional groups if all are not visible.
+                  </li>
+                </ul>
+              </PopoverContent>
+            </Popover>
+          </>
+        }
+      />
 
       <CardContent className="flex flex-col gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 h-[320px] font-thin">
         {exposuresLoading ? (
@@ -596,7 +613,7 @@ function ExposureBreakdownApplet({
                     <SelectTrigger
                       id="plotBy"
                       size="sm"
-                      className="w-[150px] bg-teal-800 justify-between font-normal text-[12px] text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50"
+                      className="w-[150px] bg-teal-800 justify-between font-normal text-[12px] text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50 cursor-pointer"
                       chevronDownIconClassName="text-white"
                     >
                       <SelectValue />
@@ -628,7 +645,7 @@ function ExposureBreakdownApplet({
                     <SelectTrigger
                       id="groupBy"
                       size="sm"
-                      className="w-[150px] bg-teal-800 justify-between font-normal text-[12px] text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50"
+                      className="w-[150px] bg-teal-800 justify-between font-normal text-[12px] text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50 cursor-pointer"
                       chevronDownIconClassName="text-white"
                     >
                       <SelectValue />
@@ -660,7 +677,7 @@ function ExposureBreakdownApplet({
                     <SelectTrigger
                       id="sortBy"
                       size="sm"
-                      className="w-[150px] bg-teal-800 justify-between font-normal text-[12px] text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50"
+                      className="w-[150px] bg-teal-800 justify-between font-normal text-[12px] text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50 cursor-pointer"
                       chevronDownIconClassName="text-white"
                     >
                       <SelectValue />

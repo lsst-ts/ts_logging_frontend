@@ -36,16 +36,14 @@ import { useSearch } from "@tanstack/react-router";
 import { TELESCOPES } from "@/components/Parameters";
 import ObservingConditionsApplet from "@/components/ObservingConditionsApplet";
 import NightSummary from "@/components/NightSummary.jsx";
-import ObservatoryStatusApplet from "@/components/ObservatoryStatusApplet";
+import ObservatoryStatusCumulativeApplet from "@/components/ObservatoryStatusCumulativeApplet";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
 import VisitMapStaticApplet from "@/components/VisitMapStaticApplet.jsx";
 import WarningTooltip from "@/components/WarningTooltip";
-import { OBSERVATORY_STATE_AVAILABILITY_STATUS } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
-
-const EMPTY_OBS_STATUS_AVAILABILITY = {
-  status: "none",
-  available_from: null,
-};
+import {
+  OBSERVATORY_STATE_AVAILABILITY_STATUS,
+  EMPTY_OBS_STATUS_AVAILABILITY,
+} from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
 
 /**
  * Builds the warning content shown on the Time Loss and Efficiency metric
@@ -125,6 +123,10 @@ function getDigestWarningContent({
   return availabilityWarning;
 }
 
+/**
+ * Render the night digest page: night summary, observatory status, observing
+ * conditions, exposure breakdown, visit maps and Jira tickets.
+ */
 export default function Digest() {
   const { startDayobs, endDayobs, telescope } = useSearch({
     from: "__root__",
@@ -253,12 +255,6 @@ export default function Digest() {
           addNotification({
             type: "error",
             source: "dome-times",
-          });
-        }
-        if (data.time_accounting_error) {
-          addNotification({
-            type: "error",
-            source: "time-accounting",
           });
         }
       })
@@ -697,7 +693,7 @@ export default function Digest() {
                 nightreportLoading={nightreportLoading}
               />
             )}
-            <ObservatoryStatusApplet
+            <ObservatoryStatusCumulativeApplet
               almanacInfo={almanacInfo}
               intervals={obsStatusIntervals}
               availability={obsStatusAvailability}
@@ -705,6 +701,8 @@ export default function Digest() {
               almanacFetchError={almanacFetchError}
               openDomeTimes={openDomeTimes}
               fullTimeRange={fullTimeRange}
+              selectedTimeRange={selectedTimeRange}
+              setSelectedTimeRange={setSelectedTimeRange}
               loading={obsStatusLoading || exposuresLoading || almanacLoading}
             />
             <VisitMapStaticApplet

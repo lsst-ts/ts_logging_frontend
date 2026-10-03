@@ -1,35 +1,53 @@
-function ToggleExpandCollapseRows({ table, expanded, setExpanded }) {
-  const grouping = table.state.grouping;
-
-  // Walk grouped row model recursively to collect
-  // expandable group row ids
-  function getAllGroupRowIds(rows) {
+/**
+ * Render a button to expand or collapse all expandable rows in a TanStack table.
+ *
+ * @param {Object} props
+ * @param {Object} props.table - TanStack Table instance.
+ * @param {Object} props.expanded - Map of expanded row ids.
+ * @param {Function} props.setExpanded - Update the expanded row map.
+ * @param {string} [props.rowNoun="Groups"] - Noun used for the row group labels.
+ */
+function ToggleExpandCollapseRows({
+  table,
+  expanded,
+  setExpanded,
+  rowNoun = "Groups",
+}) {
+  // Walk the row model recursively to collect the ids of every expandable row
+  // (grouped rows, or parent rows with expandable sub-rows).
+  function getAllExpandableRowIds(rows) {
     const ids = [];
     for (const row of rows) {
-      if (row.getIsGrouped()) {
+      if (row.getCanExpand()) {
         ids.push(row.id);
         if (row.subRows?.length) {
-          ids.push(...getAllGroupRowIds(row.subRows));
+          ids.push(...getAllExpandableRowIds(row.subRows));
         }
+      } else if (row.subRows?.length) {
+        ids.push(...getAllExpandableRowIds(row.subRows));
       }
     }
     return ids;
   }
 
-  const allGroupRowIds = getAllGroupRowIds(table.getRowModel().rows);
-  const allExpanded = allGroupRowIds.every((id) => expanded[id]);
-  const isDisabled = grouping.length === 0;
+  const allExpandableRowIds = getAllExpandableRowIds(table.getRowModel().rows);
+  // `expanded` may be a boolean (`true` = expand all, `false` = collapse all)
+  // or an object map of row ids -> boolean.
+  const allExpanded =
+    expanded === true ||
+    (typeof expanded !== "boolean" &&
+      allExpandableRowIds.every((id) => expanded[id]));
+  const isDisabled = allExpandableRowIds.length === 0;
 
   const handleClick = () => {
     if (isDisabled) return;
     if (allExpanded) {
       setExpanded({});
     } else {
-      const newExpanded = {};
-      allGroupRowIds.forEach((id) => {
-        newExpanded[id] = true;
-      });
-      setExpanded(newExpanded);
+      // `true` expands all rows, including any rows that are added later
+      // when the active-only filter is toggled, so the expand/collapse
+      // state stays consistent as the visible data changes.
+      setExpanded(true);
     }
   };
 
@@ -46,7 +64,7 @@ function ToggleExpandCollapseRows({ table, expanded, setExpanded }) {
       disabled={isDisabled}
       className={`${baseClasses} ${stateClasses}`}
     >
-      {allExpanded ? "Collapse All Groups" : "Expand All Groups"}
+      {allExpanded ? `Collapse All ${rowNoun}` : `Expand All ${rowNoun}`}
     </button>
   );
 }
