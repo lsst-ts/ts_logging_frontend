@@ -303,6 +303,82 @@ const mergeContextFeedSources = (rubinNightsRows, blockLookup) => {
 };
 
 /**
+ * Converts a Context Feed exposure name to a DataLog exposureId string.
+ * Example: "MC_O_20260630_000015" -> "2026063000015"
+ *
+ * @param {string} name - Context Feed exposure name.
+ * @returns {string} Formatted exposureId string, or original string if format isn't recognized.
+ */
+function formatContextFeedExposureId(name) {
+  if (typeof name !== "string") return "";
+
+  const parts = name.split("_");
+  if (parts.length < 4) return name; // Fallback if string layout differs
+
+  const dayObs = parts[2]; // e.g. "20260630"
+  const rawSeq = parts[3]; // e.g. "000015"
+
+  // Convert 6-digit sequence to 5-digit DataLog sequence by dropping leading zero
+  const seq =
+    rawSeq.length === 6 && rawSeq.startsWith("0") ? rawSeq.slice(1) : rawSeq;
+
+  return `${dayObs}${seq}`;
+}
+
+/**
+ * Constructs a URL to the Data Log table view given exposure metadata.
+ *
+ * @param {Object} params
+ * @param {string} params.exposureId - Formatted exposure ID (e.g. "2026063000015")
+ * @param {string|number} params.dayObs - Dayobs string or number (e.g. "2026-06-30" or 20260630)
+ * @param {string|number} params.obsStartTime - Exposure start timestamp (ISO string or epoch ms)
+ * @param {string} [params.telescope="Simonyi"] - Telescope name
+ * @param {number} [params.windowSeconds=10] - Total window size in seconds around obsStartTime (default: 10s, i.e., ±5s)
+ * @returns {string|null} Relative URL string to the Data Log view
+ */
+const getDataLogUrl = ({
+  exposureId,
+  dayObs,
+  obsStartTime,
+  telescope = "Simonyi",
+  windowSeconds = 10,
+}) => {
+  if (!exposureId) return null;
+
+  // get rid of any - if they exist in dayObs
+  const dayObsStr = dayObs ? String(dayObs).replace(/-/g, "") : "";
+
+  const searchParams = new URLSearchParams();
+
+  if (dayObsStr) {
+    searchParams.set("startDayobs", dayObsStr);
+    searchParams.set("endDayobs", dayObsStr);
+  }
+
+  if (telescope) {
+    searchParams.set("telescope", telescope);
+  }
+
+  if (obsStartTime && !isNaN(obsStartTime)) {
+    const halfWindowMs = (windowSeconds / 2) * 1000;
+    searchParams.set(
+      "startTime",
+      String(Math.floor(obsStartTime - halfWindowMs)),
+    );
+    searchParams.set("endTime", String(Math.ceil(obsStartTime + halfWindowMs)));
+  }
+
+  if (exposureId) {
+    searchParams.set("selectedExposureId", String(exposureId));
+  }
+
+  const baseUrl = "/nightlydigest/data-log";
+  const queryStr = searchParams.toString();
+
+  return `${baseUrl}${queryStr ? `?${queryStr}` : ""}`;
+};
+
+/**
  * Generates a RubinTV URL based on telescope, dayObs and seqNum values.
  *
  * Validates inputs and returns null if dayObs or seqNum are missing.
@@ -631,7 +707,9 @@ export {
   prettyTitleFromKey,
   mergeAllDataLogSources,
   mergeContextFeedSources,
+  formatContextFeedExposureId,
   getRubinTVUrl,
+  getDataLogUrl,
   getSiteConfig,
   buildNavigationWithSearchParams,
   getNightSummaryLink,

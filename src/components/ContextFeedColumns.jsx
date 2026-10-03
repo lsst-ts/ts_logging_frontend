@@ -1,5 +1,7 @@
 import React from "react";
 import yaml from "js-yaml";
+import ContextFeedToDataLogLink from "@/components/ContextFeedToDataLogLink.jsx";
+import { formatContextFeedExposureId } from "@/utils/utils";
 
 import {
   Dialog,
@@ -18,12 +20,43 @@ import { CATEGORY_INDEX_INFO } from "@/constants/CONTEXT_FEED_DEFINITIONS";
 import CopyIcon from "../assets/CopyIcon.svg";
 import FullScreenIcon from "../assets/FullScreenIcon.svg";
 
+import { isoToTAI } from "@/utils/timeUtils";
+
 const columnHelper = createColumnHelper();
+
+// used for renderNameCell
+const EVENT_TELESCOPE_MAP = {
+  "Simonyi Exposure": "Simonyi",
+  "AuxTel Exposure": "AuxTel",
+};
 
 // Handles Zephyr/Jira links on BLOCK names and plain text.
 function renderNameCell(info) {
   const value = info.getValue();
   if (!value) return null;
+
+  const row = info.row.original;
+
+  // Lookup telescope name
+  const telescope = EVENT_TELESCOPE_MAP[row?.event_type];
+
+  if (telescope) {
+    const dataLogExposureId = formatContextFeedExposureId(value);
+
+    // Use isoToTAI from timeUtils to convert ISO string -> TAI DateTime, then get millis
+    const taiDateTime = row.time ? isoToTAI(row.time) : null;
+    const taiMillis = taiDateTime?.isValid ? taiDateTime.toMillis() : null;
+
+    return (
+      <ContextFeedToDataLogLink
+        exposureId={dataLogExposureId}
+        dayObs={row.event_dayobs}
+        obsStartTime={taiMillis}
+        exposureName={value}
+        telescope={telescope}
+      />
+    );
+  }
 
   // Get BLOCK lookup
   const blockMap = info.table.options.meta?.blockLookup;
