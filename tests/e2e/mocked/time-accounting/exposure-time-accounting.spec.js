@@ -11,12 +11,23 @@ import {
 } from "../../helpers/time-accounting-helpers.js";
 
 // On-sky time-accounting data so the applet has enough to render a real chart.
-// total_on_sky_exposure_time = 14400s (4 h) against the 8 h of elapsed
-// twilight in the almanac fixture yields 50 % / 50 % for Exposures vs
-// Not-exposures, and the breakdown hours make the calculated fault positive.
+//
+// The Exposure applet now derives its "Exposures" percentage from the
+// twilight-clipped sum of the exposure rows (calculateSumExpTimeBetweenTwilights)
+// rather than the backend total_on_sky_exposure_time. These rows all start
+// within the almanac fixture's 01:00–09:00 UTC twilight window on 2026-01-01
+// and sum to 14400 s (4 h) against the 8 h of elapsed twilight, yielding
+// 50 % / 50 % for Exposures vs Not-exposures.
+const ON_SKY_EXPOSURES = Array.from({ length: 16 }, (_, i) => ({
+  day_obs: "20251231",
+  can_see_sky: true,
+  exp_time: 900,
+  obs_start: new Date(Date.UTC(2026, 0, 1, 2, 0, i)).toISOString(),
+}));
+
 const TIME_ACCOUNTING_EXPOSURES = (overrides = {}) =>
   generateExposureTimeAccountingMock({
-    totalOnSkySeconds: 14400,
+    exposures: ON_SKY_EXPOSURES,
     nightOnSkyAccounting: {
       sum_visit_gap_without_filter_change: 0.5,
       sum_overhead_without_filter_change: 0.5,

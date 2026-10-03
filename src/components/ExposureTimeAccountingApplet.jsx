@@ -32,7 +32,7 @@ import InfoIcon from "../assets/InfoIcon.svg";
  * @param {Object} props
  * @param {boolean} props.loading Whether the underlying data is still loading.
  * @param {Object} props.onSkyTimeAccounting On-sky time accounting metrics.
- * @param {number} props.sumOnSkyExpTime Total on-sky exposure time in seconds.
+ * @param {number} props.totalExpTimeBetweenTwilights Total on-sky exposure time (seconds) clipped to the twilights.
  * @param {number} props.elapsedTwilightHours Completed 12° twilight hours in the selected range.
  * @param {number} props.closedDomeHours Closed-dome hours during the night.
  * @param {number} props.calculatedFaultHours Calculated fault hours.
@@ -49,7 +49,7 @@ import InfoIcon from "../assets/InfoIcon.svg";
 function ExposureTimeAccountingApplet({
   loading,
   onSkyTimeAccounting,
-  sumOnSkyExpTime,
+  totalExpTimeBetweenTwilights,
   elapsedTwilightHours,
   closedDomeHours,
   calculatedFaultHours,
@@ -120,13 +120,13 @@ function ExposureTimeAccountingApplet({
     if (!elapsedTwilightHours || elapsedTwilightHours === 0) {
       return [0, 0];
     }
-    const expHours = sumOnSkyExpTime / 3600;
+    const expHours = (totalExpTimeBetweenTwilights ?? 0) / 3600;
     // Calculate the percentage of on-sky exposure time relative to the
     // completed 12-degree twilight hours in the selected range.
     const expPercentage = Math.round((expHours / elapsedTwilightHours) * 100);
     const nonExpPercentage = 100 - expPercentage;
     return [expPercentage, nonExpPercentage];
-  }, [elapsedTwilightHours, sumOnSkyExpTime]);
+  }, [elapsedTwilightHours, totalExpTimeBetweenTwilights]);
 
   // One hue (teal), varying only in lightness, for the four bars that are
   // sub-components of the same two metrics (gap time, overhead time) split
