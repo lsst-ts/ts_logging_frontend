@@ -48,7 +48,10 @@ function Parameters({
     );
 
   // Bound the calendar by dayobs, not the local date, which can run ahead.
-  const disabledDays = [{ after: dayObsToCalendarDate(maxDayObs) }];
+  const disabledDays = [];
+  if (isScientificNightlyDigest) {
+    disabledDays.push({ after: dayObsToCalendarDate(maxDayObs) });
+  }
   if (minDayObs !== null) {
     disabledDays.push({ before: dayObsToCalendarDate(minDayObs) });
   }
@@ -87,7 +90,7 @@ function Parameters({
             id="dayobs-description"
             className="text-xs text-white font-extralight block pb-1"
           >
-            *within the previous {retentionDays} nights
+            *only data from the past {retentionDays} nights is available
           </small>
         )}
         <UTCDatePicker
@@ -103,14 +106,14 @@ function Parameters({
         <Label htmlFor="noOfNights" className="text-white text-base pb-1">
           Number of Nights
         </Label>
-        <small
-          id="noOfNights-description"
-          className="text-xs text-white font-extralight block pb-1"
-        >
-          {retentionDays
-            ? `≤${retentionDays} nights up to and including the selected dayobs`
-            : "*up to and including selected dayobs"}
-        </small>
+        {!retentionDays && (
+          <small
+            id="noOfNights-description"
+            className="text-xs text-white font-extralight block pb-1"
+          >
+            "*up to and including selected dayobs"
+          </small>
+        )}
         <Input
           type="number"
           id="noOfNights"

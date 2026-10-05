@@ -212,15 +212,16 @@ test.describe("Sidebar — dayobs and number of nights", () => {
       await page.clock.setFixedTime(new Date("2026-01-02T05:00:00Z"));
     });
 
-    test("the calendar stops at the current dayobs and marks it as today", async ({
+    // Only the Scientific Nightly Digest stops the calendar at the current
+    // dayobs; see tests/e2e/snd/sidebar.spec.js.
+    test("the calendar marks the current dayobs as today without stopping at it", async ({
       page,
     }) => {
       await page.goto(DIGEST_URL);
       await openCalendar(page);
 
       const day = (isoDate) => page.locator(`[data-day="${isoDate}"]`);
-      await expect(day("2026-01-02")).toHaveAttribute("data-disabled", "true");
-      await expect(day("2026-01-01")).not.toHaveAttribute("data-disabled");
+      await expect(day("2026-01-02")).not.toHaveAttribute("data-disabled");
       await expect(day("2026-01-01")).toHaveAttribute("data-today", "true");
       await expect(day("2026-01-02")).not.toHaveAttribute("data-today");
     });
