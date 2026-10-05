@@ -9,7 +9,7 @@ import { formatCellValue, getDataLogUrl } from "@/utils/utils";
 export default function ContextFeedToDataLogLink({
   exposureId,
   dayObs,
-  obsStartTime,
+  obsStartTime, //in TAI milliseconds epoch
   exposureName,
   telescope = "Simonyi",
   windowSeconds = 10,

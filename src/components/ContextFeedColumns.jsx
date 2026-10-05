@@ -43,7 +43,8 @@ function renderNameCell(info) {
   if (telescope) {
     const dataLogExposureId = formatContextFeedExposureId(value);
 
-    // Use isoToTAI from timeUtils to convert ISO string -> TAI DateTime, then get millis
+    // Use isoToTAI from timeUtils to convert ISO string of the exposure
+    // start time to TAI DateTime, then convert to epoch ms
     const taiDateTime = row.time ? isoToTAI(row.time) : null;
     const taiMillis = taiDateTime?.isValid ? taiDateTime.toMillis() : null;
 

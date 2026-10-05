@@ -331,7 +331,7 @@ function formatContextFeedExposureId(name) {
  * @param {Object} params
  * @param {string} params.exposureId - Formatted exposure ID (e.g. "2026063000015")
  * @param {string|number} params.dayObs - Dayobs string or number (e.g. "2026-06-30" or 20260630)
- * @param {string|number} params.obsStartTime - Exposure start timestamp (ISO string or epoch ms)
+ * @param {string|number} params.obsStartTime - Exposure start timestamp (tai epoch ms)
  * @param {string} [params.telescope="Simonyi"] - Telescope name
  * @param {number} [params.windowSeconds=10] - Total window size in seconds around obsStartTime (default: 10s, i.e., ±5s)
  * @returns {string|null} Relative URL string to the Data Log view
@@ -345,12 +345,12 @@ const getDataLogUrl = ({
 }) => {
   if (!exposureId) return null;
 
-  // get rid of any - if they exist in dayObs
-  const dayObsStr = dayObs ? String(dayObs).replace(/-/g, "") : "";
-
   const searchParams = new URLSearchParams();
 
-  if (dayObsStr) {
+  if (dayObs) {
+    // get rid of any - if they exist in dayObs
+    const dayObsStr = dayObs ? String(dayObs).replace(/-/g, "") : "";
+    // set the startDayObs and endDayObs needed for the URL
     searchParams.set("startDayobs", dayObsStr);
     searchParams.set("endDayobs", dayObsStr);
   }
@@ -368,9 +368,7 @@ const getDataLogUrl = ({
     searchParams.set("endTime", String(Math.ceil(obsStartTime + halfWindowMs)));
   }
 
-  if (exposureId) {
-    searchParams.set("selectedExposureId", String(exposureId));
-  }
+  searchParams.set("selectedExposureId", String(exposureId));
 
   const baseUrl = "/nightlydigest/data-log";
   const queryStr = searchParams.toString();
