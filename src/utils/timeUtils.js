@@ -285,26 +285,32 @@ function utcDateToCalendarDate(utcDate) {
   return new Date(d.year, d.month - 1, d.day);
 }
 
+// Displayed in place of a missing timestamp.
+const MISSING_TIMESTAMP_DISPLAY = "--";
+
 /**
- * Formats a timestamp to the standard context feed table format.
+ * Formats a timestamp to the standard table display format.
  *
  * Accepts either milliseconds since epoch or an ISO date-time string.
  *
  * @param {number|string} timestamp - Milliseconds since epoch, or an ISO date-time string.
  * @param {string} [zone="utc"] - IANA zone identifier; otherwise UTC.
- * @returns {string|null} Formatted date-time string as "yyyy-LL-dd HH:mm:ss.SSS",
- *   null if there is no timestamp, or the original string if it cannot be parsed
- *   (e.g. "NaT").
+ * @returns {string} Formatted date-time string as "yyyy-LL-dd HH:mm:ss.SSS",
+ *   "--" if there is no valid timestamp, or the original string if it cannot
+ *   be parsed (e.g. "NaT"), so unhandled values stay visible.
  */
 function formatTimestamp(timestamp, zone = "utc") {
-  if (timestamp == null || timestamp === "") return null;
+  if (timestamp == null || timestamp === "") return MISSING_TIMESTAMP_DISPLAY;
 
   const dt =
     typeof timestamp === "number"
       ? DateTime.fromMillis(timestamp, { zone })
       : DateTime.fromISO(timestamp, { zone });
 
-  if (!dt.isValid) return typeof timestamp === "string" ? timestamp : null;
+  if (!dt.isValid)
+    return typeof timestamp === "string"
+      ? timestamp
+      : MISSING_TIMESTAMP_DISPLAY;
 
   return dt.toFormat("yyyy-LL-dd HH:mm:ss.SSS");
 }
@@ -363,6 +369,7 @@ export {
   calendarDateToLongFormat,
   utcDateToCalendarDate,
   formatTimestamp,
+  MISSING_TIMESTAMP_DISPLAY,
   formatDuration,
   getCurrentDayObs,
 };
