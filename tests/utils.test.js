@@ -366,7 +366,7 @@ describe("utils", () => {
       const merged = mergeAllDataLogSources(consDb, [], {});
 
       expect(merged[0].instrument).toBe("na");
-      expect(merged[0].exposure_flag).toBe("none");
+      expect(merged[0].exposure_flag).toBe("na");
       expect(merged[0].message_text).toBe("");
     });
 

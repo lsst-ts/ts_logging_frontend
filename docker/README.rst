@@ -70,6 +70,22 @@ Optional Configuration
 
     Changing it requires rebuilding the image.
 
+- **Build the Scientific Nightly Digest**:
+  The Scientific Nightly Digest (SND) is a public-facing variant of this app for the scientific community, deployed separately and served from static files rather than the FastAPI backend. Set `VITE_SCIENTIFIC_NIGHTLY_DIGEST` to switch a build into that mode:
+  ::
+     VITE_SCIENTIFIC_NIGHTLY_DIGEST=true
+
+  Accepted affirmative values are `true`, `1`, `yes` and `on`; anything else (including leaving it blank or omitting it) builds the internal Nightly Digest.
+
+  Like `VITE_BACKEND_URL`, it is read by Vite at start/build time rather than by the browser, so set it in `docker/.env` for the Compose dev stack, or pass it as a build argument for the deployment image:
+  ::
+     docker build -f docker/Dockerfile-deploy --build-arg VITE_SCIENTIFIC_NIGHTLY_DIGEST=true .
+
+  The flag also sets where the app is served from: the Scientific Nightly Digest lives at the domain root (`/`) instead of `/nightlydigest/`. When running in local development, you must also set
+  `VITE_BACKEND_URL` appropriately.
+  ::
+     VITE_BACKEND_URL=http://localhost/nightlydigest/api
+
 Troubleshooting
 ===============
 - If you encounter issues with missing environment variables, ensure the `.env` file is correctly configured and located in the `docker/` directory.

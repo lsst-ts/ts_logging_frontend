@@ -58,7 +58,7 @@ export function getContextFeedUrl(
   telescope = "Simonyi",
   endDayobs = dayobs,
 ) {
-  return `/nightlydigest/context-feed?startDayobs=${dayobs}&endDayobs=${endDayobs}&telescope=${telescope}`;
+  return `context-feed?startDayobs=${dayobs}&endDayobs=${endDayobs}&telescope=${telescope}`;
 }
 
 /**

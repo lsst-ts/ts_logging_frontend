@@ -36,7 +36,9 @@ const DEFAULT_MOCKS = {
  * Sets up Playwright route mocks for all backend API endpoints used.
  * Call this in beforeEach before navigating.
  *
- * Each key in the mocks object is matched against `** / nightlydigest / api / <key>*`.
+ * Each key in the mocks object is matched against `** / api / <key>*`, so the
+ * same mocks serve /nightlydigest/api (internal build) and /api (Scientific
+ * Nightly Digest, served from the domain root).
  * Values may be a plain object (used directly as the JSON response) or a string
  * (name of a fixture file in tests/e2e/mocks/fixtures/, without .json extension).
  *
@@ -67,8 +69,33 @@ export async function setupApiMocks(page, overrides = {}) {
 
   for (const [key, value] of Object.entries(mocks)) {
     const data = typeof value === "string" ? loadFixture(value) : value;
-    await page.route(`**/nightlydigest/api/${key}*`, (route) =>
+    await page.route(`**/api/${key}*`, (route) =>
       route.fulfill({ json: data }),
     );
   }
+}
+
+/**
+ * Records requests to one API endpoint without changing how it responds.
+ *
+ * Routes registered later match first, so calling this after setupApiMocks
+ * observes the request and then hands it back to the mock via fallback().
+ * Use it to assert that a build variant does, or does not, hit an endpoint.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} endpoint - Endpoint name, e.g. "night-reports".
+ * @returns {Promise<string[]>} Array that fills with matching request URLs.
+ *
+ * @example
+ * const requests = await recordRequests(page, "jira-tickets");
+ * await page.goto(DIGEST_URL);
+ * expect(requests).toEqual([]);
+ */
+export async function recordRequests(page, endpoint) {
+  const urls = [];
+  await page.route(`**/api/${endpoint}*`, (route) => {
+    urls.push(route.request().url());
+    return route.fallback();
+  });
+  return urls;
 }

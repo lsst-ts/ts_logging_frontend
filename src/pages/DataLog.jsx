@@ -25,6 +25,7 @@ import {
 } from "@/utils/fetchUtils";
 import { mergeAllDataLogSources, getBlockSourceLabel } from "@/utils/utils";
 import { getDayobsStartUTC } from "@/utils/timeUtils";
+import { isScientificNightlyDigest } from "@/utils/appConfig";
 import { useNotifications } from "@/hooks/useNotifications";
 import { NotificationBannerStack } from "@/components/NotificationBannerStack";
 import {
@@ -52,14 +53,18 @@ function DataLog() {
 
   // Context menu items
   const contextMenuItems = [
-    {
-      label: "View Context Feed",
-      to: "/nightlydigest/context-feed",
-      search,
-    },
+    ...(isScientificNightlyDigest
+      ? []
+      : [
+          {
+            label: "View Context Feed",
+            to: "/context-feed",
+            search,
+          },
+        ]),
     {
       label: "View Plots",
-      to: "/nightlydigest/plots",
+      to: "/plots",
       search,
     },
   ];

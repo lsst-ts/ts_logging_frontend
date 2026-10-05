@@ -5,35 +5,39 @@ import {
   NavigationMenuItem,
   NavigationMenuLink,
 } from "@/components/ui/navigation-menu";
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useMatchRoute, useRouterState } from "@tanstack/react-router";
 import { buildNavigationWithSearchParams } from "@/utils/utils";
+import { isScientificNightlyDigest } from "@/utils/appConfig";
 
 const items = [
-  { name: "digest", title: "Nightly Digest", url: "/nightlydigest/" },
-  { name: "plots", title: "Plots", url: "/nightlydigest/plots" },
-  { name: "data-log", title: "Data Log", url: "/nightlydigest/data-log" },
-  {
-    name: "context-feed",
-    title: "Context Feed",
-    url: "/nightlydigest/context-feed",
-  },
+  { name: "digest", title: "Nightly Digest", url: "/" },
+  { name: "plots", title: "Plots", url: "/plots" },
+  { name: "data-log", title: "Data Log", url: "/data-log" },
+  ...(isScientificNightlyDigest
+    ? []
+    : [
+        {
+          name: "context-feed",
+          title: "Context Feed",
+          url: "/context-feed",
+        },
+      ]),
   {
     name: "visit-maps",
     title: "Visit Maps",
-    url: "/nightlydigest/visit-maps",
+    url: "/visit-maps",
   },
 ];
 
 export default function NavMenu() {
   const { pathname, search } = useRouterState({ select: (s) => s.location });
+  const matchRoute = useMatchRoute();
   return (
     <NavigationMenu className="flex flex-col items-start">
       <NavigationMenuList className="flex flex-col gap-2">
         {items.map((item) => {
-          // Remove trailing slash for comparison if needed
-          const itemPath = item.url.replace(/\/$/, "");
-          const currentPath = pathname.replace(/\/$/, "");
-          const isActive = itemPath === currentPath;
+          // pathname includes the basepath, so let the router do the matching
+          const isActive = !!matchRoute({ to: item.url });
 
           // Build navigation target with filtered search params
           const { to, search: filteredSearch } =
