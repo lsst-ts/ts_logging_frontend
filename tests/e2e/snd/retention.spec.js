@@ -28,16 +28,14 @@ test.describe("Scientific Nightly Digest — retention policy", () => {
     await expect(page.getByText(/data is only retained for/i)).toHaveCount(0);
   });
 
-  test("the dayobs and nights inputs describe the window", async ({ page }) => {
+  test("the dayobs input describes the window", async ({ page }) => {
     await page.goto(DIGEST_URL);
 
     await expect(page.getByLabel("Night (dayobs)")).toHaveAccessibleDescription(
-      "*within the previous 7 nights",
+      "*only data from the past 7 nights is available",
     );
     await expect(
       page.getByLabel("Number of Nights"),
-    ).toHaveAccessibleDescription(
-      "≤7 nights up to and including the selected dayobs",
-    );
+    ).toHaveAccessibleDescription("");
   });
 });
