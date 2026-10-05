@@ -1,1 +1,0 @@
-Add gc-deploy script to upload the react static code to the SND GC bucket.

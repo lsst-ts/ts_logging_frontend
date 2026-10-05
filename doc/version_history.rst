@@ -1,3 +1,20 @@
+v0.25.0 (2026-10-05)
+====================
+
+New Features
+------------
+
+- Implement Scientific Nightly Digest conditional data and UI display. (`OSW-2670 <https://rubinobs.atlassian.net//browse/OSW-2670>`_)
+- Serve the Scientific Nightly Digest from the domain root instead of ``/nightlydigest/``. (`SSW-3008 <https://rubinobs.atlassian.net//browse/SSW-3008>`_)
+
+
+Other Changes and Additions
+---------------------------
+
+- Changed the blanks exposure flags to be "na". (`SSW-2876 <https://rubinobs.atlassian.net//browse/SSW-2876>`_)
+- Add gc-deploy script to upload the react static code to the SND GC bucket. (`SSW-2970 <https://rubinobs.atlassian.net//browse/SSW-2970>`_)
+
+
 v0.24.0 (2026-09-15)
 ====================
 
