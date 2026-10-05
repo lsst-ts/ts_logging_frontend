@@ -3,7 +3,6 @@ import RubinTVLink from "@/components/RubinTVLink";
 import DataLog2ContextFeedLink from "@/components/DataLog2ContextFeedLink";
 import {
   formatCellValue,
-  formatTimestampCell,
   DEFAULT_PIXEL_SCALE_MEDIAN,
   PSF_SIGMA_FACTOR,
 } from "@/utils/utils";
@@ -123,7 +122,7 @@ const commonColumns = [
   // Dayobs and timestamp
   columnHelper.accessor("obs_start", {
     header: "Obs Start (TAI)",
-    cell: (info) => formatTimestampCell(info.getValue()),
+    cell: (info) => formatTimestamp(info.getValue()),
     size: 240,
     minSize: 240,
     filterType: "number-range",
@@ -134,7 +133,7 @@ const commonColumns = [
   }),
   columnHelper.accessor("obs_end", {
     header: "Obs End (TAI)",
-    cell: (info) => formatTimestampCell(info.getValue()),
+    cell: (info) => formatTimestamp(info.getValue()),
     size: 240,
     minSize: 240,
     filterType: "number-range",
