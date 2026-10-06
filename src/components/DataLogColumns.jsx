@@ -8,6 +8,7 @@ import {
 } from "@/utils/utils";
 import { formatTimestamp } from "@/utils/timeUtils";
 import { matchValueOrInList } from "@/components/DataTable/tableUtils";
+import LinkIcon from "@/assets/LinkIcon.svg";
 import { isScientificNightlyDigest } from "@/utils/appConfig";
 
 const columnHelper = createColumnHelper();
@@ -81,23 +82,45 @@ const commonColumns = [
   }),
   columnHelper.accessor("exposure_id", {
     header: "Exposure Id",
-    cell: ({ row }) => (
-      <DataLogToContextFeedLink
-        exposureId={row.original.exposure_id}
-        dayObs={row.original.day_obs}
-        obsStartTime={row.original.obs_start}
-        exposureName={row.original.exposure_name}
-      />
-    ),
+    cell: ({ getValue }) => getValue(),
     size: 140,
     minSize: 140,
     filterType: null,
     meta: {
-      tooltip:
-        "Unique identifier for the exposure. Click on it to go to the context feed around this exposure.",
+      tooltip: "Unique identifier for the exposure.",
       selectedKey: true,
     },
   }),
+  //now provide a new column with link to context feed as long as
+  //we aren't the Scientific Nightly Digest who don't have to context feed
+  ...(isScientificNightlyDigest
+    ? []
+    : [
+        columnHelper.display({
+          id: "ContextFeedLink",
+          header: "Context Feed",
+          cell: ({ row }) => (
+            <DataLogToContextFeedLink
+              exposureId={row.original.exposure_id}
+              dayObs={row.original.day_obs}
+              obsStartTime={row.original.obs_start}
+              exposureName={row.original.exposure_name}
+            >
+              <img
+                src={LinkIcon}
+                alt="Go to context feed"
+                className="w-4 h-4 cursor-pointer inline-block"
+              />
+            </DataLogToContextFeedLink>
+          ),
+          size: 140,
+          minSize: 140,
+          filterType: null,
+          meta: {
+            tooltip: "Go to the context feed around this exposure.",
+          },
+        }),
+      ]),
   columnHelper.accessor("seq_num", {
     header: "Seq Num",
     cell: (info) => formatCellValue(info.getValue()),
@@ -489,6 +512,7 @@ const defaultColumnOrder = {
   Simonyi: [
     "RubinTVLink",
     "exposure_id",
+    "ContextFeedLink",
     "exposure_name",
     "day_obs",
     "seq_num",
@@ -521,6 +545,7 @@ const defaultColumnOrder = {
   AuxTel: [
     "RubinTVLink",
     "exposure_id",
+    "ContextFeedLink",
     "exposure_name",
     "day_obs",
     "seq_num",
