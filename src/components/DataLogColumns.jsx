@@ -5,6 +5,7 @@ import {
   DEFAULT_PIXEL_SCALE_MEDIAN,
   PSF_SIGMA_FACTOR,
 } from "@/utils/utils";
+import { formatTimestamp } from "@/utils/timeUtils";
 import { matchValueOrInList } from "@/components/DataTable/tableUtils";
 import { isScientificNightlyDigest } from "@/utils/appConfig";
 
@@ -113,7 +114,7 @@ const commonColumns = [
   // Dayobs and timestamp
   columnHelper.accessor("obs_start", {
     header: "Obs Start (TAI)",
-    cell: (info) => formatCellValue(info.getValue()),
+    cell: (info) => formatTimestamp(info.getValue()),
     size: 240,
     minSize: 240,
     filterType: "number-range",
@@ -124,7 +125,7 @@ const commonColumns = [
   }),
   columnHelper.accessor("obs_end", {
     header: "Obs End (TAI)",
-    cell: (info) => formatCellValue(info.getValue()),
+    cell: (info) => formatTimestamp(info.getValue()),
     size: 240,
     minSize: 240,
     filterType: "number-range",

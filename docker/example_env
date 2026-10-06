@@ -15,3 +15,10 @@ VITE_BACKEND_URL=
 
 # Set to true to build/run the SND. Leave blank for the normal Nightly Digest.
 VITE_SCIENTIFIC_NIGHTLY_DIGEST=
+# Optional: cache memory ceiling for the redis service (default 512mb)
+#REDIS_MAX_MEMORY=512mb
+# Optional: set to 1 to turn off a caching layer (empty or 0 leaves it on)
+#ND_CACHING_DISABLE_NGINX=1
+#ND_CACHING_DISABLE_REDIS=1
+# Optional: backend log level, applied to the API and the refresh worker
+#LOG_LEVEL=DEBUG
