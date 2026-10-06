@@ -1,5 +1,6 @@
 import { createColumnHelper } from "@tanstack/react-table";
 import RubinTVLink from "@/components/RubinTVLink";
+import DataLog2ContextFeedLink from "@/components/DataLog2ContextFeedLink";
 import {
   formatCellValue,
   DEFAULT_PIXEL_SCALE_MEDIAN,
@@ -80,12 +81,20 @@ const commonColumns = [
   }),
   columnHelper.accessor("exposure_id", {
     header: "Exposure Id",
-    cell: (info) => formatCellValue(info.getValue()),
+    cell: ({ row }) => (
+      <DataLog2ContextFeedLink
+        exposureId={row.original.exposure_id}
+        dayObs={row.original.day_obs}
+        obsStartTime={row.original.obs_start}
+        exposureName={row.original.exposure_name}
+      />
+    ),
     size: 140,
     minSize: 140,
     filterType: null,
     meta: {
-      tooltip: "Unique identifier for the exposure.",
+      tooltip:
+        "Unique identifier for the exposure. Click on it to go to the context feed around this exposure.",
       selectedKey: true,
     },
   }),
