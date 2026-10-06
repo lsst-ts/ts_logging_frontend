@@ -1,0 +1,1 @@
+Pass ``ND_DEBUG`` through to the backend in the Docker Compose stack, to put it in development mode when production-only environment variables are unavailable locally.
