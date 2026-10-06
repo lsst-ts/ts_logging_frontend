@@ -423,8 +423,7 @@ export const contextFeedColumns = [
       header: "Time (UTC)",
       cell: (info) => {
         const micros = info.getValue();
-        if (!micros) return null;
-        return formatTimestamp(Math.floor(micros / 1000));
+        return formatTimestamp(micros ? Math.floor(micros / 1000) : null);
       },
       size: 220,
       minSize: 220,

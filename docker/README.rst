@@ -85,6 +85,15 @@ Optional Configuration
   `VITE_BACKEND_URL` appropriately.
   ::
      VITE_BACKEND_URL=http://localhost/nightlydigest/api
+- **Disable Caching**:
+  API responses are cached twice: by the nginx proxy, and by the backend in redis. Either layer can be turned off from the `.env` file, which is useful when you want to see uncached upstream behaviour:
+  ::
+     ND_CACHING_DISABLE_NGINX=1
+     ND_CACHING_DISABLE_REDIS=1
+
+  A missing, empty or `0` value leaves the layer enabled.
+
+  With `ND_CACHING_DISABLE_NGINX` set, the proxy also replaces the upstream `Cache-Control` header with `no-store`, so the browser will not serve an API response from its own cache either.
 
 Troubleshooting
 ===============
