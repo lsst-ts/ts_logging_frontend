@@ -36,6 +36,11 @@ server {
     proxy_set_header Upgrade $http_upgrade;
     proxy_set_header Connection "upgrade";
 
+    # Cache one gzipped copy per URL; gunzip it for clients without gzip.
+    proxy_set_header Accept-Encoding "gzip";
+    proxy_ignore_headers Vary;
+    gunzip on;
+
     proxy_cache nightlydigest_cache;
     proxy_cache_key "$scheme$request_method$host$request_uri";
     proxy_cache_use_stale error timeout updating;
