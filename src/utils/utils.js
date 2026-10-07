@@ -363,10 +363,6 @@ const getContextFeedUrl = (
 
   // Parse TAI ISO string directly into UTC epoch milliseconds (TAI)
   const utcSelectedMillis = taiDateTimeStrToUTCMillis(ObsSelectedTime);
-  console.log("Debugging Context Feed:", {
-    ObsSelectedTime,
-    utcSelectedMillis,
-  });
   if (isNaN(utcSelectedMillis)) return null;
 
   // Convert TAI milliseconds to UTC microseconds (TAI - leapseconds = UTC)

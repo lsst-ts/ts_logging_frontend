@@ -450,6 +450,7 @@ const defaultColumnVisibility = {
   Simonyi: {
     RubinTVLink: true,
     exposure_id: true,
+    ContextFeedLink: true,
     exposure_name: false,
     seq_num: false,
     day_obs: false,
@@ -481,8 +482,9 @@ const defaultColumnVisibility = {
   },
   AuxTel: {
     RubinTVLink: true,
-    exposure_id: false,
-    exposure_name: true,
+    exposure_id: true,
+    ContextFeedLink: true,
+    exposure_name: false,
     seq_num: false,
     day_obs: false,
     science_program: true,
