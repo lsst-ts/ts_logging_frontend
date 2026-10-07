@@ -1,0 +1,1 @@
+Add method to parse endpoint requests using bucket backend format.
