@@ -7,6 +7,7 @@ import {
   isoToChile,
   isoToUTC,
   getDayobsUTC,
+  taiDateTimeStrToUTCMillis,
 } from "./timeUtils";
 import { CATEGORY_INDEX_INFO } from "@/constants/CONTEXT_FEED_DEFINITIONS";
 import { GLOBAL_SEARCH_PARAMS } from "@/routes";
@@ -348,7 +349,7 @@ const getRubinTVUrl = (telescope, dayObs, seqNum) => {
  *
  * @param {string} telescope - The telescope name ("Simonyi" or "AuxTel").
  * @param {string|number} dayObs - Observation day (e.g. 20260521)
- * @param {string|number} ObsSelectedTime - TAI selected time in microseconds - this is the time of what you want centered
+ * @param {string|number} ObsSelectedTime - ISO TAI format selected time - this is the time of what you want centered
  * @param {number} [windowSeconds=30] - Total size of time window in seconds (default: 30s, ±15s around selectedTime)
  * @returns {string|null} Formatted URL string or null if missing required parameters.
  */
@@ -360,18 +361,18 @@ const getContextFeedUrl = (
 ) => {
   if (!dayObs || !ObsSelectedTime) return null;
 
-  // 1. Parse ISO string directly into epoch milliseconds (UTC)
-  const utcMillis = DateTime.fromISO(ObsSelectedTime, {
-    zone: "utc",
-  }).toMillis();
-  if (isNaN(utcMillis)) return null;
+  // Parse TAI ISO string directly into UTC epoch milliseconds (TAI)
+  const utcSelectedMillis = taiDateTimeStrToUTCMillis(ObsSelectedTime);
+  console.log("Debugging Context Feed:", {
+    ObsSelectedTime,
+    utcSelectedMillis,
+  });
+  if (isNaN(utcSelectedMillis)) return null;
 
-  // 2. Convert TAI milliseconds to UTC microseconds (subtract 37s offset)
-  const LEAP_SECONDS_MS = TAI_OFFSET_SECONDS * 1000;
-  const utcSelectedMillis = utcMillis - LEAP_SECONDS_MS;
+  // Convert TAI milliseconds to UTC microseconds (TAI - leapseconds = UTC)
   const utcSelectedMicros = utcSelectedMillis * 1000;
 
-  // 3. Compute startTime and endTime (default: ±15,000 ms around selectedTime)
+  // Compute startTime and endTime (half the window around the selected time)
   const halfWindowMs = (windowSeconds / 2) * 1000;
   const startTime = utcSelectedMillis - halfWindowMs;
   const endTime = utcSelectedMillis + halfWindowMs;
