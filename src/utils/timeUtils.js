@@ -169,6 +169,18 @@ const utcDateTimeStrToMillis = (dateTimeStr) =>
   }).toMillis();
 
 /**
+ * Converts a TAI date-time string in "yyyy-MM-dd HH:mm:ss" format
+ * to UTC milliseconds since the epoch.
+ *
+ * @param {string} dateTimeStr - The TAI date-time string (e.g., "2025-08-27 15:42:00").
+ * @returns {number} The corresponding timestamp in milliseconds.
+ */
+const taiDateTimeStrToUTCMillis = (dateTimeStr) =>
+  DateTime.fromISO(dateTimeStr, { zone: "utc" })
+    .minus({ seconds: TAI_OFFSET_SECONDS })
+    .toMillis();
+
+/**
  * Converts a Luxon DateTime to a formatted dayobs string,
  * subtracting 1 minute to capture the previous day's date.
  *
@@ -359,6 +371,7 @@ export {
   millisToHHmm,
   utcDateTimeStrToTAIMillis,
   utcDateTimeStrToMillis,
+  taiDateTimeStrToUTCMillis,
   dayobsAtMidnight,
   getValidTimeRange,
   ISO_DATETIME_FORMAT,
