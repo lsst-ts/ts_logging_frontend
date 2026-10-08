@@ -43,7 +43,7 @@ export const SITE_CONFIGURATION = Object.freeze({
   "nightlydigest.lsst.cloud": {
     rubinTVSiteSuffix: undefined,
     hostDisplayName: "Scientific Nightly Digest",
-    retentionDays: 7,
+    retentionDays: 30,
   },
   "nightlydigest-dev.lsst.cloud": {
     rubinTVSiteSuffix: undefined,
