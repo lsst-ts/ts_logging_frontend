@@ -95,6 +95,15 @@ Optional Configuration
 
   With `ND_CACHING_DISABLE_NGINX` set, the proxy also replaces the upstream `Cache-Control` header with `no-store`, so the browser will not serve an API response from its own cache either.
 
+- **Backend Development Mode**:
+  On startup the backend and refresh worker check their environment, and exit with a critical log line naming every problem if anything they need is missing.
+  Some of what production requires is difficult to obtain locally, notably the AWS credentials behind expected exposures (see `Configuring Additional Credentials`_).
+  Setting `ND_DEBUG` puts the backend in development mode, where those production-only variables only produce a warning when unset, and the features that depend on them fail at runtime instead:
+  ::
+     ND_DEBUG=1
+
+  A missing, empty or `0` value leaves development mode off. In local development, this should usually be enabled. See `doc/environment-variables.md` in the backend repository for which variables are required.
+
 Troubleshooting
 ===============
 - If you encounter issues with missing environment variables, ensure the `.env` file is correctly configured and located in the `docker/` directory.
