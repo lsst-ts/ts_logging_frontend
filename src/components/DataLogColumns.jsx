@@ -443,7 +443,7 @@ const defaultColumnVisibility = {
     psf_median: true,
     sky_bg_median: true,
     zero_point_median: true,
-    high_snr_source_count_median: true,
+    high_snr_source_count_median: false,
     air_temp: true,
     dome_temp: true,
   },
