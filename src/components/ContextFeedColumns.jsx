@@ -37,14 +37,14 @@ function renderNameCell(info) {
 
   const row = info.row.original;
 
-  // Lookup telescope name
+  // Lookup telescope name if it's an Exposure
   const telescope = EVENT_TELESCOPE_MAP[row?.event_type];
 
   if (telescope) {
     const dataLogExposureId = formatContextFeedExposureId(value);
 
-    // Use isoToTAI from timeUtils to convert ISO string of the exposure
-    // start time to TAI DateTime, then convert to epoch ms
+    // Use isoToTAI from timeUtils to convert UTC ISO string of the exposure
+    //    start time to TAI DateTime, then convert to epoch ms
     const taiDateTime = row.time ? isoToTAI(row.time) : null;
     const taiMillis = taiDateTime?.isValid ? taiDateTime.toMillis() : null;
 
