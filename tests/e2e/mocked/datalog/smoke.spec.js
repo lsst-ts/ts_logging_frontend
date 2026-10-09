@@ -26,7 +26,7 @@ test.describe("Data-log page — smoke", () => {
     await page.goto(DATALOG_URL);
     await waitForDataLogLoad(page);
 
-    // PageHeader uses CardTitle (a div, not a heading element)
+    // AppletHeader uses CardTitle (a div, not a heading element)
     await expect(page.locator("[data-slot='card-title']")).toContainText(
       "Data Log",
     );
