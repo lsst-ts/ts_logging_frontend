@@ -9,10 +9,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import AppletHeader from "@/components/AppletHeader";
 import { TELESCOPES } from "@/components/Parameters";
 import DataLogTable from "@/components/DataLogTable.jsx";
 import TimelineChart from "@/components/TimelineChart";
-import PageHeader from "@/components/PageHeader";
 import TipsCard from "@/components/TipsCard";
 import SelectedTimeRangeBar from "@/components/SelectedTimeRangeBar";
 import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
@@ -35,6 +35,10 @@ import {
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
 import { useSelectionSync } from "@/components/DataTable";
 
+/**
+ * Render the Data Log page: merged exposure, script and narrative log data in a
+ * filterable table with selection, plus observatory status timelines.
+ */
 function DataLog() {
   // Routing and URL params
   const { startDayobs, endDayobs, telescope } = useSearch({
@@ -355,7 +359,8 @@ function DataLog() {
         {/* Page Header, Timeline & Tips Banners */}
         <div className="flex flex-col gap-2">
           {/* Page title + buttons */}
-          <PageHeader
+          <AppletHeader
+            isPageHeader={true}
             title="Data Log"
             description="Exposure metadata and related fields from the ConsDB, Exposure Log, Transformed EFD, Zephyr & Jira."
             actions={

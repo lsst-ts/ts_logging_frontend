@@ -31,6 +31,14 @@ export const OBSERVATORY_STATE_AVAILABILITY_STATUS = {
 };
 
 /**
+ * Observatory status availability object for cases where no data is available.
+ */
+export const EMPTY_OBS_STATUS_AVAILABILITY = {
+  status: "none",
+  available_from: null,
+};
+
+/**
  * Human-readable labels for each state
  */
 export const STATUS_LABELS = {
@@ -86,6 +94,28 @@ export const STATUS_TIMELINE_DIMENSIONS = {
   // Gap between the last state row and the Night Hours total row in the
   // label column, chosen to line the total up with the chart's date labels
   METRICS_TOTAL_ROW_GAP: 32,
+};
+
+/**
+ * Timeline sizing that differs between the applet and full-screen variants.
+ */
+export const STATUS_TIMELINE_VARIABLE_DIMENSIONS = {
+  APPLET: {
+    SERIES_ROW_HEIGHT: STATUS_TIMELINE_DIMENSIONS.SERIES_ROW_HEIGHT,
+    BAR_HEIGHT: STATUS_TIMELINE_DIMENSIONS.BAR_HEIGHT,
+    MARKER_SIZE: STATUS_TIMELINE_DIMENSIONS.MARKER_SIZE,
+    MARKER_SIZE_WITH_NOTE: STATUS_TIMELINE_DIMENSIONS.MARKER_SIZE_WITH_NOTE,
+    ROW_LABEL_FONT_SIZE: 12,
+    NIGHT_HOURS_FONT_SIZE: 16,
+  },
+  FULL_SCREEN: {
+    SERIES_ROW_HEIGHT: 28,
+    BAR_HEIGHT: 18,
+    MARKER_SIZE: 18,
+    MARKER_SIZE_WITH_NOTE: 20,
+    ROW_LABEL_FONT_SIZE: 14,
+    NIGHT_HOURS_FONT_SIZE: 20,
+  },
 };
 
 /**
