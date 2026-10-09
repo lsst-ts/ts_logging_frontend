@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { Fragment, useCallback, useRef } from "react";
 import { flexRender } from "@tanstack/react-table";
 
 import { TableBody, TableRow, TableCell } from "@/components/ui/table";
@@ -23,7 +23,7 @@ function findSelectedKey(columns) {
 
 /**
  * DataTable body component with skeleton loading, grouped rows,
- * and normal row rendering.
+ * normal row rendering, and optional expandable sub-component rows.
  *
  * @param {Object} props
  * @param {Object} props.table - TanStack Table instance
@@ -40,6 +40,8 @@ function DataTableBody({
   onSelectionChange,
 }) {
   const selectedKey = findSelectedKey(columns);
+
+  const subComponent = table.options.meta?.subComponent;
 
   // No initial selection means nothing to scroll to, so skip future scrolls too.
   const hasScrolled = useRef(selected === null);
@@ -79,7 +81,7 @@ function DataTableBody({
 
         // Check if this row matches the selected value
         // Use loose equality (==) to handle number/string comparisons
-        const rowValue = row.getValue(selectedKey);
+        const rowValue = selectedKey ? row.getValue(selectedKey) : undefined;
         const isSelected =
           !isGroupedRow &&
           selected != null &&
@@ -101,24 +103,48 @@ function DataTableBody({
           }
         };
 
+        const customRowClassName =
+          table.options.meta?.getRowClassName?.(row) ?? "";
+
+        const rowClassName = [
+          onSelectionChange ? "cursor-pointer" : "",
+          isSelected
+            ? "bg-black/40 shadow-[inset_4px_0_0_0_white] border-t-2 border-b-2 border-white"
+            : "",
+          customRowClassName,
+        ]
+          .filter(Boolean)
+          .join(" ");
+
         return (
-          <TableRow
-            key={row.id}
-            ref={isSelected ? setSelectedRowRef : null}
-            onClick={handleClick}
-            data-selected={isSelected ? "true" : undefined}
-            className={
-              isSelected
-                ? "bg-black/40 shadow-[inset_4px_0_0_0_white] border-t-2 border-b-2 border-white"
-                : ""
-            }
-          >
-            {isGroupedRow ? (
-              <GroupedRowCell row={row} table={table} columns={columns} />
-            ) : (
-              <NormalRowCells row={row} />
+          <Fragment key={row.id}>
+            <TableRow
+              ref={isSelected ? setSelectedRowRef : null}
+              onClick={handleClick}
+              data-selected={isSelected ? "true" : undefined}
+              className={rowClassName}
+            >
+              {isGroupedRow ? (
+                <GroupedRowCell row={row} table={table} />
+              ) : (
+                <NormalRowCells row={row} />
+              )}
+            </TableRow>
+
+            {/* Expandable sub-component (e.g. a full-width message row)
+                attached beneath its parent leaf row. Always rendered for
+                rows that provide one. */}
+            {!isGroupedRow && subComponent && row.getCanExpand() && (
+              <TableRow key={`${row.id}__sub`} className="sub-row">
+                <TableCell
+                  colSpan={table.getVisibleLeafColumns().length}
+                  className="p-0"
+                >
+                  {subComponent({ row })}
+                </TableCell>
+              </TableRow>
             )}
-          </TableRow>
+          </Fragment>
         );
       })}
     </TableBody>
@@ -128,14 +154,14 @@ function DataTableBody({
 /**
  * Renders a grouped row with expand/collapse toggle
  */
-function GroupedRowCell({ row, table, columns }) {
+function GroupedRowCell({ row, table }) {
   const groupingColumnId = row.groupingColumnId;
   const groupingColumn = table.getColumn(groupingColumnId);
   const headerLabel = groupingColumn?.columnDef.header ?? groupingColumnId;
 
   return (
     <TableCell
-      colSpan={columns.length}
+      colSpan={table.getVisibleLeafColumns().length}
       className="bg-stone-900 font-light text-teal-400"
     >
       <div
@@ -159,14 +185,18 @@ function NormalRowCells({ row }) {
       key={cell.id}
       style={{
         width: cell.column.getSize(),
-        paddingRight: "1rem",
+        paddingRight: "2rem",
       }}
-      className="align-top whitespace-normal break-words"
+      className={
+        "align-top whitespace-normal break-words" +
+        (cell.column.columnDef.meta?.cellClassName
+          ? ` ${cell.column.columnDef.meta.cellClassName}`
+          : "")
+      }
       align={cell.column.columnDef.meta?.align}
     >
       {flexRender(cell.column.columnDef.cell, cell.getContext())}
     </TableCell>
   ));
 }
-
 export default DataTableBody;

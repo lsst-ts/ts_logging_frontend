@@ -89,8 +89,12 @@ for (const {
       await header.scrollIntoViewIfNeeded();
       const original = await header.boundingBox();
 
-      const x = original.x + original.width - 4;
-      const y = original.y + original.height / 2;
+      // Drag the resize handle itself (positioned at the content-box right
+      // edge) rather than guessing from the header's outer box.
+      const handle = header.locator(".cursor-col-resize");
+      const hb = await handle.boundingBox();
+      const x = hb.x + hb.width / 2;
+      const y = hb.y + hb.height / 2;
       await page.mouse.move(x, y);
       await page.mouse.down();
       await page.mouse.move(x + 80, y);
