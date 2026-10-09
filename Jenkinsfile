@@ -23,6 +23,7 @@ pipeline {
         script {
           sh """
             source /home/saluser/.bashrc
+            ls -al .
             npm ci
             pre-commit run --all-files
             npx vitest run --run --no-color --reporter=verbose
@@ -42,6 +43,7 @@ pipeline {
         script {
           sh """
             source /home/saluser/.bashrc
+            ls -al .
             npm ci
             npx playwright install chromium
             npm run test:e2e -- --reporter=list
