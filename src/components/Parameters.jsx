@@ -38,16 +38,23 @@ function Parameters({
   onInstrumentChange,
 }) {
   const displayRange = getDisplayDateRange(dayobs, noOfNights);
-  const { getAvailableDayObsRange } = useHostConfig();
+  const { getAvailableDayObsRange, retentionDays } = useHostConfig();
 
-  const { min: minDayObs } = getAvailableDayObsRange();
+  const { min: minDayObs, max: maxDayObs } = getAvailableDayObsRange();
 
-  const minDayObs_dt =
-    minDayObs === null
-      ? null
-      : DateTime.fromFormat(minDayObs, "yyyyLLdd", {
-          zone: "utc",
-        }).toJSDate();
+  const dayObsToCalendarDate = (dayObs) =>
+    utcDateToCalendarDate(
+      DateTime.fromFormat(dayObs, "yyyyLLdd", { zone: "utc" }).toJSDate(),
+    );
+
+  // Bound the calendar by dayobs, not the local date, which can run ahead.
+  const disabledDays = [];
+  if (isScientificNightlyDigest) {
+    disabledDays.push({ after: dayObsToCalendarDate(maxDayObs) });
+  }
+  if (minDayObs !== null) {
+    disabledDays.push({ before: dayObsToCalendarDate(minDayObs) });
+  }
 
   return (
     <>
@@ -78,25 +85,35 @@ function Parameters({
         <Label htmlFor="dayobs" className="text-white text-base pb-1">
           Night (dayobs)
         </Label>
+        {retentionDays && (
+          <small
+            id="dayobs-description"
+            className="text-xs text-white font-extralight block pb-1"
+          >
+            *only data from the past {retentionDays} nights is available
+          </small>
+        )}
         <UTCDatePicker
           id="dayobs"
+          aria-describedby={retentionDays ? "dayobs-description" : undefined}
           selectedDate={dayobs}
           onDateChange={onDayobsChange}
-          disabled={{
-            before: utcDateToCalendarDate(minDayObs_dt),
-          }}
+          disabled={disabledDays}
+          today={dayObsToCalendarDate(maxDayObs)}
         />
       </div>
       <div className="pt-8">
         <Label htmlFor="noOfNights" className="text-white text-base pb-1">
           Number of Nights
         </Label>
-        <small
-          id="noOfNights-description"
-          className="text-xs text-white font-extralight block pb-1"
-        >
-          *up to and including selected dayobs
-        </small>
+        {!retentionDays && (
+          <small
+            id="noOfNights-description"
+            className="text-xs text-white font-extralight block pb-1"
+          >
+            "*up to and including selected dayobs"
+          </small>
+        )}
         <Input
           type="number"
           id="noOfNights"
