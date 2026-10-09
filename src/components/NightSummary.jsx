@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import AppletHeader from "@/components/AppletHeader";
 import {
   Popover,
   PopoverContent,
@@ -80,7 +81,7 @@ function SelectObsDay({ days, selectedDay, onChange }) {
         className={
           "!h-[1rem] text-sidebar-foreground text-xs px-2 py-0" +
           " inline-flex bg-white justify-between font-normal" +
-          " focus-visible:ring-4 focus-visible:ring-green-500/50"
+          " cursor-pointer focus-visible:ring-4 focus-visible:ring-green-500/50"
         }
       >
         <SelectValue />
@@ -123,6 +124,14 @@ function handleDownload(reports) {
   console.log(textContent);
 }
 
+/**
+ * Render the night summary applet with a list of per-night reports and a
+ * day selector, plus download to text.
+ *
+ * @param {Object} props
+ * @param {Array} [props.reports=[]] Nightly (day) summary reports.
+ * @param {boolean} [props.nightreportLoading=false] Whether reports are loading.
+ */
 function NightSummary({ reports = [], nightreportLoading = false }) {
   const [selectedDay, setSelectedDay] = useState(null);
 
@@ -210,25 +219,22 @@ function NightSummary({ reports = [], nightreportLoading = false }) {
 
   return (
     <Card className="border-none p-0 bg-stone-800 gap-2">
-      <CardHeader
-        className={
-          "flex flex-wrap gap-x-4" +
-          " bg-teal-900 p-4 rounded-sm align-center items-center"
-        }
-      >
-        <CardTitle className="text-white font-thin">{appletTitle}</CardTitle>
-        <div className="flex gap-x-2 grow">
-          {showObsDaySelector && (
+      <AppletHeader
+        title={appletTitle}
+        titleBadge={
+          showObsDaySelector && (
             <SelectObsDay
               days={availableDays}
               selectedDay={selectedDay}
               onChange={handleSelectedDay}
             />
-          )}
-          <div className="flex flex-row gap-2 ml-auto">
+          )
+        }
+        actions={
+          <>
             <Dialog>
               <DialogTrigger
-                className="self-end min-w-4"
+                className="self-end min-w-4 cursor-pointer"
                 aria-label={`Open ${appletTitle.toLowerCase()} in fullscreen`}
               >
                 <img src={FullScreenIcon} alt="Fullscreen" />
@@ -246,7 +252,7 @@ function NightSummary({ reports = [], nightreportLoading = false }) {
             </Dialog>
             <Popover>
               <PopoverTrigger
-                className="self-end min-w-4"
+                className="self-end min-w-4 cursor-pointer"
                 aria-label={`Download ${appletTitle.toLowerCase()} data`}
               >
                 <img
@@ -262,7 +268,7 @@ function NightSummary({ reports = [], nightreportLoading = false }) {
             </Popover>
             <Popover>
               <PopoverTrigger
-                className="self-end min-w-4"
+                className="self-end min-w-4 cursor-pointer"
                 aria-label={`${
                   appletTitle.charAt(0).toUpperCase() +
                   appletTitle.slice(1).toLowerCase()
@@ -274,9 +280,9 @@ function NightSummary({ reports = [], nightreportLoading = false }) {
                 Observers night report retrieved from the nightreport API.
               </PopoverContent>
             </Popover>
-          </div>
-        </div>
-      </CardHeader>
+          </>
+        }
+      />
       <CardContent
         ref={reportsContainerRef}
         style={{ maxHeight: "100%" }}
