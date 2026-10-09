@@ -27,8 +27,23 @@ const items = [
     title: "Visit Maps",
     url: "/visit-maps",
   },
+  ...(isScientificNightlyDigest
+    ? []
+    : [
+        {
+          name: "time-accounting",
+          title: "Time Accounting",
+          url: "/nightlydigest/time-accounting",
+        },
+      ]),
 ];
 
+/**
+ * Render the primary navigation menu, highlighting the active route.
+ *
+ * Reads the current location from the router and builds navigation targets
+ * that preserve relevant search params.
+ */
 export default function NavMenu() {
   const { pathname, search } = useRouterState({ select: (s) => s.location });
   const matchRoute = useMatchRoute();
