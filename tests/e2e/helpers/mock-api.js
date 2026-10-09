@@ -36,7 +36,7 @@ const DEFAULT_MOCKS = {
  * Sets up Playwright route mocks for all backend API endpoints used.
  * Call this in beforeEach before navigating.
  *
- * Each key in the mocks object is matched against `** / api / <key>*`, so the
+ * Each key in the mocks object is matched against `** / api / <key>**`, so the
  * same mocks serve /nightlydigest/api (internal build) and /api (Scientific
  * Nightly Digest, served from the domain root).
  * Values may be a plain object (used directly as the JSON response) or a string
@@ -69,7 +69,7 @@ export async function setupApiMocks(page, overrides = {}) {
 
   for (const [key, value] of Object.entries(mocks)) {
     const data = typeof value === "string" ? loadFixture(value) : value;
-    await page.route(`**/api/${key}*`, (route) =>
+    await page.route(`**/api/${key}**`, (route) =>
       route.fulfill({ json: data }),
     );
   }
