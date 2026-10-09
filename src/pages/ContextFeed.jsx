@@ -5,8 +5,6 @@ import { useSearch } from "@tanstack/react-router";
 import { NotificationBannerStack } from "@/components/NotificationBannerStack";
 import { useNotifications } from "@/hooks/useNotifications";
 
-import { TriangleAlert } from "lucide-react";
-
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
@@ -16,43 +14,35 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from "@/components/ui/tooltip";
 
 import TimelineChart from "@/components/TimelineChart";
-import ObservatoryStatusTimeline from "@/components/ObservatoryStatusTimeline";
+import ObservatoryStatusTimelineCardContents from "@/components/ObservatoryStatusTimelineCardContents";
 import ContextFeedTable from "@/components/ContextFeedTable.jsx";
 import { CATEGORY_INDEX_INFO } from "@/constants/CONTEXT_FEED_DEFINITIONS";
-import {
-  SERIES_ORDER,
-  METRIC_STATES,
-  STATUS_TIMELINE_DIMENSIONS,
-  STATUS_TIMELINE_MARGINS,
-} from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
-import { getStatusLabel } from "@/utils/observatoryStatusUtils";
+import { METRIC_STATES } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
 import { contextFeedColumns } from "@/components/ContextFeedColumns";
 import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
-import PageHeader from "@/components/PageHeader";
+import AppletHeader from "@/components/AppletHeader";
+
 import TipsCard from "@/components/TipsCard";
 import SelectedTimeRangeBar from "@/components/SelectedTimeRangeBar";
 import DownloadIcon from "../assets/DownloadIcon.svg";
-import {
-  getDayobsStartUTC,
-  formatDayobsStrForDisplay,
-} from "@/utils/timeUtils";
+import { getDayobsStartUTC } from "@/utils/timeUtils";
 import {
   fetchAlmanac,
   fetchContextFeedFromRubinNights,
   fetchBlockDetails,
   fetchObsStatusFromRubinNights,
 } from "@/utils/fetchUtils";
+import {
+  buildObsStatusSource,
+  resolveAppletStatus,
+} from "@/utils/appletStatus";
 import { mergeContextFeedSources, getBlockSourceLabel } from "@/utils/utils";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
 import { prepareAlmanacData } from "@/utils/timelineUtils";
 import { useUrlSync, useSelectionSync } from "@/components/DataTable";
+import WarningTooltip from "@/components/WarningTooltip";
 
 // This filters out the non-selected telescope's exposures, queues and
 // narrative logs from the default display.
@@ -86,6 +76,10 @@ const filterDefaultEventsByTelescope = (telescope) => {
   return eventTypes;
 };
 
+/**
+ * Render the Context Feed page: a chronologically ordered log of exposures,
+ * scripts, errors and narrations, with related timelines and tables.
+ */
 function ContextFeed() {
   // Subscribe component to URL params
   const search = useSearch({
@@ -120,12 +114,14 @@ function ContextFeed() {
   const [twilightValues, setTwilightValues] = useState([]);
   const [twilight0DegValues, setTwilight0DegValues] = useState([]);
   const [almanacLoading, setAlmanacLoading] = useState(true);
+  const [almanacError, setAlmanacError] = useState(false);
 
   // Observatory status data
   const [obsStatusEntries, setObsStatusEntries] = useState([]);
   const [obsStatusMetrics, setObsStatusMetrics] = useState(null);
   const [obsStatusAvailability, setObsStatusAvailability] = useState(null);
   const [obsStatusLoading, setObsStatusLoading] = useState(true);
+  const [obsStatusError, setObsStatusError] = useState(false);
 
   // Total night hours from almanac (for metrics total row)
   const [nightHours, setNightHours] = useState(null);
@@ -221,6 +217,8 @@ function ContextFeed() {
     setRubinNightsDataLoading(true);
     setAlmanacLoading(true);
     setObsStatusLoading(true);
+    setObsStatusError(false);
+    setAlmanacError(false);
     clearNotifications();
 
     fetchAlmanac(startDayobs, queryEndDayobs, abortController)
@@ -238,6 +236,7 @@ function ContextFeed() {
       .catch((err) => {
         if (!abortController.signal.aborted) {
           console.error("Error fetching almanac data:", err);
+          setAlmanacError(true);
           addNotification({
             type: "error",
             source: "almanac",
@@ -299,6 +298,7 @@ function ContextFeed() {
       .catch((err) => {
         if (!abortController.signal.aborted) {
           console.error("Error fetching observatory status:", err);
+          setObsStatusError(true);
           addNotification({
             type: "error",
             source: "observatory-status",
@@ -417,13 +417,17 @@ function ContextFeed() {
       )
     : processedNotifications;
 
-  const obsAvailabilityStatus = obsStatusAvailability?.status ?? null;
-  const obsAvailableFrom = obsStatusAvailability?.available_from
-    ? formatDayobsStrForDisplay(String(obsStatusAvailability.available_from))
-    : null;
-  const obsAvailabilityWarningText = `Observatory Status data is only available from ${
-    obsAvailableFrom ?? "the supported date range"
-  }.`;
+  // Determine the applet status for the Observatory Status Timeline.
+  const obsStatusTimelineSources = {
+    "obs-status": buildObsStatusSource(obsStatusAvailability, obsStatusError),
+    almanac: { ok: !almanacError },
+  };
+  const { status: obsStatusTimelineStatus, message: obsStatusTimelineMessage } =
+    resolveAppletStatus({
+      sources: obsStatusTimelineSources,
+      required: ["obs-status"],
+      loading: obsStatusLoading,
+    });
 
   const timelineSeriesData = useMemo(() => {
     return Object.values(CATEGORY_INDEX_INFO)
@@ -460,8 +464,22 @@ function ContextFeed() {
         {/* Page Header, Timeline & Tips Banners */}
         <div className="flex flex-col gap-2">
           {/* Page title + buttons */}
-          <PageHeader
+          <AppletHeader
+            isPageHeader={true}
             title="Context Feed"
+            titleBadge={
+              obsStatusTimelineStatus === "ready" &&
+              obsStatusTimelineMessage ? (
+                <div className="flex place-items-center-safe">
+                  <WarningTooltip
+                    ariaLabel="Observatory Status data availability warning"
+                    iconClassName="h-4"
+                  >
+                    {obsStatusTimelineMessage}
+                  </WarningTooltip>
+                </div>
+              ) : undefined
+            }
             description="Chronologically ordered log of exposures, scripts, errors and narrations."
             actions={
               <>
@@ -526,95 +544,23 @@ function ContextFeed() {
             </TipsCard>
           )}
 
-          {/* Partial availability warning above timelines */}
-          {timelineVisible &&
-            !obsStatusLoading &&
-            obsAvailabilityStatus === "partial" && (
-              <div className="flex items-center">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <TriangleAlert className="h-5 w-5 text-yellow-400 cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{obsAvailabilityWarningText}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-            )}
-
           {/* Observatory Status Timeline */}
           {timelineVisible && (
             <Card className="grid gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 font-thin shadow-stone-900 shadow-md">
-              {obsStatusLoading ? (
-                <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
-              ) : obsAvailabilityStatus === "none" ? (
-                <p className="text-sm text-stone-400 text-center py-4">
-                  {obsAvailabilityWarningText}
-                </p>
-              ) : (
-                <div className="flex flex-row min-w-0">
-                  {/* State Labels */}
-                  <div
-                    className="flex flex-col w-45"
-                    style={{
-                      // Centre the first label on the first chart row, which
-                      // sits one row height below the top margin
-                      paddingTop: `${
-                        STATUS_TIMELINE_MARGINS.top +
-                        STATUS_TIMELINE_DIMENSIONS.SERIES_ROW_HEIGHT / 2
-                      }px`,
-                    }}
-                  >
-                    {SERIES_ORDER.map((stateName) => (
-                      <div
-                        key={stateName}
-                        className="flex items-center justify-between"
-                        style={{
-                          height: `${STATUS_TIMELINE_DIMENSIONS.SERIES_ROW_HEIGHT}px`,
-                        }}
-                      >
-                        <span className="text-xs text-stone-200">
-                          {getStatusLabel(stateName)}
-                        </span>
-                        <span className="text-xs text-stone-200 tabular-nums">
-                          {!METRIC_STATES.includes(stateName)
-                            ? ""
-                            : obsStatusMetrics?.[stateName.toLowerCase()] !=
-                                null
-                              ? obsStatusMetrics[
-                                  stateName.toLowerCase()
-                                ].toFixed(2)
-                              : "—"}
-                        </span>
-                      </div>
-                    ))}
-                    <div
-                      className="flex items-center justify-between"
-                      style={{
-                        marginTop: `${STATUS_TIMELINE_DIMENSIONS.METRICS_TOTAL_ROW_GAP}px`,
-                      }}
-                    >
-                      <span className="text-base text-stone-200">
-                        Night Hours
-                      </span>
-                      <span className="text-base text-stone-400 tabular-nums">
-                        {nightHours != null ? nightHours.toFixed(2) : "—"}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <ObservatoryStatusTimeline
-                      entries={obsStatusEntries}
-                      twilightValues={twilightValues}
-                      twilight0DegValues={twilight0DegValues}
-                      fullTimeRange={fullTimeRange}
-                      selectedTimeRange={selectedTimeRange}
-                      setSelectedTimeRange={setSelectedTimeRange}
-                      brushGroup="context-feed"
-                    />
-                  </div>
-                </div>
-              )}
+              <ObservatoryStatusTimelineCardContents
+                sources={obsStatusTimelineSources}
+                required={["obs-status"]}
+                loading={obsStatusLoading}
+                entries={obsStatusEntries}
+                twilightValues={twilightValues}
+                twilight0DegValues={twilight0DegValues}
+                fullTimeRange={fullTimeRange}
+                selectedTimeRange={selectedTimeRange}
+                setSelectedTimeRange={setSelectedTimeRange}
+                brushGroup="context-feed"
+                obsStatusMetrics={obsStatusMetrics}
+                nightHours={nightHours}
+              />
             </Card>
           )}
 
@@ -622,7 +568,7 @@ function ContextFeed() {
           {timelineVisible && (
             <Card className="grid gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 font-thin shadow-stone-900 shadow-md">
               {tableLoading ? (
-                <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
+                <Skeleton className="w-full h-20 bg-stone-900 rounded-md" />
               ) : (
                 <div className="flex flex-row min-w-0">
                   {/* Event Type Checkboxes */}
@@ -650,6 +596,7 @@ function ContextFeed() {
                                 toggleEvents(key, !!checked)
                               }
                               style={{ borderColor: info.color }}
+                              className="cursor-pointer"
                             />
                             <span className="text-xs text-stone-200">
                               {info.label}

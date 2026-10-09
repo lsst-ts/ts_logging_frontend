@@ -219,3 +219,21 @@ test.describe("Context Feed — timeline context menu", () => {
     expect(page.url()).toContain("telescope=Simonyi");
   });
 });
+
+test.describe("Context Feed — observatory status timeline error", () => {
+  test("shows a compact fetch-error message instead of a blank timeline", async ({
+    page,
+  }) => {
+    await setupApiMocks(page);
+    // Registered after setupApiMocks so this failed route takes precedence.
+    await page.route("**/api/obs-status*", (route) => route.abort());
+    await page.goto(CONTEXTFEED_URL);
+    await waitForContextFeedLoad(page);
+
+    await expect(
+      page.getByText("Observatory Status data could not be fetched."),
+    ).toBeVisible();
+    // The context-feed event timeline still renders.
+    await expect(page.locator(TIMELINE_SELECTOR)).toBeVisible();
+  });
+});
