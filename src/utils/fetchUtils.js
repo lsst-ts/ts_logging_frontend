@@ -1,5 +1,50 @@
+import { isScientificNightlyDigest } from "./appConfig";
+
 const httpProtocol = window.location.protocol;
 const host = window.location.host;
+
+/**
+ * Builds the full backend URL for a given endpoint and optional query parameters.
+ * If `isScientificNightlyDigest` is true, the URL will point to a static JSON file location.
+ * Otherwise, it constructs a standard backend API URL with query parameters.
+ * For Scientific Nightly Digest mode only start dayobs, end dayobs and instrument are relevant.
+ * @param {string} endpoint - The backend API endpoint.
+ * @param {string} start - The start dayobs in `YYYYMMDD` format.
+ * @param {string} end - The end dayobs in `YYYYMMDD` format.
+ * @param {string} instrument - The instrument name.
+ * @param {Object|URLSearchParams} extraParams - Additional query parameters for the backend API.
+ * @returns {string} The constructed backend URL.
+ */
+function buildBackendURL(endpoint, start, end, instrument, extraParams) {
+  if (isScientificNightlyDigest) {
+    const urlParts = [backendLocation, endpoint];
+    if (instrument) {
+      urlParts.push(instrument);
+    }
+    if (start && end) {
+      urlParts.push(`${start}_${end}`);
+    }
+    return urlParts.join("/") + ".json";
+  }
+  const url = new URL(`${backendLocation}/${endpoint}`);
+  if (instrument) {
+    url.searchParams.set("instrument", instrument);
+  }
+  if (start) {
+    url.searchParams.set("dayObsStart", start);
+  }
+  if (end) {
+    url.searchParams.set("dayObsEnd", end);
+  }
+  if (extraParams) {
+    const extraSearchParams = new URLSearchParams(extraParams);
+    extraSearchParams.forEach((value, key) => {
+      url.searchParams.set(key, value);
+    });
+  }
+  return url.toString();
+}
+
 /**
  * The base URL for the backend API endpoints.
  *
@@ -15,6 +60,7 @@ const backendLocation =
 
 /**
  * Fetches JSON data from the specified URL using a GET request.
+ * If `isScientificNightlyDigest` is true, the URL will be rewritten to point to the corresponding static file location.
  *
  * @async
  * @function fetchData
@@ -68,7 +114,7 @@ const fetchData = async (url, abortController) => {
  */
 const fetchExposures = async (start, end, instrument, abortController) => {
   try {
-    const url = `${backendLocation}/exposures?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
+    const url = buildBackendURL("exposures", start, end, instrument);
     const data = await fetchData(url, abortController);
     return data;
   } catch (err) {
@@ -93,7 +139,7 @@ const fetchExposures = async (start, end, instrument, abortController) => {
  */
 const fetchExpectedExposures = async (start, end, abortController) => {
   try {
-    const url = `${backendLocation}/expected-exposures?dayObsStart=${start}&dayObsEnd=${end}`;
+    const url = buildBackendURL("expected-exposures", start, end);
     const data = await fetchData(url, abortController);
     return data.sum_exposures;
   } catch (err) {
@@ -116,7 +162,7 @@ const fetchExpectedExposures = async (start, end, abortController) => {
  * @throws {Error} Throws an error if the fetch fails or the response is invalid.
  */
 const fetchAlmanac = async (start, end, abortController) => {
-  const url = `${backendLocation}/almanac?dayObsStart=${start}&dayObsEnd=${end}`;
+  const url = buildBackendURL("almanac", start, end);
   try {
     const data = await fetchData(url, abortController);
     return data.almanac_info;
@@ -144,7 +190,7 @@ const fetchAlmanac = async (start, end, abortController) => {
  * @throws {Error} Throws an error if the narrative log cannot be fetched and the request was not aborted.
  */
 const fetchNarrativeLog = async (start, end, instrument, abortController) => {
-  const url = `${backendLocation}/narrative-log?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
+  const url = buildBackendURL("narrative-log", start, end, instrument);
   try {
     const data = await fetchData(url, abortController);
     return data;
@@ -190,8 +236,6 @@ const fetchObsStatusFromRubinNights = async ({
 }) => {
   // Construct API url containing multiple (unique) requested metrics.
   const params = new URLSearchParams({
-    dayObsStart: start,
-    dayObsEnd: end,
     includeEntries: includeEntries,
     includeIntervals: includeIntervals,
     nightOnlyMetrics: nightOnlyMetrics,
@@ -202,8 +246,7 @@ const fetchObsStatusFromRubinNights = async ({
     const uniqueMetrics = [...new Set(metrics)];
     uniqueMetrics.forEach((metric) => params.append("metric", metric));
   }
-
-  const url = `${backendLocation}/obs-status?${params.toString()}`;
+  const url = buildBackendURL("obs-status", start, end, null, params);
 
   try {
     const data = await fetchData(url, abortController);
@@ -246,7 +289,7 @@ const fetchObsStatusFromRubinNights = async ({
  * @throws {Error} Throws an error if the night reports cannot be fetched and the request was not aborted.
  */
 const fetchNightreport = async (start, end, abortController) => {
-  const url = `${backendLocation}/night-reports?dayObsStart=${start}&dayObsEnd=${end}`;
+  const url = buildBackendURL("night-reports", start, end);
   try {
     const data = await fetchData(url, abortController);
     return [data.reports];
@@ -274,7 +317,7 @@ const fetchNightreport = async (start, end, abortController) => {
  * @throws {Error} Throws an error if fetching fails and the request was not aborted.
  */
 const fetchExposureFlags = async (start, end, instrument, abortController) => {
-  const url = `${backendLocation}/exposure-flags?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
+  const url = buildBackendURL("exposure-flags", start, end, instrument);
   try {
     const data = await fetchData(url, abortController);
     if (!data) {
@@ -302,7 +345,7 @@ const fetchExposureFlags = async (start, end, instrument, abortController) => {
  * @throws {Error} Throws an error if fetching Jira tickets fails for reasons other than an abort.
  */
 const fetchJiraTickets = async (start, end, instrument, abortController) => {
-  const url = `${backendLocation}/jira-tickets?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
+  const url = buildBackendURL("jira-tickets", start, end, instrument);
   try {
     const data = await fetchData(url, abortController);
     return data.issues;
@@ -332,7 +375,7 @@ const fetchDataLogEntriesFromConsDB = async (
   instrument,
   abortController,
 ) => {
-  const url = `${backendLocation}/data-log?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
+  const url = buildBackendURL("data-log", start, end, instrument);
   try {
     const data = await fetchData(url, abortController);
     if (!data) {
@@ -365,7 +408,7 @@ const fetchDataLogEntriesFromExposureLog = async (
   instrument,
   abortController,
 ) => {
-  const url = `${backendLocation}/exposure-entries?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
+  const url = buildBackendURL("exposure-entries", start, end, instrument);
   try {
     const data = await fetchData(url, abortController);
     if (!data) {
@@ -394,7 +437,7 @@ const fetchDataLogEntriesFromExposureLog = async (
  * @throws {Error} Throws an error if the context feed data cannot be fetched and the request was not aborted.
  */
 const fetchContextFeedFromRubinNights = async (start, end, abortController) => {
-  const url = `${backendLocation}/context-feed?dayObsStart=${start}&dayObsEnd=${end}`;
+  const url = buildBackendURL("context-feed", start, end);
   try {
     const data = await fetchData(url, abortController);
     return [data.data, data.cols];
@@ -417,7 +460,7 @@ const fetchContextFeedFromRubinNights = async (start, end, abortController) => {
  * @throws {Error} Throws an error if the package version cannot be fetched and the request was not aborted.
  */
 const fetchBackendVersion = async (abortController) => {
-  const url = `${backendLocation}/version`;
+  const url = buildBackendURL("version");
   try {
     const data = await fetchData(url, abortController);
     return data.version;
@@ -450,7 +493,16 @@ const fetchVisitMaps = async (
   abortController,
   { appletMode = false } = {},
 ) => {
-  const url = `${backendLocation}/multi-night-visit-maps?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}&appletMode=${appletMode}`;
+  const params = new URLSearchParams({
+    appletMode: appletMode,
+  });
+  const url = buildBackendURL(
+    "multi-night-visit-maps",
+    start,
+    end,
+    instrument,
+    params,
+  );
   try {
     const data = await fetchData(url, abortController);
     if (!data) {
@@ -480,7 +532,7 @@ const fetchBlockDetails = async (keys, abortController) => {
   const params = new URLSearchParams();
   const uniqueKeys = [...new Set(keys)];
   uniqueKeys.forEach((key) => params.append("key", key));
-  const url = `${backendLocation}/block-details?${params.toString()}`;
+  const url = buildBackendURL("block-details", null, null, null, params);
   try {
     const data = await fetchData(url, abortController);
     return data;
@@ -516,7 +568,7 @@ const toDataUrl = (imagePayload) =>
  * @throws {Error} Throws an error if the fetch fails or returns invalid data and the request was not aborted.
  */
 const fetchStaticVisitMap = async (start, end, instrument, abortController) => {
-  const url = `${backendLocation}/static-visit-map?dayObsStart=${start}&dayObsEnd=${end}&instrument=${instrument}`;
+  const url = buildBackendURL("static-visit-map", start, end, instrument);
   try {
     const data = await fetchData(url, abortController);
     return {
@@ -531,6 +583,7 @@ const fetchStaticVisitMap = async (start, end, instrument, abortController) => {
 };
 
 export {
+  buildBackendURL,
   fetchExposures,
   fetchExpectedExposures,
   fetchAlmanac,
