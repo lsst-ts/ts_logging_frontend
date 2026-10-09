@@ -680,13 +680,8 @@ function ContextFeed() {
             selectedTimeRange={selectedTimeRange}
             setSelectedTimeRange={setSelectedTimeRange}
             fullTimeRange={fullTimeRange}
-            rightContent={
-              tableLoading ? (
-                <Skeleton className="h-5 w-64 bg-teal-700 inline-block" />
-              ) : (
-                `${filteredData.length} of ${contextFeedTableData.length} events selected`
-              )
-            }
+            rightContentLoading={tableLoading}
+            rightContent={`${filteredData.length} of ${contextFeedTableData.length} events selected`}
           />
 
           {/* Table Tips */}
