@@ -95,6 +95,10 @@ Optional Configuration
 
   With `ND_CACHING_DISABLE_NGINX` set, the proxy also replaces the upstream `Cache-Control` header with `no-store`, so the browser will not serve an API response from its own cache either.
 
+  The refresh worker, which keeps today's redis entries warm, can be turned off on its own while leaving redis caching in place. `example_env` sets this by default:
+  ::
+     ND_CACHING_DISABLE_WORKER=1
+
 - **Backend Development Mode**:
   On startup the backend and refresh worker check their environment, and exit with a critical log line naming every problem if anything they need is missing.
   Some of what production requires is difficult to obtain locally, notably the AWS credentials behind expected exposures (see `Configuring Additional Credentials`_).
