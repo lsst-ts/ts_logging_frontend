@@ -33,9 +33,10 @@ Steps to Run
 
    This will:
 
-   - Build the frontend service using the `docker/Dockerfile-dev` file.
-   - Expose the frontend on port `5173`.
-   - Start the `nginx` service on port `80`.
+   - Build the frontend and backend images, each from its repository's `docker/Dockerfile`.
+   - Start the frontend dev server on port `5173`.
+   - Start the backend API on port `8080`, the backend refresh worker, and `redis` on port `6379`.
+   - Start the `nginx` service on port `80`, which serves the frontend and proxies `/nightlydigest/api/` to the backend.
 
 3. **Access the Application**:
    Access the Frontend application through the Nginx service at: `http://localhost/nightlydigest/`.
