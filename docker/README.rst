@@ -15,20 +15,16 @@ Steps to Run
 ============
 1. **Set Environment Variables**:
    Create a `.env` file in the `docker/` directory and copy environment variables from the example env file `docker/example_env` to the new file. 
-   Make sure that the variables are properly configured. For example, set the `FRONTEND_PATH` variable to the absolute path of the frontend source directory:
-   ::
-      FRONTEND_PATH=/path/to/your/frontend
-      BACKEND_PATH=/path/to/your/backend
-   
-   If connecting to remote sources such as consdb, exposurelog, narrativelog and nightreport you will need to set extra environment variables to access the services and provide authentication before running the services:
-   ::
-      export ACCESS_TOKEN=your_authentication_key
-      export EXTERNAL_INSTANCE_URL=server-url
-   
-   The token must be manually retrieved from the RSP platform you are connecting to. The scope of the token must be set to at least:
+   Make sure that the variables are properly configured. These are read by Docker Compose itself:
 
-   - `image:read`
-   - `exec:internal-tools`
+   - `FRONTEND_PATH` and `BACKEND_PATH`: paths to the frontend and backend repositories, relative to `docker/` or absolute.
+   - `LOCAL_RUBIN_SIM_DATA_DIR`: a local copy of the `rubin_sim` data, mounted read-only into the backend containers.
+   - `REDIS_MAX_MEMORY` (optional, default `512mb`): the redis cache's memory ceiling.
+
+   The backend also needs its upstream credentials in `.env`: `ACCESS_TOKEN`, `EXTERNAL_INSTANCE_URL`, `JIRA_API_TOKEN`, `JIRA_API_HOSTNAME` and `ZEPHYR_API_TOKEN`.
+   How to obtain each one, and every other variable the backend reads, is described in the backend's `environment variables documentation`_.
+
+   .. _environment variables documentation: https://github.com/lsst-ts/ts_logging_and_reporting/blob/develop/doc/environment-variables.md
 
 2. **Start Services**:
    From the root of the repository, run the following command to start the services defined in `docker/docker-compose.yaml`:
@@ -85,6 +81,7 @@ Optional Configuration
   `VITE_BACKEND_URL` appropriately.
   ::
      VITE_BACKEND_URL=http://localhost/nightlydigest/api
+
 - **Disable Caching**:
   API responses are cached twice: by the nginx proxy, and by the backend in redis. Either layer can be turned off from the `.env` file, which is useful when you want to see uncached upstream behaviour:
   ::
@@ -95,18 +92,10 @@ Optional Configuration
 
   With `ND_CACHING_DISABLE_NGINX` set, the proxy also replaces the upstream `Cache-Control` header with `no-store`, so the browser will not serve an API response from its own cache either.
 
-  The refresh worker, which keeps today's redis entries warm, can be turned off on its own while leaving redis caching in place. `example_env` sets this by default:
-  ::
-     ND_CACHING_DISABLE_WORKER=1
+  `example_env` also sets `ND_CACHING_DISABLE_WORKER=1`, which turns off the refresh worker that keeps today's redis entries warm. `ND_CACHING_DISABLE_REDIS` and `ND_CACHING_DISABLE_WORKER` are backend variables; see the backend's `environment variables documentation`_.
 
 - **Backend Development Mode**:
-  On startup the backend and refresh worker check their environment, and exit with a critical log line naming every problem if anything they need is missing.
-  Some of what production requires is difficult to obtain locally, notably the AWS credentials behind expected exposures (see `Configuring Additional Credentials`_).
-  Setting `ND_DEBUG` puts the backend in development mode, where those production-only variables only produce a warning when unset, and the features that depend on them fail at runtime instead:
-  ::
-     ND_DEBUG=1
-
-  A missing, empty or `0` value leaves development mode off. In local development, this should usually be enabled. See `doc/environment-variables.md` in the backend repository for which variables are required.
+  `example_env` sets `ND_DEBUG=1`, placing the backend in development mode. Leave it set for local development; the backend's `environment variables documentation`_ describes what it changes.
 
 Troubleshooting
 ===============
@@ -119,59 +108,10 @@ e.g.
       docker pull lsstts/develop-env:develop
       docker system prune
 
-Configuring Additional Credentials
-==================================
-Some aspects of the Nightly Digest require additional configurations.
+Expected Exposures Credentials
+==============================
+Expected exposures need AWS credentials, which are **not required** otherwise: without them you will see "0 expected exposures" on the first metric card and an error in the backend logs. Only set them up if you are working on that feature.
 
-**Expected Exposures** (`rubin-sim <https://github.com/lsst/rubin_sim>`_)
+**These credentials are sensitive, and leaking them is a high-risk security incident.** Copy **ONLY** the `[default]` profile; **DO NOT** copy any other profile, and especially not `[embargo]`. Never commit the file: if it is ever pushed to GitHub, report it immediately, since Git history is preserved, and public, even after the commit is deleted.
 
-This is **not required**; not having these credentials will not break anything, you will just see "0 expected exposures" on the first metric card, and an error in the logs saying that you don't have the credentials. You should **only set these credentials if you are actively working on this aspect of the Nightly Digest**.
-
-1. **Get AWS Credentials**:
-   Open an RSP notebook and copy **ONLY** the [default] profile contents of your aws credentials file.
-   **DO NOT** copy the other profiles. The [embargo] profile especially is very critical and should be left alone.
-   ::
-      cat ~/.lsst/aws-credentials.ini
-
-2. **Create Local Credentials File**:
-   Put the credentials in a safe place on your computer, e.g.:
-   ::
-      nano ~/.aws/credentials
-
-   **Please note:**
-
-   - Be really careful to put the credentials file in a safe place.
-   - Make sure to not push it to GitHub. If you do, then this needs to be reported immediately, as it represents a high-risk security issue. GitHub history is preserved (and public) even if you do delete the commit.
-   - The file should have reduced access permissions.
-   e.g.
-   ::
-      chmod 600 path/to/credentials
-
-
-3. **Tell Docker Where Credentials Are**:
-   In your `docker-compose.yaml`, indicate in the volume section where your credentials file is located, e.g.:
-   ::
-      backend:
-         volumes:
-            - ~/.aws:/home/saluser/.aws:ro
-
-   The file location goes on the left side, before the first colon ( : ).
-
-**Test Cases** (`Zephyr <https://rubinobs.atlassian.net/projects/BLOCK?selectedItem=com.atlassian.plugins.atlassian-connect-plugin:com.kanoah.test-manager__main-project-page#!/v2/testCases>`_)
-
-1. **Get Zephyr Token from Jira**:
-   Open Jira and open the account menu (top-right of screen, circle with initials inside).
-   Click on "Zephyr Scale API Access Tokens", create a token, and copy it.
-
-2. **Add Token to .env file**:
-   Add the copied token to your .env file like so:
-   ::
-      ZEPHYR_API_TOKEN=<paste_zephyr_token_here>
-
-3. **Tell Docker Where Token Is**:
-   This should already be merged into the codebase, but, for completeness:
-   In your `docker-compose.yaml`, indicate in the env section where to grab the env variables from:
-   ::
-      backend:
-         environment:
-            - ZEPHYR_API_TOKEN=${ZEPHYR_API_TOKEN}
+Obtain them by following the steps in the backend's `environment variables documentation`_, and save the file as `~/.aws/credentials`. `docker-compose.yaml` mounts `~/.aws` read-only into the backend containers.
