@@ -35,12 +35,3 @@ export default function DataLogToContextFeedLink({
     </div>
   );
 }
-
-DataLogToContextFeedLink.propTypes = {
-  exposureId: PropTypes.string,
-  dayObs: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-  obsStartTime: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-  exposureName: PropTypes.string,
-  windowSeconds: PropTypes.number,
-  children: PropTypes.node,
-};

@@ -91,8 +91,8 @@ const commonColumns = [
       selectedKey: true,
     },
   }),
-  //now provide a new column with link to context feed as long as
-  //we aren't the Scientific Nightly Digest who don't have to context feed
+  //A column linking each exposure to their entry in the Context Feed.
+  //This column is hidden in the Scientific Nightly Digest.
   ...(isScientificNightlyDigest
     ? []
     : [
