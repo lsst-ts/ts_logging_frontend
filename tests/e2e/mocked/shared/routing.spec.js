@@ -253,6 +253,7 @@ test.describe("Data-log — unknown parameter stripping", () => {
     await waitForDataLogLoad(page);
     await expect(page).not.toHaveURL(/unknown=/);
     await expect(page).toHaveURL(/science_program=FM/);
+    // datalog-multi-program cycles five programs over 30 records: 6 are FM.
     await expect(page.locator("[data-slot='table-body'] tr")).toHaveCount(6);
   });
 });

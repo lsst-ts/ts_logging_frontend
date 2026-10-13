@@ -10,6 +10,9 @@ function loadFixture(name) {
   );
 }
 
+// Every endpoint the app calls needs a default here. An unmocked request falls
+// through to the Vite dev server, which answers with index.html and a 200, so
+// the page fails parsing it as JSON rather than with a clear network error.
 const DEFAULT_MOCKS = {
   "data-log": loadFixture("data-log"),
   "context-feed": loadFixture("context-feed"),
@@ -44,6 +47,10 @@ const DEFAULT_MOCKS = {
  *
  * Any key not present in overrides falls back to the default. Keys present only
  * in overrides are also mocked.
+ *
+ * To make an endpoint fail, call page.route() for it after this function, e.g.
+ * with route.fulfill({ status: 500 }). Playwright tries the most recently
+ * registered route first, so the later route takes precedence over the mock.
  *
  * @param {import('@playwright/test').Page} page
  * @param {Record < string, object | string >} [overrides]

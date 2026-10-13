@@ -8,7 +8,10 @@ export const DATALOG_URL = `data-log?startDayobs=${TEST_DAYOBS}&endDayobs=${TEST
 export const CONTEXTFEED_URL = `context-feed?startDayobs=${TEST_DAYOBS}&endDayobs=${TEST_DAYOBS}&telescope=Simonyi`;
 export const VISITMAPS_URL = `visit-maps?startDayobs=${TEST_DAYOBS}&endDayobs=${TEST_DAYOBS}&telescope=Simonyi`;
 
-// Full time range UTC boundaries for dayobs=20260101:
+// Full time range UTC boundaries for dayobs=20260101, which runs from 12:00
+// UTC that day to 11:59:59 UTC the next. Hand-computed epoch values are easy to
+// get hours wrong; check new ones with `new Date(ms).toISOString()`, or derive
+// them from an ISO string as the specs do.
 export const FULL_START = 1767268800000;
 export const FULL_END = 1767355199000;
 export const FULL_RANGE = FULL_END - FULL_START;

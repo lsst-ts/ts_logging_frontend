@@ -92,10 +92,16 @@ export function getTimeParams(page) {
 /**
  * Scrolls the nth dot (0-based) in the given chart into the viewport then
  * moves the mouse to its centre. Uses page.mouse.move() to bypass
- * Playwright's actionability checks on overlapping SVG elements.
+ * Playwright's actionability checks on overlapping SVG elements, where
+ * locator.hover() fails because another dot "intercepts pointer events".
+ * The scroll comes first because the charts sit below the fold, and
+ * page.mouse.move() only reaches what is in the viewport.
  *
  * For reliable hover targeting, use spread-out mock data so dots don't
  * overlap (e.g. postProcess: (r) => ({ ...r, airmass: 1.0 + r.seq_num * 0.2 })).
+ *
+ * Each chart renders its own tooltip, so locate the tooltip within
+ * chartLocator rather than on the page.
  *
  * @param {import('@playwright/test').Page} page
  * @param {import('@playwright/test').Locator} chartLocator
