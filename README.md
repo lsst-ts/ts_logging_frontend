@@ -19,6 +19,8 @@ It is a React app built with Vite.
 - [Testing](doc/testing.md): unit tests and the end-to-end suites.
 - [Architecture](doc/architecture.md): build-time configuration, images, CI
   and releasing.
+- [Scientific Nightly Digest](doc/snd.md): the public variant, its data and
+  its deployment.
 - [Time accounting](doc/time_accounting.rst): definitions behind the time
   accounting figures.
 - [Version history](doc/version_history.rst)
