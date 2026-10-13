@@ -10,11 +10,18 @@ make_release.py
 
 A simple Python command-line tool to arrange releases for `ts_logging_frontend`.
 It generates release notes using towncrier, updates package.json metadata, and creates a git tag.
-To use this script, run the following command:
+To use this script, run the following command from the root of the repository:
 
 ::
-    
-    python make_release.py -v <new_version>
+
+    python scripts/make_release.py -v <new_version>
+
+Each step can be skipped, which is how ``docker/Dockerfile-deploy`` sets the version to ``develop`` without touching git:
+
+- ``--no-version-check``: accept a version that is not semantic versioning.
+- ``--no-release-notes``: skip building the release notes with towncrier.
+- ``--no-package-json``: skip updating ``package.json``.
+- ``--no-git``: skip the commits and the tag.
 
 ------------
 gc-deploy.py
