@@ -118,10 +118,10 @@ The Data Log and Context Feed share `src/components/DataTable/`, built on
 definitions, and `DataTable` provides sorting, filtering, grouping, column
 visibility, resizing and row selection.
 
-Column behaviour is configured through each column's `meta`:
+Two properties of a column definition control its filter:
 
 - `filterType: "string"` gives the column a multi-select filter of its values.
-- `urlParam` keeps the column's filter in the URL, under that name.
+- `meta.urlParam` keeps the column's filter in the URL, under that name.
   Filters on columns without one are kept only in the table's
   state, and are lost on reload.
 
