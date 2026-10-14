@@ -337,6 +337,13 @@ export const defaultColumnOrder = [
   "timestampProcessEnd",
 ];
 
+/**
+ * Column definitions for the Context Feed table. Filtering is set by each
+ * column's `filterType` and `meta.urlParam` (see `doc/pages.md`). Names link to
+ * their Zephyr/Jira BLOCK where there is one. Tracebacks and script
+ * configurations can be collapsed and copied, and tracebacks also opened
+ * fullscreen.
+ */
 export const contextFeedColumns = [
   columnHelper.accessor("category_index", {
     header: "Category Index",

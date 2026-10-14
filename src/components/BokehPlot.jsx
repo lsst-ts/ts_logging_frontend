@@ -1,6 +1,10 @@
 import { useEffect, useRef } from "react";
 import * as Bokeh from "@bokeh/bokehjs";
 
+/**
+ * Embeds a Bokeh document built by the backend (`plotData`, the JSON from
+ * Bokeh's `json_item`) into a container div.
+ */
 const BokehPlot = ({ plotData }) => {
   const plotRef = useRef(null);
   const embeddedRef = useRef(false);

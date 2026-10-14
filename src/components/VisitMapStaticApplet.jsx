@@ -9,6 +9,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import InfoIcon from "../assets/InfoIcon.svg";
 import DownloadIcon from "../assets/DownloadIcon.svg";
 
+/**
+ * Digest applet showing a full-sky image of how many times each area has
+ * been visited over the selected nights. The image is rendered by the backend
+ * and passed in as `mapData`, a b64 encoded png image source.
+ */
 export default function VisitMapStaticApplet({
   mapData,
   mapLoading,

@@ -20,6 +20,13 @@ import { isScientificNightlyDigest } from "@/utils/appConfig";
 import RubinIcon from "../assets/RubinIcon.svg";
 import packageJson from "../../package.json";
 
+/**
+ * The app's sidebar: the night and telescope controls (`Parameters`), the
+ * page navigation, and a footer with the frontend's version and links to the
+ * frontend and backend release notes. The backend version comes from its
+ * `version` endpoint. In the Scientific Nightly Digest the footer also links
+ * to the LSST Community Forum.
+ */
 export function AppSidebar({ ...props }) {
   const [backendVersion, setBackendVersion] = useState("develop");
   useEffect(() => {

@@ -123,6 +123,13 @@ function handleDownload(reports) {
   console.log(textContent);
 }
 
+/**
+ * Digest applet listing the observers' night reports for the selected nights:
+ * the summary, weather, telescope summary, crew and the time each report was
+ * sent. With more than one night, a day selector scrolls to that night's
+ * report and follows the scroll position. The reports can also be opened in a
+ * fullscreen dialog.
+ */
 function NightSummary({ reports = [], nightreportLoading = false }) {
   const [selectedDay, setSelectedDay] = useState(null);
 
