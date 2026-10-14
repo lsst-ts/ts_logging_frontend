@@ -17,6 +17,8 @@ It is a React app built with Vite.
 - [Getting started](doc/getting-started.md): setting up a development
   environment, running the local stack, and the pull request process.
 - [Testing](doc/testing.md): unit tests and the end-to-end suites.
+- [Pages and components](doc/pages.md): what each page shows and reads, and
+  the charts, tables and time-range handling they share.
 - [Architecture](doc/architecture.md): build-time configuration, images, CI
   and releasing.
 - [Scientific Nightly Digest](doc/snd.md): the public variant, its data and
