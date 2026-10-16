@@ -14,7 +14,8 @@
     "preview": "vite preview"
   },
   "overrides": {
-    "react-is": "^19.0.0-rc-69d4b800-20241021"
+    "react-is": "^19.0.0-rc-69d4b800-20241021",
+    "@xmldom/xmldom": "^0.9.12"
   },
   "dependencies": {
     "@bokeh/bokehjs": "^3.8.0",
