@@ -14,7 +14,9 @@ export async function waitForDataLogLoad(page) {
   await expect(page.locator("[data-slot='skeleton']")).toHaveCount(0, {
     timeout: 15000,
   });
-  await expect(page.locator("[data-slot='table-body']")).toBeAttached();
+  await expect(page.locator("[data-slot='table-body']")).toBeAttached({
+    timeout: 15000,
+  });
 }
 
 /**

@@ -28,7 +28,7 @@ export function ComboBox({ options, selectedValue, handleChange }) {
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-[280px] justify-between rounded-xs drop-shadow-lg drop-shadow-green-500"
+          className="w-[280px] justify-between rounded-xs drop-shadow-lg drop-shadow-green-500 cursor-pointer"
         >
           {value
             ? options.find((option) => option.value === value)?.label
