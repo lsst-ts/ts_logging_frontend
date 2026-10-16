@@ -19,7 +19,6 @@ import CopyIcon from "../assets/CopyIcon.svg";
 import FullScreenIcon from "../assets/FullScreenIcon.svg";
 
 const columnHelper = createColumnHelper();
-
 // Handles Zephyr/Jira links on BLOCK names and plain text.
 function renderNameCell(info) {
   const value = info.getValue();

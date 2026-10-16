@@ -7,12 +7,18 @@ import {
   isoToChile,
   isoToUTC,
   getDayobsUTC,
+  taiDateTimeStrToUTCMillis,
 } from "./timeUtils";
 import { CATEGORY_INDEX_INFO } from "@/constants/CONTEXT_FEED_DEFINITIONS";
 import { GLOBAL_SEARCH_PARAMS } from "@/routes";
 
 export const DEFAULT_EXTERNAL_INSTANCE_URL =
   "https://usdf-rsp.slac.stanford.edu";
+
+export const TELESCOPE_PREFIXES = {
+  MC: "Simonyi",
+  AT: "AuxTel",
+};
 
 export const SITE_CONFIGURATION = Object.freeze({
   "usdf-rsp.slac.stanford.edu": {
@@ -339,6 +345,50 @@ const getRubinTVUrl = (telescope, dayObs, seqNum) => {
 };
 
 /**
+ * Generates the Nightly Digest Context Feed URL based on telescope, dayObs, and TAI obsSelectedTime
+ *
+ * @param {string} telescope - The telescope name ("Simonyi" or "AuxTel").
+ * @param {string|number} dayObs - Observation day (e.g. 20260521)
+ * @param {string|number} ObsSelectedTime - ISO TAI format selected time - this is the time of what you want centered
+ * @param {number} [windowSeconds=30] - Total size of time window in seconds (default: 30s, ±15s around selectedTime)
+ * @returns {string|null} Formatted URL string or null if missing required parameters.
+ */
+const getContextFeedUrl = (
+  telescope,
+  dayObs,
+  ObsSelectedTime,
+  windowSeconds = 30,
+) => {
+  if (!dayObs || !ObsSelectedTime) return null;
+
+  // Parse TAI ISO string directly into UTC epoch milliseconds (TAI)
+  const utcSelectedMillis = taiDateTimeStrToUTCMillis(ObsSelectedTime);
+  if (isNaN(utcSelectedMillis)) return null;
+
+  // Convert TAI milliseconds to UTC microseconds (TAI - leapseconds = UTC)
+  const utcSelectedMicros = utcSelectedMillis * 1000;
+
+  // Compute startTime and endTime (half the window around the selected time)
+  const halfWindowMs = (windowSeconds / 2) * 1000;
+  const startTime = utcSelectedMillis - halfWindowMs;
+  const endTime = utcSelectedMillis + halfWindowMs;
+
+  const dayObsStr = String(dayObs);
+
+  const baseUrl = "/nightlydigest/context-feed";
+  const params = new URLSearchParams({
+    startDayobs: dayObsStr,
+    endDayobs: dayObsStr,
+    telescope: telescope || "",
+    selectedTime: String(utcSelectedMicros),
+    startTime: String(startTime),
+    endTime: String(endTime),
+  });
+
+  return `${baseUrl}?${params.toString()}`;
+};
+
+/**
  * Retrieves the site configuration for a given host.
  *
  * @param {string} host - The hostname (without protocol) to look up.
@@ -632,6 +682,7 @@ export {
   mergeAllDataLogSources,
   mergeContextFeedSources,
   getRubinTVUrl,
+  getContextFeedUrl,
   getSiteConfig,
   buildNavigationWithSearchParams,
   getNightSummaryLink,
