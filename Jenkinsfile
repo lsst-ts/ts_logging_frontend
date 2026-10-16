@@ -15,18 +15,16 @@ pipeline {
       agent{
         docker {
           alwaysPull true
-          image 'lsstts/develop-env:develop'
+          image 'rubincr.lsst.org/develop-env-node:develop'
           args "--entrypoint=''"
         }
       }
       steps {
         script {
           sh """
-            source /home/saluser/.setup_dev.sh
-
+            source /home/saluser/.bashrc
             npm ci
             pre-commit run --all-files
-
             npx vitest run --run --no-color --reporter=verbose
           """
         }
@@ -36,14 +34,14 @@ pipeline {
       agent{
         docker {
           alwaysPull true
-          image 'lsstts/develop-env:develop'
+          image 'rubincr.lsst.org/develop-env-node:develop'
           args "--entrypoint=''"
         }
       }
       steps {
         script {
           sh """
-            source /home/saluser/.setup_dev.sh
+            source /home/saluser/.bashrc
             npm ci
             npx playwright install chromium
             npm run test:e2e -- --reporter=list
