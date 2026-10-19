@@ -55,6 +55,27 @@ describe("buildBackendURL for internal backend", () => {
       "https://backend.example/api/exposures?instrument=LATISS&dayObsStart=20250101&dayObsEnd=20250102&extraParam=value&anotherParam=anotherValue",
     );
   });
+
+  it("preserves extra query parameters with the same key", async () => {
+    const buildBackendURL = await loadBuilder(false);
+
+    const extraParams = new URLSearchParams();
+    extraParams.append("key", "BLOCK-T100");
+    extraParams.append("key", "BLOCK-T101");
+    extraParams.append("key", "BLOCK-T102");
+
+    expect(
+      buildBackendURL(
+        "block-details",
+        undefined,
+        undefined,
+        undefined,
+        extraParams,
+      ),
+    ).toBe(
+      "https://backend.example/api/block-details?key=BLOCK-T100&key=BLOCK-T101&key=BLOCK-T102",
+    );
+  });
 });
 
 describe("buildBackendURL for SND backend", () => {
@@ -80,20 +101,19 @@ describe("buildBackendURL for SND backend", () => {
   it("omits extra query parameters for SND backend", async () => {
     const buildBackendURL = await loadBuilder(true);
 
-    const extraParams = new URLSearchParams({
-      extraParam: "value",
-      anotherParam: "anotherValue",
-    });
+    const extraParams = new URLSearchParams();
+    extraParams.append("key", "BLOCK-T100");
+    extraParams.append("key", "BLOCK-T101");
+    extraParams.append("key", "BLOCK-T102");
+
     expect(
       buildBackendURL(
-        "exposures",
-        "20250101",
-        "20250102",
-        "LATISS",
+        "block-details",
+        undefined,
+        undefined,
+        undefined,
         extraParams,
       ),
-    ).toBe(
-      "https://backend.example/api/exposures/LATISS/20250101_20250102.json",
-    );
+    ).toBe("https://backend.example/api/block-details.json");
   });
 });
