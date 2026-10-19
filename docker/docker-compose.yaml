@@ -44,56 +44,56 @@ services:
       retries: 20
       start_period: 30s
 
-  backend:
-    container_name: nightlydigest-backend
-    build:
-      context: ${BACKEND_PATH}
-      dockerfile: docker/Dockerfile
-    image: nightlydigest-backend-local
-    environment: *backend-environment
-    ports:
-      - "8080:8080"
-    volumes: *backend-volumes
-    depends_on:
-      redis:
-        condition: service_healthy
+  # backend:
+  #   container_name: nightlydigest-backend
+  #   build:
+  #     context: ${BACKEND_PATH}
+  #     dockerfile: docker/Dockerfile
+  #   image: nightlydigest-backend-local
+  #   environment: *backend-environment
+  #   ports:
+  #     - "8080:8080"
+  #   volumes: *backend-volumes
+  #   depends_on:
+  #     redis:
+  #       condition: service_healthy
 
   # Keeps today's cache entries warm. Runs as a single container: the
   # worker does no cross-instance coordination, so a second replica
   # would only duplicate upstream fetches.
-  refresh-worker:
-    container_name: nightlydigest-refresh-worker
-    build:
-      context: ${BACKEND_PATH}
-      dockerfile: docker/Dockerfile
-    image: nightlydigest-backend-local
-    command: docker/refresh_worker.sh
-    environment: *backend-environment
-    volumes: *backend-volumes
-    depends_on:
-      redis:
-        condition: service_healthy
+  # refresh-worker:
+  #   container_name: nightlydigest-refresh-worker
+  #   build:
+  #     context: ${BACKEND_PATH}
+  #     dockerfile: docker/Dockerfile
+  #   image: nightlydigest-backend-local
+  #   command: docker/refresh_worker.sh
+  #   environment: *backend-environment
+  #   volumes: *backend-volumes
+  #   depends_on:
+  #     redis:
+  #       condition: service_healthy
 
-  redis:
-    container_name: nightlydigest-redis
-    image: redis:7-alpine
-    # Cache, not a datastore: bounded memory with LRU eviction and no
-    # persistence.
-    command: >
-      redis-server
-      --maxmemory ${REDIS_MAX_MEMORY:-512mb}
-      --maxmemory-policy allkeys-lru
-      --save ""
-      --appendonly no
-    # Published so redis-cli and scripts/perf_test.py can reach the
-    # cache from the host.
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 20
+  # redis:
+  #   container_name: nightlydigest-redis
+  #   image: redis:7-alpine
+  #   # Cache, not a datastore: bounded memory with LRU eviction and no
+  #   # persistence.
+  #   command: >
+  #     redis-server
+  #     --maxmemory ${REDIS_MAX_MEMORY:-512mb}
+  #     --maxmemory-policy allkeys-lru
+  #     --save ""
+  #     --appendonly no
+  #   # Published so redis-cli and scripts/perf_test.py can reach the
+  #   # cache from the host.
+  #   ports:
+  #     - "6379:6379"
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 5s
+  #     timeout: 3s
+  #     retries: 20
 
   nginx:
     container_name: nightlydigest-nginx
@@ -102,6 +102,7 @@ services:
       - "80:80"
     environment:
       - ND_CACHING_DISABLE_NGINX=${ND_CACHING_DISABLE_NGINX:-}
+      - ACCESS_TOKEN=${ACCESS_TOKEN:-}
     depends_on:
       frontend:
         condition: service_healthy
