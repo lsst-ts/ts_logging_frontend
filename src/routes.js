@@ -10,6 +10,7 @@ import ContextFeed from "./pages/ContextFeed";
 import Digest from "./pages/Digest";
 import Plots from "./pages/Plots";
 import VisitMaps from "./pages/VisitMaps";
+import TimeAccounting from "./pages/TimeAccounting";
 import { z } from "zod";
 import { DateTime } from "luxon";
 
@@ -159,6 +160,7 @@ const contextFeedUrlParams =
 // Selection params (not part of column urlParam mappings)
 const dataLogSelectionParams = ["selectedExposureId"];
 const contextFeedSelectionParams = ["selectedTime"];
+const timeAccountingSelectionParams = ["selectedBreakdown"];
 
 // All array keys (for router parseSearch)
 const arrayKeys = [
@@ -167,6 +169,7 @@ const arrayKeys = [
     ...contextFeedUrlParams,
     ...dataLogSelectionParams,
     ...contextFeedSelectionParams,
+    ...timeAccountingSelectionParams,
   ]),
 ];
 
@@ -186,6 +189,14 @@ export const contextFeedSearchSchema = applyCommonValidations(
         ...contextFeedUrlParams,
         ...contextFeedSelectionParams,
       ]),
+    ),
+  ),
+);
+
+export const timeAccountingSearchSchema = applyCommonValidations(
+  applyDateValidation(
+    baseSearchParamsSchema.extend(
+      createFilterSchema(timeAccountingSelectionParams),
     ),
   ),
 );
@@ -267,15 +278,29 @@ const visitmapsRoute = createRoute({
   errorComponent: SearchParamErrorComponent,
 });
 
+const timeAccountingRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/time-accounting",
+  component: TimeAccounting,
+  validateSearch: parseWith(timeAccountingSearchSchema),
+  beforeLoad: stripUnknownParams([
+    ...GLOBAL_SEARCH_PARAMS,
+    ...timeAccountingSelectionParams,
+  ]),
+  errorComponent: SearchParamErrorComponent,
+});
+
 const router = createRouter({
   routeTree: rootRoute.addChildren([
     dashboardRoute,
     dataLogRoute,
-    // The Context Feed is internal-only; the Scientific Nightly Digest has no
-    // route for it at all, so the path 404s rather than rendering the page.
+    // The Context Feed & the Time Accounting pages are internal-only;
+    // the Scientific Nightly Digest has no routes for them at all, so
+    // the paths 404s rather than rendering the page.
     ...(isScientificNightlyDigest ? [] : [contextFeedRoute]),
     plotsRoute,
     visitmapsRoute,
+    ...(isScientificNightlyDigest ? [] : [timeAccountingRoute]),
   ]),
   basepath: import.meta.env.BASE_URL,
 

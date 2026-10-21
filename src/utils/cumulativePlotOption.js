@@ -28,6 +28,7 @@ import {
  * @returns {Object} ECharts option.
  */
 export function buildCumulativePlotOption({
+  plotTitle = "Cumulative Time in State",
   model,
   markerData,
   markerSize,
@@ -43,7 +44,7 @@ export function buildCumulativePlotOption({
     animation: false,
     toolbox: { show: false },
     title: {
-      text: "Cumulative Time in State",
+      text: plotTitle,
       textStyle: {
         color: STATUS_CUMULATIVE_PLOT_COLOURS.NAMES,
         fontSize: fontSize.TITLE_FONT_SIZE,
@@ -216,7 +217,7 @@ export function buildCumulativePlotOption({
           borderColor: STATUS_CUMULATIVE_PLOT_COLOURS.BORDERS,
           borderWidth: STATUS_CUMULATIVE_DIMENSIONS.BREAK_BORDER_WIDTH,
           color: STATUS_CUMULATIVE_PLOT_COLOURS.BREAK_AREA_FILL,
-          opacity: 1,
+          opacity: 0.8,
         },
       },
     },

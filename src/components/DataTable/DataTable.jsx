@@ -7,6 +7,7 @@ import { dataTableFeatures } from "./tableFeatures";
 import { useDataTableState } from "./useDataTableState";
 import DataTableHeader from "./DataTableHeader";
 import DataTableBody from "./DataTableBody";
+import DataTableFooter from "./DataTableFooter";
 import DataTableToolbar from "./DataTableToolbar";
 
 /**
@@ -67,6 +68,10 @@ const DataTable = forwardRef(function DataTable(
     defaultSorting,
   });
 
+  // Optional renderer for expandable sub-component rows.
+  // When provided, rows that can be expanded render their sub-component.
+  const subComponent = tableMeta?.subComponent;
+
   // Create table instance
   const table = useTable({
     features: dataTableFeatures,
@@ -92,6 +97,12 @@ const DataTable = forwardRef(function DataTable(
     onExpandedChange: setExpanded,
     onColumnFiltersChange: setColumnFilters,
     columnResizeMode: "onChange",
+
+    // Rows can be expanded when they have a sub-component renderer, or when
+    // they are grouped rows (which carry nested sub-rows that can be
+    // expanded/collapsed).
+    getRowCanExpand: (row) =>
+      Boolean(subComponent) || Boolean(row.subRows?.length),
   });
 
   // Expose imperative methods via ref
@@ -136,6 +147,7 @@ const DataTable = forwardRef(function DataTable(
               selected={selected}
               onSelectionChange={onSelectionChange}
             />
+            <DataTableFooter table={table} />
           </Table>
         </div>
       </div>

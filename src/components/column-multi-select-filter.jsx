@@ -78,7 +78,7 @@ function ColumnMultiSelectFilter({ column, closeDropdown }) {
             e.stopPropagation();
             clear();
           }}
-          className="text-red-600 hover:underline"
+          className="text-red-600 hover:underline cursor-pointer"
         >
           Clear
         </button>
@@ -87,7 +87,7 @@ function ColumnMultiSelectFilter({ column, closeDropdown }) {
             e.stopPropagation();
             apply();
           }}
-          className="text-blue-600 hover:underline"
+          className="text-blue-600 hover:underline cursor-pointer"
         >
           Apply
         </button>

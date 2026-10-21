@@ -41,7 +41,10 @@ function DataTableHeader({ table }) {
   return (
     <TableHeader>
       {table.getHeaderGroups().map((headerGroup) => (
-        <TableRow key={headerGroup.id} className="sticky top-0 z-50">
+        <TableRow
+          key={headerGroup.id}
+          className="sticky top-0 z-50 bg-teal-700"
+        >
           {headerGroup.headers.map((header) => (
             <TableHead
               key={header.id}
@@ -63,13 +66,7 @@ function DataTableHeader({ table }) {
                       ? "justify-end"
                       : "justify-between"
                   }`}
-                  style={{
-                    width: header.getSize(),
-                    minWidth:
-                      header.column.columnDef.minSize ?? MIN_DEFAULT_COL_WIDTH,
-                    maxWidth:
-                      header.column.columnDef.maxSize ?? MAX_DEFAULT_COL_WIDTH,
-                  }}
+                  style={{ width: "100%" }}
                 >
                   {/* Header content with optional tooltip */}
                   <HeaderContent header={header} />
@@ -135,7 +132,7 @@ function HeaderContent({ header }) {
             align="center"
             className="break-words text-center"
           >
-            {tooltipText}
+            <TooltipText text={tooltipText} />
           </TooltipContent>
         </Tooltip>
       </div>
@@ -143,6 +140,27 @@ function HeaderContent({ header }) {
   }
 
   return headerContent;
+}
+
+/**
+ * Renders tooltip text, highlighting backtick-wrapped segments as inline code
+ * (e.g. `` `Parent: {Child}` ``).
+ */
+function TooltipText({ text }) {
+  if (typeof text !== "string") return text;
+
+  return text.split("`").map((part, index) =>
+    index % 2 === 1 ? (
+      <code
+        key={index}
+        className="font-mono text-teal-300 bg-black/40 px-1 rounded text-[0.9em]"
+      >
+        {part}
+      </code>
+    ) : (
+      <span key={index}>{part}</span>
+    ),
+  );
 }
 
 /**
