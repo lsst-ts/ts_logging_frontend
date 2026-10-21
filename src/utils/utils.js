@@ -40,7 +40,23 @@ export const SITE_CONFIGURATION = Object.freeze({
     hostDisplayName: "Tuscon",
     retentionDays: 7,
   },
+  "nightlydigest.lsst.cloud": {
+    rubinTVSiteSuffix: undefined,
+    hostDisplayName: "Scientific Nightly Digest",
+    retentionDays: 30,
+  },
+  "nightlydigest-dev.lsst.cloud": {
+    rubinTVSiteSuffix: undefined,
+    hostDisplayName: "Scientific Nightly Digest Dev",
+    retentionDays: 7,
+  },
 });
+
+/**
+ * The host whose configuration a local dev server of the Scientific Nightly
+ * Digest stands in for, so it runs under the same retention policy.
+ */
+export const SND_LOCAL_SITE = "nightlydigest-dev.lsst.cloud";
 
 const DEFAULT_PIXEL_SCALE_MEDIAN = 0.2; // default median pixel scale in arcsec/pixel
 const PSF_SIGMA_FACTOR = 2.355; // factor for going from sigma (σ) to FWHM (2 sqrt(2 ln(2)))
