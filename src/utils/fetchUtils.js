@@ -39,7 +39,7 @@ function buildBackendURL(endpoint, start, end, instrument, extraParams) {
   if (extraParams) {
     const extraSearchParams = new URLSearchParams(extraParams);
     extraSearchParams.forEach((value, key) => {
-      url.searchParams.set(key, value);
+      url.searchParams.append(key, value);
     });
   }
   return url.toString();
