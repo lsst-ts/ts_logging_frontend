@@ -27,6 +27,12 @@ import { getNightSummaryLink } from "@/utils/utils";
 import { getDayobsStartUTC } from "@/utils/timeUtils";
 import { BAND_COLORS_TAILWIND } from "@/components/PLOT_DEFINITIONS";
 
+/**
+ * An interactive sky map of the selected nights' visits, with a legend for
+ * its markers and band colours, and links to the Scheduler's survey progress
+ * reports for each night. The map is a Bokeh document built by the backend
+ * and rendered by `BokehPlot`.
+ */
 function VisitMaps() {
   // Routing and URL params
   const { startDayobs, endDayobs, telescope } = useSearch({

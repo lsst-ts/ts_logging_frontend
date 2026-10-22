@@ -49,6 +49,11 @@ const config = {
   },
 };
 
+/**
+ * A single banner in a page's `NotificationBannerStack`, styled by `type`:
+ * `error`, `noData` or `systemNotice`. Errors cannot be dismissed by default
+ * and the other types can, which `dismissible` overrides.
+ */
 export function NotificationBanner({
   type,
   title = "",

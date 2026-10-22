@@ -52,6 +52,14 @@ const SortByValues = Object.freeze({
 const PLOT_YLABELS_MAXSIZE = 14;
 const BAR_SIZE = 35;
 
+/**
+ * Digest applet breaking the night's exposures down by a chosen field
+ * (science program, observation reason, image type, target or filter) as a
+ * horizontal bar chart of either exposure counts or exposure time, with each
+ * bar split into flagged and unflagged exposures. Clicking a bar opens the
+ * Data Log filtered to that group, and hovering one reports the group's
+ * exposure IDs through `onBarHover` so that other applets can highlight them.
+ */
 function ExposureBreakdownApplet({
   exposureFields,
   exposureCount,

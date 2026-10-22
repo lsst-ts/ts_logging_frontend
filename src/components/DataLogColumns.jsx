@@ -334,7 +334,12 @@ const commonColumns = [
   }),
 ];
 
-// Telescope-specific columns
+/**
+ * Column definitions for the Data Log table, keyed by telescope, with each
+ * telescope's default column visibility and order below. Filtering is set by
+ * each column's `filterType` and `meta.urlParam` (see `doc/pages.md`). The
+ * RubinTV and Comments columns are left out of the Scientific Nightly Digest.
+ */
 const dataLogColumns = {
   Simonyi: [
     ...commonColumns,

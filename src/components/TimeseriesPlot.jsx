@@ -50,6 +50,13 @@ import {
 import { millisToDateTime } from "@/utils/timeUtils";
 import { createDotCallback } from "../utils/createDotCallback";
 
+/**
+ * One plot on the Plots page: a single data-log field (`dataKey`) against
+ * observation time or sequence number. The chart data
+ * comes from `PlotDataContext`, so every plot shares one x-axis. Dragging
+ * zooms and sets the page's selected time range, and hovering a point
+ * highlights the same exposure on every plot through `hoverStore`.
+ */
 function TimeseriesPlot({
   title,
   unit = null,

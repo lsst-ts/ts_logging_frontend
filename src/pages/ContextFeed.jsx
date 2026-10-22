@@ -86,6 +86,15 @@ const filterDefaultEventsByTelescope = (telescope) => {
   return eventTypes;
 };
 
+/**
+ * The night's events from Rubin Nights in a `ContextFeedTable`, below a
+ * `TimelineChart` of the events and an `ObservatoryStatusTimeline` with the
+ * hours spent in each state. The table's filters are held here and synced
+ * with the URL, so the timeline's event-type checkboxes can drive the
+ * `event_type` filter. The default filter hides the other telescope's events,
+ * and is reapplied when the telescope changes. Not available in the
+ * Scientific Nightly Digest.
+ */
 function ContextFeed() {
   // Subscribe component to URL params
   const search = useSearch({

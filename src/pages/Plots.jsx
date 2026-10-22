@@ -57,6 +57,14 @@ import { PlotDataContext } from "@/contexts/PlotDataContext";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
 import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
 
+/**
+ * Per-exposure metrics from the data log, each plotted against time (or
+ * sequence number) in its own `TimeseriesPlot`, below a `TimelineChart` of
+ * the nights. The chart data is computed once here and shared with every plot
+ * through `PlotDataContext`, and the plot selection and formatting are chosen
+ * through `PlotVisibilityPopover` and `PlotFormatPopover`. AuxTel is not
+ * supported, and shows a message instead.
+ */
 function Plots() {
   // Routing and URL params
   const { startDayobs, endDayobs, telescope } = useSearch({ from: "/plots" });

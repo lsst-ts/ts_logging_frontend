@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+// fetchUtils reads the backend URL and the SND flag when it first loads, so
+// each case stubs them and re-imports with a fresh module registry.
 const loadBuilder = async (isSND) => {
   vi.resetModules();
   vi.stubEnv("VITE_BACKEND_URL", "https://backend.example/api");

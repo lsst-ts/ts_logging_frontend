@@ -11,6 +11,13 @@ import { dayObsIntToDateTime } from "@/utils/timeUtils";
 import { useHostConfig } from "@/contexts/HostConfigContext";
 import { useNotifications } from "@/hooks/useNotifications";
 
+/**
+ * Root layout shared by every page: the sidebar with the selected night, number of
+ * nights and telescope controls, and the main area the routed page renders
+ * into. It translates the sidebar's controls into the `startDayobs`,
+ * `endDayobs` and `telescope` search parameters, clears any selected time
+ * window when the nights change.
+ */
 export default function Layout({ children }) {
   const router = useRouter();
   const { startDayobs, endDayobs, telescope } = useSearch({

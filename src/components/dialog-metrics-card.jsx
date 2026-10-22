@@ -10,6 +10,10 @@ import {
 } from "@/components/ui/dialog";
 import { XIcon } from "lucide-react";
 
+/**
+ * A `MetricsCard` that opens a dialog of details when clicked, such as the
+ * Jira tickets behind the Digest's ticket count.
+ */
 function DialogMetricsCard({
   icons,
   data,

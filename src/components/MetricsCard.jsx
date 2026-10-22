@@ -7,6 +7,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import InfoIcon from "../assets/InfoIcon.svg";
 
+/**
+ * A headline figure on the Digest page. The card is clickable only when
+ * `onClick` is provided and it is not loading. */
 export default function MetricsCard({
   icon,
   data,

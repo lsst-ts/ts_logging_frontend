@@ -1,6 +1,11 @@
 import { Card } from "@/components/ui/card";
 import EditableDateTimeInput from "@/components/EditableDateTimeInput.jsx";
 
+/**
+ * Shows the page's selected time range as two editable datetime inputs, kept
+ * within `fullTimeRange` and in order, with optional content on the right
+ * such as an exposure count. Renders nothing until a range is set.
+ */
 function SelectedTimeRangeBar({
   selectedTimeRange,
   setSelectedTimeRange,

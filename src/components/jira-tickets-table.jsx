@@ -19,6 +19,11 @@ function parseTimeLostField(timeLost) {
   return "N/A";
 }
 
+/**
+ * Table of the Jira tickets for the selected nights, shown in the Digest's
+ * Jira tickets dialog. Tickets created in the range are marked "New", and
+ * tickets in one of `strikethroughStatuses` are struck through.
+ */
 function JiraTicketsTable({
   tickets,
   loading = false,

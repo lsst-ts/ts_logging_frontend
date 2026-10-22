@@ -15,19 +15,19 @@ The ``<TYPE>`` should be one of:
 * ``removal``: A deprecation or removal of API.
 * ``misc``: Other minor changes and/or additions
 
-An example file name would therefore look like ``DM-40534.doc.rst``.
+An example file name would therefore look like ``SSW-1234.doc.rst``.
 
 Each developer now has to create the news fragments for the changes they have made on their own branches, instead of adding them to the release notes directly.
 You can create new fragments using the ``towncrier create`` command, which will help you to create a new news fragment file with the correct naming convention and numbering:
 
 .. code-block:: bash
 
-   $ towncrier create -c "<News fragment message>" DM-XXXXX.<fragment type>.rst
+   $ towncrier create -c "<News fragment message>" SSW-XXXX.<fragment type>.rst
 
 The news fragments are then automatically integrated into the release notes by the ``towncrier`` tool.
 
 You can test how the content will be integrated into the release notes by running ``towncrier build --draft --version=v<X.XX.X>``.
-Note that you have to run it from the root repository directory (i.e. ``watcher``).
+Note that you have to run it from the root repository directory (i.e. ``ts_logging_frontend``).
 
 In order to update the release notes file for real, the person responsible for the release should run:
 
