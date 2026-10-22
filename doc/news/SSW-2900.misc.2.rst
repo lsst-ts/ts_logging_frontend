@@ -1,1 +1,0 @@
-Add override for @xmldom/xmldom to install version 0.9.12 to fix security vulnerabilities.

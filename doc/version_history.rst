@@ -1,3 +1,34 @@
+v0.26.0 (2026-10-22)
+====================
+
+New Features
+------------
+
+- Add Redis caching support. (`OSW-1297 <https://rubinobs.atlassian.net//browse/OSW-1297>`_)
+- Pass `ND_CACHING_DISABLE_WORKER` flag to the backend containers. (`SSW-3027 <https://rubinobs.atlassian.net//browse/SSW-3027>`_)
+- Add method to parse endpoint requests using bucket backend format. (`SSW-3034 <https://rubinobs.atlassian.net//browse/SSW-3034>`_)
+
+
+Performance Enhancement
+-----------------------
+
+- Cache gzipped API responses in nginx, decompressing them for clients that do not accept gzip. (`SSW-2812 <https://rubinobs.atlassian.net//browse/SSW-2812>`_)
+
+
+Other Changes and Additions
+---------------------------
+
+- The Data Log column high_snr_source_count is now turned off by default. (`SSW-1048 <https://rubinobs.atlassian.net//browse/SSW-1048>`_)
+- Pass ``ND_DEBUG`` through to the backend in the Docker Compose stack, to put it in development mode when production-only environment variables are unavailable locally. (`SSW-2809 <https://rubinobs.atlassian.net//browse/SSW-2809>`_)
+- Bump js-yaml from 4.1.0 to 4.3.2. (`SSW-2900 <https://rubinobs.atlassian.net//browse/SSW-2900>`_)
+- Bump lodash from 4.17.21 to 4.18.1. (`SSW-2900 <https://rubinobs.atlassian.net//browse/SSW-2900>`_)
+- Bump echarts from 6.0.0 to 6.1.0. (`SSW-2900 <https://rubinobs.atlassian.net//browse/SSW-2900>`_)
+- Add override for @xmldom/xmldom to install version 0.9.12 to fix security vulnerabilities. (`SSW-2900 <https://rubinobs.atlassian.net//browse/SSW-2900>`_)
+- Bump fflate from 0.8.2 to 0.8.3. (`SSW-2900 <https://rubinobs.atlassian.net//browse/SSW-2900>`_)
+- Update base development image. (`SSW-3053 <https://rubinobs.atlassian.net//browse/SSW-3053>`_)
+- Upgrade playwright to solve issue with tests in new node development image. (`SSW-3053 <https://rubinobs.atlassian.net//browse/SSW-3053>`_)
+
+
 v0.25.0 (2026-10-05)
 ====================
 

@@ -1,1 +1,0 @@
-The Data Log column high_snr_source_count is now turned off by default.

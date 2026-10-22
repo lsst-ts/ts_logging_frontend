@@ -1,1 +1,0 @@
-Cache gzipped API responses in nginx, decompressing them for clients that do not accept gzip.
