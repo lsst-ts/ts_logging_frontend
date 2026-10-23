@@ -2,6 +2,7 @@
 import { test, expect } from "@playwright/test";
 import { setupApiMocks } from "../../helpers/mock-api.js";
 import { generateExposureTimeAccountingMock } from "../../helpers/mock-generators.js";
+import { downloadCsv } from "../../helpers/download-helpers.js";
 import { TIME_ACCOUNTING_URL } from "../../helpers/constants.js";
 import { tooltipForTrigger } from "../../helpers/digest-helpers.js";
 import {
@@ -91,17 +92,66 @@ test.describe("Exposure Time Accounting — populated data", () => {
     ).toBeVisible();
     await expect(page.getByText("Calculated Fault:").first()).toBeVisible();
   });
+});
 
-  test("opens the download placeholder popover", async ({ page }) => {
-    const card = exposureTimeAccountingCard(page);
+test.describe("Exposure Time Accounting — download", () => {
+  const downloadButton = (page) =>
+    exposureTimeAccountingCard(page).getByRole("button", {
+      name: "Download CSV",
+    });
+
+  // Turns the downloaded rows into a { Type: Duration } lookup.
+  const durationsByType = (rows) =>
+    Object.fromEntries(rows.map((row) => [row.Type, row["Duration (hours)"]]));
+
+  test("downloads each bar's duration and the time spent exposing", async ({
+    page,
+  }) => {
+    await setupApiMocks(page, { exposures: TIME_ACCOUNTING_EXPOSURES() });
+    await page.goto(TIME_ACCOUNTING_URL);
     await expectChartRendered(page);
 
-    await card
-      .getByRole("button", { name: "Download exposure time accounting data" })
-      .click();
-    await expect(
-      page.getByText("This is a placeholder for the download/export button."),
-    ).toBeVisible();
+    const { filename, headers, rows } = await downloadCsv(
+      page,
+      downloadButton(page),
+    );
+
+    expect(filename).toBe(
+      "nightlydigest_exposure-time-accounting_Simonyi_20260101-20260101.csv",
+    );
+    expect(headers).toEqual(["Type", "Duration (hours)"]);
+    expect(rows.map((row) => row.Type)).toEqual([
+      "Gaps",
+      "Overhead",
+      "Gaps (Filter)",
+      "Overhead (Filter)",
+      "Fault (calculated)",
+      "Closed Dome",
+      "Exposing",
+    ]);
+
+    const durations = durationsByType(rows);
+    expect(durations).toMatchObject({
+      Gaps: "0.50",
+      Overhead: "0.50",
+      "Gaps (Filter)": "0.25",
+      "Overhead (Filter)": "0.25",
+      "Closed Dome": "2.00",
+      Exposing: "4.00",
+    });
+    expect(durations["Fault (calculated)"]).toMatch(/^\d+\.\d{2}$/);
+  });
+
+  test("leaves unavailable durations blank instead of 0", async ({ page }) => {
+    await setupApiMocks(page, {
+      exposures: TIME_ACCOUNTING_EXPOSURES({ openDomeError: "dome boom" }),
+    });
+    await page.goto(TIME_ACCOUNTING_URL);
+    await expectChartRendered(page);
+
+    const { rows } = await downloadCsv(page, downloadButton(page));
+
+    expect(durationsByType(rows)["Closed Dome"]).toBe("");
   });
 });
 
