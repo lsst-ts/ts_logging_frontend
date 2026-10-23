@@ -24,7 +24,11 @@ import {
   getZephyrUrl,
 } from "@/utils/utils";
 
-import { getDayobsStartUTC } from "@/utils/timeUtils";
+import {
+  getDayobsStartUTC,
+  taiDateTimeStrToUTCMillis,
+} from "@/utils/timeUtils";
+
 import { CATEGORY_INDEX_INFO } from "@/constants/CONTEXT_FEED_DEFINITIONS";
 import { GLOBAL_SEARCH_PARAMS } from "@/routes";
 
@@ -641,6 +645,7 @@ describe("utils", () => {
     const dayObs = "20260630";
     // ISO string representing 12:02:32.413 TAI
     const obsSelectedTime = "2026-06-30T12:02:32.413Z";
+    const utcSelectedMillis = taiDateTimeStrToUTCMillis(obsSelectedTime);
 
     beforeEach(() => {
       vi.stubGlobal("window", {
@@ -653,17 +658,13 @@ describe("utils", () => {
     });
 
     it("returns null if required parameters are missing", () => {
-      expect(getContextFeedUrl(telescope, null, obsSelectedTime)).toBeNull();
+      expect(getContextFeedUrl(telescope, null, utcSelectedMillis)).toBeNull();
       expect(getContextFeedUrl(telescope, dayObs, null)).toBeNull();
-      expect(getContextFeedUrl(telescope, "", obsSelectedTime)).toBeNull();
-    });
-
-    it("returns null for malformed or invalid date strings", () => {
-      expect(getContextFeedUrl(telescope, dayObs, "invalid-date")).toBeNull();
+      expect(getContextFeedUrl(telescope, "", utcSelectedMillis)).toBeNull();
     });
 
     it("calculates correct default 30s window bounds and 37s TAI offset", () => {
-      const urlString = getContextFeedUrl(telescope, dayObs, obsSelectedTime);
+      const urlString = getContextFeedUrl(telescope, dayObs, utcSelectedMillis);
       expect(urlString).not.toBeNull();
 
       const url = new URL(urlString, "http:/localhost");
@@ -699,7 +700,7 @@ describe("utils", () => {
       const urlString = getContextFeedUrl(
         telescope,
         dayObs,
-        obsSelectedTime,
+        utcSelectedMillis,
         60,
       );
       const url = new URL(urlString, "http://localhost");
@@ -719,7 +720,7 @@ describe("utils", () => {
     });
 
     it("handles missing or empty telescope gracefully", () => {
-      const urlString = getContextFeedUrl(null, dayObs, obsSelectedTime);
+      const urlString = getContextFeedUrl(null, dayObs, utcSelectedMillis);
       const url = new URL(urlString, "http://localhost");
 
       expect(url.searchParams.get("telescope")).toBe("");
