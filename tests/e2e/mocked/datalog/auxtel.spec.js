@@ -35,15 +35,15 @@ test.describe("Data-log page — AuxTel", () => {
     await expect(page.getByText(/Error fetching/)).toHaveCount(0);
   });
 
-  test("exposure_name column is visible by default; exposure_id is hidden", async ({
+  test("exposure_name column is invisible by default; exposure_id is visible", async ({
     page,
   }) => {
     await expect(
       page.getByRole("columnheader", { name: /^Exposure Name/ }),
-    ).toBeVisible();
+    ).toHaveCount(0);
     await expect(
       page.getByRole("columnheader", { name: /^Exposure Id/ }),
-    ).toHaveCount(0);
+    ).toBeVisible();
   });
 
   test("Simonyi-only columns are absent from the table header", async ({

@@ -451,8 +451,8 @@ const dataLogColumns = {
 const defaultColumnVisibility = {
   Simonyi: {
     RubinTVLink: true,
-    exposure_id: true,
     ContextFeedLink: true,
+    exposure_id: true,
     exposure_name: false,
     seq_num: false,
     day_obs: false,
@@ -484,8 +484,8 @@ const defaultColumnVisibility = {
   },
   AuxTel: {
     RubinTVLink: true,
-    exposure_id: true,
     ContextFeedLink: true,
+    exposure_id: true,
     exposure_name: false,
     seq_num: false,
     day_obs: false,
@@ -515,8 +515,8 @@ const defaultColumnVisibility = {
 const defaultColumnOrder = {
   Simonyi: [
     "RubinTVLink",
-    "exposure_id",
     "ContextFeedLink",
+    "exposure_id",
     "exposure_name",
     "day_obs",
     "seq_num",
@@ -548,8 +548,8 @@ const defaultColumnOrder = {
   ],
   AuxTel: [
     "RubinTVLink",
-    "exposure_id",
     "ContextFeedLink",
+    "exposure_id",
     "exposure_name",
     "day_obs",
     "seq_num",
