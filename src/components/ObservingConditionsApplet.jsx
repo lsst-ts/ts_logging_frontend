@@ -7,7 +7,7 @@ import {
   PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover";
-import DownloadIcon from "../assets/DownloadIcon.svg";
+import DownloadButton from "@/components/DownloadButton";
 import InfoIcon from "../assets/InfoIcon.svg";
 import { ChartContainer, ChartTooltip, ChartLegend } from "./ui/chart";
 import {
@@ -38,6 +38,11 @@ import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
 import { RotateCcw } from "lucide-react";
 import { calculateZoom } from "@/utils/plotUtils";
 import { isScientificNightlyDigest } from "@/utils/appConfig";
+import {
+  EXPOSURE_KEY_COLUMNS,
+  buildDownloadFilename,
+  toCsv,
+} from "@/utils/downloadUtils";
 import {
   millisToDateTime,
   millisToHHmm,
@@ -663,20 +668,29 @@ function ObservingConditionsApplet({
     });
   };
 
+  // Download the plotted values for every loaded exposure, ignoring the
+  // selected time range.
+  const handleDownload = () => ({
+    content: toCsv(data, [
+      ...EXPOSURE_KEY_COLUMNS,
+      { key: "psf_median" },
+      { key: "zero_point_median" },
+      { key: "physical_filter" },
+    ]),
+    filename: buildDownloadFilename("observing-conditions", search, "csv"),
+    mimeType: "text/csv",
+  });
+
   return (
     <Card className="border-none p-0 bg-stone-800 gap-2">
       <AppletHeader
         title="Observing Conditions"
         actions={
           <>
-            <Popover>
-              <PopoverTrigger className="self-end min-w-4 cursor-pointer">
-                <img src={DownloadIcon} />
-              </PopoverTrigger>
-              <PopoverContent className="bg-black text-white text-sm border-yellow-700">
-                This is a placeholder for the download/export button.
-              </PopoverContent>
-            </Popover>
+            <DownloadButton
+              onDownload={handleDownload}
+              disabled={exposuresLoading || data.length === 0}
+            />
             <Popover>
               <PopoverTrigger className="self-end min-w-4 cursor-pointer">
                 <img src={InfoIcon} />

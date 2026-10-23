@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import AppletHeader from "@/components/AppletHeader";
 import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
+import DownloadButton from "@/components/DownloadButton";
 import { NotificationBannerStack } from "@/components/NotificationBannerStack";
 import { TELESCOPES } from "@/components/Parameters";
 import {
@@ -33,6 +34,11 @@ import TimeseriesPlot from "@/components/TimeseriesPlot";
 import { PlotDataContext } from "@/contexts/PlotDataContext";
 import { isScientificNightlyDigest } from "@/utils/appConfig";
 import { calculateChartData } from "@/utils/chartCalculations";
+import {
+  EXPOSURE_KEY_COLUMNS,
+  buildDownloadFilename,
+  toCsv,
+} from "@/utils/downloadUtils";
 import {
   fetchAlmanac,
   fetchDataLogEntriesFromConsDB,
@@ -308,6 +314,21 @@ function Plots() {
       )
     : processedNotifications;
 
+  // Download the key exposure fields plus each visible plot's values for
+  // every loaded exposure, ignoring the selected time range.
+  const handleDownload = () => ({
+    content: toCsv(dataLogEntries, [
+      ...EXPOSURE_KEY_COLUMNS,
+      ...visiblePlots.map((key) => ({ key })),
+    ]),
+    filename: buildDownloadFilename(
+      "plots",
+      { telescope, startDayobs, endDayobs },
+      "csv",
+    ),
+    mimeType: "text/csv",
+  });
+
   // Temporary display message for AuxTel queries
   if (telescope === "AuxTel") {
     return (
@@ -343,6 +364,10 @@ function Plots() {
             description="An interactive visual overview of exposure metadata from the ConsDB and related sources."
             actions={
               <>
+                <DownloadButton
+                  onDownload={handleDownload}
+                  disabled={dataLogLoading || dataLogEntries.length === 0}
+                />
                 {/* Button to toggle timeline visibility */}
                 <Button
                   onClick={() => setTimelineVisible((prev) => !prev)}

@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useSearch } from "@tanstack/react-router";
 import { Cell, Bar, BarChart, XAxis, YAxis } from "recharts";
 
 import { Button } from "@/components/ui/button";
@@ -11,9 +12,14 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 
 import AppletCard from "@/components/AppletCard";
-import { buildObsStatusSource } from "@/utils/appletStatus";
+import DownloadButton from "@/components/DownloadButton";
+import {
+  buildObsStatusSource,
+  resolveAppletStatus,
+} from "@/utils/appletStatus";
+import { buildDownloadFilename, toCsv } from "@/utils/downloadUtils";
+import { formatHours } from "@/utils/timeUtils";
 
-import DownloadIcon from "../assets/DownloadIcon.svg";
 import InfoIcon from "../assets/InfoIcon.svg";
 
 /**
@@ -177,6 +183,47 @@ function ExposureTimeAccountingApplet({
     },
   ];
 
+  const { status } = resolveAppletStatus({ sources, required, loading });
+
+  const { startDayobs, endDayobs, telescope } = useSearch({
+    from: "/time-accounting",
+  });
+
+  // Download each bar's duration, plus the time spent exposing. Unavailable
+  // values are left blank rather than shown as 0.
+  const handleDownload = () => {
+    const duration = (hours, unavailable = false) =>
+      unavailable ? "" : formatHours(hours, { nullReplacement: "" });
+    const rows = [
+      ...chartData
+        .filter((entry) => entry.name)
+        .map((entry) => ({
+          type: entry.name,
+          duration: duration(entry.value, entry.unavailable),
+        })),
+      {
+        type: "Exposing",
+        duration: duration(
+          totalExpTimeBetweenTwilights == null
+            ? null
+            : totalExpTimeBetweenTwilights / 3600,
+        ),
+      },
+    ];
+    return {
+      content: toCsv(rows, [
+        { key: "type", header: "Type" },
+        { key: "duration", header: "Duration (hours)" },
+      ]),
+      filename: buildDownloadFilename(
+        "exposure-time-accounting",
+        { telescope, startDayobs, endDayobs },
+        "csv",
+      ),
+      mimeType: "text/csv",
+    };
+  };
+
   return (
     <AppletCard
       title="Exposure Time Accounting"
@@ -194,17 +241,10 @@ function ExposureTimeAccountingApplet({
       }
       actions={
         <>
-          <Popover>
-            <PopoverTrigger
-              className="min-w-4 cursor-pointer"
-              aria-label="Download exposure time accounting data"
-            >
-              <img src={DownloadIcon} />
-            </PopoverTrigger>
-            <PopoverContent className="bg-black text-white text-sm border-yellow-700">
-              This is a placeholder for the download/export button.
-            </PopoverContent>
-          </Popover>
+          <DownloadButton
+            onDownload={handleDownload}
+            disabled={status !== "ready"}
+          />
           <Popover>
             <PopoverTrigger
               className="min-w-4 cursor-pointer"

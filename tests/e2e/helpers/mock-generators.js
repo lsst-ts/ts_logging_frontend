@@ -189,11 +189,15 @@ export function generateContextFeedMock(
  * empty. Use this when a test needs real rows: grouped bars in the exposure
  * breakdown, or a science_program that triggers the BLOCK details fetch.
  *
- * Rows are spaced a minute apart from 20:00 UTC on the given dayobs, and cycle
- * through the given science programs.
+ * Rows are generateDataLogMock records, which already have the ConsDB exposure
+ * fields, cycling through the given science programs.
  *
  * @param {number} count
- * @param {{dayobs?: number, programs?: string[], overrides?: object}} [options]
+ * @param {object} [options]
+ * @param {number} [options.dayobs=20260101] - As for generateDataLogMock.
+ * @param {string[]} [options.programs] - Science programs to cycle through.
+ * @param {object} [options.overrides={}] - Field values to override on every record.
+ * @param {function} [options.postProcess] - As for generateDataLogMock.
  * @returns {object} The `/exposures` response body.
  */
 export function generateExposuresMock(
@@ -202,43 +206,31 @@ export function generateExposuresMock(
     dayobs = 20260101,
     programs = ["BLOCK-320", "BLOCK-T17"],
     overrides = {},
+    postProcess = (a) => a,
   } = {},
 ) {
-  const dayObsStr = String(dayobs);
-  const base = Date.UTC(
-    Number(dayObsStr.slice(0, 4)),
-    Number(dayObsStr.slice(4, 6)) - 1,
-    Number(dayObsStr.slice(6, 8)),
-    20,
+  const exposures = generateDataLogMock(count, { dayobs }).data_log.map(
+    (record, idx) =>
+      postProcess(
+        {
+          ...record,
+          science_program: programs[idx % programs.length],
+          img_type: idx % 2 === 0 ? "science" : "bias",
+          observation_reason: "science",
+          target_name: `target_${idx % 3}`,
+          ...overrides,
+        },
+        idx + 1,
+      ),
   );
-
-  const exposures = Array.from({ length: count }, (_, i) => {
-    const startMillis = base + i * 60_000;
-    return {
-      obs_id: `${dayobs}${String(i + 1).padStart(6, "0")}`,
-      seq_num: i + 1,
-      day_obs: dayobs,
-      instrument: "LSSTCam",
-      science_program: programs[i % programs.length],
-      img_type: i % 2 === 0 ? "science" : "bias",
-      observation_reason: "science",
-      target_name: `target_${i % 3}`,
-      physical_filter: "y_10",
-      band: "y",
-      exp_time: 30,
-      airmass: 1.2,
-      obs_start: new Date(startMillis).toISOString(),
-      obs_start_millis: startMillis,
-      ...overrides,
-    };
-  });
+  const sumExpTime = exposures.reduce((sum, e) => sum + e.exp_time, 0);
 
   return {
     exposures,
     exposures_count: exposures.length,
-    sum_exposure_time: exposures.length * 30,
+    sum_exposure_time: sumExpTime,
     on_sky_exposures_count: exposures.length,
-    total_on_sky_exposure_time: exposures.length * 30,
+    total_on_sky_exposure_time: sumExpTime,
     open_dome_times: [],
     day_obs_open_dome_hours: {},
     open_dome_error: null,

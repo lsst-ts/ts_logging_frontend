@@ -26,21 +26,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BAND_COLORS } from "@/components/PLOT_DEFINITIONS";
 import BarChartYAxisTick from "@/components/BarChartYAxisTick";
 import { isScientificNightlyDigest } from "@/utils/appConfig";
+import {
+  GroupByValues,
+  aggregateExposureBreakdown,
+} from "@/utils/exposureBreakdownUtils";
+
+import DownloadButton from "@/components/DownloadButton";
+import { buildDownloadFilename, toCsv } from "@/utils/downloadUtils";
 
 import InfoIcon from "../assets/InfoIcon.svg";
-import DownloadIcon from "../assets/DownloadIcon.svg";
 
 const PlotByValues = Object.freeze({
   NUMBER: "Number",
   TIME: "Time",
-});
-
-const GroupByValues = Object.freeze({
-  OBSERVATION_REASON: "observation_reason",
-  IMG_TYPE: "img_type",
-  SCIENCE_PROGRAM: "science_program",
-  TARGET_NAME: "target_name",
-  FILTER: "physical_filter",
 });
 
 const SortByValues = Object.freeze({
@@ -179,121 +177,98 @@ function ExposureBreakdownApplet({
     router.navigate(to); // SPA navigation
   };
 
+  // Group the exposures, totalling both count and time
+  const { groups, totalFlaggedCount, totalFlaggedTime } = useMemo(
+    () => aggregateExposureBreakdown(exposureFields, flags, groupBy),
+    [exposureFields, flags, groupBy],
+  );
+
   // Memoize data handling computations
-  const { chartData, chartConfig, totalFlaggedCount, totalFlaggedTime } =
-    useMemo(() => {
-      const flaggedObsIds = new Set(flags.map((f) => f.obs_id));
-      const aggregatedMap = {};
-
-      let totalFlaggedCount = 0;
-      let totalFlaggedTime = 0;
-
-      if (Array.isArray(exposureFields)) {
-        exposureFields.forEach((row) => {
-          const rawValue = row[groupBy];
-          const groupKey =
-            rawValue === null || rawValue === undefined || rawValue === ""
-              ? groupBy === GroupByValues.TARGET_NAME
-                ? "No target"
-                : "Unknown"
-              : rawValue;
-
-          const expTime = parseFloat(row.exp_time ?? 0);
-          const isFlagged = flaggedObsIds.has(row.exposure_name);
-
-          if (!aggregatedMap[groupKey]) {
-            aggregatedMap[groupKey] = {
-              groupKey,
-              unflagged: 0,
-              flagged: 0,
-              exposureIds: [],
-            };
-          }
-          aggregatedMap[groupKey].exposureIds.push(String(row.exposure_id));
-
-          if (plotBy === PlotByValues.TIME) {
-            if (isFlagged) {
-              const time = isNaN(expTime) ? 0 : expTime;
-              aggregatedMap[groupKey].flagged += time;
-              totalFlaggedTime += time;
-              totalFlaggedCount += 1;
-            } else {
-              aggregatedMap[groupKey].unflagged += isNaN(expTime) ? 0 : expTime;
-            }
-          } else {
-            if (isFlagged) {
-              aggregatedMap[groupKey].flagged += 1;
-              totalFlaggedCount += 1;
-            } else {
-              aggregatedMap[groupKey].unflagged += 1;
-            }
-          }
-        });
-      } else {
-        console.warn("exposureFields is not an array:", exposureFields);
-      }
-
-      let chartData = Object.values(aggregatedMap).map((entry) => {
-        const totalValue = entry.unflagged + entry.flagged;
-        return {
-          groupKey: entry.groupKey,
-          unflagged: entry.unflagged,
-          flagged: entry.flagged,
-          exposureIds: entry.exposureIds,
-          totalValue,
-        };
-      });
-
-      const chartConfig = {
-        unflagged: {
-          label: "Unflagged",
-          color: "",
-        },
-        flagged: {
-          label: "Flagged",
-          color: "#ffffff",
-        },
+  const { chartData, chartConfig } = useMemo(() => {
+    const plotByTime = plotBy === PlotByValues.TIME;
+    let chartData = groups.map((group) => {
+      const unflagged = plotByTime ? group.unflaggedTime : group.unflaggedCount;
+      const flagged = plotByTime ? group.flaggedTime : group.flaggedCount;
+      return {
+        groupKey: group.groupKey,
+        unflagged,
+        flagged,
+        exposureIds: group.exposureIds,
+        totalValue: unflagged + flagged,
       };
+    });
 
-      // Sort chartData based on sortBy
-      const sorters = {
-        [SortByValues.ALPHABETICAL_ASC]: (a, b) =>
-          a.groupKey.localeCompare(b.groupKey),
-        [SortByValues.ALPHABETICAL_DESC]: (a, b) =>
-          b.groupKey.localeCompare(a.groupKey),
-        [SortByValues.HIGHEST_FIRST]: (a, b) => b.totalValue - a.totalValue,
-        [SortByValues.LOWEST_FIRST]: (a, b) => a.totalValue - b.totalValue,
-      };
+    const chartConfig = {
+      unflagged: {
+        label: "Unflagged",
+        color: "",
+      },
+      flagged: {
+        label: "Flagged",
+        color: "#ffffff",
+      },
+    };
 
-      chartData.sort(sorters[sortBy]);
+    // Sort chartData based on sortBy
+    const sorters = {
+      [SortByValues.ALPHABETICAL_ASC]: (a, b) =>
+        a.groupKey.localeCompare(b.groupKey),
+      [SortByValues.ALPHABETICAL_DESC]: (a, b) =>
+        b.groupKey.localeCompare(a.groupKey),
+      [SortByValues.HIGHEST_FIRST]: (a, b) => b.totalValue - a.totalValue,
+      [SortByValues.LOWEST_FIRST]: (a, b) => a.totalValue - b.totalValue,
+    };
 
-      // After sorting, assign bar colors.
-      // For grouping by filter, use band colours.
-      // Otherwise, assign an ordered rainbow of colours
-      // based on vertical position to prevent
-      // associations being made between bars and their
-      // colours.
-      chartData = chartData.map((entry, index) => {
-        // The band is the first character of physical_filter.
-        const band = String(entry.groupKey).charAt(0);
+    chartData.sort(sorters[sortBy]);
 
-        return {
-          ...entry,
-          fill:
-            groupBy == GroupByValues.FILTER
-              ? BAND_COLORS[band] ?? "#888888"
-              : `hsl(${index * 40}, 70%, 50%)`,
-          fill_flag: "#ffffff",
-        };
-      });
+    // After sorting, assign bar colors.
+    // For grouping by filter, use band colours.
+    // Otherwise, assign an ordered rainbow of colours
+    // based on vertical position to prevent
+    // associations being made between bars and their
+    // colours.
+    chartData = chartData.map((entry, index) => {
+      // The band is the first character of physical_filter.
+      const band = String(entry.groupKey).charAt(0);
 
       return {
-        chartData,
-        chartConfig,
-        totalFlaggedCount,
-        totalFlaggedTime,
+        ...entry,
+        fill:
+          groupBy == GroupByValues.FILTER
+            ? BAND_COLORS[band] ?? "#888888"
+            : `hsl(${index * 40}, 70%, 50%)`,
+        fill_flag: "#ffffff",
       };
-    }, [flags, exposureFields, groupBy, plotBy, sortBy]);
+    });
+
+    return {
+      chartData,
+      chartConfig,
+    };
+  }, [groups, groupBy, plotBy, sortBy]);
+
+  // Download each group's unflagged and flagged time and count, in the
+  // order the groups first appear (ignoring the chart's sorting).
+  const handleDownload = () => {
+    const groupByLabel =
+      groupByOptions.find((option) => option.value === groupBy)?.label ??
+      groupBy;
+    return {
+      content: toCsv(groups, [
+        { key: "groupKey", header: groupByLabel },
+        { key: "unflaggedTime", header: "Time (unflagged, s)" },
+        { key: "flaggedTime", header: "Time (flagged, s)" },
+        { key: "unflaggedCount", header: "Count (unflagged)" },
+        { key: "flaggedCount", header: "Count (flagged)" },
+      ]),
+      filename: buildDownloadFilename(
+        "exposure-breakdown",
+        { telescope, startDayobs, endDayobs },
+        "csv",
+      ),
+      mimeType: "text/csv",
+    };
+  };
 
   // Set tooltip position for rendering via portal,
   // accounting for any scrolling of the bar chart.
@@ -312,16 +287,10 @@ function ExposureBreakdownApplet({
         title="Exposure Breakdown"
         actions={
           <>
-            <Popover>
-              <PopoverTrigger className="self-end min-w-4 cursor-pointer">
-                <img src={DownloadIcon} />
-              </PopoverTrigger>
-              <PopoverContent className="bg-black text-white text-sm border-yellow-700">
-                This is a placeholder for the download/export button. Once
-                implemented, clicking here will download this Applet's data to a
-                .csv file.
-              </PopoverContent>
-            </Popover>
+            <DownloadButton
+              onDownload={handleDownload}
+              disabled={exposuresLoading || flagsLoading || groups.length === 0}
+            />
             <Popover>
               <PopoverTrigger className="self-end min-w-4 cursor-pointer">
                 <img src={InfoIcon} />
