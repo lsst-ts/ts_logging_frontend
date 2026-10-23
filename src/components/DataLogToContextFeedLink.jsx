@@ -3,6 +3,7 @@ import {
   formatCellValue,
   TELESCOPE_PREFIXES,
 } from "@/utils/utils";
+import { taiDateTimeStrToUTCMillis } from "@/utils/timeUtils";
 import PropTypes from "prop-types";
 
 export default function DataLogToContextFeedLink({
@@ -19,7 +20,15 @@ export default function DataLogToContextFeedLink({
     ? TELESCOPE_PREFIXES[exposureName.slice(0, 2)] ?? ""
     : "";
 
-  const url = getContextFeedUrl(telescope, dayObs, obsStartTime, windowSeconds);
+  // convert TAI ISO string directly into UTC epoch milliseconds
+  const utcSelectedMillis = taiDateTimeStrToUTCMillis(obsStartTime);
+
+  const url = getContextFeedUrl(
+    telescope,
+    dayObs,
+    utcSelectedMillis,
+    windowSeconds,
+  );
   if (!url) return "X";
 
   return (

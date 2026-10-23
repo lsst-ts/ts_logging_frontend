@@ -100,18 +100,20 @@ const commonColumns = [
           id: "ContextFeedLink",
           header: "Context Feed",
           cell: ({ row }) => (
-            <DataLogToContextFeedLink
-              exposureId={row.original.exposure_id}
-              dayObs={row.original.day_obs}
-              obsStartTime={row.original.obs_start}
-              exposureName={row.original.exposure_name}
-            >
-              <img
-                src={LinkIcon}
-                alt="Go to context feed"
-                className="w-4 h-4 cursor-pointer inline-block"
-              />
-            </DataLogToContextFeedLink>
+            <div className="flex justify-center items-center w-full">
+              <DataLogToContextFeedLink
+                exposureId={row.original.exposure_id}
+                dayObs={row.original.day_obs}
+                obsStartTime={row.original.obs_start}
+                exposureName={row.original.exposure_name}
+              >
+                <img
+                  src={LinkIcon}
+                  alt="Go to context feed"
+                  className="w-4 h-4 cursor-pointer inline-block"
+                />
+              </DataLogToContextFeedLink>
+            </div>
           ),
           size: 140,
           minSize: 140,

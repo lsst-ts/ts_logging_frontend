@@ -7,7 +7,6 @@ import {
   isoToChile,
   isoToUTC,
   getDayobsUTC,
-  taiDateTimeStrToUTCMillis,
 } from "./timeUtils";
 import { CATEGORY_INDEX_INFO } from "@/constants/CONTEXT_FEED_DEFINITIONS";
 import { GLOBAL_SEARCH_PARAMS } from "@/routes";
@@ -349,23 +348,21 @@ const getRubinTVUrl = (telescope, dayObs, seqNum) => {
  *
  * @param {string} telescope - The telescope name ("Simonyi" or "AuxTel").
  * @param {string|number} dayObs - Observation day (e.g. 20260521)
- * @param {string|number} ObsSelectedTime - ISO TAI format selected time - this is the time of what you want centered
+ * @param {string|number} UTCSelectedMillis - the UTC ms since the epoch time of what you want selected
  * @param {number} [windowSeconds=30] - Total size of time window in seconds (default: 30s, ±15s around selectedTime)
  * @returns {string|null} Formatted URL string or null if missing required parameters.
  */
 const getContextFeedUrl = (
   telescope,
   dayObs,
-  ObsSelectedTime,
+  utcSelectedMillis,
   windowSeconds = 30,
 ) => {
-  if (!dayObs || !ObsSelectedTime) return null;
+  if (!dayObs || !utcSelectedMillis) return null;
 
-  // Parse TAI ISO string directly into UTC epoch milliseconds (TAI)
-  const utcSelectedMillis = taiDateTimeStrToUTCMillis(ObsSelectedTime);
   if (isNaN(utcSelectedMillis)) return null;
 
-  // Convert TAI milliseconds to UTC microseconds (TAI - leapseconds = UTC)
+  // Convert UTC milliseconds to UTC microseconds
   const utcSelectedMicros = utcSelectedMillis * 1000;
 
   // Compute startTime and endTime (half the window around the selected time)
