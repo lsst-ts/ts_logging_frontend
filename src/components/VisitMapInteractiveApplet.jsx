@@ -1,4 +1,7 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import AppletCard, {
+  EmptyDisplayState,
+  useAppletState,
+} from "@/components/AppletCard";
 import {
   Popover,
   PopoverContent,
@@ -11,16 +14,65 @@ import InfoIcon from "../assets/InfoIcon.svg";
 import DownloadIcon from "../assets/DownloadIcon.svg";
 import { VISIT_SHAPE, VISIT_SHAPE_INNER } from "./PLOT_DEFINITIONS";
 
-function VisitMapApplet({ mapData, mapLoading }) {
+/**
+ * Render the interactive visit map, or a standard empty state when the
+ * applet has no data.
+ *
+ * Reads the applet display state from context (provided by AppletCard). Only
+ * the "noData" state needs handling here: a fetch "error" is already shown by
+ * AppletStateBody and never reaches this content.
+ *
+ * @param {Object} props
+ * @param {Object} [props.mapData] Bokeh plot data for the interactive visit map.
+ */
+function InteractiveVisitMap({ mapData }) {
+  const { state, message } = useAppletState();
+
+  if (state === "noData") {
+    return <EmptyDisplayState message={message} />;
+  }
+
+  if (!mapData) {
+    return (
+      <div className="flex items-center justify-center font-normal w-full h-full text-stone-400">
+        No visit map data available
+      </div>
+    );
+  }
+
   return (
-    <Card className="border-none p-0 bg-stone-800 gap-2">
-      <CardHeader className="grid-cols-3 bg-teal-900 p-4 rounded-sm align-center gap-0">
-        <CardTitle className="text-white font-thin col-span-2">
-          Visit Map
-        </CardTitle>
-        <div className="flex flex-row gap-2 justify-end">
+    <div className="flex flex-col w-full px-4 space-y-4 items-center">
+      <BokehPlot plotData={mapData} />
+    </div>
+  );
+}
+
+/**
+ * Render the visit map as an interactive Bokeh plot applet with its own
+ * header, using the standard applet shell and data-source handling.
+ *
+ * Currently not wired into any page; kept available in case it is added back
+ * in future.
+ *
+ * @param {Object} props
+ * @param {Object} [props.mapData] Bokeh plot data for the interactive visit map.
+ * @param {boolean} [props.mapLoading] Whether the map is still loading.
+ * @param {Object} [props.sources] Map of source -> `{ ok, message?, noData? }`.
+ * @param {string[]} [props.required] Sources required for a sensible display.
+ */
+export default function VisitMapInteractiveApplet({
+  mapData,
+  mapLoading,
+  sources = {},
+  required = [],
+}) {
+  return (
+    <AppletCard
+      title="Visit Map"
+      actions={
+        <>
           <Popover>
-            <PopoverTrigger className="self-end min-w-4">
+            <PopoverTrigger className="self-end min-w-4 cursor-pointer">
               <img src={DownloadIcon} />
             </PopoverTrigger>
             <PopoverContent className="bg-black text-white text-sm border-yellow-700">
@@ -30,7 +82,7 @@ function VisitMapApplet({ mapData, mapLoading }) {
             </PopoverContent>
           </Popover>
           <Popover>
-            <PopoverTrigger className="self-end min-w-4">
+            <PopoverTrigger className="self-end min-w-4 cursor-pointer">
               <img src={InfoIcon} />
             </PopoverTrigger>
             <PopoverContent className="bg-black text-white text-sm border-yellow-700 flex flex-col max-w-5xl mx-auto gap-y-2">
@@ -98,25 +150,16 @@ function VisitMapApplet({ mapData, mapLoading }) {
               </div>
             </PopoverContent>
           </Popover>
-        </div>
-      </CardHeader>
-      <CardContent className="grid gap-4 bg-black p-4 text-neutral-700 rounded-sm border-2 border-teal-900 h-80 font-thin">
-        {mapLoading ? (
-          <Skeleton className="w-full h-full bg-stone-900 rounded-md" />
-        ) : (
-          <div className="flex flex-col w-full px-4 space-y-4 items-center">
-            {mapData ? (
-              <BokehPlot id="interactive-plot" plotData={mapData} />
-            ) : (
-              <div className="flex items-center justify-center font-normal w-full h-full text-stone-400">
-                No visit map data available
-              </div>
-            )}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+        </>
+      }
+      sources={sources}
+      required={required}
+      loading={mapLoading}
+      skeleton={<Skeleton className="w-full h-full bg-stone-900 rounded-md" />}
+      readyClassName="h-80"
+      maintainHeight
+    >
+      <InteractiveVisitMap mapData={mapData} />
+    </AppletCard>
   );
 }
-
-export default VisitMapApplet;
