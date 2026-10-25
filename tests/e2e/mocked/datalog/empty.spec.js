@@ -18,7 +18,11 @@ test.describe("Data-log page — empty data", () => {
   test("no data notification banner and 0 rows when no data returned", async ({
     page,
   }) => {
-    await expect(page.getByText("No exposures found in ConsDB")).toBeVisible({
+    // The banner text also appears inline below the table (with a trailing
+    // full stop), so match the banner exactly.
+    await expect(
+      page.getByText("No exposures found in ConsDB", { exact: true }),
+    ).toBeVisible({
       timeout: 10000,
     });
     await expect(page.locator("[data-slot='table-body'] tr")).toHaveCount(0);
@@ -31,7 +35,9 @@ test.describe("Data-log page — empty data", () => {
   });
 
   test("no-data banner can be dismissed", async ({ page }) => {
-    const banner = page.getByText("No exposures found in ConsDB");
+    const banner = page.getByText("No exposures found in ConsDB", {
+      exact: true,
+    });
     await expect(banner).toBeVisible({ timeout: 10000 });
 
     await page.getByRole("button", { name: "Dismiss" }).click();
