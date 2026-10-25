@@ -7,6 +7,9 @@ import {
   tooltipForTrigger,
 } from "../../helpers/digest-helpers.js";
 
+import { NO_DATA_DISPLAY } from "@/constants/DATA_SOURCES";
+import { OBSERVATORY_STATE_AVAILABILITY_STATUS } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS.js";
+
 const EFFICIENCY_LABEL = "Open-shutter (-weather) efficiency";
 
 const AVAILABLE_OBS_STATUS = (
@@ -15,7 +18,10 @@ const AVAILABLE_OBS_STATUS = (
   entries: [],
   intervals: [],
   metrics,
-  availability: { status: "full", available_from: null },
+  availability: {
+    status: OBSERVATORY_STATE_AVAILABILITY_STATUS.FULL,
+    available_from: null,
+  },
   totals: metrics,
 });
 
@@ -71,9 +77,13 @@ test.describe("Digest page — Efficiency card", () => {
     page,
   }) => {
     await setupApiMocks(page, {
+      exposures: EXPOSURES_FOR_EFFICIENCY,
       "obs-status": {
         ...AVAILABLE_OBS_STATUS(),
-        availability: { status: "partial", available_from: "20260225" },
+        availability: {
+          status: OBSERVATORY_STATE_AVAILABILITY_STATUS.PARTIAL,
+          available_from: "20260225",
+        },
       },
     });
     await page.goto(DIGEST_URL);
@@ -85,18 +95,19 @@ test.describe("Digest page — Efficiency card", () => {
     await expect(tooltip).toContainText(
       "Observatory Status data is only available from 2026-02-25.",
     );
-    await expect(tooltip).toContainText(
-      "Where unavailable, status data is treated as 0.",
-    );
   });
 
   test("explains when Observatory Status has no data", async ({ page }) => {
     await setupApiMocks(page, {
+      exposures: EXPOSURES_FOR_EFFICIENCY,
       "obs-status": {
         entries: [],
         intervals: [],
         metrics: {},
-        availability: { status: "none", available_from: null },
+        availability: {
+          status: OBSERVATORY_STATE_AVAILABILITY_STATUS.NONE,
+          available_from: null,
+        },
         totals: {},
       },
     });
@@ -108,9 +119,6 @@ test.describe("Digest page — Efficiency card", () => {
     const tooltip = await tooltipForTrigger(page, warning);
     await expect(tooltip).toContainText(
       "Observatory Status data is only available from the supported dayobs range.",
-    );
-    await expect(tooltip).toContainText(
-      "Where unavailable, status data is treated as 0.",
     );
   });
 
@@ -146,18 +154,22 @@ test.describe("Digest page — Efficiency card", () => {
     await efficiencyCard(page).locator("button").click();
     await expect(
       page.getByText(
-        "If Observatory Status data is not available, weather loss is treated as",
+        "Where Observatory Status data is not available, weather loss is treated as",
       ),
     ).toBeVisible();
   });
 
-  test("shows NA and combines Almanac and partial Observatory Status warnings", async ({
+  test("shows no-data placeholder when Almanac fails, even alongside partial Observatory Status", async ({
     page,
   }) => {
     await setupApiMocks(page, {
+      exposures: EXPOSURES_FOR_EFFICIENCY,
       "obs-status": {
         ...AVAILABLE_OBS_STATUS(),
-        availability: { status: "partial", available_from: "20260225" },
+        availability: {
+          status: OBSERVATORY_STATE_AVAILABILITY_STATUS.PARTIAL,
+          available_from: "20260225",
+        },
       },
     });
     await page.route("**/nightlydigest/api/almanac*", (route) => route.abort());
@@ -165,27 +177,27 @@ test.describe("Digest page — Efficiency card", () => {
 
     await expect(
       efficiencyCard(page).locator("[data-slot='metrics-card-value']"),
-    ).toHaveText("NA");
+    ).toHaveText(`${NO_DATA_DISPLAY} %`);
     const warning = availabilityWarning(page);
     await expect(warning).toHaveCount(1);
     await warning.hover();
     const tooltip = await tooltipForTrigger(page, warning);
-    await expect(tooltip).toContainText(
-      "Almanac data could not be fetched. Observatory Status data is only available from 2026-02-25.",
-    );
-    await expect(tooltip).toContainText(
-      "Where unavailable, status data is treated as 0.",
-    );
+    await expect(tooltip).toContainText("Almanac data could not be fetched.");
   });
 
-  test("shows NA when Almanac data cannot be fetched", async ({ page }) => {
-    await setupApiMocks(page, { "obs-status": AVAILABLE_OBS_STATUS() });
+  test("shows no-data placeholder when Almanac data cannot be fetched", async ({
+    page,
+  }) => {
+    await setupApiMocks(page, {
+      exposures: EXPOSURES_FOR_EFFICIENCY,
+      "obs-status": AVAILABLE_OBS_STATUS(),
+    });
     await page.route("**/nightlydigest/api/almanac*", (route) => route.abort());
     await page.goto(DIGEST_URL);
 
     await expect(
       efficiencyCard(page).locator("[data-slot='metrics-card-value']"),
-    ).toHaveText("NA");
+    ).toHaveText(`${NO_DATA_DISPLAY} %`);
     const warning = availabilityWarning(page);
     await expect(warning).toHaveCount(1);
     await warning.hover();
@@ -194,10 +206,12 @@ test.describe("Digest page — Efficiency card", () => {
     );
   });
 
-  test("combines Almanac and Observatory Status fetch failures", async ({
+  test("shows no-data placeholder and the Almanac error when Observatory Status also fails", async ({
     page,
   }) => {
-    await setupApiMocks(page);
+    await setupApiMocks(page, {
+      exposures: EXPOSURES_FOR_EFFICIENCY,
+    });
     await page.route("**/nightlydigest/api/almanac*", (route) => route.abort());
     await page.route("**/nightlydigest/api/obs-status*", (route) =>
       route.abort(),
@@ -208,7 +222,7 @@ test.describe("Digest page — Efficiency card", () => {
     await expect(warning).toHaveCount(1);
     await warning.hover();
     await expect(await tooltipForTrigger(page, warning)).toHaveText(
-      "Almanac and Observatory Status data could not be fetched.",
+      "Almanac data could not be fetched.",
     );
   });
 });

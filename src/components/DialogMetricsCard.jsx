@@ -16,6 +16,9 @@ function DialogMetricsCard({
   label,
   metadata,
   tooltip,
+  state = "ready",
+  message = "",
+  warningAriaLabel = "data availability warning",
   loading = false,
   dialogContent,
   dialogTitle = "Details",
@@ -31,6 +34,9 @@ function DialogMetricsCard({
         label={label}
         metadata={metadata}
         tooltip={tooltip}
+        state={state}
+        message={message}
+        warningAriaLabel={warningAriaLabel}
         loading={loading}
         dialogContent={dialogContent}
         onClick={() => setIsOpen(true)}
