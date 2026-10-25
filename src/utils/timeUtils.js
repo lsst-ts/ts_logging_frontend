@@ -1,5 +1,7 @@
 import { DateTime } from "luxon";
 
+import { NO_DATA_DISPLAY } from "@/constants/DATA_SOURCES";
+
 const TAI_OFFSET_SECONDS = 37;
 const ISO_DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss"; // Twilight time format string
 
@@ -285,9 +287,6 @@ function utcDateToCalendarDate(utcDate) {
   return new Date(d.year, d.month - 1, d.day);
 }
 
-// Displayed in place of a missing timestamp.
-const MISSING_TIMESTAMP_DISPLAY = "--";
-
 /**
  * Formats a timestamp to the standard table display format.
  *
@@ -296,11 +295,11 @@ const MISSING_TIMESTAMP_DISPLAY = "--";
  * @param {number|string} timestamp - Milliseconds since epoch, or an ISO date-time string.
  * @param {string} [zone="utc"] - IANA zone identifier; otherwise UTC.
  * @returns {string} Formatted date-time string as "yyyy-LL-dd HH:mm:ss.SSS",
- *   "--" if there is no valid timestamp, or the original string if it cannot
- *   be parsed (e.g. "NaT"), so unhandled values stay visible.
+ *   a no-data placeholder if there is no valid timestamp, or the original string
+ *   if it cannot be parsed (e.g. "NaT"), so unhandled values stay visible.
  */
 function formatTimestamp(timestamp, zone = "utc") {
-  if (timestamp == null || timestamp === "") return MISSING_TIMESTAMP_DISPLAY;
+  if (timestamp == null || timestamp === "") return NO_DATA_DISPLAY;
 
   const dt =
     typeof timestamp === "number"
@@ -308,9 +307,7 @@ function formatTimestamp(timestamp, zone = "utc") {
       : DateTime.fromISO(timestamp, { zone });
 
   if (!dt.isValid)
-    return typeof timestamp === "string"
-      ? timestamp
-      : MISSING_TIMESTAMP_DISPLAY;
+    return typeof timestamp === "string" ? timestamp : NO_DATA_DISPLAY;
 
   return dt.toFormat("yyyy-LL-dd HH:mm:ss.SSS");
 }
@@ -369,7 +366,6 @@ export {
   calendarDateToLongFormat,
   utcDateToCalendarDate,
   formatTimestamp,
-  MISSING_TIMESTAMP_DISPLAY,
   formatDuration,
   getCurrentDayObs,
 };

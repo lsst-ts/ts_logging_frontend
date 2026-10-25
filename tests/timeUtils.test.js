@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 
 import { DateTime } from "luxon";
+import { NO_DATA_DISPLAY } from "../src/constants/DATA_SOURCES";
 import {
   isoToTAI,
   isoToUTC,
@@ -18,7 +19,6 @@ import {
   getValidTimeRange,
   generateDayObsRange,
   formatTimestamp,
-  MISSING_TIMESTAMP_DISPLAY,
 } from "../src/utils/timeUtils";
 
 const TAI_OFFSET_SECONDS = 37;
@@ -151,7 +151,7 @@ describe("timeUtils", () => {
       });
 
       it("returns the missing placeholder for NaN", () => {
-        expect(formatTimestamp(NaN)).toBe(MISSING_TIMESTAMP_DISPLAY);
+        expect(formatTimestamp(NaN)).toBe(NO_DATA_DISPLAY);
       });
     });
 
@@ -206,9 +206,9 @@ describe("timeUtils", () => {
 
     describe("missing values", () => {
       it("returns the missing placeholder for null, undefined and empty string", () => {
-        expect(formatTimestamp(null)).toBe(MISSING_TIMESTAMP_DISPLAY);
-        expect(formatTimestamp(undefined)).toBe(MISSING_TIMESTAMP_DISPLAY);
-        expect(formatTimestamp("")).toBe(MISSING_TIMESTAMP_DISPLAY);
+        expect(formatTimestamp(null)).toBe(NO_DATA_DISPLAY);
+        expect(formatTimestamp(undefined)).toBe(NO_DATA_DISPLAY);
+        expect(formatTimestamp("")).toBe(NO_DATA_DISPLAY);
       });
     });
   });
