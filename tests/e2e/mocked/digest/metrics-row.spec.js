@@ -4,6 +4,8 @@ import { recordRequests, setupApiMocks } from "../../helpers/mock-api.js";
 import { DIGEST_URL } from "../../helpers/constants.js";
 import { metricsRow, metricCard } from "../../helpers/digest-helpers.js";
 
+import { NO_DATA_DISPLAY } from "@/constants/DATA_SOURCES";
+
 test.describe("Digest page — metrics row", () => {
   test.beforeEach(async ({ page }) => {
     await setupApiMocks(page);
@@ -37,5 +39,66 @@ test.describe("Digest page — metrics row", () => {
     ).boundingBox();
 
     expect(card.width).toBeLessThan(row.width * 0.3);
+  });
+
+  test("shows no-data placeholder for created and updated when Jira cannot be fetched", async ({
+    page,
+  }) => {
+    await page.route("**/nightlydigest/api/jira-tickets*", (route) =>
+      route.abort(),
+    );
+    await page.goto(DIGEST_URL);
+
+    const card = metricCard(page, "Jira tickets created");
+    await expect(card.locator("[data-slot='metrics-card-value']")).toHaveText(
+      NO_DATA_DISPLAY,
+    );
+    await expect(card).toContainText(`(${NO_DATA_DISPLAY} updated)`);
+    await expect(
+      card.getByRole("button", { name: "data availability warning" }),
+    ).toHaveCount(1);
+  });
+
+  test("shows no-data placeholder for nighttime exposures when exposures cannot be fetched", async ({
+    page,
+  }) => {
+    await page.route("**/nightlydigest/api/exposures*", (route) =>
+      route.abort(),
+    );
+    await page.goto(DIGEST_URL);
+
+    await expect(
+      metricCard(page, "Nighttime exposures taken").locator(
+        "[data-slot='metrics-card-value']",
+      ),
+    ).toHaveText(NO_DATA_DISPLAY);
+  });
+
+  test("shows 0 for nighttime exposures when there are none", async ({
+    page,
+  }) => {
+    // The default exposures fixture is empty, so no data -> 0, no warning.
+    await page.goto(DIGEST_URL);
+
+    const card = metricCard(page, "Nighttime exposures taken");
+    await expect(card.locator("[data-slot='metrics-card-value']")).toHaveText(
+      "0",
+    );
+    await expect(
+      card.getByRole("button", { name: "data availability warning" }),
+    ).toHaveCount(0);
+  });
+
+  test("shows no-data placeholder expected when expected exposures cannot be fetched", async ({
+    page,
+  }) => {
+    await page.route("**/nightlydigest/api/expected-exposures*", (route) =>
+      route.abort(),
+    );
+    await page.goto(DIGEST_URL);
+
+    await expect(metricCard(page, "Nighttime exposures taken")).toContainText(
+      `(${NO_DATA_DISPLAY} expected)`,
+    );
   });
 });
