@@ -14,7 +14,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import AppletCard from "@/components/AppletCard";
+import { resolveDisplayState } from "@/utils/displayState";
 import {
   Popover,
   PopoverContent,
@@ -25,6 +26,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BAND_COLORS } from "@/components/PLOT_DEFINITIONS";
 import BarChartYAxisTick from "@/components/BarChartYAxisTick";
 import { isScientificNightlyDigest } from "@/utils/appConfig";
+import { NO_DATA_DISPLAY } from "@/constants/DATA_SOURCES";
 
 import InfoIcon from "../assets/InfoIcon.svg";
 import DownloadIcon from "../assets/DownloadIcon.svg";
@@ -52,16 +54,34 @@ const SortByValues = Object.freeze({
 const PLOT_YLABELS_MAXSIZE = 14;
 const BAR_SIZE = 35;
 
+/**
+ * Render a chart breaking down exposures by type, reason, and program.
+ *
+ * @param {Object} props
+ * @param {Object} props.exposureFields Exposure field data used to group the breakdown.
+ * @param {Object} props.exposureCount Count of exposures by group.
+ * @param {number} props.sumExpTime Total summed exposure time.
+ * @param {Object} props.flags Exposure flags data.
+ * @param {Function} props.onBarHover Callback fired with the hovered exposure ids.
+ * @param {Function} props.onBarLeave Callback fired when the pointer leaves a bar.
+ * @param {Object} [props.blockLookup={}] Dict of BLOCK objects from Zephyr/Jira.
+ * @param {boolean} [props.exposuresLoading=false] Whether exposure data is loading.
+ * @param {boolean} [props.flagsLoading=false] Whether flags data is loading.
+ * @param {boolean} [props.flagsError=false] Whether the flags fetch failed.
+ */
 function ExposureBreakdownApplet({
   exposureFields,
   exposureCount,
   sumExpTime,
   flags,
+  onBarHover,
+  onBarLeave,
   blockLookup = {},
   exposuresLoading = false,
   flagsLoading = false,
-  onBarHover,
-  onBarLeave,
+  flagsError = false,
+  sources = {},
+  required = [],
 }) {
   const [plotBy, setPlotBy] = useState(PlotByValues.NUMBER);
   const [groupBy, setGroupBy] = useState(
@@ -75,6 +95,16 @@ function ExposureBreakdownApplet({
   // and portalled tooltip.
   const [hovered, setHovered] = useState(null);
   const [tooltipState, setTooltipState] = useState(null);
+
+  // Resolve the status here so the no-data message can be shown inside the
+  // chart. Mirrors AppletCard's own resolve; duplicated because this component
+  // renders <AppletCard>, so its body can't call useAppletState (the context
+  // is only available within AppletCard's subtree).
+  const displayState = resolveDisplayState({
+    sources,
+    required,
+    loading: exposuresLoading,
+  });
 
   // For rendering tooltip via portal so the bar chart
   // can scroll without tooltip being clipped.
@@ -292,14 +322,45 @@ function ExposureBreakdownApplet({
   const isBottomHalf = top > containerHeight / 2;
 
   return (
-    <Card className="border-none p-0 bg-stone-800 gap-2">
-      <CardHeader className="grid-cols-3 bg-teal-900 p-4 rounded-sm align-center gap-0">
-        <CardTitle className="text-white font-thin col-span-2">
-          Exposure Breakdown
-        </CardTitle>
-        <div className="flex flex-row gap-2 justify-end">
+    <AppletCard
+      title="Exposure Breakdown"
+      sources={sources}
+      required={required}
+      loading={exposuresLoading}
+      skeleton={
+        <>
+          {/* Skeleton outline */}
+          {/* Plot display and controls */}
+          <div className="flex-grow flex flex-row gap-8 overflow-hidden">
+            {/* Plot display */}
+            <div className="flex-grow flex flex-col overflow-hidden">
+              <div className="flex-grow overflow-y-auto">
+                <Skeleton className="w-full h-full min-h-[180px] bg-stone-900" />
+              </div>
+            </div>
+
+            {/* Controls */}
+            <div className="w-[160px] flex flex-col gap-4">
+              {[...Array(3)].map((_, idx) => (
+                <div className="flex flex-col gap-1" key={idx}>
+                  <Skeleton className="h-4 w-16 bg-stone-900" />
+                  <Skeleton className="h-8 w-[150px] bg-stone-900 rounded-s" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Totals */}
+          <div className="text-[12px] flex flex-row gap-4 pt-2">
+            <Skeleton className="h-4 w-full bg-stone-900" />
+            <Skeleton className="h-4 w-full bg-stone-900" />
+          </div>
+        </>
+      }
+      actions={
+        <>
           <Popover>
-            <PopoverTrigger className="self-end min-w-4">
+            <PopoverTrigger className="self-end min-w-4 cursor-pointer">
               <img src={DownloadIcon} />
             </PopoverTrigger>
             <PopoverContent className="bg-black text-white text-sm border-yellow-700">
@@ -309,7 +370,7 @@ function ExposureBreakdownApplet({
             </PopoverContent>
           </Popover>
           <Popover>
-            <PopoverTrigger className="self-end min-w-4">
+            <PopoverTrigger className="self-end min-w-4 cursor-pointer">
               <img src={InfoIcon} />
             </PopoverTrigger>
             <PopoverContent className="bg-black text-white text-sm border-yellow-700 w-[300px]">
@@ -348,424 +409,383 @@ function ExposureBreakdownApplet({
               </ul>
             </PopoverContent>
           </Popover>
-        </div>
-      </CardHeader>
-
-      <CardContent className="flex flex-col gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 h-[320px] font-thin">
-        {exposuresLoading ? (
-          <>
-            {/* Skeleton outline */}
-            {/* Plot display and controls */}
-            <div className="flex-grow flex flex-row gap-8 overflow-hidden">
+        </>
+      }
+      readyClassName="h-[320px]"
+      maintainHeight
+    >
+      <>
+        {/* Plot display and controls */}
+        <div
+          ref={cardRef} // Tooltip is rendered here via portal
+          className="flex-grow flex flex-row gap-8 overflow-hidden relative"
+        >
+          {displayState.state === "noData" ? (
+            <span className="w-full self-center text-center text-stone-400">
+              {displayState.message}
+            </span>
+          ) : (
+            <>
               {/* Plot display */}
-              <div className="flex-grow flex flex-col overflow-hidden">
-                <div className="flex-grow overflow-y-auto">
-                  <Skeleton className="w-full h-full min-h-[180px] bg-stone-900" />
-                </div>
-              </div>
-
-              {/* Controls */}
-              <div className="w-[160px] flex flex-col gap-4">
-                {[...Array(3)].map((_, idx) => (
-                  <div className="flex flex-col gap-1" key={idx}>
-                    <Skeleton className="h-4 w-16 bg-stone-900" />
-                    <Skeleton className="h-8 w-[150px] bg-stone-900 rounded-s" />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Totals */}
-            <div className="text-[12px] flex flex-row gap-4 pt-2">
-              <Skeleton className="h-4 w-full bg-stone-900" />
-              <Skeleton className="h-4 w-full bg-stone-900" />
-            </div>
-          </>
-        ) : (
-          <>
-            {/* Plot display and controls */}
-            <div
-              ref={cardRef} // Tooltip is rendered here via portal
-              className="flex-grow flex flex-row gap-8 overflow-hidden relative"
-            >
-              {exposureCount === 0 ? (
-                <span className="w-full">
-                  No exposures returned for selected dates.
-                </span>
-              ) : (
-                <>
-                  {/* Plot display */}
-                  <div
-                    ref={scrollRef} // For computing tooltip position
-                    className="flex-grow overflow-y-auto"
+              <div
+                ref={scrollRef} // For computing tooltip position
+                className="flex-grow overflow-y-auto"
+              >
+                <div
+                  style={{
+                    height: `${chartData.length * BAR_SIZE}px`,
+                    minHeight: "180px",
+                  }}
+                >
+                  <ChartContainer
+                    config={chartConfig}
+                    className="w-full h-full !aspect-auto"
                   >
-                    <div
-                      style={{
-                        height: `${chartData.length * BAR_SIZE}px`,
-                        minHeight: "180px",
+                    <BarChart
+                      data={chartData}
+                      layout="vertical"
+                      margin={{
+                        left: 30,
+                      }}
+                      // For rendering tooltip
+                      onMouseMove={(state) => {
+                        const payload = state?.activePayload;
+                        const coordinate = state?.activeCoordinate;
+
+                        // Not hovering over a bar?
+                        if (!payload?.length || !coordinate) {
+                          setTooltipState(null);
+                          setHovered(null);
+                          onBarLeave?.();
+                          return;
+                        }
+
+                        // Only update tooltip when bar changes
+                        const groupKey = state.activeLabel;
+                        if (tooltipState?.groupKey !== groupKey) {
+                          setTooltipState({
+                            x: coordinate.x,
+                            y: coordinate.y,
+                            payload,
+                            groupKey,
+                          });
+                          setHovered(groupKey);
+                          const entry = chartData.find(
+                            (d) => d.groupKey === groupKey,
+                          );
+                          onBarHover?.(entry?.exposureIds ?? []);
+                        }
+                      }}
+                      onMouseLeave={() => {
+                        setTooltipState(null);
+                        setHovered(null);
+                        onBarLeave?.();
                       }}
                     >
-                      <ChartContainer
-                        config={chartConfig}
-                        className="w-full h-full !aspect-auto"
+                      {/* Unflagged data stacked bar (bottom) */}
+                      <Bar
+                        dataKey="unflagged"
+                        stackId="a"
+                        barSize={20}
+                        minPointSize={1}
+                        isAnimationActive={false}
                       >
-                        <BarChart
-                          data={chartData}
-                          layout="vertical"
-                          margin={{
-                            left: 30,
-                          }}
-                          // For rendering tooltip
-                          onMouseMove={(state) => {
-                            const payload = state?.activePayload;
-                            const coordinate = state?.activeCoordinate;
+                        {/* Round corners when no flagged data */}
+                        {chartData.map((entry, index) => {
+                          const isOnlyUnflagged = entry.flagged === 0;
+                          return (
+                            <Cell
+                              key={`cell-unflagged-${index}`}
+                              fill={entry.fill}
+                              radius={
+                                isOnlyUnflagged ? [0, 4, 4, 0] : [0, 0, 0, 0]
+                              }
+                              cursor="pointer"
+                            />
+                          );
+                        })}
+                      </Bar>
 
-                            // Not hovering over a bar?
-                            if (!payload?.length || !coordinate) {
-                              setTooltipState(null);
-                              setHovered(null);
-                              onBarLeave?.();
-                              return;
-                            }
-
-                            // Only update tooltip when bar changes
-                            const groupKey = state.activeLabel;
-                            if (tooltipState?.groupKey !== groupKey) {
-                              setTooltipState({
-                                x: coordinate.x,
-                                y: coordinate.y,
-                                payload,
-                                groupKey,
-                              });
-                              setHovered(groupKey);
-                              const entry = chartData.find(
-                                (d) => d.groupKey === groupKey,
-                              );
-                              onBarHover?.(entry?.exposureIds ?? []);
-                            }
-                          }}
-                          onMouseLeave={() => {
-                            setTooltipState(null);
-                            setHovered(null);
-                            onBarLeave?.();
-                          }}
-                        >
-                          {/* Unflagged data stacked bar (bottom) */}
-                          <Bar
-                            dataKey="unflagged"
-                            stackId="a"
-                            barSize={20}
-                            minPointSize={1}
-                            isAnimationActive={false}
-                          >
-                            {/* Round corners when no flagged data */}
-                            {chartData.map((entry, index) => {
-                              const isOnlyUnflagged = entry.flagged === 0;
-                              return (
-                                <Cell
-                                  key={`cell-unflagged-${index}`}
-                                  fill={entry.fill}
-                                  radius={
-                                    isOnlyUnflagged
-                                      ? [0, 4, 4, 0]
-                                      : [0, 0, 0, 0]
-                                  }
-                                  cursor="pointer"
-                                />
-                              );
-                            })}
-                          </Bar>
-
-                          {/* Flagged data stacked bar (top) */}
-                          <Bar
-                            dataKey="flagged"
-                            stackId="a"
-                            barSize={20}
-                            isAnimationActive={false}
-                          >
-                            {chartData.map((entry, index) => (
-                              <Cell
-                                key={`cell-flagged-${index}`}
-                                fill="#ffffff"
-                                radius={[0, 4, 4, 0]}
-                              />
-                            ))}
-                          </Bar>
-
-                          {/* Transparent/highlighted layer for visibility/clickability */}
-                          <Customized
-                            component={({ width, data, yAxisMap }) => {
-                              const yAxis = Object.values(yAxisMap)[0];
-                              const bandwidth =
-                                typeof yAxis.scale.bandwidth === "function"
-                                  ? yAxis.scale.bandwidth()
-                                  : BAR_SIZE;
-
-                              return (
-                                <g>
-                                  {data.map((entry, index) => {
-                                    const y = yAxis.scale(entry.groupKey);
-                                    const offsetY =
-                                      y + (bandwidth - BAR_SIZE) / 2;
-
-                                    // Get url of data-log, filtered by group
-                                    const url = buildBarUrl(entry);
-
-                                    return (
-                                      <a
-                                        key={`overlay-${index}`}
-                                        // Normal behaviour for modified clicks
-                                        href={router.buildLocation(url).href}
-                                        // SPA navigation for normal click
-                                        onClick={handleBarClick(url)}
-                                      >
-                                        <rect
-                                          x={0}
-                                          y={offsetY}
-                                          width={width}
-                                          height={BAR_SIZE}
-                                          fill={
-                                            hovered === entry.groupKey
-                                              ? "rgba(255,255,255,0.15)"
-                                              : "transparent"
-                                          }
-                                          style={{ cursor: "pointer" }}
-                                        />
-                                      </a>
-                                    );
-                                  })}
-                                </g>
-                              );
-                            }}
+                      {/* Flagged data stacked bar (top) */}
+                      <Bar
+                        dataKey="flagged"
+                        stackId="a"
+                        barSize={20}
+                        isAnimationActive={false}
+                      >
+                        {chartData.map((entry, index) => (
+                          <Cell
+                            key={`cell-flagged-${index}`}
+                            fill="#ffffff"
+                            radius={[0, 4, 4, 0]}
                           />
+                        ))}
+                      </Bar>
 
-                          {/* Axes, ticks, labels and styles */}
-                          <YAxis
-                            dataKey="groupKey"
-                            type="category"
-                            axisLine={{ stroke: "#ffffff", strokeWidth: 2 }}
-                            tickLine={false}
-                            // Render tick labels with links to BLOCK docs
-                            tick={(props) => (
-                              <BarChartYAxisTick
-                                {...props}
-                                groupBy={groupBy}
-                                GroupByValues={GroupByValues}
-                                blockLookup={blockLookup}
-                                maxSize={PLOT_YLABELS_MAXSIZE}
-                              />
-                            )}
-                            tickMargin={2}
+                      {/* Transparent/highlighted layer for visibility/clickability */}
+                      <Customized
+                        component={({ width, data, yAxisMap }) => {
+                          const yAxis = Object.values(yAxisMap)[0];
+                          const bandwidth =
+                            typeof yAxis.scale.bandwidth === "function"
+                              ? yAxis.scale.bandwidth()
+                              : BAR_SIZE;
+
+                          return (
+                            <g>
+                              {data.map((entry, index) => {
+                                const y = yAxis.scale(entry.groupKey);
+                                const offsetY = y + (bandwidth - BAR_SIZE) / 2;
+
+                                // Get url of data-log, filtered by group
+                                const url = buildBarUrl(entry);
+
+                                return (
+                                  <a
+                                    key={`overlay-${index}`}
+                                    // Normal behaviour for modified clicks
+                                    href={router.buildLocation(url).href}
+                                    // SPA navigation for normal click
+                                    onClick={handleBarClick(url)}
+                                  >
+                                    <rect
+                                      x={0}
+                                      y={offsetY}
+                                      width={width}
+                                      height={BAR_SIZE}
+                                      fill={
+                                        hovered === entry.groupKey
+                                          ? "rgba(255,255,255,0.15)"
+                                          : "transparent"
+                                      }
+                                      style={{ cursor: "pointer" }}
+                                    />
+                                  </a>
+                                );
+                              })}
+                            </g>
+                          );
+                        }}
+                      />
+
+                      {/* Axes, ticks, labels and styles */}
+                      <YAxis
+                        dataKey="groupKey"
+                        type="category"
+                        axisLine={{ stroke: "#ffffff", strokeWidth: 2 }}
+                        tickLine={false}
+                        // Render tick labels with links to BLOCK docs
+                        tick={(props) => (
+                          <BarChartYAxisTick
+                            {...props}
+                            groupBy={groupBy}
+                            GroupByValues={GroupByValues}
+                            blockLookup={blockLookup}
+                            maxSize={PLOT_YLABELS_MAXSIZE}
                           />
-                          <XAxis
-                            type="number"
-                            orientation="top"
-                            axisLine={{ stroke: "#ffffff", strokeWidth: 2 }}
-                            tickLine={{ stroke: "#ffffff", strokeWidth: 2 }}
-                            tick={{ fill: "#ffffff", fontSize: 12 }}
-                            label={{
-                              value:
-                                // plotBy === "Time"
-                                plotBy == PlotByValues.TIME
-                                  ? "Exposure time (s)"
-                                  : "Number of exposures",
-                              position: "insideTop",
-                              offset: 0,
-                              fill: "#ffffff",
-                              style: { fontSize: 12 },
-                            }}
-                          />
-                        </BarChart>
-                      </ChartContainer>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {/* Plot controls */}
-              <div className="w-[160px] flex flex-col gap-4">
-                {/* Plot by */}
-                <div>
-                  <Label
-                    htmlFor="plotBy"
-                    className="text-white text-[12px] pb-1"
-                  >
-                    Plot by:
-                  </Label>
-                  <Select value={plotBy} onValueChange={setPlotBy}>
-                    <SelectTrigger
-                      id="plotBy"
-                      size="sm"
-                      className="w-[150px] bg-teal-800 justify-between font-normal text-[12px] text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50"
-                      chevronDownIconClassName="text-white"
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-teal-800 border-2 border-white">
-                      {plotByOptions.map((option) => (
-                        <SelectItem
-                          className="text-white text-[12px] focus:bg-teal-700 focus:text-white"
-                          checkIconClassName="text-white"
-                          key={option.value}
-                          value={option.value}
-                        >
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Group by */}
-                <div>
-                  <Label
-                    htmlFor="groupBy"
-                    className="text-white text-[12px] pb-1"
-                  >
-                    Group by:
-                  </Label>
-                  <Select value={groupBy} onValueChange={setGroupBy}>
-                    <SelectTrigger
-                      id="groupBy"
-                      size="sm"
-                      className="w-[150px] bg-teal-800 justify-between font-normal text-[12px] text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50"
-                      chevronDownIconClassName="text-white"
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-teal-800 border-2 border-white">
-                      {groupByOptions.map((option) => (
-                        <SelectItem
-                          className="text-white text-[12px] focus:bg-teal-700 focus:text-white"
-                          checkIconClassName="text-white"
-                          key={option.value}
-                          value={option.value}
-                        >
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Sort by */}
-                <div>
-                  <Label
-                    htmlFor="sortBy"
-                    className="text-white text-[12px] pb-1"
-                  >
-                    Sort by:
-                  </Label>
-                  <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger
-                      id="sortBy"
-                      size="sm"
-                      className="w-[150px] bg-teal-800 justify-between font-normal text-[12px] text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50"
-                      chevronDownIconClassName="text-white"
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-teal-800 border-2 border-white">
-                      {sortByOptions.map((option) => (
-                        <SelectItem
-                          className="text-white text-[12px] focus:bg-teal-700 focus:text-white"
-                          checkIconClassName="text-white"
-                          key={option.value}
-                          value={option.value}
-                        >
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                        )}
+                        tickMargin={2}
+                      />
+                      <XAxis
+                        type="number"
+                        orientation="top"
+                        axisLine={{ stroke: "#ffffff", strokeWidth: 2 }}
+                        tickLine={{ stroke: "#ffffff", strokeWidth: 2 }}
+                        tick={{ fill: "#ffffff", fontSize: 12 }}
+                        label={{
+                          value:
+                            plotBy == PlotByValues.TIME
+                              ? "Exposure time (s)"
+                              : "Number of exposures",
+                          position: "insideTop",
+                          offset: 0,
+                          fill: "#ffffff",
+                          style: { fontSize: 12 },
+                        }}
+                      />
+                    </BarChart>
+                  </ChartContainer>
                 </div>
               </div>
+            </>
+          )}
+
+          {/* Plot controls */}
+          <div className="w-[160px] flex flex-col gap-4">
+            {/* Plot by */}
+            <div>
+              <Label htmlFor="plotBy" className="text-white text-[12px] pb-1">
+                Plot by:
+              </Label>
+              <Select value={plotBy} onValueChange={setPlotBy}>
+                <SelectTrigger
+                  id="plotBy"
+                  size="sm"
+                  className="w-[150px] bg-teal-800 justify-between font-normal text-[12px] text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50 cursor-pointer"
+                  chevronDownIconClassName="text-white"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-teal-800 border-2 border-white">
+                  {plotByOptions.map((option) => (
+                    <SelectItem
+                      className="text-white text-[12px] focus:bg-teal-700 focus:text-white"
+                      checkIconClassName="text-white"
+                      key={option.value}
+                      value={option.value}
+                    >
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            {/* Totals */}
-            <div className="text-[12px] flex flex-row gap-8 items-end">
-              {/* {plotBy === "Time" ? ( */}
-              {plotBy === PlotByValues.TIME ? (
-                <>
-                  <div>Total exposure time: {sumExpTime} s</div>
-                  <div className="flex flex-row items-end">
-                    <span>Total flagged time:&nbsp;</span>
-                    {flagsLoading ? (
-                      <Skeleton className="h-4 w-12 bg-stone-900 inline-block" />
-                    ) : (
-                      <span>{totalFlaggedTime} s</span>
-                    )}
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div>Total exposure count: {exposureCount}</div>
-                  <div className="flex flex-row items-end">
-                    <span>Total flagged:&nbsp;</span>
-                    {flagsLoading ? (
-                      <Skeleton className="h-4 w-12 bg-stone-900 inline-block" />
-                    ) : (
-                      <span>{totalFlaggedCount}</span>
-                    )}
-                  </div>
-                </>
-              )}
+            {/* Group by */}
+            <div>
+              <Label htmlFor="groupBy" className="text-white text-[12px] pb-1">
+                Group by:
+              </Label>
+              <Select value={groupBy} onValueChange={setGroupBy}>
+                <SelectTrigger
+                  id="groupBy"
+                  size="sm"
+                  className="w-[150px] bg-teal-800 justify-between font-normal text-[12px] text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50 cursor-pointer"
+                  chevronDownIconClassName="text-white"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-teal-800 border-2 border-white">
+                  {groupByOptions.map((option) => (
+                    <SelectItem
+                      className="text-white text-[12px] focus:bg-teal-700 focus:text-white"
+                      checkIconClassName="text-white"
+                      key={option.value}
+                      value={option.value}
+                    >
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          </>
-        )}
 
-        {/* Tooltip, rendered via portal, instead of Rechart's native tooltip
+            {/* Sort by */}
+            <div>
+              <Label htmlFor="sortBy" className="text-white text-[12px] pb-1">
+                Sort by:
+              </Label>
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger
+                  id="sortBy"
+                  size="sm"
+                  className="w-[150px] bg-teal-800 justify-between font-normal text-[12px] text-white rounded-s shadow-[4px_4px_4px_0px_#3CAE3F] border-2 border-white focus-visible:ring-4 focus-visible:ring-green-500/50 cursor-pointer"
+                  chevronDownIconClassName="text-white"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-teal-800 border-2 border-white">
+                  {sortByOptions.map((option) => (
+                    <SelectItem
+                      className="text-white text-[12px] focus:bg-teal-700 focus:text-white"
+                      checkIconClassName="text-white"
+                      key={option.value}
+                      value={option.value}
+                    >
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+
+        {/* Totals */}
+        <div className="text-[12px] flex flex-row gap-8 items-end">
+          {plotBy === PlotByValues.TIME ? (
+            <>
+              <div>Total exposure time: {sumExpTime} s</div>
+              <div className="flex flex-row items-end">
+                <span>Total flagged time:&nbsp;</span>
+                {flagsLoading ? (
+                  <Skeleton className="h-4 w-12 bg-stone-900 inline-block" />
+                ) : flagsError ? (
+                  <span>{NO_DATA_DISPLAY}</span>
+                ) : (
+                  <span>{totalFlaggedTime} s</span>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              <div>Total exposure count: {exposureCount}</div>
+              <div className="flex flex-row items-end">
+                <span>Total flagged:&nbsp;</span>
+                {flagsLoading ? (
+                  <Skeleton className="h-4 w-12 bg-stone-900 inline-block" />
+                ) : flagsError ? (
+                  <span>{NO_DATA_DISPLAY}</span>
+                ) : (
+                  <span>{totalFlaggedCount}</span>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      </>
+
+      {/* Tooltip, rendered via portal, instead of Rechart's native tooltip
         because the native tooltip does not allow both the chart to scroll
         and the tooltip to escape the chart boundaries. For this, we need
         a portal. */}
-        {cardRef.current &&
-          tooltipState &&
-          createPortal(
-            <div
-              className="absolute z-50 pointer-events-none"
-              // Set location, accounting for scroll.
-              style={{
-                left,
-                top,
-                // If in bottom half of chart, flip tooltip up
-                // by its height, so tooltips don't get clipped.
-                transform: isBottomHalf ? "translateY(-100%)" : "none",
-              }}
-            >
-              <div className="bg-white text-black text-xs p-2 border border-white rounded">
-                {(() => {
-                  const group = tooltipState.payload[0].payload.groupKey;
-                  const blockSummary = blockLookup?.[group]?.summary;
-                  // Get flagged/unflagged counts
-                  const values = tooltipState.payload.reduce((acc, d) => {
-                    acc[d.dataKey] = d.value;
-                    return acc;
-                  }, {});
-                  const unflagged = values.unflagged ?? 0;
-                  const flagged = values.flagged ?? 0;
+      {cardRef.current &&
+        tooltipState &&
+        createPortal(
+          <div
+            className="absolute z-50 pointer-events-none"
+            // Set location, accounting for scroll.
+            style={{
+              left,
+              top,
+              // If in bottom half of chart, flip tooltip up
+              // by its height, so tooltips don't get clipped.
+              transform: isBottomHalf ? "translateY(-100%)" : "none",
+            }}
+          >
+            <div className="bg-white text-black text-xs p-2 border border-white rounded">
+              {(() => {
+                const group = tooltipState.payload[0].payload.groupKey;
+                const blockSummary = blockLookup?.[group]?.summary;
+                // Get flagged/unflagged counts
+                const values = tooltipState.payload.reduce((acc, d) => {
+                  acc[d.dataKey] = d.value;
+                  return acc;
+                }, {});
+                const unflagged = values.unflagged ?? 0;
+                const flagged = values.flagged ?? 0;
 
-                  return (
-                    <>
-                      <div className="font-bold">
-                        {group}:{" "}
-                        <strong className="font-extra-bold">
-                          {unflagged + flagged}
-                        </strong>
-                      </div>
-                      {flagged > 0 && <div>Flagged: {flagged}</div>}
-                      {blockSummary && (
-                        <div className="font-medium">{blockSummary}</div>
-                      )}
-                    </>
-                  );
-                })()}
-              </div>
-            </div>,
-            // Tooltip gets rendered in container with this reference.
-            cardRef.current,
-          )}
-      </CardContent>
-    </Card>
+                return (
+                  <>
+                    <div className="font-bold">
+                      {group}:{" "}
+                      <strong className="font-extra-bold">
+                        {unflagged + flagged}
+                      </strong>
+                    </div>
+                    {flagged > 0 && <div>Flagged: {flagged}</div>}
+                    {blockSummary && (
+                      <div className="font-medium">{blockSummary}</div>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+          </div>,
+          // Tooltip gets rendered in container with this reference.
+          cardRef.current,
+        )}
+    </AppletCard>
   );
 }
 
