@@ -22,15 +22,11 @@ import {
   calculateSumExpTimeBetweenTwilights,
   getBlockSourceLabel,
 } from "@/utils/utils";
-import { getObsStatusFetchErrorText } from "@/utils/observatoryStatusUtils";
-import {
-  formatDayobsStrForDisplay,
-  getDayobsStartUTC,
-} from "@/utils/timeUtils";
+import { getDayobsStartUTC } from "@/utils/timeUtils";
 import { isScientificNightlyDigest } from "@/utils/appConfig";
 import { useNotifications } from "@/hooks/useNotifications";
 import { NotificationBannerStack } from "@/components/NotificationBannerStack";
-import DialogMetricsCard from "@/components/dialog-metrics-card";
+import DialogMetricsCard from "@/components/DialogMetricsCard";
 import JiraTicketsTable from "@/components/jira-tickets-table";
 import { useSearch } from "@tanstack/react-router";
 import { TELESCOPES } from "@/components/Parameters";
@@ -39,91 +35,16 @@ import NightSummary from "@/components/NightSummary.jsx";
 import ObservatoryStatusApplet from "@/components/ObservatoryStatusApplet";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
 import VisitMapStaticApplet from "@/components/VisitMapStaticApplet.jsx";
-import WarningTooltip from "@/components/WarningTooltip";
-import { OBSERVATORY_STATE_AVAILABILITY_STATUS } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
+import {
+  buildObsStatusSource,
+  resolveDisplayState,
+} from "@/utils/displayState";
+import { SOURCE, NO_DATA_DISPLAY } from "@/constants/DATA_SOURCES";
 
 const EMPTY_OBS_STATUS_AVAILABILITY = {
   status: "none",
   available_from: null,
 };
-
-/**
- * Builds the warning content shown on the Time Loss and Efficiency metric
- * cards when Observatory Status or Almanac data is incomplete.
- *
- * Fetch errors take precedence over availability gaps. When both requests
- * fail, a single concise message is returned. When only Almanac fails, the
- * Obs Status availability warning is preserved alongside the error, since the
- * loss metrics still describe the available data. When only Obs Status fails,
- * only the error is shown (weather loss falls back to zero for the efficiency
- * calculation). With no fetch errors, a warning is shown only when Obs Status
- * covers part (or none) of the requested range.
- *
- * @param {Object} options
- * @param {boolean} [options.almanacFetchError=false] Whether the Almanac request failed.
- * @param {boolean} [options.obsStatusFetchError=false] Whether the Observatory Status request failed.
- * @param {Object} [options.obsStatusAvailability] Availability metadata for the observatory-status feed.
- * @returns {React.ReactNode|null} The warning content, or `null` when data is fully available.
- */
-function getDigestWarningContent({
-  almanacFetchError,
-  obsStatusFetchError,
-  obsStatusAvailability,
-}) {
-  const availabilityStatus = obsStatusAvailability?.status;
-  // A successful Obs Status response can still cover only part (or none) of
-  // the selected range. These are availability warnings, not fetch errors.
-  const hasLimitedObsStatusData =
-    availabilityStatus === OBSERVATORY_STATE_AVAILABILITY_STATUS.PARTIAL ||
-    availabilityStatus === OBSERVATORY_STATE_AVAILABILITY_STATUS.NONE;
-  const availableFrom = obsStatusAvailability?.available_from
-    ? formatDayobsStrForDisplay(String(obsStatusAvailability.available_from))
-    : null;
-  const availabilityWarning = hasLimitedObsStatusData && (
-    <>
-      Observatory Status data is only available from{" "}
-      {availableFrom ? (
-        <code>{availableFrom}</code>
-      ) : (
-        "the supported dayobs range"
-      )}
-      .
-      <br />
-      Where unavailable, status data is treated as <code>0</code>.
-    </>
-  );
-
-  const fetchErrorText = getObsStatusFetchErrorText({
-    almanacFetchError,
-    obsStatusFetchError,
-  });
-
-  // When both sources fail, use one concise message rather than stacking two
-  // separate warnings on the Time Loss card.
-  if (almanacFetchError && obsStatusFetchError) {
-    return <>{fetchErrorText}</>;
-  }
-
-  // Preserve a successful Obs Status availability warning alongside an
-  // Almanac failure, since it still describes the available loss metrics.
-  if (almanacFetchError) {
-    return (
-      <>
-        {fetchErrorText}
-        {availabilityWarning && <> {availabilityWarning}</>}
-      </>
-    );
-  }
-
-  // An Obs Status fetch failure falls back to zero weather loss for the
-  // efficiency calculation, rather than being treated as an availability gap.
-  if (obsStatusFetchError) {
-    return <>{fetchErrorText}</>;
-  }
-
-  // With no fetch errors, show a warning only when Obs Status is limited.
-  return availabilityWarning;
-}
 
 export default function Digest() {
   const { startDayobs, endDayobs, telescope } = useSearch({
@@ -151,6 +72,12 @@ export default function Digest() {
   );
   const [obsStatusFetchError, setObsStatusFetchError] = useState(false);
   const [almanacFetchError, setAlmanacFetchError] = useState(false);
+  const [exposureFetchError, setExposureFetchError] = useState(false);
+  const [expectedExposuresFetchError, setExpectedExposuresFetchError] =
+    useState(false);
+  const [flagsFetchError, setFlagsFetchError] = useState(false);
+  const [nightreportFetchError, setNightreportFetchError] = useState(false);
+  const [blockFetchError, setBlockFetchError] = useState(false);
 
   const [exposuresLoading, setExposuresLoading] = useState(true);
   const [expectedExposuresLoading, setExpectedExposuresLoading] =
@@ -161,12 +88,14 @@ export default function Digest() {
 
   const [jiraTickets, setJiraTickets] = useState([]);
   const [jiraLoading, setJiraLoading] = useState(true);
+  const [jiraFetchError, setJiraFetchError] = useState(false);
 
   const [flagsLoading, setFlagsLoading] = useState(true);
   const [almanacInfo, setAlmanacInfo] = useState([]);
   const [openDomeTimes, setOpenDomeTimes] = useState([]);
 
   const [blockLookup, setBlockLookup] = useState({});
+  const [blockLookupLoading, setBlockLookupLoading] = useState(true);
 
   const [hoveredExposureIds, setHoveredExposureIds] = useState(null);
   const onBarHover = useCallback(
@@ -217,12 +146,19 @@ export default function Digest() {
     setExpectedOnSkyExpCount(0);
     setFlags([]);
     setObsStatusIntervals([]);
+    setBlockLookup({});
+    setBlockLookupLoading(true);
     setObsStatusFaultLoss(0.0);
     setObsStatusWeatherLoss(0.0);
     setObsStatusDowntime(0.0);
     setObsStatusAvailability(EMPTY_OBS_STATUS_AVAILABILITY);
     setObsStatusFetchError(false);
     setAlmanacFetchError(false);
+    setExposureFetchError(false);
+    setExpectedExposuresFetchError(false);
+    setFlagsFetchError(false);
+    setNightreportFetchError(false);
+    setJiraFetchError(false);
 
     setStaticVisitMapLoading(true);
     setStaticVisitMaps(null);
@@ -265,6 +201,7 @@ export default function Digest() {
       .catch((err) => {
         if (!abortController.signal.aborted) {
           console.error("Error fetching exposures:", err);
+          setExposureFetchError(true);
           addNotification({
             type: "error",
             source: "exposures",
@@ -288,7 +225,8 @@ export default function Digest() {
             type: "error",
             source: "expected-exposures",
           });
-          setExpectedOnSkyExpCount("-");
+          setExpectedExposuresFetchError(true);
+          setExpectedOnSkyExpCount(NO_DATA_DISPLAY);
         }
       })
       .finally(() => {
@@ -384,6 +322,7 @@ export default function Digest() {
         .catch((err) => {
           if (!abortController.signal.aborted) {
             console.error("Error fetching night reports:", err);
+            setNightreportFetchError(true);
             addNotification({
               type: "error",
               source: "night-reports",
@@ -411,6 +350,7 @@ export default function Digest() {
               type: "error",
               source: "jira-tickets",
             });
+            setJiraFetchError(true);
           }
         })
         .finally(() => {
@@ -430,6 +370,7 @@ export default function Digest() {
             "Error fetching flagged exposures from exposure Log:",
             err,
           );
+          setFlagsFetchError(true);
           addNotification({
             type: "error",
             source: "exposure-flags",
@@ -476,15 +417,30 @@ export default function Digest() {
   useEffect(() => {
     const abortController = new AbortController();
 
+    // BLOCK details only feed the exposure breakdown's Science Program labels,
+    // which the Scientific Nightly Digest renders as plain text.
+    if (isScientificNightlyDigest) {
+      setBlockLookupLoading(false);
+      return;
+    }
+    // Until exposures (which define the set of BLOCKs) have loaded, keep
+    // the block-lookup loading so the exposure-breakdown header shows no
+    // premature warning.
+    if (exposuresLoading) {
+      setBlockLookupLoading(true);
+      return;
+    }
+
     const blockKeys = [
       ...new Set(exposureFields.map((e) => e.science_program)),
     ];
-
-    // BLOCK details only feed the exposure breakdown's Science Program labels,
-    // which the Scientific Nightly Digest renders as plain text.
-    if (isScientificNightlyDigest || blockKeys.length === 0) {
-      return; // nothing to fetch
+    // No exposures, or no BLOCK programs to look up -> settled, nothing to fetch.
+    if (blockKeys.length === 0) {
+      setBlockLookupLoading(false);
+      return;
     }
+
+    setBlockLookupLoading(true);
     fetchBlockDetails(blockKeys, abortController)
       .then((blocks) => {
         setBlockLookup(blocks.data);
@@ -511,6 +467,7 @@ export default function Digest() {
             "Error fetching BLOCK descriptions from Zephyr/Jira",
             err,
           );
+          setBlockFetchError(true);
           addNotification({
             type: "error",
             source: "jira-blocks",
@@ -520,8 +477,13 @@ export default function Digest() {
             source: "zephyr-blocks",
           });
         }
+      })
+      .finally(() => {
+        if (!abortController.signal.aborted) {
+          setBlockLookupLoading(false);
+        }
       });
-  }, [exposureFields]);
+  }, [exposureFields, exposuresLoading]);
 
   const nightHours = useMemo(
     () => almanacInfo?.reduce((acc, day) => acc + day.night_hours, 0) ?? 0,
@@ -556,13 +518,170 @@ export default function Digest() {
     }
   }
 
-  const efficiencyText = Number.isFinite(efficiency) ? `${efficiency} %` : "NA";
+  const efficiencyText = Number.isFinite(efficiency)
+    ? `${efficiency} %`
+    : `${NO_DATA_DISPLAY} %`;
+
   const newTicketsCount = jiraTickets.filter((tix) => tix.isNew).length;
-  const warningContent = getDigestWarningContent({
-    almanacFetchError,
-    obsStatusFetchError,
-    obsStatusAvailability,
+
+  // Resolve the display state for each metric card. Unlike the applets, the
+  // metric cards are not wrapped in an AppletCard, so the resolved state is
+  // passed to them via props.
+  const exposureMetricState = resolveDisplayState({
+    sources: {
+      [SOURCE.EXPOSURES]: exposureFetchError
+        ? { ok: false }
+        : exposureFields.length === 0
+          ? { ok: true, noData: true }
+          : { ok: true },
+      [SOURCE.EXPECTED_EXPOSURES]: expectedExposuresFetchError
+        ? { ok: false }
+        : { ok: true },
+    },
+    required: [SOURCE.EXPOSURES],
+    loading: exposuresLoading || expectedExposuresLoading,
   });
+
+  const efficiencyState = resolveDisplayState({
+    sources: {
+      [SOURCE.EXPOSURES]: exposureFetchError
+        ? { ok: false }
+        : exposureFields.length === 0
+          ? { ok: true, noData: true }
+          : { ok: true },
+      [SOURCE.ALMANAC]: almanacFetchError
+        ? { ok: false }
+        : almanacInfo.length === 0
+          ? { ok: true, noData: true }
+          : { ok: true },
+      [SOURCE.OBS_STATUS]: buildObsStatusSource(
+        obsStatusAvailability,
+        obsStatusFetchError,
+      ),
+    },
+    required: [SOURCE.EXPOSURES, SOURCE.ALMANAC],
+    loading: almanacLoading || exposuresLoading || obsStatusLoading,
+  });
+
+  const timeLossState = resolveDisplayState({
+    sources: {
+      [SOURCE.OBS_STATUS]: buildObsStatusSource(
+        obsStatusAvailability,
+        obsStatusFetchError,
+      ),
+    },
+    required: [SOURCE.OBS_STATUS],
+    loading: obsStatusLoading,
+  });
+
+  const jiraState = resolveDisplayState({
+    sources: {
+      [SOURCE.JIRA_TICKETS]: jiraFetchError
+        ? { ok: false }
+        : jiraTickets.length === 0
+          ? { ok: true, noData: true }
+          : { ok: true },
+    },
+    required: [SOURCE.JIRA_TICKETS],
+    loading: jiraLoading,
+  });
+
+  const exposureMetricValue =
+    exposureMetricState.state === "error"
+      ? NO_DATA_DISPLAY
+      : exposureMetricState.state === "noData"
+        ? "0"
+        : onSkyExpCount;
+  const efficiencyValue =
+    efficiencyState.state === "error"
+      ? `${NO_DATA_DISPLAY}  %`
+      : efficiencyState.state === "noData"
+        ? "0 %"
+        : efficiencyText;
+  const jiraValue =
+    jiraState.state === "error"
+      ? NO_DATA_DISPLAY
+      : jiraState.state === "noData"
+        ? "0"
+        : newTicketsCount;
+  const jiraUpdatedValue =
+    jiraState.state === "error"
+      ? NO_DATA_DISPLAY
+      : jiraTickets.length - newTicketsCount;
+
+  // Use fetch errors and returned data to construct data source context
+  // to be passed into each component.
+  const observingConditionsSources = useMemo(
+    () => ({
+      [SOURCE.EXPOSURES]: exposureFetchError
+        ? { ok: false }
+        : exposureFields.length === 0
+          ? { ok: true, noData: true }
+          : { ok: true },
+      [SOURCE.ALMANAC]: almanacFetchError
+        ? { ok: false }
+        : almanacInfo.length === 0
+          ? { ok: true, noData: true }
+          : { ok: true },
+    }),
+    [exposureFetchError, exposureFields, almanacFetchError, almanacInfo],
+  );
+  const observingConditionsRequired = [SOURCE.EXPOSURES];
+
+  const exposureBreakdownSources = useMemo(
+    () => ({
+      [SOURCE.EXPOSURES]: exposureFetchError
+        ? { ok: false }
+        : exposureFields.length === 0
+          ? { ok: true, noData: true }
+          : { ok: true },
+      // An empty result (no flagged exposures) is good, so we deliberately
+      // never set noData here - only a fetch failure is a problem.
+      [SOURCE.EXPOSURE_FLAGS]: flagsFetchError ? { ok: false } : { ok: true },
+      // While the block lookup is still in flight, report it as ok so the
+      // header shows no warning until we know for sure whether it has data.
+      [SOURCE.BLOCK_DETAILS]: blockLookupLoading
+        ? { ok: true }
+        : blockFetchError
+          ? { ok: false }
+          : Object.keys(blockLookup).length === 0
+            ? { ok: true, noData: true }
+            : { ok: true },
+    }),
+    [
+      exposureFetchError,
+      exposureFields,
+      flagsFetchError,
+      blockFetchError,
+      blockLookup,
+      blockLookupLoading,
+    ],
+  );
+  const exposureBreakdownRequired = [SOURCE.EXPOSURES];
+
+  const nightSummarySources = useMemo(
+    () => ({
+      [SOURCE.NIGHT_REPORTS]: nightreportFetchError
+        ? { ok: false }
+        : reports.length === 0
+          ? { ok: true, noData: true }
+          : { ok: true },
+    }),
+    [nightreportFetchError, reports],
+  );
+  const nightSummaryRequired = [SOURCE.NIGHT_REPORTS];
+
+  const staticVisitMapSources = useMemo(
+    () => ({
+      [SOURCE.STATIC_VISIT_MAP]: staticVisitMapError
+        ? { ok: false }
+        : !staticVisitMaps?.staticMapUrl
+          ? { ok: true, noData: true }
+          : { ok: true },
+    }),
+    [staticVisitMapError, staticVisitMaps],
+  );
+  const staticVisitMapRequired = [SOURCE.STATIC_VISIT_MAP];
 
   const allLoaded =
     !exposuresLoading &&
@@ -600,7 +719,7 @@ export default function Digest() {
         >
           <MetricsCard
             icon={ShutterIcon}
-            data={onSkyExpCount}
+            data={exposureMetricValue}
             label="Nighttime exposures taken"
             metadata={
               telescope === "Simonyi"
@@ -612,11 +731,13 @@ export default function Digest() {
                 ? "On-sky exposures taken during the specified date range, and the expected number of exposures, as given by the latest simulated nominal night."
                 : "On-sky exposures taken during the specified date range."
             }
+            state={exposureMetricState.state}
+            message={exposureMetricState.message}
             loading={exposuresLoading || expectedExposuresLoading}
           />
           <MetricsCard
             icon={<EfficiencyChart value={efficiency} />}
-            data={efficiencyText}
+            data={efficiencyValue}
             label="Open-shutter (-weather) efficiency"
             tooltip={
               <>
@@ -626,32 +747,32 @@ export default function Digest() {
                 counted in total time.
                 <br />
                 <br />
-                *If Observatory Status data is not available, weather loss is
+                *Where Observatory Status data is not available, weather loss is
                 treated as <code>0</code>.
               </>
             }
+            state={efficiencyState.state}
+            message={efficiencyState.message}
+            warningAriaLabel="Efficiency data availability warning"
             loading={almanacLoading || exposuresLoading || obsStatusLoading}
-            statusIndicator={
-              <WarningTooltip ariaLabel="Efficiency data availability warning">
-                {warningContent}
-              </WarningTooltip>
-            }
           />
           <TimeLossCard
             obsStatusFaultLoss={obsStatusFaultLoss}
             obsStatusWeatherLoss={obsStatusWeatherLoss}
             obsStatusDowntime={obsStatusDowntime}
-            obsStatusAvailability={obsStatusAvailability}
-            warningContent={warningContent}
+            state={timeLossState.state}
+            message={timeLossState.message}
             obsStatusLoading={obsStatusLoading}
           />
           {!isScientificNightlyDigest && (
             <DialogMetricsCard
               icons={[JiraIconWhite, JiraIconBlue]}
-              data={newTicketsCount}
+              data={jiraValue}
               label="Jira tickets created"
-              metadata={`(${jiraTickets.length - newTicketsCount} updated)`}
+              metadata={`(${jiraUpdatedValue} updated)`}
               tooltip="Jira tickets created or updated within the specified date range."
+              state={jiraState.state}
+              message={jiraState.message}
               loading={jiraLoading}
               dialogTitle="Jira Tickets"
               dialogDescription="List of Jira tickets created or updated within the specified date range."
@@ -673,6 +794,8 @@ export default function Digest() {
               selectedTimeRange={selectedTimeRange}
               setSelectedTimeRange={setSelectedTimeRange}
               hoveredExposureIds={hoveredExposureIds}
+              sources={observingConditionsSources}
+              required={observingConditionsRequired}
             />
             <ExposureBreakdownApplet
               exposureFields={exposureFields}
@@ -682,8 +805,11 @@ export default function Digest() {
               blockLookup={blockLookup}
               exposuresLoading={exposuresLoading}
               flagsLoading={flagsLoading}
+              flagsError={flagsFetchError}
               onBarHover={onBarHover}
               onBarLeave={onBarLeave}
+              sources={exposureBreakdownSources}
+              required={exposureBreakdownRequired}
             />
           </div>
           <div
@@ -695,6 +821,8 @@ export default function Digest() {
               <NightSummary
                 reports={reports}
                 nightreportLoading={nightreportLoading}
+                sources={nightSummarySources}
+                required={nightSummaryRequired}
               />
             )}
             <ObservatoryStatusApplet
@@ -710,7 +838,8 @@ export default function Digest() {
             <VisitMapStaticApplet
               mapData={staticVisitMaps?.staticMapUrl}
               mapLoading={staticVisitMapLoading}
-              error={staticVisitMapError}
+              sources={staticVisitMapSources}
+              required={staticVisitMapRequired}
             />
           </div>
         </div>

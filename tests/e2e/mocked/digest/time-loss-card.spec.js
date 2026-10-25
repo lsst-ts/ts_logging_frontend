@@ -7,13 +7,19 @@ import {
   tooltipForTrigger,
 } from "../../helpers/digest-helpers.js";
 
+import { NO_DATA_DISPLAY } from "@/constants/DATA_SOURCES";
+import { OBSERVATORY_STATE_AVAILABILITY_STATUS } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS.js";
+
 const AVAILABLE_OBS_STATUS = (
   metrics = { fault_loss: 1.5, weather: 0.5, downtime: 0.25 },
 ) => ({
   entries: [],
   intervals: [],
   metrics,
-  availability: { status: "full", available_from: null },
+  availability: {
+    status: OBSERVATORY_STATE_AVAILABILITY_STATUS.FULL,
+    available_from: null,
+  },
   totals: metrics,
 });
 
@@ -81,7 +87,10 @@ test.describe("Digest page — Time Loss card", () => {
           weather: 3.75,
           downtime: 0.5,
         }),
-        availability: { status: "partial", available_from: "20260225" },
+        availability: {
+          status: OBSERVATORY_STATE_AVAILABILITY_STATUS.PARTIAL,
+          available_from: "20260225",
+        },
       },
     });
     await page.goto(DIGEST_URL);
@@ -104,9 +113,6 @@ test.describe("Digest page — Time Loss card", () => {
     await expect(tooltip).toContainText(
       "Observatory Status data is only available from 2026-02-25.",
     );
-    await expect(tooltip).toContainText(
-      "Where unavailable, status data is treated as 0.",
-    );
   });
 
   test("shows unavailable values and a warning when Observatory Status has no data", async ({
@@ -117,7 +123,10 @@ test.describe("Digest page — Time Loss card", () => {
         entries: [],
         intervals: [],
         metrics: {},
-        availability: { status: "none", available_from: null },
+        availability: {
+          status: OBSERVATORY_STATE_AVAILABILITY_STATUS.NONE,
+          available_from: null,
+        },
         totals: {},
       },
     });
@@ -125,13 +134,13 @@ test.describe("Digest page — Time Loss card", () => {
 
     const card = timeLossCard(page);
     await expect(card.locator("[data-slot='time-loss-fault']")).toHaveText(
-      "NA",
+      NO_DATA_DISPLAY,
     );
     await expect(card.locator("[data-slot='time-loss-weather']")).toHaveText(
-      "NA",
+      NO_DATA_DISPLAY,
     );
     await expect(card.locator("[data-slot='time-loss-downtime']")).toHaveText(
-      "NA",
+      NO_DATA_DISPLAY,
     );
 
     const warning = card.getByRole("button", {
@@ -141,9 +150,6 @@ test.describe("Digest page — Time Loss card", () => {
     const tooltip = await tooltipForTrigger(page, warning);
     await expect(tooltip).toContainText(
       "Observatory Status data is only available from the supported dayobs range.",
-    );
-    await expect(tooltip).toContainText(
-      "Where unavailable, status data is treated as 0.",
     );
   });
 
@@ -158,13 +164,13 @@ test.describe("Digest page — Time Loss card", () => {
 
     const card = timeLossCard(page);
     await expect(card.locator("[data-slot='time-loss-fault']")).toHaveText(
-      "NA",
+      NO_DATA_DISPLAY,
     );
     await expect(card.locator("[data-slot='time-loss-weather']")).toHaveText(
-      "NA",
+      NO_DATA_DISPLAY,
     );
     await expect(card.locator("[data-slot='time-loss-downtime']")).toHaveText(
-      "NA",
+      NO_DATA_DISPLAY,
     );
     const warning = card.getByRole("button", {
       name: "Time Loss data availability warning",
@@ -175,13 +181,16 @@ test.describe("Digest page — Time Loss card", () => {
     );
   });
 
-  test("combines Almanac and partial Observatory Status warnings", async ({
+  test("shows the partial-availability warning for Observatory Status", async ({
     page,
   }) => {
     await setupApiMocks(page, {
       "obs-status": {
         ...AVAILABLE_OBS_STATUS(),
-        availability: { status: "partial", available_from: "20260225" },
+        availability: {
+          status: OBSERVATORY_STATE_AVAILABILITY_STATUS.PARTIAL,
+          available_from: "20260225",
+        },
       },
     });
     await page.route("**/nightlydigest/api/almanac*", (route) => route.abort());
@@ -195,14 +204,11 @@ test.describe("Digest page — Time Loss card", () => {
     await warning.hover();
     const tooltip = await tooltipForTrigger(page, warning);
     await expect(tooltip).toContainText(
-      "Almanac data could not be fetched. Observatory Status data is only available from 2026-02-25.",
-    );
-    await expect(tooltip).toContainText(
-      "Where unavailable, status data is treated as 0.",
+      "Observatory Status data is only available from 2026-02-25.",
     );
   });
 
-  test("combines Almanac and Observatory Status fetch failures", async ({
+  test("shows the Observatory Status error when it cannot be fetched", async ({
     page,
   }) => {
     await setupApiMocks(page);
@@ -218,7 +224,7 @@ test.describe("Digest page — Time Loss card", () => {
     await expect(warning).toHaveCount(1);
     await warning.hover();
     await expect(await tooltipForTrigger(page, warning)).toHaveText(
-      "Almanac and Observatory Status data could not be fetched.",
+      "Observatory Status data could not be fetched.",
     );
   });
 });

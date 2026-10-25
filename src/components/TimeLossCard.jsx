@@ -6,26 +6,27 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import WarningTooltip from "@/components/WarningTooltip";
 
+import { NO_DATA_DISPLAY } from "@/constants/DATA_SOURCES";
+
 import InfoIcon from "../assets/InfoIcon.svg";
 import TimeLossIcon from "../assets/TimeLossIcon.svg";
-
-import { OBSERVATORY_STATE_AVAILABILITY_STATUS } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
 
 /**
  * Displays the observing time lost to fault, weather, and downtime according
  * to Observatory Status records.
  *
- * When Observatory Status data is only partially available (or unavailable),
- * the affected values are shown as `NA` and a warning tooltip is rendered in
- * the header. The card is clickable only when `onClick` is provided and data
- * is not still loading.
+ * The resolved display state drives the values: on `error` (a fetch failure,
+ * or Observatory Status data unavailable) the three values show a no-data
+ * placeholder and a warning icon beside header; on `ready` (full or partial data)
+ * the values render, with a warning when partial. The card is clickable only
+ * when `onClick` is provided and data is not still loading.
  *
  * @param {Object} props
  * @param {number} [props.obsStatusFaultLoss] Fault loss in hours.
  * @param {number} [props.obsStatusWeatherLoss] Weather loss in hours.
  * @param {number} [props.obsStatusDowntime] Downtime in hours.
- * @param {Object} [props.obsStatusAvailability] Availability metadata for the observatory-status feed.
- * @param {React.ReactNode} [props.warningContent=null] Content for the header warning tooltip.
+ * @param {string} [props.state="ready"] The resolved display state.
+ * @param {string} [props.message=""] The resolved display message (for warnings).
  * @param {boolean} [props.obsStatusLoading=false] Whether Observatory Status data is still loading.
  * @param {Function|boolean} [props.onClick=false] Click handler for the card, or `false` to disable.
  */
@@ -33,28 +34,24 @@ export default function TimeLossCard({
   obsStatusFaultLoss,
   obsStatusWeatherLoss,
   obsStatusDowntime,
-  obsStatusAvailability,
-  warningContent = null,
+  state = "ready",
+  message = "",
   obsStatusLoading = false,
   onClick = false,
 }) {
   const loading = obsStatusLoading;
   const isClickable = onClick && !loading;
+  const showValues = state !== "error";
 
   const heading = "Time Loss (hours)";
 
-  const availability = obsStatusAvailability ?? {};
-  const availabilityStatus =
-    availability.status ?? OBSERVATORY_STATE_AVAILABILITY_STATUS.NONE;
   const formatHours = (value) =>
-    typeof value === "number" && Number.isFinite(value)
+    showValues && typeof value === "number" && Number.isFinite(value)
       ? value.toFixed(2)
-      : "NA";
+      : NO_DATA_DISPLAY;
 
-  const isFullyAvailable =
-    availabilityStatus === OBSERVATORY_STATE_AVAILABILITY_STATUS.FULL;
-  const isNotAvailable =
-    availabilityStatus === OBSERVATORY_STATE_AVAILABILITY_STATUS.NONE;
+  const showWarning =
+    !loading && (state === "error" || state === "ready") && message;
 
   return (
     // Card
@@ -69,9 +66,9 @@ export default function TimeLossCard({
       <div className="flex flex-row justify-between h-12">
         <div className="flex gap-2 h-8 place-items-center-safe">
           <div className="text-2xl">{heading}</div>
-          {!loading && (
+          {showWarning && (
             <WarningTooltip ariaLabel="Time Loss data availability warning">
-              {warningContent}
+              {message}
             </WarningTooltip>
           )}
         </div>
@@ -87,19 +84,9 @@ export default function TimeLossCard({
               data-slot="time-loss-fault-loading"
               className="h-3 w-10 bg-teal-700"
             />
-          ) : // Show data when availabile
-          isFullyAvailable ? (
+          ) : (
             <div data-slot="time-loss-fault">
               {formatHours(obsStatusFaultLoss)}
-            </div>
-          ) : (
-            <div
-              data-slot="time-loss-fault"
-              className="flex items-center gap-1"
-            >
-              <span>
-                {isNotAvailable ? "NA" : formatHours(obsStatusFaultLoss)}
-              </span>
             </div>
           )}
           <div>Weather:</div>
@@ -108,18 +95,9 @@ export default function TimeLossCard({
               data-slot="time-loss-weather-loading"
               className="h-3 w-10 bg-teal-700"
             />
-          ) : isFullyAvailable ? (
+          ) : (
             <div data-slot="time-loss-weather">
               {formatHours(obsStatusWeatherLoss)}
-            </div>
-          ) : (
-            <div
-              data-slot="time-loss-weather"
-              className="flex items-center gap-1"
-            >
-              <span>
-                {isNotAvailable ? "NA" : formatHours(obsStatusWeatherLoss)}
-              </span>
             </div>
           )}
           <div>Downtime:</div>
@@ -128,18 +106,9 @@ export default function TimeLossCard({
               data-slot="time-loss-downtime-loading"
               className="h-3 w-10 bg-teal-700"
             />
-          ) : isFullyAvailable ? (
+          ) : (
             <div data-slot="time-loss-downtime">
               {formatHours(obsStatusDowntime)}
-            </div>
-          ) : (
-            <div
-              data-slot="time-loss-downtime"
-              className="flex items-center gap-1"
-            >
-              <span>
-                {isNotAvailable ? "NA" : formatHours(obsStatusDowntime)}
-              </span>
             </div>
           )}
         </div>
@@ -181,6 +150,10 @@ export default function TimeLossCard({
                 DOWNTIME
               </strong>{" "}
               status.
+              <br />
+              <br />
+              Where Observatory Status data is not available, weather loss is
+              treated as <code>0</code>.
             </p>
           </PopoverContent>
         </Popover>
