@@ -1,5 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
+import AppletCard, {
+  EmptyDisplayState,
+  useAppletState,
+} from "@/components/AppletCard";
 import {
   Popover,
   PopoverContent,
@@ -80,7 +84,7 @@ function SelectObsDay({ days, selectedDay, onChange }) {
         className={
           "!h-[1rem] text-sidebar-foreground text-xs px-2 py-0" +
           " inline-flex bg-white justify-between font-normal" +
-          " focus-visible:ring-4 focus-visible:ring-green-500/50"
+          " cursor-pointer focus-visible:ring-4 focus-visible:ring-green-500/50"
         }
       >
         <SelectValue />
@@ -123,7 +127,42 @@ function handleDownload(reports) {
   console.log(textContent);
 }
 
-function NightSummary({ reports = [], nightreportLoading = false }) {
+/**
+ * A wrapper component that renders the Night Summary applet's content, or an
+ * empty state if the applet has no data or is in an error state.
+ *
+ * This component is used to wrap the content of the NightSummary applet, so
+ * that the applet can display a consistent empty state when there are no
+ * reports or when there is an error fetching data.
+ *
+ * @param {Object} props
+ * @param {React.ReactNode} props.children The content to render if the applet has data.
+ */
+function NightSummaryBody({ children }) {
+  // Get the applet's display state from context, which is provided by the parent AppletCard.
+  const { state, message } = useAppletState();
+  if (state === "noData" || state === "error") {
+    return <EmptyDisplayState message={message} />;
+  }
+  return children;
+}
+
+/**
+ * Render the night summary applet with a list of per-night reports and a
+ * day selector, plus download to text.
+ *
+ * @param {Object} props
+ * @param {Array} [props.reports=[]] Nightly (day) summary reports.
+ * @param {boolean} [props.nightreportLoading=false] Whether reports are loading.
+ * @param {Object} [props.sources={}] Map of source -> status.
+ * @param {string[]} [props.required=[]] Sources required for a sensible display.
+ */
+function NightSummary({
+  reports = [],
+  nightreportLoading = false,
+  sources = {},
+  required = [],
+}) {
   const [selectedDay, setSelectedDay] = useState(null);
 
   const [prevReports, setPrevReports] = useState(reports);
@@ -179,29 +218,16 @@ function NightSummary({ reports = [], nightreportLoading = false }) {
     };
   }, [nightreportLoading, reports]);
 
-  const renderReports = (dialog = false) => (
-    <>
-      {nightreportLoading ? (
-        <Skeleton className="w-full h-full bg-stone-900" />
-      ) : reports.length === 0 ? (
-        <div className="flex h-full w-full items-center justify-center">
-          No reports available
-        </div>
-      ) : (
-        reports.map((report) => (
-          <Report
-            key={dialog ? "dialog-" + report.id : report.id}
-            reportRef={
-              dialog
-                ? null
-                : (node) => setReportElementRef(report.day_obs, node)
-            }
-            {...report}
-          />
-        ))
-      )}
-    </>
-  );
+  const renderReports = (dialog = false) =>
+    reports.map((report) => (
+      <Report
+        key={dialog ? "dialog-" + report.id : report.id}
+        reportRef={
+          dialog ? null : (node) => setReportElementRef(report.day_obs, node)
+        }
+        {...report}
+      />
+    ));
 
   const availableDays = reports.map((report) => report.day_obs);
   const showObsDaySelector = !nightreportLoading && availableDays.length > 1;
@@ -209,82 +235,76 @@ function NightSummary({ reports = [], nightreportLoading = false }) {
     availableDays.length > 1 ? "Night Reports" : "Night Report";
 
   return (
-    <Card className="border-none p-0 bg-stone-800 gap-2">
-      <CardHeader
-        className={
-          "flex flex-wrap gap-x-4" +
-          " bg-teal-900 p-4 rounded-sm align-center items-center"
-        }
-      >
-        <CardTitle className="text-white font-thin">{appletTitle}</CardTitle>
-        <div className="flex gap-x-2 grow">
-          {showObsDaySelector && (
-            <SelectObsDay
-              days={availableDays}
-              selectedDay={selectedDay}
-              onChange={handleSelectedDay}
-            />
-          )}
-          <div className="flex flex-row gap-2 ml-auto">
-            <Dialog>
-              <DialogTrigger
-                className="self-end min-w-4"
-                aria-label={`Open ${appletTitle.toLowerCase()} in fullscreen`}
-              >
-                <img src={FullScreenIcon} alt="Fullscreen" />
-              </DialogTrigger>
-              <DialogContent className="bg-teal-900/75 border-none p-8 !w-auto !max-w-7xl !max-h-[90vh] grid-rows-[auto_1fr] text-lg">
-                <DialogHeader>
-                  <DialogTitle className=" text-neutral-200 text-2xl">
-                    {appletTitle}
-                  </DialogTitle>
-                </DialogHeader>
-                <CardContent className="flex flex-col gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 font-thin min-w-[30vw] min-h-[30vh] box-border overflow-y-auto">
-                  {renderReports(true)}
-                </CardContent>
-              </DialogContent>
-            </Dialog>
-            <Popover>
-              <PopoverTrigger
-                className="self-end min-w-4"
-                aria-label={`Download ${appletTitle.toLowerCase()} data`}
-              >
-                <img
-                  src={DownloadIcon}
-                  onClick={() => handleDownload(reports)}
-                />
-              </PopoverTrigger>
-              <PopoverContent className="bg-black text-white text-sm border-yellow-700">
-                This is a placeholder for the download/export button. Once
-                implemented, clicking here will download this Applet's data to a
-                .txt file.
-              </PopoverContent>
-            </Popover>
-            <Popover>
-              <PopoverTrigger
-                className="self-end min-w-4"
-                aria-label={`${
-                  appletTitle.charAt(0).toUpperCase() +
-                  appletTitle.slice(1).toLowerCase()
-                } information`}
-              >
-                <img src={InfoIcon} />
-              </PopoverTrigger>
-              <PopoverContent className="bg-black text-white text-sm border-yellow-700">
-                Observers night report retrieved from the nightreport API.
-              </PopoverContent>
-            </Popover>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent
-        ref={reportsContainerRef}
-        style={{ maxHeight: "100%" }}
-        className="grid gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 h-80 font-thin overflow-y-auto"
-      >
-        {renderReports()}
-      </CardContent>
-    </Card>
+    <AppletCard
+      title={appletTitle}
+      titleBadge={
+        showObsDaySelector && (
+          <SelectObsDay
+            days={availableDays}
+            selectedDay={selectedDay}
+            onChange={handleSelectedDay}
+          />
+        )
+      }
+      sources={sources}
+      required={required}
+      loading={nightreportLoading}
+      skeleton={<Skeleton className="w-full h-full bg-stone-900" />}
+      actions={
+        <>
+          <Dialog>
+            <DialogTrigger
+              className="self-end min-w-4 cursor-pointer"
+              aria-label={`Open ${appletTitle.toLowerCase()} in fullscreen`}
+            >
+              <img src={FullScreenIcon} alt="Fullscreen" />
+            </DialogTrigger>
+            <DialogContent className="bg-teal-900/75 border-none p-8 !w-auto !max-w-7xl !max-h-[90vh] grid-rows-[auto_1fr] text-lg">
+              <DialogHeader>
+                <DialogTitle className=" text-neutral-200 text-2xl">
+                  {appletTitle}
+                </DialogTitle>
+              </DialogHeader>
+              <CardContent className="flex flex-col gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 font-thin min-w-[30vw] min-h-[30vh] box-border overflow-y-auto">
+                <NightSummaryBody>{renderReports(true)}</NightSummaryBody>
+              </CardContent>
+            </DialogContent>
+          </Dialog>
+          <Popover>
+            <PopoverTrigger
+              className="self-end min-w-4 cursor-pointer"
+              aria-label={`Download ${appletTitle.toLowerCase()} data`}
+            >
+              <img src={DownloadIcon} onClick={() => handleDownload(reports)} />
+            </PopoverTrigger>
+            <PopoverContent className="bg-black text-white text-sm border-yellow-700">
+              This is a placeholder for the download/export button. Once
+              implemented, clicking here will download this Applet's data to a
+              .txt file.
+            </PopoverContent>
+          </Popover>
+          <Popover>
+            <PopoverTrigger
+              className="self-end min-w-4 cursor-pointer"
+              aria-label={`${
+                appletTitle.charAt(0).toUpperCase() +
+                appletTitle.slice(1).toLowerCase()
+              } information`}
+            >
+              <img src={InfoIcon} />
+            </PopoverTrigger>
+            <PopoverContent className="bg-black text-white text-sm border-yellow-700">
+              Observers night report retrieved from the nightreport API.
+            </PopoverContent>
+          </Popover>
+        </>
+      }
+      readyClassName="h-80 overflow-y-auto"
+      maintainHeight
+      contentRef={reportsContainerRef}
+    >
+      <NightSummaryBody>{renderReports()}</NightSummaryBody>
+    </AppletCard>
   );
 }
 
