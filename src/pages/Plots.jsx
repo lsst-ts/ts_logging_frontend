@@ -1,16 +1,26 @@
 import { useEffect, useState, useMemo } from "react";
-
 import { useSearch } from "@tanstack/react-router";
 
-import { Skeleton } from "@/components/ui/skeleton";
-import { NotificationBannerStack } from "@/components/NotificationBannerStack";
-import { useNotifications } from "@/hooks/useNotifications";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
-import PlotVisibilityPopover from "@/components/PlotVisibilityPopover";
-import PlotFormatPopover from "@/components/PlotFormatPopover";
+import Header from "@/components/Header";
+import {
+  EmptyDisplayState,
+  renderHeaderWarning,
+} from "@/components/AppletCard";
+import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
+import { NotificationBannerStack } from "@/components/NotificationBannerStack";
+import { SOURCE } from "@/constants/DATA_SOURCES";
+import { resolveDisplayState } from "@/utils/displayState";
 import { TELESCOPES } from "@/components/Parameters";
+import {
+  PLOT_DEFINITIONS,
+  BAND_COLORS,
+  PLOT_KEY_TIME,
+  PLOT_KEY_SEQUENCE,
+} from "@/components/PLOT_DEFINITIONS";
 import {
   CircleShape,
   TriangleShape,
@@ -19,44 +29,42 @@ import {
   StarShape,
   AsteriskShape,
 } from "@/components/plotDotShapes";
-
+import PlotFormatPopover from "@/components/PlotFormatPopover";
+import PlotVisibilityPopover from "@/components/PlotVisibilityPopover";
+import SelectedTimeRangeBar from "@/components/SelectedTimeRangeBar";
+import TipsCard from "@/components/TipsCard";
 import TimelineChart from "@/components/TimelineChart";
 import TimeseriesPlot from "@/components/TimeseriesPlot";
-import {
-  PLOT_DEFINITIONS,
-  BAND_COLORS,
-  PLOT_KEY_TIME,
-  PLOT_KEY_SEQUENCE,
-} from "@/components/PLOT_DEFINITIONS";
 
-import PageHeader from "@/components/PageHeader";
-import TipsCard from "@/components/TipsCard";
-import SelectedTimeRangeBar from "@/components/SelectedTimeRangeBar";
-
+import { PlotDataContext } from "@/contexts/PlotDataContext";
+import { isScientificNightlyDigest } from "@/utils/appConfig";
+import { calculateChartData } from "@/utils/chartCalculations";
 import {
   fetchAlmanac,
   fetchDataLogEntriesFromConsDB,
 } from "@/utils/fetchUtils";
 import {
-  DEFAULT_PIXEL_SCALE_MEDIAN,
-  PSF_SIGMA_FACTOR,
-  prettyTitleFromKey,
-} from "@/utils/utils";
+  prepareAlmanacData,
+  prepareMoonIntervals,
+} from "@/utils/timelineUtils";
 import {
   generateDayObsRange,
   isoToUTC,
   getDayobsStartUTC,
 } from "@/utils/timeUtils";
 import {
-  prepareAlmanacData,
-  prepareMoonIntervals,
-} from "@/utils/timelineUtils";
-import { calculateChartData } from "@/utils/chartCalculations";
-import { isScientificNightlyDigest } from "@/utils/appConfig";
-import { PlotDataContext } from "@/contexts/PlotDataContext";
-import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
-import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
+  DEFAULT_PIXEL_SCALE_MEDIAN,
+  PSF_SIGMA_FACTOR,
+  prettyTitleFromKey,
+} from "@/utils/utils";
 
+import { useNotifications } from "@/hooks/useNotifications";
+import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
+
+/**
+ * Render the Plots page: plotted data from the selected telescope and
+ * time range with dynamic plot selection and full-range timelines.
+ */
 function Plots() {
   // Routing and URL params
   const { startDayobs, endDayobs, telescope } = useSearch({ from: "/plots" });
@@ -79,6 +87,12 @@ function Plots() {
   const [moonValues, setMoonValues] = useState([]);
   const [moonIntervals, setMoonIntervals] = useState([]);
   const [almanacLoading, setAlmanacLoading] = useState(true);
+
+  // Source status flags for page-level no-data / error presentation
+  const [dataLogNoData, setDataLogNoData] = useState(false);
+  const [dataLogError, setDataLogError] = useState(false);
+  const [almanacNoData, setAlmanacNoData] = useState(false);
+  const [almanacError, setAlmanacError] = useState(false);
 
   // Time range state synced with URL
   const { selectedTimeRange, setSelectedTimeRange, fullTimeRange } =
@@ -156,6 +170,11 @@ function Plots() {
     setTwilightValues([]);
     setIllumValues([]);
     setMoonValues([]);
+    // Source status flags
+    setDataLogNoData(false);
+    setDataLogError(false);
+    setAlmanacNoData(false);
+    setAlmanacError(false);
   }
 
   // Navigation
@@ -201,6 +220,7 @@ function Plots() {
       .then((consDBData) => {
         const dataLog = consDBData.data_log ?? [];
         if (dataLog.length === 0) {
+          setDataLogNoData(true);
           addNotification({
             type: "noData",
             source: "consdb",
@@ -214,6 +234,7 @@ function Plots() {
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
+          setDataLogError(true);
           console.error("Error fetching exposures from ConsDB:", err);
           addNotification({
             type: "error",
@@ -229,6 +250,9 @@ function Plots() {
 
     fetchAlmanac(startDayobs, queryEndDayobs, abortController)
       .then((almanac) => {
+        if (!almanac || almanac.length === 0) {
+          setAlmanacNoData(true);
+        }
         const { twilightValues, illumValues, moonValues } =
           prepareAlmanacData(almanac);
         setTwilightValues(twilightValues);
@@ -237,6 +261,7 @@ function Plots() {
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
+          setAlmanacError(true);
           console.error("Error fetching almanac data:", err);
           addNotification({
             type: "error",
@@ -299,8 +324,33 @@ function Plots() {
     twilightValues,
   ]);
 
-  const loading = dataLogLoading || almanacLoading;
-  const displayedNotifications = loading
+  const plotsSources = useMemo(
+    () => ({
+      [SOURCE.DATA_LOG]: dataLogError
+        ? { ok: false }
+        : dataLogNoData
+          ? { ok: true, noData: true }
+          : { ok: true },
+      [SOURCE.ALMANAC]: almanacError
+        ? { ok: false }
+        : almanacNoData
+          ? { ok: true, noData: true }
+          : { ok: true },
+    }),
+    [dataLogError, dataLogNoData, almanacError, almanacNoData],
+  );
+
+  // A single resolved status drives the whole page: required-source
+  // problems (data log) show a message in the plot area, while optional-
+  // source (almanac) problems surface as a header warning once ready.
+  const plotsState = resolveDisplayState({
+    sources: plotsSources,
+    required: [SOURCE.DATA_LOG],
+    loading: dataLogLoading || almanacLoading,
+  });
+  const isLoading = plotsState.state === "loading";
+
+  const displayedNotifications = isLoading
     ? processedNotifications.filter(
         (notification) => notification.type !== "error",
       )
@@ -309,22 +359,21 @@ function Plots() {
   // Temporary display message for AuxTel queries
   if (telescope === "AuxTel") {
     return (
-      <div className="flex flex-col w-full p-8 gap-4">
-        <PageHeader
+      <div className="flex flex-col h-full w-full p-8 gap-4">
+        <Header
+          isPageHeader={true}
           title="Plots"
           description="An interactive visual overview of exposure metadata from the ConsDB and related sources."
+          className="min-h-12"
         />
-        <p className="text-white font-thin text-center">
-          AuxTel is currently not supported in this page. Contact the Logging
-          team if this is a priority for you.
-        </p>
+        <EmptyDisplayState message="AuxTel is currently not supported on this page. Contact the Logging team if this is a priority for you." />
       </div>
     );
   }
 
   return (
     <>
-      <div className="flex flex-col w-full p-8 gap-4">
+      <div className="flex flex-col h-full w-full p-8 gap-4">
         {displayedNotifications.length > 0 && (
           <NotificationBannerStack
             notifications={displayedNotifications}
@@ -334,9 +383,11 @@ function Plots() {
         {/* Page Header, Timeline & Tips Banners */}
         <div className="flex flex-col gap-2">
           {/* Page title + buttons */}
-          <PageHeader
+          <Header
+            isPageHeader={true}
             title="Plots"
             description="An interactive visual overview of exposure metadata from the ConsDB and related sources."
+            titleBadge={renderHeaderWarning(plotsState)}
             actions={
               <>
                 {/* Button to toggle timeline visibility */}
@@ -393,7 +444,7 @@ function Plots() {
           {/* Timeline */}
           {timelineVisible && (
             <Card className="grid gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 font-thin shadow-stone-900 shadow-md">
-              {loading ? (
+              {isLoading ? (
                 <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
               ) : (
                 <ContextMenuWrapper
@@ -432,7 +483,7 @@ function Plots() {
             fullTimeRange={fullTimeRange}
             timezone="TAI"
             rightContent={
-              loading ? (
+              isLoading ? (
                 <Skeleton className="h-5 w-64 bg-teal-700 inline-block" />
               ) : (
                 `${filteredCount} of ${dataLogEntries.length} exposures selected`
@@ -478,81 +529,79 @@ function Plots() {
           )}
         </div>
 
-        {/* Time Window Inputs & Controls */}
-        {loading ? (
-          <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
-        ) : (
-          <div className="flex flex-row w-full justify-between items-center gap-8 mt-4">
-            {/* Show/Hide Plots button */}
-            <PlotVisibilityPopover
-              dataLogEntries={dataLogEntries}
-              visiblePlots={visiblePlots}
-              setVisiblePlots={setVisiblePlots}
-            />
+        {/* Plot Settings & Legend */}
+        <div className="flex flex-row w-full justify-between items-center gap-8 mt-4">
+          {/* Show/Hide Plots button */}
+          <PlotVisibilityPopover
+            dataLogEntries={dataLogEntries}
+            visiblePlots={visiblePlots}
+            setVisiblePlots={setVisiblePlots}
+          />
 
-            {/* Conditionally display band icon/color key */}
-            {bandMarker !== "none" && (
-              <div className="flex flex-row h-10 px-4 justify-between items-center gap-3 border border-1 border-white rounded-md text-white font-thin">
-                <div>Bands:</div>
-                {Object.entries(BAND_COLORS).map(([band, color]) => {
-                  const shapeMap = {
-                    u: CircleShape,
-                    g: TriangleShape,
-                    r: FlippedTriangleShape,
-                    i: SquareShape,
-                    z: StarShape,
-                    y: AsteriskShape,
-                  };
+          {/* Conditionally display band icon/color key */}
+          {bandMarker !== "none" && (
+            <div className="flex flex-row h-10 px-4 justify-between items-center gap-3 border border-1 border-white rounded-md text-white font-thin">
+              <div>Bands:</div>
+              {Object.entries(BAND_COLORS).map(([band, color]) => {
+                const shapeMap = {
+                  u: CircleShape,
+                  g: TriangleShape,
+                  r: FlippedTriangleShape,
+                  i: SquareShape,
+                  z: StarShape,
+                  y: AsteriskShape,
+                };
 
-                  const ShapeComponent = shapeMap[band];
+                const ShapeComponent = shapeMap[band];
 
-                  return (
-                    <div key={band} className="flex items-center gap-1">
-                      <svg width="16" height="16">
-                        {bandMarker === "bandColorsIcons" && ShapeComponent ? (
-                          <ShapeComponent cx={8} cy={8} fill={color} r={4} />
-                        ) : (
-                          <CircleShape cx={8} cy={8} fill={color} r={5} />
-                        )}
-                      </svg>
-                      <span>{band}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                return (
+                  <div key={band} className="flex items-center gap-1">
+                    <svg width="16" height="16">
+                      {bandMarker === "bandColorsIcons" && ShapeComponent ? (
+                        <ShapeComponent cx={8} cy={8} fill={color} r={4} />
+                      ) : (
+                        <CircleShape cx={8} cy={8} fill={color} r={5} />
+                      )}
+                    </svg>
+                    <span>{band}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
-            {/* Plot format controls */}
-            <PlotFormatPopover
-              xAxisType={xAxisType}
-              setXAxisType={setXAxisType}
-              xAxisShow={xAxisShow}
-              setXAxisShow={setXAxisShow}
-              plotShape={plotShape}
-              setPlotShape={setPlotShape}
-              plotColor={plotColor}
-              setPlotColor={setPlotColor}
-              bandMarker={bandMarker}
-              setBandMarker={setBandMarker}
-            />
+          {/* Plot format controls */}
+          <PlotFormatPopover
+            xAxisType={xAxisType}
+            setXAxisType={setXAxisType}
+            xAxisShow={xAxisShow}
+            setXAxisShow={setXAxisShow}
+            plotShape={plotShape}
+            setPlotShape={setPlotShape}
+            plotColor={plotColor}
+            setPlotColor={setPlotColor}
+            bandMarker={bandMarker}
+            setBandMarker={setBandMarker}
+          />
+        </div>
+
+        {/* Plots, skeletons, or centred message */}
+        {isLoading ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-40">
+            {/* Four loading skeletons */}
+            {Array(4)
+              .fill(true)
+              .map((_, i) => (
+                <Skeleton
+                  key={i}
+                  className="w-full h-80 bg-stone-700 rounded-md"
+                />
+              ))}
           </div>
-        )}
-
-        {/* Plots */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-40">
-          {loading ? (
-            <>
-              {/* 4 loading plot skeletons */}
-              {Array(4)
-                .fill(true)
-                .map((_, i) => (
-                  <Skeleton
-                    key={i}
-                    className="w-full h-80 bg-stone-700 rounded-md"
-                  />
-                ))}
-            </>
-          ) : (
+        ) : plotsState.state === "error" || plotsState.state === "noData" ? (
+          <EmptyDisplayState message={plotsState.message} />
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-40">
             <PlotDataContext.Provider value={plotDataContextValue}>
               {visiblePlots.map((key, idx) => {
                 const def = PLOT_DEFINITIONS.find((p) => p.key === key);
@@ -581,8 +630,8 @@ function Plots() {
                 );
               })}
             </PlotDataContext.Provider>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </>
   );
