@@ -14,6 +14,11 @@ import { GLOBAL_SEARCH_PARAMS } from "@/routes";
 export const DEFAULT_EXTERNAL_INSTANCE_URL =
   "https://usdf-rsp.slac.stanford.edu";
 
+export const TELESCOPE_PREFIXES = {
+  MC: "Simonyi",
+  AT: "AuxTel",
+};
+
 export const SITE_CONFIGURATION = Object.freeze({
   "usdf-rsp.slac.stanford.edu": {
     rubinTVSiteSuffix: "summit-usdf",
@@ -339,6 +344,48 @@ const getRubinTVUrl = (telescope, dayObs, seqNum) => {
 };
 
 /**
+ * Generates the Nightly Digest Context Feed URL based on telescope, dayObs, and TAI obsSelectedTime
+ *
+ * @param {string} telescope - The telescope name ("Simonyi" or "AuxTel").
+ * @param {string|number} dayObs - Observation day (e.g. 20260521)
+ * @param {string|number} UTCSelectedMillis - the UTC ms since the epoch time of what you want selected
+ * @param {number} [windowSeconds=30] - Total size of time window in seconds (default: 30s, ±15s around selectedTime)
+ * @returns {string|null} Formatted URL string or null if missing required parameters.
+ */
+const getContextFeedUrl = (
+  telescope,
+  dayObs,
+  utcSelectedMillis,
+  windowSeconds = 30,
+) => {
+  if (!dayObs || !utcSelectedMillis) return null;
+
+  if (isNaN(utcSelectedMillis)) return null;
+
+  // Convert UTC milliseconds to UTC microseconds
+  const utcSelectedMicros = utcSelectedMillis * 1000;
+
+  // Compute startTime and endTime (half the window around the selected time)
+  const halfWindowMs = (windowSeconds / 2) * 1000;
+  const startTime = utcSelectedMillis - halfWindowMs;
+  const endTime = utcSelectedMillis + halfWindowMs;
+
+  const dayObsStr = String(dayObs);
+
+  const baseUrl = "/nightlydigest/context-feed";
+  const params = new URLSearchParams({
+    startDayobs: dayObsStr,
+    endDayobs: dayObsStr,
+    telescope: telescope || "",
+    selectedTime: String(utcSelectedMicros),
+    startTime: String(startTime),
+    endTime: String(endTime),
+  });
+
+  return `${baseUrl}?${params.toString()}`;
+};
+
+/**
  * Retrieves the site configuration for a given host.
  *
  * @param {string} host - The hostname (without protocol) to look up.
@@ -632,6 +679,7 @@ export {
   mergeAllDataLogSources,
   mergeContextFeedSources,
   getRubinTVUrl,
+  getContextFeedUrl,
   getSiteConfig,
   buildNavigationWithSearchParams,
   getNightSummaryLink,
