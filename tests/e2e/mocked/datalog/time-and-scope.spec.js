@@ -114,12 +114,12 @@ test.describe("Data-log page — runtime telescope switch", () => {
 
     await expect(page).toHaveURL(/telescope=AuxTel/);
 
-    // AuxTel defaults: exposure_name visible, exposure_id and Filter absent
-    await expect(
-      page.getByRole("columnheader", { name: /^Exposure Name/ }),
-    ).toBeVisible();
+    // AuxTel defaults: exposure_id visible, exposure_name and Filter absent
     await expect(
       page.getByRole("columnheader", { name: /^Exposure Id/ }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("columnheader", { name: /^Exposure Name/ }),
     ).toHaveCount(0);
     await expect(
       page.getByRole("columnheader", { name: /^Filter/ }),
