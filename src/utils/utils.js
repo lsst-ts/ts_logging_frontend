@@ -637,7 +637,6 @@ export {
   getNightSummaryLink,
   DEFAULT_PIXEL_SCALE_MEDIAN,
   PSF_SIGMA_FACTOR,
-  ISO_DATETIME_FORMAT,
   getDayobsAlmanac,
   calculateSumExpTimeBetweenTwilights,
   parseBackendVersion,
