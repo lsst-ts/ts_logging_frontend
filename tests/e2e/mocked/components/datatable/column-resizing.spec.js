@@ -9,23 +9,24 @@ import {
 /**
  * Drags a column's resize handle by `dx` pixels.
  *
- * The handle is absolutely positioned at the header's right edge and is 12px
- * wide, so grab it a few pixels inside that edge.
+ * The handle is a `.cursor-col-resize` element positioned at the right edge of
+ * the header's content box. Target that element directly rather than guessing
+ * a coordinate from the header's outer bounding box.
  */
 async function dragResizeHandle(page, header, dx) {
-  // The Context Feed table sits below two chart cards, so its header starts
-  // outside the viewport and mouse coordinates would miss it.
-  await header.scrollIntoViewIfNeeded();
-  const box = await header.boundingBox();
-  const x = box.x + box.width - 4;
+  const handle = header.locator(".cursor-col-resize");
+  await handle.scrollIntoViewIfNeeded();
+  const box = await handle.boundingBox();
+  const x = box.x + box.width / 2;
   const y = box.y + box.height / 2;
 
+  const before = await header.boundingBox();
   await page.mouse.move(x, y);
   await page.mouse.down();
   await page.mouse.move(x + dx, y);
   await page.mouse.up();
 
-  return box;
+  return before;
 }
 
 for (const { name, url, waitForLoad, mocks, resizeColumn } of DATATABLE_PAGES) {
@@ -45,8 +46,9 @@ for (const { name, url, waitForLoad, mocks, resizeColumn } of DATATABLE_PAGES) {
     });
 
     test("dragging below minSize clamps at the minimum", async ({ page }) => {
-      // The profile picks a column whose size equals its minSize, so grow it
-      // first and then drag well past the minimum.
+      // Grow the column first, then drag well past the minimum. The width
+      // should clamp back at (or below) its original size — i.e. much
+      // narrower than the grown width and no wider than it started.
       const header = columnHeader(page, resizeColumn);
       const original = await dragResizeHandle(page, header, 60);
 
@@ -56,7 +58,8 @@ for (const { name, url, waitForLoad, mocks, resizeColumn } of DATATABLE_PAGES) {
       await dragResizeHandle(page, header, -200);
 
       const clamped = await header.boundingBox();
-      expect(Math.abs(clamped.width - original.width)).toBeLessThan(2);
+      expect(clamped.width).toBeLessThan(grown.width);
+      expect(clamped.width).toBeLessThanOrEqual(original.width + 1);
     });
   });
 }

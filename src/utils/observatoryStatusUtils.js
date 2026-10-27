@@ -185,14 +185,15 @@ export function parseStatusBitmask(status) {
  * Converts a status bitmask to a human-readable string.
  *
  * @param {number} status - Bitmask status value
+ * @param {string} [separator=" | "] - Separator placed between state labels
  * @returns {string} Human-readable status string (e.g., "Unknown", "Daytime | Operational")
  */
-export function statusBitmaskToString(status) {
+export function statusBitmaskToString(status, separator = " | ") {
   const states = parseStatusBitmask(status);
   if (states.length === 0) {
     return "Unknown";
   }
-  return states.map((s) => STATUS_LABELS[s] || s).join(" | ");
+  return states.map((s) => STATUS_LABELS[s] || s).join(separator);
 }
 
 /**
@@ -206,6 +207,35 @@ export function formatTimeForTooltip(timeStr) {
     zone: "utc",
   });
   return dt.toFormat("HH:mm:ss");
+}
+
+/**
+ * Clip an observatory-status interval to a night's boundaries.
+ *
+ * Returns the overlapping portion of the interval, or `null` when the
+ * interval does not overlap the night at all.
+ *
+ * @param {number} intervalStartMs Interval start, in ms since epoch.
+ * @param {number} intervalEndMs Interval end, in ms since epoch.
+ * @param {number} nightStartMs Night start boundary (sunset), in ms.
+ * @param {number} nightEndMs Night end boundary (sunrise), in ms.
+ * @returns {{startMs: number, endMs: number}|null} The clipped interval, or
+ *   `null` if the interval falls entirely outside the night.
+ */
+export function clipIntervalToNight(
+  intervalStartMs,
+  intervalEndMs,
+  nightStartMs,
+  nightEndMs,
+) {
+  const startMs = Math.max(intervalStartMs, nightStartMs);
+  const endMs = Math.min(intervalEndMs, nightEndMs);
+
+  if (endMs <= startMs) {
+    return null;
+  }
+
+  return { startMs, endMs };
 }
 
 /**

@@ -26,13 +26,18 @@ for (const { name, url, waitForLoad, mocks, sort } of DATATABLE_PAGES) {
       await openColumnMenu(page, column);
       await page.getByText("Sort by asc.").click();
 
-      const actual = [];
-      for (let i = 0; i < expectedOrder.length; i++) {
-        actual.push(
-          (await (await cellByHeader(page, i, column)).innerText()).trim(),
-        );
-      }
-      expect(actual).toEqual(expectedOrder);
+      // Wait for the sorted render.
+      await expect
+        .poll(async () => {
+          const actual = [];
+          for (let i = 0; i < expectedOrder.length; i++) {
+            actual.push(
+              (await (await cellByHeader(page, i, column)).innerText()).trim(),
+            );
+          }
+          return actual;
+        })
+        .toEqual(expectedOrder);
     });
   });
 

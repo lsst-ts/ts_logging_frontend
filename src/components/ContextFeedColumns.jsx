@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { createColumnHelper } from "@tanstack/react-table";
 import { formatCellValue } from "@/utils/utils";
-import { formatTimestamp } from "@/utils/timeUtils";
+import { toEpochMicros, formatTimestamp } from "@/utils/timeUtils";
 import { matchValueOrInList } from "@/components/DataTable/tableUtils";
 import { CATEGORY_INDEX_INFO } from "@/constants/CONTEXT_FEED_DEFINITIONS";
 
@@ -410,13 +410,7 @@ export const contextFeedColumns = [
     (row) => {
       if (!row.time) return null;
       const ms = new Date(row.time).getTime();
-      // Extract sub-millisecond digits to get microsecond precision
-      const match = row.time.match(/\.(\d+)/);
-      if (match) {
-        const micros = parseInt(match[1].padEnd(6, "0").slice(3, 6), 10);
-        return ms * 1000 + micros;
-      }
-      return ms * 1000;
+      return toEpochMicros(ms, row.time);
     },
     {
       id: "time",
