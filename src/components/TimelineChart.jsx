@@ -38,12 +38,13 @@ function TimelineChart({
   fullTimeRange,
   selectedTimeRange,
   setSelectedTimeRange,
+  brushGroup,
   twilightValues = [],
   showMoonArea = false,
   moonIntervals = [],
   showMoonIllumination = false,
   illumValues = [],
-  brushGroup,
+  noDataMessage = "",
 }) {
   const containerRef = useRef(null);
 
@@ -63,6 +64,7 @@ function TimelineChart({
         fullTimeRange,
         computedHeight,
         showBaseline: data?.length > 1,
+        noDataMessage,
       });
       if (!result) return;
 
@@ -137,7 +139,14 @@ function TimelineChart({
 
       instance.setOption({ graphic: elements });
     },
-    [data, fullTimeRange, showMoonIllumination, illumValues, computedHeight],
+    [
+      data,
+      fullTimeRange,
+      showMoonIllumination,
+      illumValues,
+      computedHeight,
+      noDataMessage,
+    ],
   );
 
   const { instanceRef, syncBrushToSelection, xAxisOption } = useEChartsTimeline(
@@ -186,7 +195,6 @@ function TimelineChart({
     );
 
     // ── Series ────────────────────────────────────────────────────────────────
-
     // Row lines: one thin horizontal line per series
     const rowLineSeries = data.map((entry, i) => ({
       type: "line",
@@ -291,16 +299,21 @@ function TimelineChart({
       },
       brush: buildBrushConfig(),
       series: [
-        buildGridLinesSeries(hourlyTicks),
+        // Hide data overlays in empty shells.
+        ...(!noDataMessage
+          ? [
+              buildGridLinesSeries(hourlyTicks),
+              buildTwilightSeries(
+                "twilight-lines",
+                twilightValues,
+                "solid",
+                xMinMillis,
+                xMaxMillis,
+              ),
+              ...rowLineSeries,
+            ]
+          : []),
         moonSeries,
-        buildTwilightSeries(
-          "twilight-lines",
-          twilightValues,
-          "solid",
-          xMinMillis,
-          xMaxMillis,
-        ),
-        ...rowLineSeries,
         ...scatterSeries,
       ],
     };
@@ -331,6 +344,7 @@ function TimelineChart({
     moonIntervals,
     showMoonIllumination,
     illumValues,
+    noDataMessage,
     updateGraphicElements,
     syncBrushToSelection,
     instanceRef,

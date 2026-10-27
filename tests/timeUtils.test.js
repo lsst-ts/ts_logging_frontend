@@ -19,11 +19,62 @@ import {
   getValidTimeRange,
   generateDayObsRange,
   formatTimestamp,
+  numberFormatter,
+  toEpochMicros,
+  isoToUtcMicros,
+  buildContextFeedUrlParams,
+  DEFAULT_EVENT_MARGIN_SECONDS,
 } from "../src/utils/timeUtils";
 
 const TAI_OFFSET_SECONDS = 37;
 
 describe("timeUtils", () => {
+  describe("numberFormatter", () => {
+    it.each([
+      [0, "0.00"],
+      [-0, "0.00"],
+      [1, "1.00"],
+      [1.236, "1.24"],
+      [-2.346, "-2.35"],
+      [0.004, "0.00"],
+    ])("formats %s as %s", (value, expected) => {
+      expect(numberFormatter(value)).toBe(expected);
+    });
+
+    it.each([
+      null,
+      undefined,
+      NaN,
+      Infinity,
+      -Infinity,
+      "2",
+      "",
+      false,
+      {},
+      [],
+    ])(
+      "uses the missing-value placeholder for %j without coercion",
+      (value) => {
+        expect(numberFormatter(value)).toBe("NA");
+        expect(numberFormatter(value, { nullReplacement: "--" })).toBe("--");
+      },
+    );
+
+    it("replaces only exact zero, including negative zero", () => {
+      const options = { zeroReplacement: "--", nullReplacement: "missing" };
+      expect(numberFormatter(0, options)).toBe("--");
+      expect(numberFormatter(-0, options)).toBe("--");
+      expect(numberFormatter(0.004, options)).toBe("0.00");
+      expect(numberFormatter(null, options)).toBe("missing");
+    });
+
+    it("accepts empty replacements and null to retain formatted zero", () => {
+      expect(numberFormatter(0, { zeroReplacement: "" })).toBe("");
+      expect(numberFormatter(null, { nullReplacement: "" })).toBe("");
+      expect(numberFormatter(0, { zeroReplacement: null })).toBe("0.00");
+    });
+  });
+
   describe("isoToTAI", () => {
     it("applies the TAI offset correctly", () => {
       const dt = isoToTAI("2025-08-18T00:00:00Z");
@@ -333,6 +384,93 @@ describe("timeUtils", () => {
         // Where endDate is before startDate
         expect(() => generateDayObsRange("20250820", "20250818")).toThrow();
       });
+    });
+  });
+
+  describe("toEpochMicros", () => {
+    it("adds sub-millisecond digits as microsecond precision", () => {
+      // 2025-08-18T00:00:00.123456Z: ms part 0, sub-ms ".456" -> 456 micros
+      expect(toEpochMicros(0, "2025-08-18T00:00:00.123456Z")).toBe(456);
+    });
+
+    it("adds no sub-millisecond precision when none is present", () => {
+      expect(toEpochMicros(1000, "2025-08-18T00:00:01Z")).toBe(1000 * 1000);
+    });
+
+    it("pads short fractional parts to fill the full microsecond range", () => {
+      // ".5" -> 500ms, sub-ms digits "000" -> 0 micros
+      expect(toEpochMicros(0, "2025-08-18T00:00:00.5Z")).toBe(0);
+      // ".000001" -> sub-milliseconds of 1 microsecond
+      expect(toEpochMicros(0, "2025-08-18T00:00:00.000001Z")).toBe(1);
+    });
+  });
+
+  describe("isoToUtcMicros", () => {
+    it("returns null for an invalid timestamp", () => {
+      expect(isoToUtcMicros("not-a-date", "UTC")).toBeNull();
+      expect(isoToUtcMicros(null, "UTC")).toBeNull();
+    });
+
+    it("treats a UTC string with no TAI offset as UTC", () => {
+      const result = isoToUtcMicros("2025-08-18T00:00:00Z", "UTC");
+      expect(result).toBe(isoToUTC("2025-08-18T00:00:00Z").toMillis() * 1000);
+    });
+
+    it("subtracts the TAI offset for a TAI string", () => {
+      const result = isoToUtcMicros("2025-08-18T00:00:00Z", "TAI");
+      const expected =
+        isoToUTC("2025-08-18T00:00:00Z")
+          .minus({ seconds: TAI_OFFSET_SECONDS })
+          .toMillis() * 1000;
+      expect(result).toBe(expected);
+    });
+  });
+
+  describe("buildContextFeedUrlParams", () => {
+    it("returns null for an invalid event time", () => {
+      expect(buildContextFeedUrlParams({ eventIso: "not-a-date" })).toBeNull();
+    });
+
+    it("builds startTime/endTime around the event with a custom margin", () => {
+      const centerMs = isoToUTC("2025-08-18T00:00:00Z").toMillis();
+      const marginMs = 5 * 60 * 1000;
+      const result = buildContextFeedUrlParams({
+        eventIso: "2025-08-18T00:00:00Z",
+        sourceTz: "UTC",
+        marginSeconds: 5 * 60,
+      });
+      expect(result).toEqual({
+        startTime: centerMs - marginMs,
+        endTime: centerMs + marginMs,
+        selectedTime: centerMs * 1000,
+      });
+    });
+
+    it("uses the default margin when none is provided", () => {
+      const centerMs = isoToUTC("2025-08-18T00:00:00Z").toMillis();
+      const marginMs = DEFAULT_EVENT_MARGIN_SECONDS * 1000;
+      const result = buildContextFeedUrlParams({
+        eventIso: "2025-08-18T00:00:00Z",
+        sourceTz: "UTC",
+      });
+      expect(result).toEqual({
+        startTime: centerMs - marginMs,
+        endTime: centerMs + marginMs,
+        selectedTime: centerMs * 1000,
+      });
+    });
+
+    it("converts a TAI event time to UTC before building the window", () => {
+      const centerMs = isoToUTC("2025-08-18T00:00:00Z")
+        .minus({ seconds: TAI_OFFSET_SECONDS })
+        .toMillis();
+      const result = buildContextFeedUrlParams({
+        eventIso: "2025-08-18T00:00:00Z",
+        sourceTz: "TAI",
+        marginSeconds: 60,
+      });
+      expect(result.startTime).toBe(centerMs - 60 * 1000);
+      expect(result.selectedTime).toBe(centerMs * 1000);
     });
   });
 });

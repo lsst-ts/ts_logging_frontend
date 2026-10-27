@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import * as echarts from "echarts";
 
 import {
@@ -13,6 +13,7 @@ import {
   STATUS_COLORS,
   STATUS_BAR_COLORS,
   STATUS_TIMELINE_DIMENSIONS,
+  STATUS_TIMELINE_VARIABLE_DIMENSIONS,
   STATUS_TIMELINE_MARGINS,
 } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
 import { useEChartsTimeline } from "@/hooks/useEChartsTimeline";
@@ -25,30 +26,45 @@ import { useEChartsTimeline } from "@/hooks/useEChartsTimeline";
  * TimelineChart via the shared selectedTimeRange / setSelectedTimeRange props.
  *
  * @param {Object} props
- * @param {Array<{time: string, status: number, note: string, statusLabels: string, time_ms: number}>} props.entries
  * @param {[DateTime, DateTime]} props.fullTimeRange
  * @param {[DateTime, DateTime]} props.selectedTimeRange
  * @param {Function} props.setSelectedTimeRange
+ * @param {string} props.brushGroup Shared brush-group id for brush-sync across instances.
+ * @param {Array<{time: string, status: number, note: string, statusLabels: string, time_ms: number}>} [props.entries=[]]
  * @param {number[]} [props.twilightValues=[]] - 12° twilight times in ms (solid line)
  * @param {number[]} [props.twilight0DegValues=[]] - 0° twilight times in ms (dashed line)
+ * @param {boolean} [props.fullScreen=false] - Whether rendered in the full-screen
+ *   variant, which uses larger dimensions.
  */
 function ObservatoryStatusTimeline({
-  entries = [],
   fullTimeRange,
   selectedTimeRange,
   setSelectedTimeRange,
+  brushGroup,
+  entries = [],
   twilightValues = [],
   twilight0DegValues = [],
-  brushGroup,
+  fullScreen = false,
+  noDataMessage = "",
 }) {
   const containerRef = useRef(null);
   const markerDataRef = useRef([]);
   const markerSeriesIdxRef = useRef(-1);
 
+  const hasData = entries.length > 0;
+
+  const variableDimensions = useMemo(
+    () =>
+      fullScreen
+        ? STATUS_TIMELINE_VARIABLE_DIMENSIONS.FULL_SCREEN
+        : STATUS_TIMELINE_VARIABLE_DIMENSIONS.APPLET,
+    [fullScreen],
+  );
+
   // Grid data area = (N series + 1 buffer unit for min:-1) × row height,
   // plus top and bottom margins.
   const computedHeight =
-    (SERIES_ORDER.length + 1) * STATUS_TIMELINE_DIMENSIONS.SERIES_ROW_HEIGHT +
+    (SERIES_ORDER.length + 1) * variableDimensions.SERIES_ROW_HEIGHT +
     STATUS_TIMELINE_MARGINS.top +
     STATUS_TIMELINE_MARGINS.bottom;
 
@@ -59,7 +75,7 @@ function ObservatoryStatusTimeline({
     (instance) => {
       const xMinMillis = fullTimeRange[0]?.toMillis();
       const xMaxMillis = fullTimeRange[1]?.toMillis();
-      if (xMinMillis && xMaxMillis) {
+      if (xMinMillis && xMaxMillis && hasData) {
         const containerWidth = containerRef.current?.offsetWidth ?? 800;
         const minSeparationMs =
           (22 * (xMaxMillis - xMinMillis)) / containerWidth;
@@ -88,12 +104,20 @@ function ObservatoryStatusTimeline({
         computedHeight,
         showBaseline: true,
         bottomMargin: STATUS_TIMELINE_MARGINS.bottom,
+        noDataMessage,
       });
       if (!result) return;
 
       instance.setOption({ graphic: result.elements });
     },
-    [fullTimeRange, computedHeight, twilightValues, twilight0DegValues],
+    [
+      fullTimeRange,
+      computedHeight,
+      twilightValues,
+      twilight0DegValues,
+      noDataMessage,
+      hasData,
+    ],
   );
 
   const { instanceRef, syncBrushToSelection, xAxisOption } = useEChartsTimeline(
@@ -143,8 +167,8 @@ function ObservatoryStatusTimeline({
         const dist = Math.sqrt(dx * dx + dy * dy);
         const radius =
           (data[i].hasNote
-            ? STATUS_TIMELINE_DIMENSIONS.MARKER_SIZE_WITH_NOTE
-            : STATUS_TIMELINE_DIMENSIONS.MARKER_SIZE) / 2;
+            ? variableDimensions.MARKER_SIZE_WITH_NOTE
+            : variableDimensions.MARKER_SIZE) / 2;
         if (dist < radius && dist < closestDist) {
           closestDist = dist;
           closestIdx = i;
@@ -180,7 +204,6 @@ function ObservatoryStatusTimeline({
       container.removeEventListener("mouseleave", handleMouseLeave);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
   // ── Build and apply the ECharts option ─────────────────────────────────────
   useEffect(() => {
     const instance = instanceRef.current;
@@ -336,35 +359,40 @@ function ObservatoryStatusTimeline({
             data: entries.map((e) => ({ xAxis: e.time_ms })),
           },
         },
-        // 12° twilight — solid blue line, label at top
-        buildTwilightSeries(
-          "twilight-12deg",
-          twilightValues,
-          "solid",
-          xMinMillis,
-          xMaxMillis,
-          undefined,
-          undefined,
-          "12°",
-        ),
-        // Background row lines — one thin line per series at 20% opacity
-        ...SERIES_ORDER.map((stateName, idx) => ({
-          type: "line",
-          z: 1,
-          id: `row-line-${stateName}`,
-          data: [
-            [xMinMillis, idx],
-            [xMaxMillis, idx],
-          ],
-          lineStyle: {
-            color: STATUS_COLORS[stateName],
-            width: 1,
-            opacity: 0.2,
-          },
-          symbol: "none",
-          animation: false,
-          silent: true,
-        })),
+        // Hide data overlays in empty shells.
+        ...(hasData
+          ? [
+              // 12° twilight — solid blue line, label at top
+              buildTwilightSeries(
+                "twilight-12deg",
+                twilightValues,
+                "solid",
+                xMinMillis,
+                xMaxMillis,
+                undefined,
+                undefined,
+                "12°",
+              ),
+              // Background row lines — one thin line per series at 20% opacity
+              ...SERIES_ORDER.map((stateName, idx) => ({
+                type: "line",
+                z: 1,
+                id: `row-line-${stateName}`,
+                data: [
+                  [xMinMillis, idx],
+                  [xMaxMillis, idx],
+                ],
+                lineStyle: {
+                  color: STATUS_COLORS[stateName],
+                  width: 1,
+                  opacity: 0.2,
+                },
+                symbol: "none",
+                animation: false,
+                silent: true,
+              })),
+            ]
+          : []),
         // Status interval bars — custom series renders one rect per interval
         {
           type: "custom",
@@ -376,7 +404,7 @@ function ObservatoryStatusTimeline({
 
             const startCoord = api.coord([startMs, catIdx]);
             const endCoord = api.coord([endMs, catIdx]);
-            const barH = STATUS_TIMELINE_DIMENSIONS.BAR_HEIGHT;
+            const barH = variableDimensions.BAR_HEIGHT;
 
             // Clip rect to the chart grid area to avoid overdraw
             const rectShape = echarts.graphic.clipRectByRect(
@@ -417,8 +445,8 @@ function ObservatoryStatusTimeline({
             params.data.hasNote ? "diamond" : "circle",
           symbolSize: (value, params) =>
             params.data.hasNote
-              ? STATUS_TIMELINE_DIMENSIONS.MARKER_SIZE_WITH_NOTE
-              : STATUS_TIMELINE_DIMENSIONS.MARKER_SIZE,
+              ? variableDimensions.MARKER_SIZE_WITH_NOTE
+              : variableDimensions.MARKER_SIZE,
           itemStyle: {
             color: (params) =>
               STATUS_COLORS[params.data.stateName] ?? STATUS_COLORS.UNKNOWN,
@@ -460,6 +488,8 @@ function ObservatoryStatusTimeline({
     updateGraphicElements,
     syncBrushToSelection,
     instanceRef,
+    variableDimensions,
+    hasData,
   ]);
 
   // Re-run graphic elements when the relevant props change

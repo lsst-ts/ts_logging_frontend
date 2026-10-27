@@ -25,7 +25,7 @@ test.describe("Data-log page — API errors", () => {
       timeout: 10000,
     });
     await expect(
-      page.getByText("exposures failed to load. Data may be incomplete."),
+      page.getByText("data-log failed to load. Data may be incomplete."),
     ).toBeVisible({
       timeout: 10000,
     });
@@ -48,7 +48,9 @@ test.describe("Data-log page — API errors", () => {
       timeout: 10000,
     });
     await expect(
-      page.getByText("exposure-flags failed to load. Data may be incomplete."),
+      page.getByText(
+        "exposure-entries failed to load. Data may be incomplete.",
+      ),
     ).toBeVisible({
       timeout: 10000,
     });
@@ -64,7 +66,9 @@ test.describe("Data-log page — API errors", () => {
     await waitForDataLogLoad(page);
 
     await expect(
-      page.getByText("exposure-flags failed to load. Data may be incomplete."),
+      page.getByText(
+        "exposure-entries failed to load. Data may be incomplete.",
+      ),
     ).toBeVisible({ timeout: 10000 });
 
     // Errors are configured dismissible: false — no dismiss button offered

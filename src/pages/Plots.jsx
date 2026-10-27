@@ -223,7 +223,7 @@ function Plots() {
           setDataLogNoData(true);
           addNotification({
             type: "noData",
-            source: "consdb",
+            source: SOURCE.DATA_LOG,
             title: "No exposures found in ConsDB",
             description:
               "Plots will not be displayed for the selected date range.",
@@ -238,7 +238,7 @@ function Plots() {
           console.error("Error fetching exposures from ConsDB:", err);
           addNotification({
             type: "error",
-            source: "exposures",
+            source: SOURCE.DATA_LOG,
           });
         }
       })
@@ -265,7 +265,7 @@ function Plots() {
           console.error("Error fetching almanac data:", err);
           addNotification({
             type: "error",
-            source: "almanac",
+            source: SOURCE.ALMANAC,
           });
         }
       })
@@ -366,7 +366,10 @@ function Plots() {
           description="An interactive visual overview of exposure metadata from the ConsDB and related sources."
           className="min-h-12"
         />
-        <EmptyDisplayState message="AuxTel is currently not supported on this page. Contact the Logging team if this is a priority for you." />
+        <EmptyDisplayState
+          variant="page"
+          message="AuxTel is currently not supported on this page. Contact the Logging team if this is a priority for you."
+        />
       </div>
     );
   }
@@ -599,7 +602,7 @@ function Plots() {
               ))}
           </div>
         ) : plotsState.state === "error" || plotsState.state === "noData" ? (
-          <EmptyDisplayState message={plotsState.message} />
+          <EmptyDisplayState variant="page" message={plotsState.message} />
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-40">
             <PlotDataContext.Provider value={plotDataContextValue}>

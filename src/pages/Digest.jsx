@@ -1,3 +1,8 @@
+import {
+  SOURCE,
+  BLOCK_DETAIL_SOURCES,
+  NO_DATA_DISPLAY,
+} from "@/constants/DATA_SOURCES";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import ExposureBreakdownApplet from "@/components/ExposureBreakdownApplet.jsx";
 import MetricsCard from "@/components/MetricsCard.jsx";
@@ -32,20 +37,23 @@ import { useSearch } from "@tanstack/react-router";
 import { TELESCOPES } from "@/components/Parameters";
 import ObservingConditionsApplet from "@/components/ObservingConditionsApplet";
 import NightSummary from "@/components/NightSummary.jsx";
-import ObservatoryStatusApplet from "@/components/ObservatoryStatusApplet";
+import ObservatoryStatusCumulativeApplet from "@/components/ObservatoryStatusCumulativeApplet";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
 import VisitMapStaticApplet from "@/components/VisitMapStaticApplet.jsx";
 import {
   buildObsStatusSource,
   resolveDisplayState,
 } from "@/utils/displayState";
-import { SOURCE, NO_DATA_DISPLAY } from "@/constants/DATA_SOURCES";
 
 const EMPTY_OBS_STATUS_AVAILABILITY = {
   status: "none",
   available_from: null,
 };
 
+/**
+ * Render the night digest page: night summary, observatory status, observing
+ * conditions, exposure breakdown, visit maps and Jira tickets.
+ */
 export default function Digest() {
   const { startDayobs, endDayobs, telescope } = useSearch({
     from: "__root__",
@@ -73,6 +81,7 @@ export default function Digest() {
   const [obsStatusFetchError, setObsStatusFetchError] = useState(false);
   const [almanacFetchError, setAlmanacFetchError] = useState(false);
   const [exposureFetchError, setExposureFetchError] = useState(false);
+  const [openDomeError, setOpenDomeError] = useState(false);
   const [expectedExposuresFetchError, setExpectedExposuresFetchError] =
     useState(false);
   const [flagsFetchError, setFlagsFetchError] = useState(false);
@@ -144,6 +153,7 @@ export default function Digest() {
     setReports([]);
     setOnSkyExpCount(0);
     setExpectedOnSkyExpCount(0);
+    setOpenDomeTimes([]);
     setFlags([]);
     setObsStatusIntervals([]);
     setBlockLookup({});
@@ -155,6 +165,7 @@ export default function Digest() {
     setObsStatusFetchError(false);
     setAlmanacFetchError(false);
     setExposureFetchError(false);
+    setOpenDomeError(false);
     setExpectedExposuresFetchError(false);
     setFlagsFetchError(false);
     setNightreportFetchError(false);
@@ -179,22 +190,17 @@ export default function Digest() {
         if (data.exposures_count === 0) {
           addNotification({
             type: "noData",
-            source: "consdb",
+            source: SOURCE.EXPOSURES,
             title: "No exposures found in ConsDB",
             description:
               "Parts of the dashboard that depend on exposure data will appear empty for the selected date range.",
           });
         }
         if (data.open_dome_error) {
+          setOpenDomeError(data.open_dome_error);
           addNotification({
             type: "error",
-            source: "dome-times",
-          });
-        }
-        if (data.time_accounting_error) {
-          addNotification({
-            type: "error",
-            source: "time-accounting",
+            source: SOURCE.DOME,
           });
         }
       })
@@ -204,7 +210,7 @@ export default function Digest() {
           setExposureFetchError(true);
           addNotification({
             type: "error",
-            source: "exposures",
+            source: SOURCE.EXPOSURES,
           });
         }
       })
@@ -223,7 +229,7 @@ export default function Digest() {
           console.error("Error fetching expected exposures:", err);
           addNotification({
             type: "error",
-            source: "expected-exposures",
+            source: SOURCE.EXPECTED_EXPOSURES,
           });
           setExpectedExposuresFetchError(true);
           setExpectedOnSkyExpCount(NO_DATA_DISPLAY);
@@ -245,7 +251,7 @@ export default function Digest() {
           setAlmanacFetchError(true);
           addNotification({
             type: "error",
-            source: "almanac",
+            source: SOURCE.ALMANAC,
           });
         }
       })
@@ -295,7 +301,7 @@ export default function Digest() {
           setObsStatusFetchError(true);
           addNotification({
             type: "error",
-            source: "observatory-status",
+            source: SOURCE.OBS_STATUS,
           });
         }
       })
@@ -325,7 +331,7 @@ export default function Digest() {
             setNightreportFetchError(true);
             addNotification({
               type: "error",
-              source: "night-reports",
+              source: SOURCE.NIGHT_REPORTS,
             });
           }
         })
@@ -348,7 +354,7 @@ export default function Digest() {
             console.error("Error fetching Jira tickets:", err);
             addNotification({
               type: "error",
-              source: "jira-tickets",
+              source: SOURCE.JIRA_TICKETS,
             });
             setJiraFetchError(true);
           }
@@ -373,7 +379,7 @@ export default function Digest() {
           setFlagsFetchError(true);
           addNotification({
             type: "error",
-            source: "exposure-flags",
+            source: SOURCE.EXPOSURE_FLAGS,
           });
         }
       })
@@ -397,7 +403,7 @@ export default function Digest() {
           console.error("Error generating static map:", err);
           addNotification({
             type: "error",
-            source: "static-map",
+            source: SOURCE.STATIC_VISIT_MAP,
           });
           setStaticVisitMapError(true);
         }
@@ -456,7 +462,7 @@ export default function Digest() {
             );
             addNotification({
               type: "error",
-              source: `${source}-blocks`,
+              source: BLOCK_DETAIL_SOURCES[source] ?? SOURCE.BLOCK_DETAILS,
             });
           });
         }
@@ -470,11 +476,11 @@ export default function Digest() {
           setBlockFetchError(true);
           addNotification({
             type: "error",
-            source: "jira-blocks",
+            source: SOURCE.JIRA_BLOCKS,
           });
           addNotification({
             type: "error",
-            source: "zephyr-blocks",
+            source: SOURCE.ZEPHYR_BLOCKS,
           });
         }
       })
@@ -557,6 +563,7 @@ export default function Digest() {
       [SOURCE.OBS_STATUS]: buildObsStatusSource(
         obsStatusAvailability,
         obsStatusFetchError,
+        obsStatusIntervals.length,
       ),
     },
     required: [SOURCE.EXPOSURES, SOURCE.ALMANAC],
@@ -568,6 +575,7 @@ export default function Digest() {
       [SOURCE.OBS_STATUS]: buildObsStatusSource(
         obsStatusAvailability,
         obsStatusFetchError,
+        obsStatusIntervals.length,
       ),
     },
     required: [SOURCE.OBS_STATUS],
@@ -576,11 +584,8 @@ export default function Digest() {
 
   const jiraState = resolveDisplayState({
     sources: {
-      [SOURCE.JIRA_TICKETS]: jiraFetchError
-        ? { ok: false }
-        : jiraTickets.length === 0
-          ? { ok: true, noData: true }
-          : { ok: true },
+      // No tickets is a valid zero, not missing data.
+      [SOURCE.JIRA_TICKETS]: { ok: !jiraFetchError },
     },
     required: [SOURCE.JIRA_TICKETS],
     loading: jiraLoading,
@@ -594,16 +599,11 @@ export default function Digest() {
         : onSkyExpCount;
   const efficiencyValue =
     efficiencyState.state === "error"
-      ? `${NO_DATA_DISPLAY}  %`
-      : efficiencyState.state === "noData"
-        ? "0 %"
-        : efficiencyText;
+      ? `${NO_DATA_DISPLAY} %`
+      : // Unknown efficiency is -- %; no on-sky exposures gives 0 %.
+        efficiencyText;
   const jiraValue =
-    jiraState.state === "error"
-      ? NO_DATA_DISPLAY
-      : jiraState.state === "noData"
-        ? "0"
-        : newTicketsCount;
+    jiraState.state === "error" ? NO_DATA_DISPLAY : newTicketsCount;
   const jiraUpdatedValue =
     jiraState.state === "error"
       ? NO_DATA_DISPLAY
@@ -670,6 +670,38 @@ export default function Digest() {
     [nightreportFetchError, reports],
   );
   const nightSummaryRequired = [SOURCE.NIGHT_REPORTS];
+
+  const obsStatusCumulativeSources = useMemo(
+    () => ({
+      [SOURCE.OBS_STATUS]: buildObsStatusSource(
+        obsStatusAvailability,
+        obsStatusFetchError,
+        obsStatusIntervals.length,
+      ),
+      [SOURCE.ALMANAC]: almanacFetchError
+        ? { ok: false }
+        : almanacInfo.length === 0
+          ? { ok: true, noData: true }
+          : { ok: true },
+      [SOURCE.DOME]:
+        openDomeError || exposureFetchError
+          ? { ok: false }
+          : openDomeTimes.length === 0
+            ? { ok: true, noData: true }
+            : { ok: true },
+    }),
+    [
+      obsStatusFetchError,
+      obsStatusAvailability,
+      obsStatusIntervals,
+      almanacFetchError,
+      almanacInfo,
+      openDomeError,
+      openDomeTimes,
+      exposureFetchError,
+    ],
+  );
+  const obsStatusCumulativeRequired = [SOURCE.OBS_STATUS, SOURCE.ALMANAC];
 
   const staticVisitMapSources = useMemo(
     () => ({
@@ -825,15 +857,17 @@ export default function Digest() {
                 required={nightSummaryRequired}
               />
             )}
-            <ObservatoryStatusApplet
+            <ObservatoryStatusCumulativeApplet
+              maintainHeight
               almanacInfo={almanacInfo}
               intervals={obsStatusIntervals}
-              availability={obsStatusAvailability}
-              fetchError={obsStatusFetchError}
-              almanacFetchError={almanacFetchError}
               openDomeTimes={openDomeTimes}
               fullTimeRange={fullTimeRange}
+              selectedTimeRange={selectedTimeRange}
+              setSelectedTimeRange={setSelectedTimeRange}
               loading={obsStatusLoading || exposuresLoading || almanacLoading}
+              sources={obsStatusCumulativeSources}
+              required={obsStatusCumulativeRequired}
             />
             <VisitMapStaticApplet
               mapData={staticVisitMaps?.staticMapUrl}

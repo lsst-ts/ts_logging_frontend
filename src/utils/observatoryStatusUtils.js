@@ -185,14 +185,15 @@ export function parseStatusBitmask(status) {
  * Converts a status bitmask to a human-readable string.
  *
  * @param {number} status - Bitmask status value
+ * @param {string} [separator=" | "] - Separator placed between state labels
  * @returns {string} Human-readable status string (e.g., "Unknown", "Daytime | Operational")
  */
-export function statusBitmaskToString(status) {
+export function statusBitmaskToString(status, separator = " | ") {
   const states = parseStatusBitmask(status);
   if (states.length === 0) {
     return "Unknown";
   }
-  return states.map((s) => STATUS_LABELS[s] || s).join(" | ");
+  return states.map((s) => STATUS_LABELS[s] || s).join(separator);
 }
 
 /**
@@ -209,27 +210,30 @@ export function formatTimeForTooltip(timeStr) {
 }
 
 /**
- * Returns the shared fetch-error message for the Observatory Status and
- * Almanac requests. Used by both the Digest metric cards and the Observatory
- * Status applet so the wording stays consistent.
+ * Clip an observatory-status interval to a night's boundaries.
  *
- * @param {Object} options
- * @param {boolean} [options.almanacFetchError=false] Whether the Almanac request failed.
- * @param {boolean} [options.obsStatusFetchError=false] Whether the Observatory Status request failed.
- * @returns {string|null} The error message, or `null` when neither request failed.
+ * Returns the overlapping portion of the interval, or `null` when the
+ * interval does not overlap the night at all.
+ *
+ * @param {number} intervalStartMs Interval start, in ms since epoch.
+ * @param {number} intervalEndMs Interval end, in ms since epoch.
+ * @param {number} nightStartMs Night start boundary (sunset), in ms.
+ * @param {number} nightEndMs Night end boundary (sunrise), in ms.
+ * @returns {{startMs: number, endMs: number}|null} The clipped interval, or
+ *   `null` if the interval falls entirely outside the night.
  */
-export function getObsStatusFetchErrorText({
-  almanacFetchError = false,
-  obsStatusFetchError = false,
-}) {
-  if (almanacFetchError && obsStatusFetchError) {
-    return "Almanac and Observatory Status data could not be fetched.";
+export function clipIntervalToNight(
+  intervalStartMs,
+  intervalEndMs,
+  nightStartMs,
+  nightEndMs,
+) {
+  const startMs = Math.max(intervalStartMs, nightStartMs);
+  const endMs = Math.min(intervalEndMs, nightEndMs);
+
+  if (endMs <= startMs) {
+    return null;
   }
-  if (almanacFetchError) {
-    return "Almanac data could not be fetched.";
-  }
-  if (obsStatusFetchError) {
-    return "Observatory Status data could not be fetched.";
-  }
-  return null;
+
+  return { startMs, endMs };
 }

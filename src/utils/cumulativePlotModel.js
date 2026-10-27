@@ -1,6 +1,13 @@
-import { DateTime } from "luxon";
 import { OBSERVATORY_STATES } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
-import { isoToUTC, getCurrentDayObs } from "@/utils/timeUtils";
+import { clipIntervalToNight } from "@/utils/observatoryStatusUtils";
+import {
+  isoToUTC,
+  getCurrentDayObs,
+  almanacDayobsForPlot,
+  utcDateTimeStrToMillis,
+} from "@/utils/timeUtils";
+
+const HOURS_PER_MILLISECOND = 1 / (60 * 60 * 1000);
 
 /**
  * Build day-break gaps between consecutive nights for the cumulative plot.
@@ -33,12 +40,16 @@ export function buildDayBreaks(nights) {
  * @param {Map} nights Night metadata keyed by dayobs.
  * @returns {Array<[number, number]>} `[timestampMs, cumulativeOpenHours]` points.
  */
-export function buildOpenDomeSeries(nights) {
+export function buildOpenDomeSeries(nights, accumulate) {
   const series = [];
+
+  let cumulativeHours = 0;
 
   // Loop through each dayobs.
   for (const night of nights.values()) {
-    let cumulativeHours = 0;
+    if (!accumulate) {
+      cumulativeHours = 0;
+    }
 
     // Get current time.
     const nowMs = Date.now();
@@ -99,7 +110,9 @@ export function buildOpenDomeSeries(nights) {
 
     if (lastInterval.close_time) {
       series.push([cutOffMs, cumulativeHours]);
-      series.push([cutOffMs, NaN]);
+      if (!accumulate) {
+        series.push([cutOffMs, NaN]);
+      }
     }
   }
 
@@ -115,13 +128,21 @@ export function buildOpenDomeSeries(nights) {
  * @param {Map} nights Night metadata keyed by dayobs.
  * @returns {Array<[number, number]>} `[timestampMs, nightHours]` points.
  */
-export function buildNightHoursSeries(nights) {
+export function buildNightHoursSeries(nights, accumulate) {
   const series = [];
 
+  let accumulatedHours = 0;
+
   for (const night of nights.values()) {
-    series.push([night.sunsetMs, night.nightHours]);
-    series.push([night.sunriseMs, night.nightHours]);
-    series.push([night.sunriseMs, NaN]);
+    if (accumulate) {
+      series.push([night.sunsetMs, accumulatedHours]);
+      accumulatedHours += night.nightHours;
+      series.push([night.sunriseMs, accumulatedHours]);
+    } else {
+      series.push([night.sunsetMs, night.nightHours]);
+      series.push([night.sunriseMs, night.nightHours]);
+      series.push([night.sunriseMs, NaN]);
+    }
   }
 
   return series;
@@ -134,7 +155,7 @@ export function buildNightHoursSeries(nights) {
  * @param {Map} nights Night metadata keyed by dayobs.
  * @returns {Object<string, Array<Object>>} Series data keyed by observatory state.
  */
-export function buildCumulativeStateSeries(intervals, nights) {
+export function buildCumulativeStateSeries(intervals, nights, accumulate) {
   // Build one output series per state.
   const stateNames = Object.keys(OBSERVATORY_STATES).filter(
     (state) => state !== "DAYTIME",
@@ -144,15 +165,18 @@ export function buildCumulativeStateSeries(intervals, nights) {
 
   if (!intervals || intervals.length === 0) return {};
 
+  // Running cumulative total for each state.
+  let cumulative = Object.fromEntries(stateNames.map((state) => [state, 0]));
+
   // Process each night independently.
   for (const night of nights.values()) {
     const { dayObs, sunsetMs, sunriseMs } = night;
 
-    // Running cumulative total for each state for this night.
-    // Each state resets to zero at sunset.
-    const cumulative = Object.fromEntries(
-      stateNames.map((state) => [state, 0]),
-    );
+    if (!accumulate) {
+      // If accumulation is not across nights,
+      // each state resets to zero at sunset.
+      cumulative = Object.fromEntries(stateNames.map((state) => [state, 0]));
+    }
 
     // Find intervals that overlap this night.
     const nightIntervals = intervals.filter(
@@ -165,25 +189,39 @@ export function buildCumulativeStateSeries(intervals, nights) {
       stateNames.map((state) => [state, false]),
     );
 
-    // Start all state series at zero at sunset.
+    // Start all state series at zero at sunset, unless they're
+    // accumulating across nights.
     for (const state of stateNames) {
-      series[state].push({
-        value: [sunsetMs, 0],
-        showMarker: false,
-      });
+      if (accumulate) {
+        series[state].push({
+          value: [sunsetMs, cumulative[state]],
+          showMarker: false,
+        });
+      } else {
+        series[state].push({
+          value: [sunsetMs, 0],
+          showMarker: false,
+        });
+      }
     }
 
     // Walk intervals in chronological order.
     for (const interval of nightIntervals) {
-      // Clip interval at the night boundaries.
-      const clippedAtSunset = interval.start_time_ms < sunsetMs;
-      const startMs = Math.max(interval.start_time_ms, sunsetMs);
-      const endMs = Math.min(interval.end_time_ms, sunriseMs);
+      const clipped = clipIntervalToNight(
+        interval.start_time_ms,
+        interval.end_time_ms,
+        sunsetMs,
+        sunriseMs,
+      );
 
       // Ignore intervals entirely outside the night.
-      if (endMs <= startMs) {
+      if (!clipped) {
         continue;
       }
+
+      const startMs = clipped.startMs;
+      const endMs = clipped.endMs;
+      const clippedAtSunset = interval.start_time_ms < sunsetMs;
 
       // Recalculate duration after clipping.
       const durationHours = (endMs - startMs) / (1000 * 60 * 60);
@@ -257,7 +295,6 @@ export function buildCumulativeStateSeries(intervals, nights) {
     // 2. If we're still in the current dayobs but it is after
     // the sunrise, and no events have been recorded since,
     // extend states to sunrise.
-
     // When was the most recent event?
     const lastInterval = intervals[intervals.length - 1];
     const lastEventMs = lastInterval.end_time_ms;
@@ -283,6 +320,7 @@ export function buildCumulativeStateSeries(intervals, nights) {
 
       // Set cutoff time dependent on whether during the night.
       const cutOffMs = isDuringCurrentNight ? nowMs : sunriseMs;
+      // TODO: SSW-2999 Exclude pre-sunset time when extending the last state.
       const extraHours = (cutOffMs - lastEventMs) / (1000 * 60 * 60);
 
       for (const state of stateNames) {
@@ -298,6 +336,7 @@ export function buildCumulativeStateSeries(intervals, nights) {
         // add a marker at sunset representing the most recent event.
         if (lastActive[state] && lastEventMs < sunsetMs) {
           series[state].push({
+            // TODO: SSW-2999 Preserve prior-night totals at this sunset marker.
             value: [sunsetMs, 0],
             showMarker: true,
             status: lastInterval.start_labels,
@@ -347,11 +386,14 @@ export function buildCumulativeStateSeries(intervals, nights) {
           showMarker: false,
         });
 
-        // Break line before next night.
-        series[state].push({
-          value: [sunriseMs, NaN],
-          showMarker: false,
-        });
+        // Break line before next night if not carrying accumulation
+        // across.
+        if (!accumulate) {
+          series[state].push({
+            value: [sunriseMs, NaN],
+            showMarker: false,
+          });
+        }
       }
     }
   }
@@ -361,6 +403,12 @@ export function buildCumulativeStateSeries(intervals, nights) {
 
 /**
  * Build a night metadata map from almanac data and open-dome intervals.
+ *
+ * This is the single source of night-boundary metadata derived from the
+ * almanac, used by both the cumulative plots and the observatory-status
+ * breakdown. Each night carries the full scheduled hours (`nightHours`)
+ * and the completed hours (`elapsedHours`, `0` for future nights, partial
+ * for the current in-progress night).
  *
  * @param {Array} almanacInfo Almanac records for each night.
  * @param {Array} [openDomeTimes=[]] Open-dome intervals to attach to each night.
@@ -372,17 +420,19 @@ export function buildNightMetadataMap(almanacInfo, openDomeTimes = []) {
   // Create all nights from almanac data.
   for (const night of almanacInfo) {
     // TODO: (OSW-2471) Remove once almanac dayobs values are corrected.
-    const correctedDayObs = Number(
-      DateTime.fromFormat(String(night.dayobs), "yyyyLLdd")
-        .minus({ days: 1 })
-        .toFormat("yyyyLLdd"),
-    );
+    const dayObs = Number(almanacDayobsForPlot(night.dayobs));
+    const sunsetMs = utcDateTimeStrToMillis(night.twilight_evening_12deg);
+    const sunriseMs = utcDateTimeStrToMillis(night.twilight_morning_12deg);
+    const elapsedTwilightHours = Number(night.elapsed_twilight_hours);
 
-    nights.set(correctedDayObs, {
-      dayObs: correctedDayObs,
-      sunsetMs: Date.parse(`${night.twilight_evening_12deg}Z`),
-      sunriseMs: Date.parse(`${night.twilight_morning_12deg}Z`),
+    nights.set(dayObs, {
+      dayObs,
+      sunsetMs,
+      sunriseMs,
       nightHours: night.night_hours,
+      elapsedHours: Number.isFinite(elapsedTwilightHours)
+        ? elapsedTwilightHours
+        : (sunriseMs - sunsetMs) * HOURS_PER_MILLISECOND,
       intervals: [],
     });
   }
@@ -412,6 +462,8 @@ export function buildNightMetadataMap(almanacInfo, openDomeTimes = []) {
  * @param {Array} almanacInfo Almanac records for the relevant nights.
  * @param {Array} intervals Observatory status intervals to plot.
  * @param {Array} openDomeTimes Open-dome intervals to overlay.
+ * @param {boolean} [accumulate=false] Whether to accumulate across nights.
+ *
  * @returns {{
  *   breaks: Array,
  *   nightHours: Array<[number, number]>,
@@ -423,6 +475,7 @@ export function buildCumulativePlotModel(
   almanacInfo,
   intervals,
   openDomeTimes,
+  accumulate = false,
 ) {
   if (!almanacInfo || almanacInfo.length === 0) return {};
 
@@ -430,8 +483,8 @@ export function buildCumulativePlotModel(
 
   return {
     breaks: buildDayBreaks(nights),
-    nightHours: buildNightHoursSeries(nights),
-    openDomeSeries: buildOpenDomeSeries(nights),
-    stateSeries: buildCumulativeStateSeries(intervals, nights),
+    nightHours: buildNightHoursSeries(nights, accumulate),
+    openDomeSeries: buildOpenDomeSeries(nights, accumulate),
+    stateSeries: buildCumulativeStateSeries(intervals, nights, accumulate),
   };
 }

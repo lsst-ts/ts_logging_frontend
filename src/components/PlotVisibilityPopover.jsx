@@ -52,7 +52,7 @@ function PlotVisibilityPopover({
         <DialogTrigger asChild>
           <button
             className="text-sm btn bg-white text-black w-40 h-10 font-light rounded-md shadow-[4px_4px_4px_0px_#3CAE3F] 
-                        flex justify-center items-center py-2 px-4 
+                        flex justify-center items-center py-2 px-4 cursor-pointer
                         hover:shadow-[6px_6px_8px_0px_#3CAE3F] hover:scale-[1.02] hover:bg-white transition-all duration-200"
           >
             Show / Hide Plots
@@ -69,13 +69,13 @@ function PlotVisibilityPopover({
           <div className="flex justify-between mb-2">
             <button
               onClick={handleSelectAll}
-              className="text-xs text-blue-600 hover:underline"
+              className="text-xs text-blue-600 hover:underline cursor-pointer"
             >
               Select All
             </button>
             <button
               onClick={handleDeselectAll}
-              className="text-xs text-red-600 hover:underline mr-5"
+              className="text-xs text-red-600 hover:underline mr-5 cursor-pointer"
             >
               Deselect All
             </button>
@@ -97,6 +97,7 @@ function PlotVisibilityPopover({
                     checked={visiblePlots.includes(key)}
                     onCheckedChange={(checked) => togglePlot(key, !!checked)}
                     disabled={!fieldStatus[key]}
+                    className="cursor-pointer"
                   />
                   <label
                     htmlFor={`plot-selected-${key}`}

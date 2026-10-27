@@ -31,11 +31,24 @@ export function useAppletState() {
  * Shared empty-state message placed in a data region when the display state
  * is `noData` (a required source was reached but is empty) or `error` (a
  * required source failed to fetch).
+ *
+ * @param {Object} props
+ * @param {string} props.message - The message to display.
+ * @param {"applet"|"page"} [props.variant] - Which variant to style for.
+ *   Text size and vertical padding differ between `applet` (default)
+ *   and `page` variants.
  */
-export function EmptyDisplayState({ message }) {
+export function EmptyDisplayState({ message, variant = "applet" }) {
   return (
     <div className="h-full place-content-center-safe">
-      <p className="text-stone-400 text-center font-thin text-xl">{message}</p>
+      <p
+        className={cn(
+          "text-stone-400 text-center font-thin",
+          variant === "page" ? "text-xl py-10" : "text-md py-4",
+        )}
+      >
+        {message}
+      </p>
     </div>
   );
 }
@@ -120,6 +133,9 @@ export function renderHeaderWarning(
  *   ready height instead of collapsing to the shared compact error height. Use for
  *   applets that are embedded in a dashboard and must keep a fixed height in
  *   every state.
+ * @param {boolean} [props.collapseNoData] When true, the no-data state collapses
+ *   to the shared compact error height, like the fetch-error state. Use for
+ *   applets that have no non-data elements to show when there is no data.
  * @param {string} [props.cardClassName] Extra classes for the outer Card.
  * @param {string} [props.badgeAriaLabel] Accessible label for the warning badge.
  * @param {import("react").ReactNode} [props.children] Content when ready or no data.
@@ -138,6 +154,7 @@ function AppletCard({
   open = true,
   readyClassName = "",
   maintainHeight = false,
+  collapseNoData = false,
   cardClassName = "",
   badgeAriaLabel = "data availability warning",
   children,
@@ -152,6 +169,7 @@ function AppletCard({
 
   return (
     <Card
+      data-testid="applet-card"
       className={cn(
         "@container border-none p-0 bg-stone-800 gap-2",
         cardClassName,
@@ -177,7 +195,8 @@ function AppletCard({
             ref={contentRef}
             className={cn(
               "flex flex-col gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 font-thin",
-              state === "error" && !maintainHeight
+              (state === "error" || (collapseNoData && state === "noData")) &&
+                !maintainHeight
                 ? APP_ERROR_HEIGHT
                 : readyClassName,
             )}

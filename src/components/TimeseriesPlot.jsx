@@ -52,13 +52,13 @@ import { createDotCallback } from "../utils/createDotCallback";
 
 function TimeseriesPlot({
   title,
-  unit = null,
   dataKey,
   fullTimeRange,
   setSelectedTimeRange,
   plotShape,
   plotColor,
   bandMarker,
+  unit = null,
   isBandPlot = false,
   showMoon = false,
   plotIndex = 0,

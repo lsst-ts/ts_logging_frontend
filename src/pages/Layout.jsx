@@ -1,3 +1,4 @@
+import { SOURCE } from "@/constants/DATA_SOURCES";
 import { useEffect, useState } from "react";
 import { DateTime } from "luxon";
 import { Outlet, useRouter, useSearch } from "@tanstack/react-router";
@@ -79,7 +80,7 @@ export default function Layout({ children }) {
 
     addNotification({
       type: "systemNotice",
-      source: "retention-policy",
+      source: SOURCE.RETENTION_POLICY,
       title: `${host} data is only retained for ${retentionDays} days`,
       description: `Currently available dayobs data: ${dayObsRange.min} - ${dayObsRange.max}.`,
       meta: `${DateTime.utc().toFormat("yyyy-MM-dd HH:mm")} UTC`,

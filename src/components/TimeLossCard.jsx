@@ -45,7 +45,7 @@ export default function TimeLossCard({
 
   const heading = "Time Loss";
 
-  const formatHours = (value) =>
+  const numberFormatter = (value) =>
     showValues && typeof value === "number" && Number.isFinite(value)
       ? value.toFixed(2)
       : NO_DATA_DISPLAY;
@@ -86,7 +86,7 @@ export default function TimeLossCard({
             />
           ) : (
             <div data-slot="time-loss-fault">
-              {formatHours(obsStatusFaultLoss)}
+              {numberFormatter(obsStatusFaultLoss)}
             </div>
           )}
           <div>Weather:</div>
@@ -97,7 +97,7 @@ export default function TimeLossCard({
             />
           ) : (
             <div data-slot="time-loss-weather">
-              {formatHours(obsStatusWeatherLoss)}
+              {numberFormatter(obsStatusWeatherLoss)}
             </div>
           )}
           <div>Downtime:</div>
@@ -108,7 +108,7 @@ export default function TimeLossCard({
             />
           ) : (
             <div data-slot="time-loss-downtime">
-              {formatHours(obsStatusDowntime)}
+              {numberFormatter(obsStatusDowntime)}
             </div>
           )}
         </div>
@@ -116,7 +116,7 @@ export default function TimeLossCard({
         {/* Info Icon */}
         <Popover>
           <PopoverTrigger
-            className="self-end min-w-4"
+            className="self-end min-w-4 cursor-pointer"
             /* Prevents click from propagating to the card 
             to show the tooltip rather than open the dialog*/
             onClick={(e) => e.stopPropagation()}

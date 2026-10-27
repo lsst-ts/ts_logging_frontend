@@ -1149,6 +1149,34 @@ describe("buildCumulativeStateSeries", () => {
 });
 
 describe("buildNightMetadataMap", () => {
+  it.each([0, 2.5, "3.25"])(
+    "preserves backend elapsed twilight hours %s",
+    (elapsed) => {
+      const nights = buildNightMetadataMap([
+        {
+          dayobs: 20260702,
+          twilight_evening_12deg: "2026-07-01 20:00:00",
+          twilight_morning_12deg: "2026-07-02 04:00:00",
+          night_hours: 8,
+          elapsed_twilight_hours: elapsed,
+        },
+      ]);
+      expect(nights.get(20260701).elapsedHours).toBe(Number(elapsed));
+    },
+  );
+
+  it("falls back to the twilight duration when elapsed hours are absent", () => {
+    const nights = buildNightMetadataMap([
+      {
+        dayobs: 20260702,
+        twilight_evening_12deg: "2026-07-01 20:00:00",
+        twilight_morning_12deg: "2026-07-02 04:00:00",
+        night_hours: 10,
+      },
+    ]);
+    expect(nights.get(20260701).elapsedHours).toBeCloseTo(8);
+  });
+
   it("returns an empty map when given no almanac data", () => {
     expect(buildNightMetadataMap([])).toEqual(new Map());
   });

@@ -28,9 +28,12 @@ import { formatDayobsStrForDisplay } from "@/utils/timeUtils";
  *
  * @param {Object} [availability] Availability metadata for the obs-status feed.
  * @param {boolean} [fetchError] Whether the obs-status request failed.
- * @returns {{ok: boolean, message?: string}}
+ * @param {number} [entriesLength] Number of obs-status entries that were
+ *   actually returned; used to distinguish "data is empty" from "data is
+ *   unavailable for a known reason (availability NONE)".
+ * @returns {{ok: boolean, message?: string, noData?: boolean}}
  */
-export function buildObsStatusSource(availability, fetchError) {
+export function buildObsStatusSource(availability, fetchError, entriesLength) {
   if (fetchError) {
     return {
       ok: false,
@@ -39,16 +42,35 @@ export function buildObsStatusSource(availability, fetchError) {
   }
 
   const status = availability?.status;
-  if (
-    status === OBSERVATORY_STATE_AVAILABILITY_STATUS.NONE ||
-    status === OBSERVATORY_STATE_AVAILABILITY_STATUS.PARTIAL
-  ) {
+  const noData = entriesLength === 0;
+
+  const availabilityMessage = () => {
     const from = availability?.available_from
       ? formatDayobsStrForDisplay(String(availability.available_from))
       : "the supported dayobs range";
+    return `Observatory Status data is only available from ${from}.`;
+  };
+
+  if (status === OBSERVATORY_STATE_AVAILABILITY_STATUS.NONE) {
     return {
-      ok: status === OBSERVATORY_STATE_AVAILABILITY_STATUS.PARTIAL,
-      message: `Observatory Status data is only available from ${from}.`,
+      ok: false,
+      noData: true,
+      message: availabilityMessage(),
+    };
+  }
+
+  if (status === OBSERVATORY_STATE_AVAILABILITY_STATUS.PARTIAL) {
+    const message = noData
+      ? `No observatory status data available. ${availabilityMessage()}`
+      : availabilityMessage();
+    return { ok: true, noData, message };
+  }
+
+  if (noData) {
+    return {
+      ok: true,
+      noData: true,
+      message: "No observatory status data available.",
     };
   }
 
@@ -85,10 +107,6 @@ function formatProblemList(problems) {
     out = `${list} data could not be fetched.`;
   }
 
-  // Any remaining notes (e.g. the obs-status availability message) are
-  // appended as separate sentences, so a mixed message reads "Almanac
-  // data could not be fetched. Observatory Status data is only available
-  // from ...".
   const notes = problems.filter(
     (p) => !/ data could not be fetched\.?$/.test(p),
   );
@@ -136,28 +154,21 @@ export function resolveDisplayState({
     return { state: "loading", message: "" };
   }
 
-  // Problems are split by whether the source is required: required-source
-  // problems are shown in the card content, optional-source problems only as
-  // a header warning, since the data can render without them.
   const requiredProblems = [];
   const optionalProblems = [];
-  // Some required-sources might correctly load data but need to communicate
-  // some info to the user, i.e. obs-status data is only partially available,
-  // and will be treated as 0 where unavailable.
+  // Successful required sources may still carry availability notes.
   const requiredNotes = [];
   let anyRequiredFetchError = false;
   let anyRequiredNoData = false;
 
   for (const [source, status] of Object.entries(sources)) {
     const ok = status?.ok === true;
-    // Distinct from a fetch error: the source was reached but has no data.
     const noData = status?.noData === true;
 
     if (ok && !status?.message && !noData) {
       continue;
     }
 
-    // Fall back to a label derived from an unregistered source.
     const sourceMeta = SOURCE_METADATA[source] ?? { label: source };
 
     const text =
