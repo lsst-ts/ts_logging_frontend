@@ -41,7 +41,10 @@ function DataTableHeader({ table }) {
   return (
     <TableHeader>
       {table.getHeaderGroups().map((headerGroup) => (
-        <TableRow key={headerGroup.id} className="sticky top-0 z-50">
+        <TableRow
+          key={headerGroup.id}
+          className="sticky top-0 z-50 bg-teal-700"
+        >
           {headerGroup.headers.map((header) => (
             <TableHead
               key={header.id}
@@ -63,13 +66,7 @@ function DataTableHeader({ table }) {
                       ? "justify-end"
                       : "justify-between"
                   }`}
-                  style={{
-                    width: header.getSize(),
-                    minWidth:
-                      header.column.columnDef.minSize ?? MIN_DEFAULT_COL_WIDTH,
-                    maxWidth:
-                      header.column.columnDef.maxSize ?? MAX_DEFAULT_COL_WIDTH,
-                  }}
+                  style={{ width: "100%" }}
                 >
                   {/* Header content with optional tooltip */}
                   <HeaderContent header={header} />

@@ -97,7 +97,10 @@ test.describe("Scientific Nightly Digest — BLOCK details", () => {
       .locator("span.cursor-help")
       .hover();
 
-    await expect(page.getByText("Science program.")).toBeVisible();
-    await expect(page.getByText(/linked to Zephyr\/Jira/)).toHaveCount(0);
+    const tooltip = page.getByRole("tooltip");
+
+    await expect(tooltip).toBeVisible();
+    await expect(tooltip).toContainText("Science program.");
+    await expect(tooltip).not.toContainText(/linked to Zephyr\/Jira/);
   });
 });
