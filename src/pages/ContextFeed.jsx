@@ -1,4 +1,3 @@
-import { SOURCE, BLOCK_DETAIL_SOURCES } from "@/constants/DATA_SOURCES";
 import { useEffect, useState, useMemo, useRef } from "react";
 
 import { useSearch } from "@tanstack/react-router";
@@ -6,54 +5,45 @@ import { useSearch } from "@tanstack/react-router";
 import { NotificationBannerStack } from "@/components/NotificationBannerStack";
 import { useNotifications } from "@/hooks/useNotifications";
 
-import { TriangleAlert } from "lucide-react";
-
 import { Skeleton } from "@/components/ui/skeleton";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from "@/components/ui/tooltip";
 
-import TimelineChart from "@/components/TimelineChart";
-import ObservatoryStatusTimeline from "@/components/ObservatoryStatusTimeline";
+import ObservatoryStatusTimelineApplet from "@/components/ObservatoryStatusTimelineApplet";
+import ContextFeedTimelineApplet from "@/components/ContextFeedTimelineApplet";
 import ContextFeedTable from "@/components/ContextFeedTable.jsx";
 import { CATEGORY_INDEX_INFO } from "@/constants/CONTEXT_FEED_DEFINITIONS";
-import {
-  SERIES_ORDER,
-  METRIC_STATES,
-  STATUS_TIMELINE_DIMENSIONS,
-  STATUS_TIMELINE_MARGINS,
-} from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
-import { getStatusLabel } from "@/utils/observatoryStatusUtils";
+import { METRIC_STATES } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS";
 import { contextFeedColumns } from "@/components/ContextFeedColumns";
-import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
-import PageHeader from "@/components/PageHeader";
+import Header from "@/components/Header";
+import { SOURCE, BLOCK_DETAIL_SOURCES } from "@/constants/DATA_SOURCES";
+
 import TipsCard from "@/components/TipsCard";
 import SelectedTimeRangeBar from "@/components/SelectedTimeRangeBar";
 import DownloadIcon from "../assets/DownloadIcon.svg";
-import {
-  getDayobsStartUTC,
-  formatDayobsStrForDisplay,
-} from "@/utils/timeUtils";
+import { getDayobsStartUTC } from "@/utils/timeUtils";
 import {
   fetchAlmanac,
   fetchContextFeedFromRubinNights,
   fetchBlockDetails,
   fetchObsStatusFromRubinNights,
 } from "@/utils/fetchUtils";
+import {
+  buildObsStatusSource,
+  resolveDisplayState,
+} from "@/utils/displayState";
 import { mergeContextFeedSources, getBlockSourceLabel } from "@/utils/utils";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
 import { prepareAlmanacData } from "@/utils/timelineUtils";
 import { useUrlSync, useSelectionSync } from "@/components/DataTable";
+import {
+  EmptyDisplayState,
+  renderHeaderWarning,
+} from "@/components/AppletCard";
 
 // This filters out the non-selected telescope's exposures, queues and
 // narrative logs from the default display.
@@ -87,6 +77,10 @@ const filterDefaultEventsByTelescope = (telescope) => {
   return eventTypes;
 };
 
+/**
+ * Render the Context Feed page: a chronologically ordered log of exposures,
+ * scripts, errors and narrations, with related timelines and tables.
+ */
 function ContextFeed() {
   // Subscribe component to URL params
   const search = useSearch({
@@ -114,25 +108,28 @@ function ContextFeed() {
   // Data and loading flags
   const [rubinNightsData, setRubinNightsData] = useState([]);
   const [rubinNightsDataLoading, setRubinNightsDataLoading] = useState(true);
+  const [rubinNightsError, setRubinNightsError] = useState(false);
   const [blockLookup, setBlockLookup] = useState({});
   const [blockLookupLoading, setBlockLookupLoading] = useState(true);
+  const [blockDetailsError, setBlockDetailsError] = useState(false);
 
   // Almanac data for timeline
   const [twilightValues, setTwilightValues] = useState([]);
   const [twilight0DegValues, setTwilight0DegValues] = useState([]);
   const [almanacLoading, setAlmanacLoading] = useState(true);
+  const [almanacError, setAlmanacError] = useState(false);
 
   // Observatory status data
   const [obsStatusEntries, setObsStatusEntries] = useState([]);
   const [obsStatusMetrics, setObsStatusMetrics] = useState(null);
   const [obsStatusAvailability, setObsStatusAvailability] = useState(null);
   const [obsStatusLoading, setObsStatusLoading] = useState(true);
+  const [obsStatusError, setObsStatusError] = useState(false);
 
   // Total night hours from almanac (for metrics total row)
   const [nightHours, setNightHours] = useState(null);
 
   // Visibility toggles
-  const [timelineVisible, setTimelineVisible] = useState(true);
   const [tipsVisible, setTipsVisible] = useState(false);
 
   const {
@@ -153,7 +150,6 @@ function ContextFeed() {
   // The table filter state is hoisted up here in order to allow
   // the timeline checkboxes to interact with it
   // It is also synced with the page URL
-
   const { columnFilters, setColumnFilters, resetFilters } = useUrlSync({
     routePath: "/context-feed",
     columns: contextFeedColumns,
@@ -220,8 +216,11 @@ function ContextFeed() {
     const abortController = new AbortController();
 
     setRubinNightsDataLoading(true);
+    setRubinNightsError(false);
     setAlmanacLoading(true);
     setObsStatusLoading(true);
+    setObsStatusError(false);
+    setAlmanacError(false);
     clearNotifications();
 
     fetchAlmanac(startDayobs, queryEndDayobs, abortController)
@@ -239,6 +238,7 @@ function ContextFeed() {
       .catch((err) => {
         if (!abortController.signal.aborted) {
           console.error("Error fetching almanac data:", err);
+          setAlmanacError(true);
           addNotification({
             type: "error",
             source: SOURCE.ALMANAC,
@@ -273,6 +273,7 @@ function ContextFeed() {
             "Error fetching Context Feed data from Rubin Nights",
             err,
           );
+          setRubinNightsError(true);
           addNotification({
             type: "error",
             source: SOURCE.CONTEXT_FEED,
@@ -300,6 +301,7 @@ function ContextFeed() {
       .catch((err) => {
         if (!abortController.signal.aborted) {
           console.error("Error fetching observatory status:", err);
+          setObsStatusError(true);
           addNotification({
             type: "error",
             source: SOURCE.OBS_STATUS,
@@ -326,6 +328,7 @@ function ContextFeed() {
       // tableLoading, which would otherwise pin the page to its loading
       // skeletons and suppress the empty-state and error banners.
       setBlockLookupLoading(false);
+      setBlockDetailsError(false);
       return;
     }
 
@@ -341,14 +344,18 @@ function ContextFeed() {
     // There is nothing to fetch
     if (blockKeys.length === 0) {
       setBlockLookupLoading(false);
+      setBlockDetailsError(false);
       return;
     }
     fetchBlockDetails(blockKeys, abortController)
       .then((blocks) => {
         setBlockLookup(blocks.data);
 
-        // Handle partial errors (one of Zephyr/Jira failing)
-        if (blocks.errors) {
+        // An empty errors object is a successful response.
+        const hasErrors =
+          blocks.errors && Object.keys(blocks.errors).length > 0;
+        if (hasErrors) {
+          setBlockDetailsError(true);
           Object.entries(blocks.errors).forEach(([source, message]) => {
             addNotification({
               type: "error",
@@ -361,11 +368,14 @@ function ContextFeed() {
               message,
             );
           });
+        } else {
+          setBlockDetailsError(false);
         }
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
           setBlockLookup({});
+          setBlockDetailsError(true);
           console.error(
             "Error fetching BLOCK descriptions from Zephyr/Jira",
             err,
@@ -418,13 +428,53 @@ function ContextFeed() {
       )
     : processedNotifications;
 
-  const obsAvailabilityStatus = obsStatusAvailability?.status ?? null;
-  const obsAvailableFrom = obsStatusAvailability?.available_from
-    ? formatDayobsStrForDisplay(String(obsStatusAvailability.available_from))
-    : null;
-  const obsAvailabilityWarningText = `Observatory Status data is only available from ${
-    obsAvailableFrom ?? "the supported date range"
-  }.`;
+  // Determine the applet status for the Observatory Status Timeline.
+  const obsStatusTimelineSources = {
+    [SOURCE.OBS_STATUS]: buildObsStatusSource(
+      obsStatusAvailability,
+      obsStatusError,
+      obsStatusEntries.length,
+    ),
+    [SOURCE.ALMANAC]: almanacError ? { ok: false } : { ok: true },
+  };
+  const obsStatusTimelineRequired = [SOURCE.OBS_STATUS];
+
+  // Block details affect the table, not the timeline.
+  const contextFeedSources = {
+    [SOURCE.CONTEXT_FEED]: rubinNightsError
+      ? { ok: false }
+      : rubinNightsData.length === 0
+        ? { ok: true, noData: true }
+        : { ok: true },
+    [SOURCE.ALMANAC]: almanacError ? { ok: false } : { ok: true },
+  };
+  const contextFeedRequired = [SOURCE.CONTEXT_FEED];
+  // The standalone table resolves separately from AppletCard.
+  const { state: contextFeedTableState, message: contextFeedTableMessage } =
+    resolveDisplayState({
+      sources: contextFeedSources,
+      required: contextFeedRequired,
+      loading: tableLoading,
+    });
+
+  // Optional page sources only produce header warnings.
+  const pageOptionalSources = {
+    [SOURCE.ALMANAC]: almanacError ? { ok: false } : { ok: true },
+    [SOURCE.BLOCK_DETAILS]: blockDetailsError ? { ok: false } : { ok: true },
+  };
+  const { state: pageOptionalState, message: pageOptionalMessage } =
+    resolveDisplayState({
+      sources: pageOptionalSources,
+      // Wait for all requests to avoid transient warnings.
+      loading: obsStatusLoading || tableLoading,
+    });
+  const pageHeaderWarning = renderHeaderWarning(
+    { state: pageOptionalState, message: pageOptionalMessage },
+    "Page data availability warning",
+  );
+
+  const showContextFeedMessage =
+    contextFeedTableState === "error" || contextFeedTableState === "noData";
 
   const timelineSeriesData = useMemo(() => {
     return Object.values(CATEGORY_INDEX_INFO)
@@ -461,9 +511,11 @@ function ContextFeed() {
         {/* Page Header, Timeline & Tips Banners */}
         <div className="flex flex-col gap-2">
           {/* Page title + buttons */}
-          <PageHeader
+          <Header
+            isPageHeader={true}
             title="Context Feed"
-            description="Chronologically ordered log of exposures, scripts, errors and narrations."
+            description="Chronologically ordered observatory events in context."
+            titleBadge={pageHeaderWarning}
             actions={
               <>
                 <Popover>
@@ -476,13 +528,6 @@ function ContextFeed() {
                     the table to a .csv file.
                   </PopoverContent>
                 </Popover>
-                {/* Button to toggle timeline visibility */}
-                <Button
-                  onClick={() => setTimelineVisible((prev) => !prev)}
-                  className="bg-stone-300 text-teal-900 font-sm h-6 rounded-md px-2 shadow-[3px_3px_3px_0px_#0d9488] cursor-pointer hover:bg-stone-200 hover:shadow-[4px_4px_8px_0px_#0d9488] transition-all duration-200"
-                >
-                  {timelineVisible ? "Hide Timelines" : "Show Timelines"}
-                </Button>
                 {/* Button to toggle tips visibility */}
                 <Button
                   onClick={() => setTipsVisible((prev) => !prev)}
@@ -527,154 +572,37 @@ function ContextFeed() {
             </TipsCard>
           )}
 
-          {/* Partial availability warning above timelines */}
-          {timelineVisible &&
-            !obsStatusLoading &&
-            obsAvailabilityStatus === "partial" && (
-              <div className="flex items-center">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <TriangleAlert className="h-5 w-5 text-yellow-400 cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{obsAvailabilityWarningText}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-            )}
-
           {/* Observatory Status Timeline */}
-          {timelineVisible && (
-            <Card className="grid gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 font-thin shadow-stone-900 shadow-md">
-              {obsStatusLoading ? (
-                <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
-              ) : obsAvailabilityStatus === "none" ? (
-                <p className="text-sm text-stone-400 text-center py-4">
-                  {obsAvailabilityWarningText}
-                </p>
-              ) : (
-                <div className="flex flex-row min-w-0">
-                  {/* State Labels */}
-                  <div
-                    className="flex flex-col w-45"
-                    style={{
-                      // Centre the first label on the first chart row, which
-                      // sits one row height below the top margin
-                      paddingTop: `${
-                        STATUS_TIMELINE_MARGINS.top +
-                        STATUS_TIMELINE_DIMENSIONS.SERIES_ROW_HEIGHT / 2
-                      }px`,
-                    }}
-                  >
-                    {SERIES_ORDER.map((stateName) => (
-                      <div
-                        key={stateName}
-                        className="flex items-center justify-between"
-                        style={{
-                          height: `${STATUS_TIMELINE_DIMENSIONS.SERIES_ROW_HEIGHT}px`,
-                        }}
-                      >
-                        <span className="text-xs text-stone-200">
-                          {getStatusLabel(stateName)}
-                        </span>
-                        <span className="text-xs text-stone-200 tabular-nums">
-                          {!METRIC_STATES.includes(stateName)
-                            ? ""
-                            : obsStatusMetrics?.[stateName.toLowerCase()] !=
-                                null
-                              ? obsStatusMetrics[
-                                  stateName.toLowerCase()
-                                ].toFixed(2)
-                              : "—"}
-                        </span>
-                      </div>
-                    ))}
-                    <div
-                      className="flex items-center justify-between"
-                      style={{
-                        marginTop: `${STATUS_TIMELINE_DIMENSIONS.METRICS_TOTAL_ROW_GAP}px`,
-                      }}
-                    >
-                      <span className="text-base text-stone-200">
-                        Night Hours
-                      </span>
-                      <span className="text-base text-stone-400 tabular-nums">
-                        {nightHours != null ? nightHours.toFixed(2) : "—"}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <ObservatoryStatusTimeline
-                      entries={obsStatusEntries}
-                      twilightValues={twilightValues}
-                      twilight0DegValues={twilight0DegValues}
-                      fullTimeRange={fullTimeRange}
-                      selectedTimeRange={selectedTimeRange}
-                      setSelectedTimeRange={setSelectedTimeRange}
-                      brushGroup="context-feed"
-                    />
-                  </div>
-                </div>
-              )}
-            </Card>
-          )}
+          <ObservatoryStatusTimelineApplet
+            sources={obsStatusTimelineSources}
+            required={obsStatusTimelineRequired}
+            loading={obsStatusLoading}
+            entries={obsStatusEntries}
+            twilightValues={twilightValues}
+            twilight0DegValues={twilight0DegValues}
+            fullTimeRange={fullTimeRange}
+            selectedTimeRange={selectedTimeRange}
+            setSelectedTimeRange={setSelectedTimeRange}
+            brushGroup="context-feed"
+            obsStatusMetrics={obsStatusMetrics}
+            nightHours={nightHours}
+          />
 
-          {/* Timeline */}
-          {timelineVisible && (
-            <Card className="grid gap-4 bg-black p-4 text-neutral-200 rounded-sm border-2 border-teal-900 font-thin shadow-stone-900 shadow-md">
-              {tableLoading ? (
-                <Skeleton className="w-full h-20 bg-stone-700 rounded-md" />
-              ) : (
-                <div className="flex flex-row min-w-0">
-                  {/* Event Type Checkboxes */}
-                  <div className="mt-8 flex flex-col gap-1 w-45">
-                    {Object.entries(CATEGORY_INDEX_INFO)
-                      .filter(([, info]) => info.displayIndex != null) // exclude AUTOLOG
-                      .sort(
-                        // sort on displayIndex
-                        ([, aInfo], [, bInfo]) =>
-                          (aInfo.displayIndex ?? 0) - (bInfo.displayIndex ?? 0),
-                      )
-                      .map(([key, info]) => {
-                        // Determine if checkbox should be checked
-                        const checked = columnFilters
-                          .find((f) => f.id === "event_type")
-                          ?.value.includes(info.label);
-                        return (
-                          <div
-                            key={key}
-                            className="flex items-center space-x-2 opacity-100"
-                          >
-                            <Checkbox
-                              checked={!!checked}
-                              onCheckedChange={(checked) =>
-                                toggleEvents(key, !!checked)
-                              }
-                              style={{ borderColor: info.color }}
-                            />
-                            <span className="text-xs text-stone-200">
-                              {info.label}
-                            </span>
-                          </div>
-                        );
-                      })}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <ContextMenuWrapper menuItems={contextMenuItems}>
-                      <TimelineChart
-                        data={timelineData}
-                        twilightValues={twilightValues}
-                        fullTimeRange={fullTimeRange}
-                        selectedTimeRange={selectedTimeRange}
-                        setSelectedTimeRange={setSelectedTimeRange}
-                        brushGroup="context-feed"
-                      />
-                    </ContextMenuWrapper>
-                  </div>
-                </div>
-              )}
-            </Card>
-          )}
+          {/* Context Feed Timeline */}
+          <ContextFeedTimelineApplet
+            sources={contextFeedSources}
+            required={contextFeedRequired}
+            loading={tableLoading}
+            timelineData={timelineData}
+            columnFilters={columnFilters}
+            toggleEvents={toggleEvents}
+            contextMenuItems={contextMenuItems}
+            twilightValues={twilightValues}
+            fullTimeRange={fullTimeRange}
+            selectedTimeRange={selectedTimeRange}
+            setSelectedTimeRange={setSelectedTimeRange}
+            brushGroup="context-feed"
+          />
 
           {/* Editable Time Range */}
           <SelectedTimeRangeBar
@@ -726,6 +654,9 @@ function ContextFeed() {
           selected={selectedValue}
           onSelectionChange={setSelectedValue}
         />
+        {showContextFeedMessage && (
+          <EmptyDisplayState variant="page" message={contextFeedTableMessage} />
+        )}
       </div>
     </>
   );

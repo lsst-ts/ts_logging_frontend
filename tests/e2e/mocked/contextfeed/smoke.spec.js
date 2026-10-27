@@ -30,9 +30,7 @@ test.describe("Context Feed page — smoke", () => {
       page.locator("[data-slot='card-title']").first(),
     ).toContainText("Context Feed");
     await expect(
-      page.getByText(
-        "Chronologically ordered log of exposures, scripts, errors and narrations.",
-      ),
+      page.getByText("Chronologically ordered observatory events in context."),
     ).toBeVisible();
 
     await expect(tableRows(page)).toHaveCount(SIMONYI_ROWS);
