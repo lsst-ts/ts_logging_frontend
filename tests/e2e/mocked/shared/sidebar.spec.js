@@ -26,6 +26,7 @@ const NAV_ITEMS = [
   "Data Log",
   "Context Feed",
   "Visit Maps",
+  "Time Accounting",
 ];
 
 const digestUrlFor = (start, end, telescope = "Simonyi") =>
@@ -46,7 +47,7 @@ test.describe("Sidebar — nav menu", () => {
     await setupApiMocks(page);
   });
 
-  test("lists all five pages", async ({ page }) => {
+  test("lists all six pages", async ({ page }) => {
     await page.goto(PLOTS_URL);
 
     for (const item of NAV_ITEMS) {

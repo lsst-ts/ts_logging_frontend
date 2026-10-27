@@ -48,9 +48,16 @@ for (const { name, url, waitForLoad } of PAGES) {
         { value: "abcd", expectedError: /format|yyyyMMdd/i },
       ];
 
+      // The validation-error page is what we're asserting on, so we don't need
+      // the full browser "load" event (which is slow/flaky under the parallel
+      // Vite dev server); domcontentloaded is enough because the assertions
+      // below have their own timeout.
+      const gotoValidationRoute = (url) =>
+        page.goto(url, { waitUntil: "domcontentloaded" });
+
       for (const { value, expectedError } of invalidCases) {
         await test.step(`startDayobs="${value}"`, async () => {
-          await page.goto(
+          await gotoValidationRoute(
             `${basePath}?startDayobs=${value}&endDayobs=${TEST_DAYOBS}`,
           );
           await expect(page.getByText("Something went wrong")).toBeVisible({
@@ -60,7 +67,7 @@ for (const { name, url, waitForLoad } of PAGES) {
         });
 
         await test.step(`endDayobs="${value}"`, async () => {
-          await page.goto(
+          await gotoValidationRoute(
             `${basePath}?startDayobs=${TEST_DAYOBS}&endDayobs=${value}`,
           );
           await expect(page.getByText("Something went wrong")).toBeVisible({
