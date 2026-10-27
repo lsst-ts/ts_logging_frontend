@@ -12,10 +12,16 @@ import {
 import { TELESCOPES } from "@/components/Parameters";
 import DataLogTable from "@/components/DataLogTable.jsx";
 import TimelineChart from "@/components/TimelineChart";
-import PageHeader from "@/components/PageHeader";
+import Header from "@/components/Header";
 import TipsCard from "@/components/TipsCard";
 import SelectedTimeRangeBar from "@/components/SelectedTimeRangeBar";
 import { ContextMenuWrapper } from "@/components/ContextMenuWrapper";
+import {
+  EmptyDisplayState,
+  renderHeaderWarning,
+} from "@/components/AppletCard";
+import { SOURCE } from "@/constants/DATA_SOURCES";
+import { resolveDisplayState } from "@/utils/displayState";
 import DownloadIcon from "../assets/DownloadIcon.svg";
 import {
   fetchDataLogEntriesFromConsDB,
@@ -77,12 +83,20 @@ function DataLog() {
   const [blockLookup, setBlockLookup] = useState({});
   const [blockLookupLoading, setBlockLookupLoading] = useState(true);
 
+  // Source status flags (no-data vs fetch-error) for each data source
+  const [dataLogNoData, setDataLogNoData] = useState(false);
+  const [dataLogError, setDataLogError] = useState(false);
+  const [exposureLogNoData, setExposureLogNoData] = useState(false);
+  const [exposureLogError, setExposureLogError] = useState(false);
+
   // Almanac data for timeline
   const [twilightValues, setTwilightValues] = useState([]);
   const [illumValues, setIllumValues] = useState([]);
   const [moonValues, setMoonValues] = useState([]);
   const [moonIntervals, setMoonIntervals] = useState([]);
   const [almanacLoading, setAlmanacLoading] = useState(true);
+  const [almanacNoData, setAlmanacNoData] = useState(false);
+  const [almanacError, setAlmanacError] = useState(false);
 
   // Visibility toggles
   const [timelineVisible, setTimelineVisible] = useState(true);
@@ -127,6 +141,8 @@ function DataLog() {
     setAlmanacLoading(true);
 
     // Reset almanac state
+    setAlmanacNoData(false);
+    setAlmanacError(false);
     setTwilightValues([]);
     setIllumValues([]);
     setMoonValues([]);
@@ -134,6 +150,9 @@ function DataLog() {
 
     fetchAlmanac(startDayobs, queryEndDayobs, abortController)
       .then((almanac) => {
+        if (!almanac || almanac.length === 0) {
+          setAlmanacNoData(true);
+        }
         const { twilightValues, illumValues, moonValues } =
           prepareAlmanacData(almanac);
         setTwilightValues(twilightValues);
@@ -142,6 +161,7 @@ function DataLog() {
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
+          setAlmanacError(true);
           console.error("Error fetching almanac data:", err);
           addNotification({
             type: "error",
@@ -166,6 +186,8 @@ function DataLog() {
     const abortController = new AbortController();
 
     setConsDBdataLoading(true);
+    setDataLogNoData(false);
+    setDataLogError(false);
 
     fetchDataLogEntriesFromConsDB(
       startDayobs,
@@ -176,6 +198,7 @@ function DataLog() {
       .then((consDBData) => {
         const dataLog = consDBData.data_log ?? [];
         if (dataLog.length === 0) {
+          setDataLogNoData(true);
           addNotification({
             type: "noData",
             source: "consdb",
@@ -190,6 +213,7 @@ function DataLog() {
       .catch((err) => {
         if (!abortController.signal.aborted) {
           setConsDBdata([]);
+          setDataLogError(true);
           console.error("Error fetching data log entries:", err);
           addNotification({
             type: "error",
@@ -213,6 +237,8 @@ function DataLog() {
     const abortController = new AbortController();
 
     setExposureLogDataLoading(true);
+    setExposureLogNoData(false);
+    setExposureLogError(false);
 
     fetchDataLogEntriesFromExposureLog(
       startDayobs,
@@ -221,11 +247,15 @@ function DataLog() {
       abortController,
     )
       .then((exposureLogData) => {
+        if (!exposureLogData || exposureLogData.length === 0) {
+          setExposureLogNoData(true);
+        }
         setExposureLogData(exposureLogData);
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
           setExposureLogData([]);
+          setExposureLogError(true);
           console.error("Error fetching exposure log entries:", err);
           addNotification({
             type: "error",
@@ -343,6 +373,39 @@ function DataLog() {
         )
       : processedNotifications;
 
+  // The data log (ConsDB) is required to draw the table; almanac and
+  // exposure entries are optional. A single resolved status handles both:
+  // required-source problems show a message below the table, while optional-
+  // source problems surface as a header warning once the table is ready.
+  const dataLogSources = {
+    [SOURCE.DATA_LOG]: dataLogError
+      ? { ok: false }
+      : dataLogNoData
+        ? { ok: true, noData: true }
+        : { ok: true },
+    [SOURCE.ALMANAC]: almanacError
+      ? { ok: false }
+      : almanacNoData
+        ? { ok: true, noData: true }
+        : { ok: true },
+    [SOURCE.EXPOSURE_ENTRIES]: exposureLogError
+      ? { ok: false }
+      : exposureLogNoData
+        ? { ok: true, noData: true }
+        : { ok: true },
+  };
+
+  // Loading here only tracks the table sources (the timeline additionally
+  // depends on almanac and gates on `tableLoading || almanacLoading` below).
+  const dataLogState = resolveDisplayState({
+    sources: dataLogSources,
+    required: [SOURCE.DATA_LOG],
+    loading: tableLoading,
+  });
+
+  const showDataLogMessage =
+    dataLogState.state === "error" || dataLogState.state === "noData";
+
   return (
     <>
       <div className="flex flex-col h-screen w-full p-8 gap-4">
@@ -355,9 +418,11 @@ function DataLog() {
         {/* Page Header, Timeline & Tips Banners */}
         <div className="flex flex-col gap-2">
           {/* Page title + buttons */}
-          <PageHeader
+          <Header
+            isPageHeader={true}
             title="Data Log"
             description="Exposure metadata and related fields from the ConsDB, Exposure Log, Transformed EFD, Zephyr & Jira."
+            titleBadge={renderHeaderWarning(dataLogState)}
             actions={
               <>
                 <Popover>
@@ -503,6 +568,10 @@ function DataLog() {
           selected={selectedValue}
           onSelectionChange={setSelectedValue}
         />
+
+        {showDataLogMessage && (
+          <EmptyDisplayState message={dataLogState.message} />
+        )}
       </div>
     </>
   );

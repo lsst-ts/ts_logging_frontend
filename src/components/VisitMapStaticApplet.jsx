@@ -1,4 +1,7 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import AppletCard, {
+  EmptyDisplayState,
+  useAppletState,
+} from "@/components/AppletCard";
 import {
   Popover,
   PopoverContent,
@@ -9,20 +12,57 @@ import { Skeleton } from "@/components/ui/skeleton";
 import InfoIcon from "../assets/InfoIcon.svg";
 import DownloadIcon from "../assets/DownloadIcon.svg";
 
+/**
+ * Render the static visit map image, or a standard empty state when the
+ * applet has no data.
+ *
+ * Reads the applet display state from context (provided by AppletCard). Only
+ * the "noData" state needs handling here: a fetch "error" is already shown by
+ * AppletStateBody and never reaches this content.
+ *
+ * @param {Object} props
+ * @param {string} props.mapData URL of the static visit map image to display.
+ */
+function StaticVisitMap({ mapData }) {
+  const { state, message } = useAppletState();
+
+  if (state === "noData") {
+    return <EmptyDisplayState message={message} />;
+  }
+
+  return (
+    <div className="flex h-full w-full items-center justify-center p-1.5 sm:p-2">
+      <img
+        src={mapData}
+        alt="Visit Map"
+        className="block h-auto max-h-full w-auto max-w-full rounded-md border-2 border-black object-contain"
+      />
+    </div>
+  );
+}
+
+/**
+ * Render the visit map as a static image applet with its own header.
+ *
+ * @param {Object} props
+ * @param {string} props.mapData URL of the static visit map image.
+ * @param {boolean} props.mapLoading Whether the map is still loading.
+ * @param {Object} props.sources Map of source -> `{ ok, message?, noData? }`.
+ * @param {string[]} props.required Sources required for a sensible display.
+ */
 export default function VisitMapStaticApplet({
   mapData,
   mapLoading,
-  error = false,
+  sources = {},
+  required = [],
 }) {
   return (
-    <Card className="border-none p-0 bg-stone-800 gap-2">
-      <CardHeader className="grid-cols-3 bg-teal-900 p-4 rounded-sm align-center gap-0">
-        <CardTitle className="text-white font-thin col-span-2">
-          Visit Map
-        </CardTitle>
-        <div className="flex flex-row gap-2 justify-end">
+    <AppletCard
+      title="Visit Map"
+      actions={
+        <>
           <Popover>
-            <PopoverTrigger className="self-end min-w-4">
+            <PopoverTrigger className="self-end min-w-4 cursor-pointer">
               <img src={DownloadIcon} />
             </PopoverTrigger>
             <PopoverContent className="bg-black text-white text-sm border-yellow-700">
@@ -32,7 +72,7 @@ export default function VisitMapStaticApplet({
             </PopoverContent>
           </Popover>
           <Popover>
-            <PopoverTrigger className="self-end min-w-4">
+            <PopoverTrigger className="self-end min-w-4 cursor-pointer">
               <img src={InfoIcon} />
             </PopoverTrigger>
             <PopoverContent className="bg-black text-white text-sm border-yellow-700 flex flex-col max-w-5xl mx-auto gap-y-2">
@@ -51,29 +91,16 @@ export default function VisitMapStaticApplet({
               <p>Brighter areas have more visits.</p>
             </PopoverContent>
           </Popover>
-        </div>
-      </CardHeader>
-      <CardContent className="bg-black p-4 text-stone-400 font-normal rounded-sm border-2 border-teal-900 h-80">
-        {mapLoading ? (
-          <Skeleton className="w-full h-full bg-stone-900 rounded-md" />
-        ) : error ? (
-          <div className="flex h-full w-full items-center justify-center p-1.5 sm:p-2">
-            Error generating visit map
-          </div>
-        ) : !mapData ? (
-          <div className="flex h-full w-full items-center justify-center p-1.5 sm:p-2">
-            No science visits available
-          </div>
-        ) : (
-          <div className="flex h-full w-full items-center justify-center p-1.5 sm:p-2">
-            <img
-              src={mapData}
-              alt="Visit Map"
-              className="block h-auto max-h-full w-auto max-w-full rounded-md border-2 border-black object-contain"
-            />
-          </div>
-        )}
-      </CardContent>
-    </Card>
+        </>
+      }
+      sources={sources}
+      required={required}
+      loading={mapLoading}
+      skeleton={<Skeleton className="w-full h-full bg-stone-900 rounded-md" />}
+      readyClassName="h-80"
+      maintainHeight
+    >
+      <StaticVisitMap mapData={mapData} />
+    </AppletCard>
   );
 }

@@ -4,9 +4,10 @@ import { useSearch } from "@tanstack/react-router";
 
 import { Skeleton } from "@/components/ui/skeleton";
 
+import Header from "@/components/Header";
 import { TELESCOPES } from "@/components/Parameters";
-import PageHeader from "@/components/PageHeader";
 import TipsCard from "@/components/TipsCard";
+import AppletCard, { EmptyDisplayState } from "@/components/AppletCard";
 import DownloadIcon from "../assets/DownloadIcon.svg";
 import { VISIT_SHAPE, VISIT_SHAPE_INNER } from "@/components/PLOT_DEFINITIONS";
 
@@ -25,8 +26,14 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { fetchVisitMaps } from "@/utils/fetchUtils";
 import { getNightSummaryLink } from "@/utils/utils";
 import { getDayobsStartUTC } from "@/utils/timeUtils";
+import { SOURCE } from "@/constants/DATA_SOURCES";
+import { resolveDisplayState } from "@/utils/displayState";
 import { BAND_COLORS_TAILWIND } from "@/components/PLOT_DEFINITIONS";
 
+/**
+ * Render the Visit Maps page: interactive visit maps for the selected
+ * telescope and time range.
+ */
 function VisitMaps() {
   // Routing and URL params
   const { startDayobs, endDayobs, telescope } = useSearch({
@@ -42,6 +49,8 @@ function VisitMaps() {
 
   const [interactiveMap, setInteractiveMap] = useState(null);
   const [visitMapsLoading, setVisitMapsLoading] = useState(true);
+  const [visitMapsNoData, setVisitMapsNoData] = useState(false);
+  const [visitMapsError, setVisitMapsError] = useState(false);
   const [tipsVisible, setTipsVisible] = useState(false);
 
   const {
@@ -70,16 +79,34 @@ function VisitMaps() {
     return dayobsDates;
   }, [startDayobs, endDayobs]);
 
+  // Visit maps is the only source and is required: a failure or empty result
+  // surfaces a message in the gap between the legend and the pinned bottom
+  // applet (there are no optional sources to warn about in the header).
+  const visitMapState = resolveDisplayState({
+    sources: {
+      [SOURCE.MULTI_NIGHT_VISIT_MAPS]: visitMapsError
+        ? { ok: false }
+        : visitMapsNoData
+          ? { ok: true, noData: true }
+          : { ok: true },
+    },
+    required: [SOURCE.MULTI_NIGHT_VISIT_MAPS],
+    loading: visitMapsLoading,
+  });
+
   useEffect(() => {
     const abortController = new AbortController();
 
     setVisitMapsLoading(true);
     setInteractiveMap(null);
+    setVisitMapsNoData(false);
+    setVisitMapsError(false);
     clearNotifications();
 
     fetchVisitMaps(startDayobs, queryEndDayobs, instrument, abortController)
       .then((interactivePlot) => {
         if (interactivePlot === null) {
+          setVisitMapsNoData(true);
           addNotification({
             type: "noData",
             source: "consdb",
@@ -92,6 +119,7 @@ function VisitMaps() {
       })
       .catch((err) => {
         if (!abortController.signal.aborted) {
+          setVisitMapsError(true);
           console.error("Error fetching visit maps:", err);
           addNotification({
             type: "error",
@@ -112,7 +140,7 @@ function VisitMaps() {
 
   return (
     <>
-      <div className="flex flex-col w-full p-8 gap-4">
+      <div className="flex flex-col h-full w-full p-8 gap-4">
         {processedNotifications?.length > 0 && (
           <NotificationBannerStack
             notifications={processedNotifications}
@@ -123,7 +151,8 @@ function VisitMaps() {
         {/* Page Header, legend and collapsible tips */}
         <div className="flex flex-col gap-2">
           {/* Page title + buttons */}
-          <PageHeader
+          <Header
+            isPageHeader={true}
             title="Visit Maps"
             description="Interactive sky-maps of visits collected during the night."
             actions={
@@ -310,62 +339,61 @@ function VisitMaps() {
         </div>
 
         {/* Interactive Visit Maps */}
-        {visitMapsLoading ? (
-          <Skeleton className="w-full h-100 bg-stone-700 rounded-md" />
+        {visitMapState.state === "loading" ? (
+          <div className="flex-grow min-h-0">
+            <Skeleton className="w-full h-full bg-stone-700 rounded-md" />
+          </div>
+        ) : visitMapState.state === "error" ||
+          visitMapState.state === "noData" ? (
+          <div className="flex-grow">
+            <EmptyDisplayState message={visitMapState.message} />
+          </div>
         ) : (
           <div className="flex flex-col w-full p-4 space-y-4 items-center text-neutral-700">
-            {interactiveMap ? (
-              <BokehPlot id="interactive-plot" plotData={interactiveMap} />
-            ) : (
-              <div className="flex items-center justify-center font-normal w-full h-30 text-stone-400">
-                No visit map data available
-              </div>
-            )}
+            <BokehPlot id="interactive-plot" plotData={interactiveMap} />
           </div>
         )}
 
         {/* Link to nightsum reports */}
-        <div className="flex flex-col gap-2">
-          <PageHeader
-            title="Survey Progress Reports"
-            description="Scheduler-oriented night summaries."
-          />
-          <Card className="grid gap-4 bg-black p-8 text-neutral-200 rounded-sm border-2 border-teal-900 font-thin shadow-stone-900 shadow-md">
-            <div className="font-thin text-left">
-              {availableDayobs.length === 0 ? (
-                <p>No available dayobs for survey progress links.</p>
-              ) : (
-                <>
-                  <p>
-                    For survey progress, visit the Scheduler-oriented night
-                    summaries:{" "}
-                    {availableDayobs.map((dayobs, idx) => {
-                      const { url, label } = getNightSummaryLink(dayobs);
-                      return (
-                        <span key={dayobs}>
-                          <a
-                            href={url}
-                            className="underline font-normal text-blue-500 hover:text-blue-400"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            {label}
-                          </a>
-                          {idx < availableDayobs.length - 1 && ", "}
-                        </span>
-                      );
-                    })}
-                    .
-                  </p>
-                  <p className="pt-2">
-                    <span className="font-medium">Note: </span>If you see a 404
-                    error, the summary might not have been created for that day.
-                  </p>
-                </>
-              )}
-            </div>
-          </Card>
-        </div>
+        <AppletCard
+          title="Survey Progress Reports"
+          description="Scheduler-oriented night summaries."
+          cardClassName="mt-auto"
+        >
+          <div className="font-thin text-left">
+            {availableDayobs.length === 0 ? (
+              <p>No available dayobs for survey progress links.</p>
+            ) : (
+              <>
+                <p>
+                  For survey progress, visit the Scheduler-oriented night
+                  summaries:{" "}
+                  {availableDayobs.map((dayobs, idx) => {
+                    const { url, label } = getNightSummaryLink(dayobs);
+                    return (
+                      <span key={dayobs}>
+                        <a
+                          href={url}
+                          className="underline font-normal text-blue-500 hover:text-blue-400"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {label}
+                        </a>
+                        {idx < availableDayobs.length - 1 && ", "}
+                      </span>
+                    );
+                  })}
+                  .
+                </p>
+                <p className="pt-2">
+                  <span className="font-medium">Note: </span>If you see a 404
+                  error, the summary might not have been created for that day.
+                </p>
+              </>
+            )}
+          </div>
+        </AppletCard>
       </div>
     </>
   );
