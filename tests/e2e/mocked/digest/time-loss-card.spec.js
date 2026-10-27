@@ -14,7 +14,14 @@ const AVAILABLE_OBS_STATUS = (
   metrics = { fault_loss: 1.5, weather: 0.5, downtime: 0.25 },
 ) => ({
   entries: [],
-  intervals: [],
+  intervals: [
+    {
+      start_time_ms: 1767232800000,
+      end_time_ms: 1767243600000,
+      start_state: 2,
+      end_state: 2,
+    },
+  ],
   metrics,
   availability: {
     status: OBSERVATORY_STATE_AVAILABILITY_STATUS.FULL,
