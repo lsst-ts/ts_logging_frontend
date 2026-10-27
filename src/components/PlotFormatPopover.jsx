@@ -35,7 +35,7 @@ function PlotFormatPopover({
         <DialogTrigger asChild>
           <button
             className="text-sm btn bg-white text-black w-40 h-10 font-light rounded-md shadow-[4px_4px_4px_0px_#3CAE3F] 
-                        flex justify-center items-center py-2 px-4 
+                        flex justify-center items-center py-2 px-4 cursor-pointer
                         hover:shadow-[6px_6px_8px_0px_#3CAE3F] hover:scale-[1.02] hover:bg-white transition-all duration-200"
           >
             Plot Format
@@ -60,7 +60,7 @@ function PlotFormatPopover({
                 <RadioGroupItem
                   id={`xaxis-${key}`}
                   value={key}
-                  className="border border-sky-700 hover:bg-sky-700/20 hover:text-white focus:ring-2 focus:ring-sky-700 focus:ring-offset-2 focus:ring-offset-white"
+                  className="border border-sky-700 hover:bg-sky-700/20 hover:text-white focus:ring-2 focus:ring-sky-700 focus:ring-offset-2 focus:ring-offset-white cursor-pointer"
                 />
                 <Label htmlFor={`xaxis-${key}`} className="text-sm">
                   {label}
@@ -73,6 +73,7 @@ function PlotFormatPopover({
               id="xaxis-show"
               checked={xAxisShow}
               onCheckedChange={(checked) => setXAxisShow(checked)}
+              className="cursor-pointer"
             />
             <Label htmlFor="xaxis-show" className="text-sm">
               Show X Axis Label
@@ -91,7 +92,7 @@ function PlotFormatPopover({
                 <RadioGroupItem
                   id={`shape-${key}`}
                   value={key}
-                  className="border border-sky-700 hover:bg-sky-700/20 hover:text-white focus:ring-2 focus:ring-sky-700 focus:ring-offset-2 focus:ring-offset-white"
+                  className="border border-sky-700 hover:bg-sky-700/20 hover:text-white focus:ring-2 focus:ring-sky-700 focus:ring-offset-2 focus:ring-offset-white cursor-pointer"
                 />
                 <Label htmlFor={`shape-${key}`} className="text-sm">
                   {label}
@@ -114,7 +115,7 @@ function PlotFormatPopover({
                 <RadioGroupItem
                   id={`color-${key}`}
                   value={key}
-                  className="border border-sky-700 hover:bg-sky-700/20 hover:text-white focus:ring-2 focus:ring-sky-700 focus:ring-offset-2 focus:ring-offset-white"
+                  className="border border-sky-700 hover:bg-sky-700/20 hover:text-white focus:ring-2 focus:ring-sky-700 focus:ring-offset-2 focus:ring-offset-white cursor-pointer"
                 />
                 <Label htmlFor={`color-${key}`} className="text-sm">
                   {label}
@@ -139,7 +140,7 @@ function PlotFormatPopover({
                 <RadioGroupItem
                   id={`band-${key}`}
                   value={key}
-                  className="border border-sky-700 hover:bg-sky-700/20 hover:text-white focus:ring-2 focus:ring-sky-700 focus:ring-offset-2 focus:ring-offset-white"
+                  className="border border-sky-700 hover:bg-sky-700/20 hover:text-white focus:ring-2 focus:ring-sky-700 focus:ring-offset-2 focus:ring-offset-white cursor-pointer"
                 />
                 <Label htmlFor={`band-${key}`} className="text-sm">
                   {label}

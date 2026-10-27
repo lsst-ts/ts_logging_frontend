@@ -6,8 +6,8 @@ import { cn } from "@/lib/utils";
 // Custom-styled content
 export function TooltipContent({
   className,
-  sideOffset = 0,
   children,
+  sideOffset = 0,
   ...props
 }) {
   return (

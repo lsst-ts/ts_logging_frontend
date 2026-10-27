@@ -94,9 +94,9 @@ for (const endpoint of ["obs-status", "almanac"]) {
 }
 
 for (const hasDomeData of [false, true]) {
-  test(`breakdown withholds the dome warning until exposures settle (${hasDomeData ? "populated" : "empty"})`, async ({
-    page,
-  }) => {
+  test(`breakdown withholds the dome warning until exposures settle (${
+    hasDomeData ? "populated" : "empty"
+  })`, async ({ page }) => {
     await setupApiMocks(page);
     let release;
     const pending = new Promise((resolve) => {

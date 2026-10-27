@@ -42,12 +42,12 @@ function useSidebar() {
 }
 
 function SidebarProvider({
-  defaultOpen = true,
   open: openProp,
   onOpenChange: setOpenProp,
   className,
   style,
   children,
+  defaultOpen = true,
   ...props
 }) {
   const isMobile = useIsMobile();
@@ -134,11 +134,11 @@ function SidebarProvider({
 }
 
 function Sidebar({
+  className,
+  children,
   side = "left",
   variant = "sidebar",
   collapsible = "offcanvas",
-  className,
-  children,
   ...props
 }) {
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
@@ -238,7 +238,7 @@ function SidebarTrigger({ className, onClick, ...props }) {
       data-slot="sidebar-trigger"
       variant="ghost"
       size="icon"
-      className={cn("size-7", className)}
+      className={cn("size-7 cursor-pointer", className)}
       onClick={(event) => {
         onClick?.(event);
         toggleSidebar();
@@ -451,12 +451,12 @@ const sidebarMenuButtonVariants = cva(
 );
 
 function SidebarMenuButton({
+  tooltip,
+  className,
   asChild = false,
   isActive = false,
   variant = "default",
   size = "default",
-  tooltip,
-  className,
   ...props
 }) {
   const Comp = asChild ? Slot : "button";
@@ -601,10 +601,10 @@ function SidebarMenuSubItem({ className, ...props }) {
 }
 
 function SidebarMenuSubButton({
+  className,
   asChild = false,
   size = "md",
   isActive = false,
-  className,
   ...props
 }) {
   const Comp = asChild ? Slot : "a";
