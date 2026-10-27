@@ -109,7 +109,7 @@ function VisitMaps() {
           setVisitMapsNoData(true);
           addNotification({
             type: "noData",
-            source: "consdb",
+            source: SOURCE.MULTI_NIGHT_VISIT_MAPS,
             title: "No exposures found in ConsDB",
             description:
               "Visit maps couldn't be generated for the selected date range.",
@@ -123,7 +123,7 @@ function VisitMaps() {
           console.error("Error fetching visit maps:", err);
           addNotification({
             type: "error",
-            source: "visit-maps",
+            source: SOURCE.MULTI_NIGHT_VISIT_MAPS,
           });
         }
       })
@@ -346,7 +346,7 @@ function VisitMaps() {
         ) : visitMapState.state === "error" ||
           visitMapState.state === "noData" ? (
           <div className="flex-grow">
-            <EmptyDisplayState message={visitMapState.message} />
+            <EmptyDisplayState variant="page" message={visitMapState.message} />
           </div>
         ) : (
           <div className="flex flex-col w-full p-4 space-y-4 items-center text-neutral-700">
