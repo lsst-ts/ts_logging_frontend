@@ -1,7 +1,6 @@
 import React, { useMemo, useRef, useState, useCallback } from "react";
 import { useSearch } from "@tanstack/react-router";
-import AppletCard from "@/components/AppletCard";
-import { resolveDisplayState } from "@/utils/displayState";
+import AppletCard, { useAppletState } from "@/components/AppletCard";
 import {
   Popover,
   PopoverTrigger,
@@ -19,6 +18,7 @@ import {
   Line,
   ReferenceLine,
   ReferenceArea,
+  Text,
 } from "recharts";
 import { DateTime } from "luxon";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -39,17 +39,14 @@ import { RotateCcw } from "lucide-react";
 import { calculateZoom } from "@/utils/plotUtils";
 import { isScientificNightlyDigest } from "@/utils/appConfig";
 import {
+  ISO_DATETIME_FORMAT,
   millisToDateTime,
   millisToHHmm,
   isoToUTC,
   utcDateTimeStrToTAIMillis,
 } from "@/utils/timeUtils";
 
-import {
-  DEFAULT_PIXEL_SCALE_MEDIAN,
-  PSF_SIGMA_FACTOR,
-  ISO_DATETIME_FORMAT,
-} from "@/utils/utils";
+import { DEFAULT_PIXEL_SCALE_MEDIAN, PSF_SIGMA_FACTOR } from "@/utils/utils";
 
 // Constants for gap detection
 const GAP_THRESHOLD = 5 * 60 * 1000;
@@ -74,7 +71,6 @@ const CustomTooltip = ({ active, payload, label, xDomain }) => {
 
   const tooltipData = [];
   const seenKeys = new Set(); // Only add one entry for zero_point_median, showing its value and band
-
   payload.forEach(({ dataKey, value, color }) => {
     if (
       value !== null &&
@@ -227,41 +223,47 @@ const renderCustomLegend = (props) => (
   </div>
 );
 
+// Wrap the message within the plot.
+function NoDataMessage({ viewBox, value }) {
+  const vb = viewBox ?? { x: 0, y: 0, width: 300, height: 120 };
+  return (
+    <Text
+      aria-label={value}
+      x={vb.x + vb.width / 2}
+      y={vb.y + vb.height / 2}
+      width={Math.max(vb.width - 40, 60)}
+      textAnchor="middle"
+      verticalAnchor="middle"
+      fill="#a8a29e"
+      fontSize={14}
+      fontWeight="lighter"
+    >
+      {value}
+    </Text>
+  );
+}
+
 /**
  * Render the observing conditions applet with charts of the site conditions
  * over the selected time range.
  *
  * @param {Object} props
- * @param {boolean} props.exposuresLoading Whether exposure data is loading.
  * @param {Object} props.exposureFields Exposure field data.
- * @param {boolean} props.almanacLoading Whether almanac data is loading.
  * @param {Array} props.almanacInfo Almanac night metadata.
  * @param {[DateTime, DateTime]} props.fullTimeRange Visible time range for the charts.
  * @param {[DateTime, DateTime]} props.selectedTimeRange Currently selected time range.
  * @param {Function} props.setSelectedTimeRange Update the selected time range.
  * @param {Set|null} [props.hoveredExposureIds=null] Ids of hovered exposures, if any.
  */
-function ObservingConditionsApplet({
-  exposuresLoading,
+function ObservingConditionsBody({
   exposureFields,
-  almanacLoading,
   almanacInfo,
   fullTimeRange,
   selectedTimeRange,
   setSelectedTimeRange,
   hoveredExposureIds = null,
-  sources = {},
-  required = [],
 }) {
-  // Resolve the status here so the no-data message can be drawn inside the
-  // chart. This mirrors AppletCard's own resolve; it's duplicated because this
-  // component renders <AppletCard>, so its body can't call useAppletState
-  // (the context is only available within AppletCard's subtree).
-  const displayState = resolveDisplayState({
-    sources,
-    required,
-    loading: exposuresLoading || almanacLoading,
-  });
+  const displayState = useAppletState();
 
   // Router and search params for context menu navigation
   const search = useSearch({ from: "/" });
@@ -297,7 +299,6 @@ function ObservingConditionsApplet({
   const [yMaxFraction, setYMaxFraction] = useState(1);
 
   const [hoveredBand, setHoveredBand] = useState(null); // to track the hovered band
-
   // Convert selected time range to millis for ReferenceArea
   const selectedMinMillis = selectedTimeRange?.[0]?.toMillis();
   const selectedMaxMillis = selectedTimeRange?.[1]?.toMillis();
@@ -338,7 +339,8 @@ function ObservingConditionsApplet({
   // Filter out entries without obs_start_dt and sort by obs_start_dt
   // to ensure the data is in chronological order and omit crossing lines
   // between different nights/bands
-  const isValidNumber = (value) => typeof value === "number" && !isNaN(value);
+  const isValidNumber = (value) =>
+    typeof value === "number" && Number.isFinite(value);
 
   const chartData = useMemo(
     () =>
@@ -348,6 +350,13 @@ function ObservingConditionsApplet({
         .sort((a, b) => a.obs_start_dt - b.obs_start_dt),
     [data],
   );
+
+  const noDataMessage =
+    displayState.state === "noData"
+      ? displayState.message
+      : chartData.length === 0
+        ? "No on-sky exposures found in ConsDB."
+        : "";
 
   // Calculate auto Y-axis domain for PSF FWHM (left axis) - rounded to nearest 0.1
   const psfAutoYDomain = useMemo(() => {
@@ -361,7 +370,6 @@ function ObservingConditionsApplet({
     const max = Math.max(...values);
     const range = max - min;
     const padding = range * 0.05; // 5% padding
-
     // Round down to nearest 0.1 for min, round up to nearest 0.1 for max
     const paddedMin = Math.floor((min - padding) * 10) / 10;
     const paddedMax = Math.ceil((max + padding) * 10) / 10;
@@ -376,12 +384,10 @@ function ObservingConditionsApplet({
       .filter((v) => typeof v === "number" && Number.isFinite(v));
 
     if (zeroPointVals.length === 0) return [20, 30]; // Default range
-
     const min = Math.min(...zeroPointVals);
     const max = Math.max(...zeroPointVals);
     const range = max - min;
     const padding = range * 0.05; // 5% padding
-
     // Round down to nearest 1 for min, round up to nearest 1 for max
     const paddedMin = Math.floor(min - padding);
     const paddedMax = Math.ceil(max + padding);
@@ -427,7 +433,7 @@ function ObservingConditionsApplet({
       .map((d) => d.obs_start_dt)
       .filter(isValidNumber)
       // add twilight values to xVals to make sure they are included in the chart
-      .concat(twilightValues);
+      .concat(twilightValues.filter(isValidNumber));
     // Calculate min and max for x-axis data points
     const min = Math.min(...actualDataRange);
     const max = Math.max(...actualDataRange);
@@ -477,7 +483,7 @@ function ObservingConditionsApplet({
   // Calculate X domain clamped to actual data range
   const xDomain = useMemo(() => {
     // If we have valid data range, clamp to it
-    if (isValidNumber(xMin) && isValidNumber(xMax)) {
+    if (isValidNumber(xMin) && isValidNumber(xMax) && xMax > xMin) {
       const padding = (xMax - xMin) * 0.025;
       return [
         Math.max(selectedMinMillis, xMin - padding),
@@ -676,6 +682,282 @@ function ObservingConditionsApplet({
   };
 
   return (
+    <>
+      {(yMinFraction !== 0 ||
+        yMaxFraction !== 1 ||
+        selectedMinMillis !== fullTimeRange?.[0]?.toMillis() ||
+        selectedMaxMillis !== fullTimeRange?.[1]?.toMillis()) && (
+        <button
+          onClick={() => {
+            setSelectedTimeRange(fullTimeRange);
+            setYMinFraction(0);
+            setYMaxFraction(1);
+          }}
+          className="absolute top-2 right-2 z-10 bg-stone-700 hover:bg-stone-600 text-white p-1.5 rounded opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
+          title="Reset zoom"
+          aria-label="Reset zoom"
+        >
+          <RotateCcw size={16} />
+        </button>
+      )}
+      <ContextMenuWrapper menuItems={contextMenuItems} className="h-full">
+        <div
+          className="h-full overflow-visible"
+          onMouseDown={(e) => {
+            if (e.detail > 1) e.preventDefault();
+          }}
+        >
+          <div className="flex-grow min-w-0 h-full select-none">
+            <ChartContainer
+              ref={chartRef}
+              config={chartConfig}
+              className="w-full h-full"
+            >
+              <ComposedChart
+                data={
+                  noDataMessage
+                    ? [
+                        { obs_start_dt: xDomain[0] },
+                        { obs_start_dt: xDomain[1] },
+                      ]
+                    : undefined
+                }
+                onMouseDown={mouseDown}
+                onMouseMove={mouseMove}
+                onMouseUp={mouseUp}
+                onMouseLeave={mouseLeave}
+                onDoubleClick={doubleClick}
+              >
+                <CartesianGrid
+                  strokeDasharray={!noDataMessage ? "3 3" : undefined}
+                  stroke={!noDataMessage ? "#555" : undefined}
+                />
+
+                {noDataMessage && (
+                  <ReferenceArea
+                    xAxisId="0"
+                    yAxisId="left"
+                    x1={xDomain[0]}
+                    x2={xDomain[1]}
+                    strokeOpacity={0}
+                    fillOpacity={0}
+                    label={(props) => (
+                      <NoDataMessage {...props} value={noDataMessage} />
+                    )}
+                  />
+                )}
+
+                <XAxis
+                  data={chartData}
+                  dataKey="obs_start_dt"
+                  type="number"
+                  domain={xDomain}
+                  allowDataOverflow={true}
+                  scale="time"
+                  ticks={xTicks}
+                  tickFormatter={millisToHHmm}
+                  tick={{ fill: "white" }}
+                  label={{
+                    value: "Observation Start Time (TAI)",
+                    position: "bottom",
+                    fill: "white",
+                    dy: -10,
+                  }}
+                />
+
+                <YAxis
+                  yAxisId="left"
+                  tick={{ fill: "white" }}
+                  domain={currentPsfYDomain}
+                  ticks={psfTicks}
+                  allowDataOverflow={true}
+                  label={{
+                    value: "PSF FWHM (arcsec)",
+                    angle: -90,
+                    position: "insideLeft",
+                    fill: "white",
+                    dx: 0,
+                    dy: 40,
+                  }}
+                  width={50}
+                />
+
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  tick={{ fill: "white" }}
+                  domain={currentZeroPointYDomain}
+                  allowDataOverflow={true}
+                  tickFormatter={(tick) => Number(tick).toFixed(1)}
+                  label={{
+                    value: "Zero Points (mag)",
+                    angle: 90,
+                    position: "insideRight",
+                    dx: -10,
+                    dy: 30,
+                    fill: "white",
+                  }}
+                  width={50}
+                />
+
+                {/* Clamp gaps to the viewport; Recharts otherwise culls them. */}
+                {gapAreas
+                  .filter(
+                    (gap) => gap.start < xDomain[1] && gap.end > xDomain[0],
+                  )
+                  .map((gap, i) => (
+                    <ReferenceArea
+                      key={`gap-${i}`}
+                      x1={Math.max(gap.start, xDomain[0])}
+                      x2={Math.min(gap.end, xDomain[1])}
+                      yAxisId="left"
+                      strokeOpacity={0}
+                      fill="#147570ff"
+                      fillOpacity={0.4}
+                    />
+                  ))}
+
+                {!noDataMessage &&
+                  twilightValues.map((twi, i) =>
+                    isValidNumber(twi) &&
+                    xDomain[0] <= twi &&
+                    twi <= xDomain[1] ? (
+                      <ReferenceLine
+                        key={`twilight-${i}-${twi}`}
+                        x={twi}
+                        stroke="#3eb7ff"
+                        yAxisId="left"
+                        strokeDasharray="5 5"
+                      />
+                    ) : null,
+                  )}
+
+                <ReferenceLine
+                  yAxisId="left"
+                  y={1}
+                  stroke="#FFFFFF"
+                  strokeOpacity={0.5}
+                  strokeWidth={2}
+                />
+                <ChartTooltip
+                  content={(props) => (
+                    <CustomTooltip {...props} xDomain={xDomain} />
+                  )}
+                  cursor={{ strokeDasharray: "3 3", stroke: "#ffffff" }}
+                  allowEscapeViewBox={{ x: false, y: false }}
+                  offset={20}
+                  wrapperStyle={{ opacity: 0.9 }}
+                  isAnimationActive={false}
+                />
+
+                {/* Dim base lines; hover overlays stay opaque. */}
+                {BANDS.map((band) => (
+                  <Line
+                    key={`zero_point_median_${band}`}
+                    name={`zero_point_median_${band}`}
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="zero_point_median"
+                    stroke={BAND_COLORS[band]}
+                    strokeOpacity={
+                      hoveredExposureIds !== null
+                        ? DIMMED_OPACITY_ZP
+                        : opacity[band]
+                    }
+                    dot={({ key, payload, ...restProps }) => (
+                      <ObservingConditionsAppletDot
+                        key={key}
+                        {...restProps}
+                        band={band}
+                        r={2}
+                        opacity={
+                          hoveredExposureIds !== null
+                            ? DIMMED_OPACITY_ZP
+                            : dotOpacity(payload.exposure_id, opacity[band])
+                        }
+                      />
+                    )}
+                    activeDot={hoveredExposureIds !== null ? false : undefined}
+                    data={dataWithNightGaps(groupedChartData, band)}
+                    isAnimationActive={false}
+                  />
+                ))}
+
+                {hoveredExposureIds !== null &&
+                  BANDS.map((band) => (
+                    <Line
+                      key={`zero_point_median_${band}_overlay`}
+                      name={`zero_point_median_${band}_overlay`}
+                      yAxisId="right"
+                      type="monotone"
+                      dataKey="zero_point_median"
+                      stroke={BAND_COLORS[band]}
+                      strokeOpacity={1}
+                      dot={({ key, ...restProps }) => (
+                        <ObservingConditionsAppletDot
+                          key={key}
+                          {...restProps}
+                          band={band}
+                          r={2}
+                          opacity={1}
+                        />
+                      )}
+                      data={filterByBandAndHover(groupedChartData, band)}
+                      isAnimationActive={false}
+                    />
+                  ))}
+
+                <Scatter
+                  name="psf_median"
+                  dataKey="psf_median"
+                  fill="white"
+                  shape={({ key, payload, ...restProps }) => (
+                    <ObservingConditionsAppletDot
+                      key={key}
+                      {...restProps}
+                      color="#fff"
+                      band="seeing"
+                      opacity={
+                        hoveredExposureIds !== null
+                          ? hoveredExposureIds.has(String(payload.exposure_id))
+                            ? 1
+                            : DIMMED_OPACITY_SEEING
+                          : hoveredBand && hoveredBand !== payload.band
+                            ? DIMMED_OPACITY_SEEING
+                            : 1
+                      }
+                    />
+                  )}
+                  yAxisId="left"
+                  data={chartData}
+                  isAnimationActive={false}
+                />
+                <ChartLegend
+                  layout={"vertical"}
+                  verticalAlign={"middle"}
+                  align={"right"}
+                  content={renderCustomLegend}
+                  onMouseEnter={handleMouseEnter}
+                  onMouseLeave={handleMouseLeave}
+                />
+              </ComposedChart>
+            </ChartContainer>
+          </div>
+        </div>
+      </ContextMenuWrapper>
+    </>
+  );
+}
+
+/** Shared card handles loading/errors; the body retains its empty plot shell. */
+function ObservingConditionsApplet(props) {
+  const {
+    sources = {},
+    required = [],
+    exposuresLoading,
+    almanacLoading,
+  } = props;
+  return (
     <AppletCard
       title="Observing Conditions"
       sources={sources}
@@ -740,275 +1022,7 @@ function ObservingConditionsApplet({
       readyClassName="h-[320px] relative"
       maintainHeight
     >
-      <>
-        {/* Reset zoom button - show if X or Y axis is zoomed */}
-        {(yMinFraction !== 0 ||
-          yMaxFraction !== 1 ||
-          selectedMinMillis !== fullTimeRange?.[0]?.toMillis() ||
-          selectedMaxMillis !== fullTimeRange?.[1]?.toMillis()) && (
-          <button
-            onClick={() => {
-              setSelectedTimeRange(fullTimeRange);
-              setYMinFraction(0);
-              setYMaxFraction(1);
-            }}
-            className="absolute top-2 right-2 z-10 bg-stone-700 hover:bg-stone-600 text-white p-1.5 rounded opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
-            title="Reset zoom"
-            aria-label="Reset zoom"
-          >
-            <RotateCcw size={16} />
-          </button>
-        )}
-        <ContextMenuWrapper menuItems={contextMenuItems} className="h-full">
-          <div
-            className="h-full overflow-visible"
-            onMouseDown={(e) => {
-              if (e.detail > 1) e.preventDefault();
-            }}
-          >
-            <div className="flex-grow min-w-0 h-full select-none">
-              <ChartContainer
-                ref={chartRef}
-                config={chartConfig}
-                className="w-full h-full"
-              >
-                <ComposedChart
-                  onMouseDown={mouseDown}
-                  onMouseMove={mouseMove}
-                  onMouseUp={mouseUp}
-                  onMouseLeave={mouseLeave}
-                  onDoubleClick={doubleClick}
-                >
-                  {/* Show grid lines only if there is data to display. */}
-                  <CartesianGrid
-                    strokeDasharray={
-                      displayState.state !== "noData" ? "3 3" : undefined
-                    }
-                    stroke={
-                      displayState.state !== "noData" ? "#555" : undefined
-                    }
-                  />
-                  {/* If no data, show message. */}
-                  {displayState.state === "noData" && (
-                    <ReferenceArea
-                      xAxisId="0"
-                      yAxisId="left"
-                      x1={xDomain[0]}
-                      x2={xDomain[1]}
-                      strokeOpacity={0}
-                      fillOpacity={0}
-                      label={{
-                        value: displayState.message,
-                        position: "center",
-                        fill: "#a8a29e",
-                        fontSize: 16,
-                      }}
-                    />
-                  )}
-                  {/* X axis for time */}
-                  <XAxis
-                    data={chartData}
-                    dataKey="obs_start_dt"
-                    type="number"
-                    domain={xDomain}
-                    allowDataOverflow={true}
-                    scale="time"
-                    ticks={xTicks}
-                    tickFormatter={millisToHHmm}
-                    tick={{ fill: "white" }}
-                    label={{
-                      value: "Observation Start Time (TAI)",
-                      position: "bottom",
-                      fill: "white",
-                      dy: -10,
-                    }}
-                  />
-                  {/* Y axis for PSF FWHM */}
-                  <YAxis
-                    yAxisId="left"
-                    tick={{ fill: "white" }}
-                    domain={currentPsfYDomain}
-                    ticks={psfTicks}
-                    allowDataOverflow={true}
-                    label={{
-                      value: "PSF FWHM (arcsec)",
-                      angle: -90,
-                      position: "insideLeft",
-                      fill: "white",
-                      dx: 0,
-                      dy: 40,
-                    }}
-                    width={50}
-                  />
-                  {/* Y axis for Zero Point Median */}
-                  <YAxis
-                    yAxisId="right"
-                    orientation="right"
-                    tick={{ fill: "white" }}
-                    domain={currentZeroPointYDomain}
-                    allowDataOverflow={true}
-                    tickFormatter={(tick) => Number(tick).toFixed(1)}
-                    label={{
-                      value: "Zero Points (mag)",
-                      angle: 90,
-                      position: "insideRight",
-                      dx: -10,
-                      dy: 30,
-                      fill: "white",
-                    }}
-                    width={50}
-                  />
-                  {/* Shutter closed areas - clamp to visible range to prevent Recharts culling. */}
-                  {gapAreas
-                    .filter(
-                      (gap) => gap.start < xDomain[1] && gap.end > xDomain[0],
-                    )
-                    .map((gap, i) => (
-                      <ReferenceArea
-                        key={`gap-${i}`}
-                        x1={Math.max(gap.start, xDomain[0])}
-                        x2={Math.min(gap.end, xDomain[1])}
-                        yAxisId="left"
-                        strokeOpacity={0}
-                        fill="#147570ff"
-                        fillOpacity={0.4}
-                      />
-                    ))}
-                  {/* Twilight reference lines */}
-                  {displayState.state !== "noData" &&
-                    twilightValues.map((twi, i) =>
-                      isValidNumber(twi) &&
-                      xDomain[0] <= twi &&
-                      twi <= xDomain[1] ? (
-                        <ReferenceLine
-                          key={`twilight-${i}-${twi}`}
-                          x={twi}
-                          stroke="#3eb7ff"
-                          yAxisId="left"
-                          strokeDasharray="5 5"
-                        />
-                      ) : null,
-                    )}
-                  {/* Reference line at PSF FWHM = 1 arcsec as baseline for good seeing. */}
-                  <ReferenceLine
-                    yAxisId="left"
-                    y={1}
-                    stroke="#FFFFFF"
-                    strokeOpacity={0.5}
-                    strokeWidth={2}
-                  />
-                  <ChartTooltip
-                    content={(props) => (
-                      <CustomTooltip {...props} xDomain={xDomain} />
-                    )}
-                    cursor={{ strokeDasharray: "3 3", stroke: "#ffffff" }}
-                    allowEscapeViewBox={{ x: false, y: false }}
-                    offset={20}
-                    wrapperStyle={{ opacity: 0.9 }}
-                    isAnimationActive={false}
-                  />
-                  {/* Line plots for zero point median filtered by band. */}
-                  {/* Base lines — dimmed when an exposure breakdown applet bar is hovered. */}
-                  {BANDS.map((band) => (
-                    <Line
-                      key={`zero_point_median_${band}`}
-                      name={`zero_point_median_${band}`}
-                      yAxisId="right"
-                      type="monotone"
-                      dataKey="zero_point_median"
-                      stroke={BAND_COLORS[band]}
-                      strokeOpacity={
-                        hoveredExposureIds !== null
-                          ? DIMMED_OPACITY_ZP
-                          : opacity[band]
-                      }
-                      dot={({ key, payload, ...restProps }) => (
-                        <ObservingConditionsAppletDot
-                          key={key}
-                          {...restProps}
-                          band={band}
-                          r={2}
-                          // The dots are also dimmed if an exposure breakdown applet bar is hovered
-                          opacity={
-                            hoveredExposureIds !== null
-                              ? DIMMED_OPACITY_ZP
-                              : dotOpacity(payload.exposure_id, opacity[band])
-                          }
-                        />
-                      )}
-                      activeDot={
-                        hoveredExposureIds !== null ? false : undefined
-                      }
-                      data={dataWithNightGaps(groupedChartData, band)}
-                      isAnimationActive={false}
-                    />
-                  ))}
-                  {/* Overlay lines for hovered exposures — full opacity, only matching dots and the segments connecting them, rendered on top of base */}
-                  {hoveredExposureIds !== null &&
-                    BANDS.map((band) => (
-                      <Line
-                        key={`zero_point_median_${band}_overlay`}
-                        name={`zero_point_median_${band}_overlay`}
-                        yAxisId="right"
-                        type="monotone"
-                        dataKey="zero_point_median"
-                        stroke={BAND_COLORS[band]}
-                        strokeOpacity={1}
-                        dot={({ key, ...restProps }) => (
-                          <ObservingConditionsAppletDot
-                            key={key}
-                            {...restProps}
-                            band={band}
-                            r={2}
-                            opacity={1}
-                          />
-                        )}
-                        data={filterByBandAndHover(groupedChartData, band)}
-                        isAnimationActive={false}
-                      />
-                    ))}
-                  {/* Scatter plot for PSF FWHM */}
-                  <Scatter
-                    name="psf_median"
-                    dataKey="psf_median"
-                    fill="white"
-                    shape={({ key, payload, ...restProps }) => (
-                      <ObservingConditionsAppletDot
-                        key={key}
-                        {...restProps}
-                        color="#fff"
-                        band="seeing"
-                        opacity={
-                          hoveredExposureIds !== null
-                            ? hoveredExposureIds.has(
-                                String(payload.exposure_id),
-                              )
-                              ? 1
-                              : DIMMED_OPACITY_SEEING
-                            : hoveredBand && hoveredBand !== payload.band
-                              ? DIMMED_OPACITY_SEEING
-                              : 1
-                        }
-                      />
-                    )}
-                    yAxisId="left"
-                    data={chartData}
-                    isAnimationActive={false}
-                  />
-                  <ChartLegend
-                    layout={"vertical"}
-                    verticalAlign={"middle"}
-                    align={"right"}
-                    content={renderCustomLegend}
-                    onMouseEnter={handleMouseEnter}
-                    onMouseLeave={handleMouseLeave}
-                  />
-                </ComposedChart>
-              </ChartContainer>
-            </div>
-          </div>
-        </ContextMenuWrapper>
-      </>
+      <ObservingConditionsBody {...props} />
     </AppletCard>
   );
 }
