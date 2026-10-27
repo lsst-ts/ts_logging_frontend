@@ -23,11 +23,11 @@ import { CardHeader, CardTitle } from "@/components/ui/card";
  */
 function Header({
   title,
+  className,
   description,
   titleBadge,
   actions,
   isPageHeader = false,
-  className,
 }) {
   return (
     <div className="@container">

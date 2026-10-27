@@ -265,9 +265,9 @@ const CustomisedDotWithShape = ({
   cy,
   band,
   color,
-  r = 2,
   graphID,
   obsID,
+  r = 2,
 }) => {
   if (cx == null || cy == null) return null;
 

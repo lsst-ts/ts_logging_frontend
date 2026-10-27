@@ -25,9 +25,9 @@ function Command({ className, ...props }) {
 }
 
 function CommandDialog({
+  children,
   title = "Command Palette",
   description = "Search for a command to run...",
-  children,
   ...props
 }) {
   return (

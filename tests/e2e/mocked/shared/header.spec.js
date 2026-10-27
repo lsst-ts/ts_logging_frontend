@@ -28,9 +28,6 @@ const PAGES = [
     pageSpecificTipsHeading: "Table Tips",
   },
   {
-    // Context Feed labels its toggle "Hide/Show Timelines" (it has two
-    // charts). getByRole name matching is substring-based, so the shared
-    // "Hide Timeline" / "Show Timeline" queries still resolve it.
     name: "context-feed",
     url: CONTEXTFEED_URL,
     waitForLoad: waitForContextFeedLoad,
@@ -40,8 +37,15 @@ const PAGES = [
 
 for (const { name, url, waitForLoad, pageSpecificTipsHeading } of PAGES) {
   // ---------------------------------------------------------------------------
-
   test.describe(`${name} — Header: timeline toggle`, () => {
+    // Scope to the event timeline; applets toggle independently.
+    const timelineCard = (page) =>
+      name === "context-feed"
+        ? page.getByTestId("applet-card").filter({
+            hasText: "Timeline of exposures, scripts, errors and narrations.",
+          })
+        : page;
+
     test.beforeEach(async ({ page }) => {
       await setupApiMocks(page);
       await page.goto(url);
@@ -50,7 +54,10 @@ for (const { name, url, waitForLoad, pageSpecificTipsHeading } of PAGES) {
 
     test("Hide Timeline button is visible by default", async ({ page }) => {
       await expect(
-        page.getByRole("button", { name: "Hide Timeline" }),
+        timelineCard(page).getByRole("button", {
+          name: "Hide Timeline",
+          exact: true,
+        }),
       ).toBeVisible();
     });
 
@@ -58,9 +65,14 @@ for (const { name, url, waitForLoad, pageSpecificTipsHeading } of PAGES) {
       page,
     }) => {
       await expect(page.locator(TIMELINE_SELECTOR)).toBeVisible();
-      await page.getByRole("button", { name: "Hide Timeline" }).click();
+      await timelineCard(page)
+        .getByRole("button", { name: "Hide Timeline", exact: true })
+        .click();
       await expect(
-        page.getByRole("button", { name: "Show Timeline" }),
+        timelineCard(page).getByRole("button", {
+          name: "Show Timeline",
+          exact: true,
+        }),
       ).toBeVisible();
       await expect(page.locator(TIMELINE_SELECTOR)).not.toBeAttached();
     });
@@ -68,18 +80,24 @@ for (const { name, url, waitForLoad, pageSpecificTipsHeading } of PAGES) {
     test("clicking Show Timeline restores the timeline chart and updates the button", async ({
       page,
     }) => {
-      await page.getByRole("button", { name: "Hide Timeline" }).click();
+      await timelineCard(page)
+        .getByRole("button", { name: "Hide Timeline", exact: true })
+        .click();
       await expect(page.locator(TIMELINE_SELECTOR)).not.toBeAttached();
-      await page.getByRole("button", { name: "Show Timeline" }).click();
+      await timelineCard(page)
+        .getByRole("button", { name: "Show Timeline", exact: true })
+        .click();
       await expect(
-        page.getByRole("button", { name: "Hide Timeline" }),
+        timelineCard(page).getByRole("button", {
+          name: "Hide Timeline",
+          exact: true,
+        }),
       ).toBeVisible();
       await expect(page.locator(TIMELINE_SELECTOR)).toBeVisible();
     });
   });
 
   // ---------------------------------------------------------------------------
-
   test.describe(`${name} — Header: tips toggle`, () => {
     test.beforeEach(async ({ page }) => {
       await setupApiMocks(page);

@@ -56,7 +56,7 @@ function SearchParamErrorComponent({ error }) {
         <div className="flex justify-center">
           <Button
             className="bg-white text-black mt-4 w-[150px] h-10 font-normal rounded-md shadow-[4px_4px_4px_0px_#3CAE3F] 
-                      flex justify-center items-center p-2 
+                      flex justify-center items-center p-2 cursor-pointer
                       hover:shadow-[6px_6px_8px_0px_#3CAE3F] hover:scale-[1.02] hover:bg-white transition-all duration-200"
             onClick={goBackToRequestedRoute}
           >
