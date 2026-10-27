@@ -54,7 +54,9 @@ for (const { mode, shiftKey, reverse } of [
   { mode: "Multi", shiftKey: false, reverse: false },
   { mode: "Multi", shiftKey: true, reverse: true },
 ]) {
-  test(`${mode} ${shiftKey ? "reverse Shift" : "rectangle"} selection synchronizes plots, timeline and URL; double-click resets all`, async ({
+  test(`${mode} ${
+    shiftKey ? "reverse Shift" : "rectangle"
+  } selection synchronizes plots, timeline and URL; double-click resets all`, async ({
     page,
   }) => {
     await setupApiMocks(page, twoNightAccountingMocks());

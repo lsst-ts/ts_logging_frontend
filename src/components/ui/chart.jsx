@@ -82,9 +82,6 @@ function ChartTooltipContent({
   active,
   payload,
   className,
-  indicator = "dot",
-  hideLabel = false,
-  hideIndicator = false,
   label,
   labelFormatter,
   labelClassName,
@@ -92,6 +89,9 @@ function ChartTooltipContent({
   color,
   nameKey,
   labelKey,
+  indicator = "dot",
+  hideLabel = false,
+  hideIndicator = false,
 }) {
   const { config } = useChart();
 
@@ -217,10 +217,10 @@ const ChartLegend = RechartsPrimitive.Legend;
 
 function ChartLegendContent({
   className,
-  hideIcon = false,
   payload,
-  verticalAlign = "bottom",
   nameKey,
+  hideIcon = false,
+  verticalAlign = "bottom",
 }) {
   const { config } = useChart();
 
