@@ -4,6 +4,8 @@ import { NO_DATA_DISPLAY } from "@/constants/DATA_SOURCES";
 
 const TAI_OFFSET_SECONDS = 37;
 const ISO_DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss"; // Twilight time format string
+// Displayed in place of a missing value.
+const MISSING_VALUE_DISPLAY = "--";
 
 /**
  * Converts an ISO 8601 string to a Luxon DateTime object in TAI.
@@ -15,6 +17,21 @@ const ISO_DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss"; // Twilight time format strin
  */
 const isoToTAI = (isoStr) =>
   DateTime.fromISO(isoStr, { zone: "utc" }).plus({
+    seconds: TAI_OFFSET_SECONDS,
+  });
+
+/**
+ * Converts an ISO 8601 string that represents a TAI clock reading to a Luxon
+ * DateTime object in UTC (its corresponding UTC reading).
+ *
+ * TAI is ahead of UTC by `TAI_OFFSET_SECONDS` (currently 37), so this
+ * subtracts that offset from the parsed value.
+ *
+ * @param {string} isoStr - The ISO date-time string in TAI (e.g., "2025-08-27T12:34:56Z").
+ * @returns {DateTime} A Luxon DateTime object in UTC.
+ */
+const taiToUTC = (isoStr) =>
+  DateTime.fromISO(isoStr, { zone: "utc" }).minus({
     seconds: TAI_OFFSET_SECONDS,
   });
 
@@ -342,8 +359,108 @@ function getCurrentDayObs(format = "yyyyLLdd") {
   );
 }
 
+/**
+ * Formats a numeric value to two decimal places.
+ *
+ * @param {*} value - The value to format.
+ * @param {Object} [options]
+ * @param {string} [options.nullReplacement="NA"] - String to emit when the
+ *   value is not a finite number (e.g. "NA" for a card, "--" for a table).
+ * @param {string} [options.zeroReplacement=null] - When provided, emit this
+ *   string for a finite value of exactly zero (e.g. "--" for inactive
+ *   table cells) instead of "0.00".
+ * @returns {string} The formatted hours string.
+ */
+function numberFormatter(
+  value,
+  { nullReplacement = "NA", zeroReplacement = null } = {},
+) {
+  if (!(typeof value === "number" && Number.isFinite(value))) {
+    return nullReplacement;
+  }
+  if (zeroReplacement != null && value === 0) {
+    return zeroReplacement;
+  }
+  return value.toFixed(2);
+}
+
+/**
+ * Extract sub-millisecond digits from an ISO date-time string to get
+ * microsecond precision.
+ *
+ * This is necessary because Luxon only supports millisecond precision, but
+ * the Context Feed table uses microsecond precision for its selected-row key.
+ *
+ * @param {number} ms - Epoch milliseconds in UTC.
+ * @param {string} isoString - ISO date-time string in UTC.
+ * @returns {number} Epoch microseconds in UTC.
+ */
+function toEpochMicros(ms, isoString) {
+  const match = isoString.match(/\.(\d+)/);
+  if (match) {
+    const micros = parseInt(match[1].padEnd(6, "0").slice(3, 6), 10);
+    return ms * 1000 + micros;
+  }
+  return ms * 1000;
+}
+
+/**
+ * Converts an ISO time string (expressed in a given timezone) to Unix
+ * epoch microseconds in UTC, preserving sub-millisecond precision.
+ *
+ * This mirrors the Context Feed table's "time" accessor so the result can be
+ * used as that table's selected-row key.
+ *
+ * @param {string} eventIso - ISO date-time string in the source timezone.
+ * @param {"UTC"|"TAI"} [sourceTz="UTC"] - The timezone `eventIso` is in.
+ * @returns {number|null} Epoch microseconds in UTC, or null if unparsable.
+ */
+function isoToUtcMicros(eventIso, sourceTz = "UTC") {
+  const eventUtc = sourceTz === "TAI" ? taiToUTC(eventIso) : isoToUTC(eventIso);
+  if (!eventUtc?.isValid) return null;
+  const ms = eventUtc.toMillis();
+  return toEpochMicros(ms, eventIso);
+}
+
+const DEFAULT_EVENT_MARGIN_SECONDS = 1 * 60;
+
+/**
+ * Builds Context Feed URL params for a time window centred on a given event
+ * row, selected by its ISO timestamp.
+ *
+ * The ISO timestamp is read in the timezone it is expressed in (`sourceTz`) and
+ * normalised to UTC internally, so the same function can build links from
+ * UTC- or TAI-based sources. startTime and endTime are UTC epoch ms, offset by
+ * `marginSeconds` either side; selectedTime is the exact UTC microsecond key
+ * of the event row to select.
+ *
+ * @param {Object} options
+ * @param {string} options.eventIso - ISO date-time string in the source timezone.
+ * @param {"UTC"|"TAI"} [options.sourceTz="UTC"] - Timezone `eventIso` is in.
+ * @param {number} [options.marginSeconds=DEFAULT_EVENT_MARGIN_SECONDS]
+ *   - Half-window either side of event.
+ * @returns {{startTime:number, endTime:number, selectedTime:number}|null}
+ *   URL params in the units the Context Feed route expects, or null if the
+ *   event time cannot be parsed.
+ */
+function buildContextFeedUrlParams({
+  eventIso,
+  sourceTz = "UTC",
+  marginSeconds = DEFAULT_EVENT_MARGIN_SECONDS,
+}) {
+  const selectedTime = isoToUtcMicros(eventIso, sourceTz);
+  if (selectedTime == null) return null;
+  const marginMs = marginSeconds * 1000;
+  return {
+    startTime: Math.floor(selectedTime / 1000) - marginMs,
+    endTime: Math.floor(selectedTime / 1000) + marginMs,
+    selectedTime,
+  };
+}
+
 export {
   isoToTAI,
+  taiToUTC,
   isoToUTC,
   isoToChile,
   getDayobsStartTAI,
@@ -368,4 +485,10 @@ export {
   formatTimestamp,
   formatDuration,
   getCurrentDayObs,
+  numberFormatter,
+  MISSING_VALUE_DISPLAY,
+  DEFAULT_EVENT_MARGIN_SECONDS,
+  toEpochMicros,
+  isoToUtcMicros,
+  buildContextFeedUrlParams,
 };
