@@ -1,3 +1,4 @@
+import { SOURCE, BLOCK_DETAIL_SOURCES } from "@/constants/DATA_SOURCES";
 import { useEffect, useState, useMemo, useRef } from "react";
 
 import { useSearch } from "@tanstack/react-router";
@@ -240,7 +241,7 @@ function ContextFeed() {
           console.error("Error fetching almanac data:", err);
           addNotification({
             type: "error",
-            source: "almanac",
+            source: SOURCE.ALMANAC,
           });
         }
       })
@@ -255,7 +256,7 @@ function ContextFeed() {
         if (data.length === 0) {
           addNotification({
             type: "noData",
-            source: "context-feed",
+            source: SOURCE.CONTEXT_FEED,
             title: "No Context Feed entries found",
             description:
               "The table and the timeline will be empty for the selected date range.",
@@ -274,7 +275,7 @@ function ContextFeed() {
           );
           addNotification({
             type: "error",
-            source: "context-feed",
+            source: SOURCE.CONTEXT_FEED,
           });
         }
       })
@@ -301,7 +302,7 @@ function ContextFeed() {
           console.error("Error fetching observatory status:", err);
           addNotification({
             type: "error",
-            source: "observatory-status",
+            source: SOURCE.OBS_STATUS,
           });
         }
       })
@@ -351,7 +352,7 @@ function ContextFeed() {
           Object.entries(blocks.errors).forEach(([source, message]) => {
             addNotification({
               type: "error",
-              source: `${source}-blocks`,
+              source: BLOCK_DETAIL_SOURCES[source] ?? SOURCE.BLOCK_DETAILS,
             });
             console.error(
               `Error fetching BLOCK descriptions from ${getBlockSourceLabel(
@@ -371,11 +372,11 @@ function ContextFeed() {
           );
           addNotification({
             type: "error",
-            source: "jira-blocks",
+            source: SOURCE.JIRA_BLOCKS,
           });
           addNotification({
             type: "error",
-            source: "zephyr-blocks",
+            source: SOURCE.ZEPHYR_BLOCKS,
           });
         }
       })

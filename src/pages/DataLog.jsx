@@ -20,7 +20,7 @@ import {
   EmptyDisplayState,
   renderHeaderWarning,
 } from "@/components/AppletCard";
-import { SOURCE } from "@/constants/DATA_SOURCES";
+import { SOURCE, BLOCK_DETAIL_SOURCES } from "@/constants/DATA_SOURCES";
 import { resolveDisplayState } from "@/utils/displayState";
 import DownloadIcon from "../assets/DownloadIcon.svg";
 import {
@@ -41,6 +41,10 @@ import {
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
 import { useSelectionSync } from "@/components/DataTable";
 
+/**
+ * Render the Data Log page: merged exposure, script and narrative log data in a
+ * filterable table with selection, plus observatory status timelines.
+ */
 function DataLog() {
   // Routing and URL params
   const { startDayobs, endDayobs, telescope } = useSearch({
@@ -165,7 +169,7 @@ function DataLog() {
           console.error("Error fetching almanac data:", err);
           addNotification({
             type: "error",
-            source: "almanac",
+            source: SOURCE.ALMANAC,
           });
         }
       })
@@ -201,7 +205,7 @@ function DataLog() {
           setDataLogNoData(true);
           addNotification({
             type: "noData",
-            source: "consdb",
+            source: SOURCE.DATA_LOG,
             title: "No exposures found in ConsDB",
             description:
               "Table and timeline will appear empty for the selected date range.",
@@ -217,7 +221,7 @@ function DataLog() {
           console.error("Error fetching data log entries:", err);
           addNotification({
             type: "error",
-            source: "exposures",
+            source: SOURCE.DATA_LOG,
           });
         }
       })
@@ -259,7 +263,7 @@ function DataLog() {
           console.error("Error fetching exposure log entries:", err);
           addNotification({
             type: "error",
-            source: "exposure-flags",
+            source: SOURCE.EXPOSURE_ENTRIES,
           });
         }
       })
@@ -303,7 +307,7 @@ function DataLog() {
           Object.entries(blocks.errors).forEach(([source, message]) => {
             addNotification({
               type: "error",
-              source: `${source}-blocks`,
+              source: BLOCK_DETAIL_SOURCES[source] ?? SOURCE.BLOCK_DETAILS,
             });
             console.error(
               `Error fetching BLOCK descriptions from ${getBlockSourceLabel(
@@ -323,11 +327,11 @@ function DataLog() {
           );
           addNotification({
             type: "error",
-            source: "jira-blocks",
+            source: SOURCE.JIRA_BLOCKS,
           });
           addNotification({
             type: "error",
-            source: "zephyr-blocks",
+            source: SOURCE.ZEPHYR_BLOCKS,
           });
         }
       })
@@ -570,7 +574,7 @@ function DataLog() {
         />
 
         {showDataLogMessage && (
-          <EmptyDisplayState message={dataLogState.message} />
+          <EmptyDisplayState variant="page" message={dataLogState.message} />
         )}
       </div>
     </>

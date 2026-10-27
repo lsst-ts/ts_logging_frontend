@@ -67,9 +67,26 @@ test.describe("Digest page — Efficiency card", () => {
   test("does not show an availability warning when data is fully available", async ({
     page,
   }) => {
-    await setupApiMocks(page, { "obs-status": AVAILABLE_OBS_STATUS() });
+    await setupApiMocks(page, {
+      exposures: EXPOSURES_FOR_EFFICIENCY,
+      almanac: ALMANAC_FOR_EFFICIENCY,
+      "obs-status": {
+        ...AVAILABLE_OBS_STATUS(),
+        intervals: [
+          {
+            start_time_ms: 1767232800000,
+            end_time_ms: 1767243600000,
+            start_state: 2,
+            end_state: 2,
+          },
+        ],
+      },
+    });
     await page.goto(DIGEST_URL);
 
+    await expect(
+      efficiencyCard(page).getByText("13 %", { exact: true }),
+    ).toBeVisible();
     await expect(availabilityWarning(page)).toHaveCount(0);
   });
 
@@ -151,7 +168,7 @@ test.describe("Digest page — Efficiency card", () => {
     await setupApiMocks(page);
     await page.goto(DIGEST_URL);
 
-    await efficiencyCard(page).locator("button").click();
+    await efficiencyCard(page).getByTestId("metrics-card-info").click();
     await expect(
       page.getByText(
         "Where Observatory Status data is not available, weather loss is treated as",

@@ -13,7 +13,8 @@ import InfoIcon from "../assets/InfoIcon.svg";
  *
  * `data` is the ready-state display value; the resolved display state decides
  * whether a warning badge appears next to it. A warning badge is shown on `error`
- * (required source fetch failure) and on `ready` with a message.
+ * (required source fetch failure), on `noData` (required source reached but
+ * empty) and on `ready` with a message.
  *
  * @param {Object} props
  * @param {string} props.data Ready-state display value (Digest formats `--`,
@@ -36,7 +37,9 @@ export default function MetricsCard({
 }) {
   const isClickable = onClick && !loading;
   const showWarning =
-    !loading && (state === "error" || state === "ready") && message;
+    !loading &&
+    (state === "error" || state === "noData" || state === "ready") &&
+    message;
 
   return (
     <div
@@ -82,7 +85,8 @@ export default function MetricsCard({
         {tooltip && (
           <Popover>
             <PopoverTrigger
-              className="self-end min-w-4"
+              data-testid="metrics-card-info"
+              className="self-end min-w-4 cursor-pointer"
               /* Prevents click from propagating to the card 
               to show the tooltip rather than open the dialog*/
               onClick={(e) => e.stopPropagation()}

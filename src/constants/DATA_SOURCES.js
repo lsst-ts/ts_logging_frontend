@@ -1,9 +1,9 @@
 /**
  * Data source definitions used across the app.
  *
- * `SOURCE` maps each data source to its backend API endpoint slug (see
- * `fetchUtils.buildBackendURL`) — the identifier used across fetchers, applets
- * and pages, so typos are caught and identifiers stay consistent.
+ * `SOURCE` defines identifiers shared by fetchers, applets, pages and
+ * notifications. API sources use their endpoint slug; notification-only
+ * sources are listed separately below.
  *
  * `SOURCE_METADATA` provides the per-source display metadata (a label and, where
  * meaningful, a no-data message) used by the status model to build
@@ -25,6 +25,18 @@ export const SOURCE = {
   MULTI_NIGHT_VISIT_MAPS: "multi-night-visit-maps",
   BLOCK_DETAILS: "block-details",
   STATIC_VISIT_MAP: "static-visit-map",
+  DOME: "dome",
+  EXPOSURE_TIME_ACCOUNTING: "exposure-time-accounting",
+  // Notification-only sources (not standalone API endpoints).
+  JIRA_BLOCKS: "jira-blocks",
+  ZEPHYR_BLOCKS: "zephyr-blocks",
+  RETENTION_POLICY: "retention-policy",
+};
+
+// Map upstream block failures to notification sources.
+export const BLOCK_DETAIL_SOURCES = {
+  jira: SOURCE.JIRA_BLOCKS,
+  zephyr: SOURCE.ZEPHYR_BLOCKS,
 };
 
 /**
@@ -73,6 +85,10 @@ export const SOURCE_METADATA = {
     label: "Exposure entries",
     noDataMessage: "No exposure entries available.",
   },
+  [SOURCE.CONTEXT_FEED]: {
+    label: "Context feed",
+    noDataMessage: "No context feed data available.",
+  },
   [SOURCE.BLOCK_DETAILS]: {
     label: "Block details",
     noDataMessage: "No block details available.",
@@ -84,6 +100,14 @@ export const SOURCE_METADATA = {
   [SOURCE.STATIC_VISIT_MAP]: {
     label: "Visit map",
     noDataMessage: "No science visits available.",
+  },
+  [SOURCE.DOME]: {
+    label: "Dome",
+    noDataMessage: "No dome data available.",
+  },
+  [SOURCE.EXPOSURE_TIME_ACCOUNTING]: {
+    label: "Exposure time accounting",
+    noDataMessage: "No exposure time accounting data available.",
   },
 };
 

@@ -110,7 +110,7 @@ test.describe("Plots page — API errors", () => {
       timeout: 10000,
     });
     await expect(
-      page.getByText("exposures failed to load. Data may be incomplete"),
+      page.getByText("data-log failed to load. Data may be incomplete"),
     ).toBeVisible({
       timeout: 10000,
     });

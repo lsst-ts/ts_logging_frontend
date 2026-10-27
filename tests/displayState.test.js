@@ -205,43 +205,58 @@ describe("resolveDisplayState", () => {
 });
 
 describe("buildObsStatusSource", () => {
+  const FULL = { status: OBSERVATORY_STATE_AVAILABILITY_STATUS.FULL };
+  const PARTIAL = {
+    status: OBSERVATORY_STATE_AVAILABILITY_STATUS.PARTIAL,
+    available_from: "2026-01-02",
+  };
+  const NONE = {
+    status: OBSERVATORY_STATE_AVAILABILITY_STATUS.NONE,
+    available_from: "2026-01-02",
+  };
+
   it("carries a fetch-error message on fetch error", () => {
-    const source = buildObsStatusSource(undefined, true);
+    const source = buildObsStatusSource(FULL, true);
     expect(source).toEqual({
       ok: false,
       message: "Observatory Status data could not be fetched.",
     });
   });
 
-  it("is ok when full availability", () => {
-    const source = buildObsStatusSource(
-      { status: OBSERVATORY_STATE_AVAILABILITY_STATUS.FULL },
-      false,
-    );
+  it("is ok when availability is full and there are entries", () => {
+    const source = buildObsStatusSource(FULL, false, 1);
     expect(source).toEqual({ ok: true });
   });
 
-  it("is not ok with a message when none", () => {
-    const source = buildObsStatusSource(
-      {
-        status: OBSERVATORY_STATE_AVAILABILITY_STATUS.NONE,
-        available_from: "2026-01-02",
-      },
-      false,
-    );
-    expect(source.ok).toBe(false);
+  it("is noData with a message when availability is full but there are no entries", () => {
+    const source = buildObsStatusSource(FULL, false, 0);
+    expect(source).toEqual({
+      ok: true,
+      noData: true,
+      message: "No observatory status data available.",
+    });
+  });
+
+  it("is ok with an availability message when partial and there are entries", () => {
+    const source = buildObsStatusSource(PARTIAL, false, 1);
+    expect(source.ok).toBe(true);
     expect(source.message).toContain("only available from");
   });
 
-  it("is ok with a message when partial", () => {
-    const source = buildObsStatusSource(
-      {
-        status: OBSERVATORY_STATE_AVAILABILITY_STATUS.PARTIAL,
-        available_from: "2026-01-02",
-      },
-      false,
-    );
+  it("is noData with the no-data and availability messages when partial but no entries", () => {
+    const source = buildObsStatusSource(PARTIAL, false, 0);
     expect(source.ok).toBe(true);
+    expect(source.noData).toBe(true);
+    expect(source.message).toContain("No observatory status data available.");
+    expect(source.message).toContain(
+      "Observatory Status data is only available from",
+    );
+  });
+
+  it("is not ok with noData and an availability message when availability is none", () => {
+    const source = buildObsStatusSource(NONE, false, 0);
+    expect(source.ok).toBe(false);
+    expect(source.noData).toBe(true);
     expect(source.message).toContain("only available from");
   });
 });
