@@ -2,6 +2,7 @@
 import { test, expect } from "@playwright/test";
 import { setupApiMocks } from "../../helpers/mock-api.js";
 import { DIGEST_URL } from "../../helpers/constants.js";
+import { dragOn, getTimeParams } from "../../helpers/plots-helpers.js";
 import {
   observatoryStatusCard,
   observatoryStatusTooltip,
@@ -9,6 +10,8 @@ import {
   tooltipForTrigger,
   waitForObservatoryStatusAppletLoad,
 } from "../../helpers/digest-helpers.js";
+
+import { OBSERVATORY_STATE_AVAILABILITY_STATUS } from "@/constants/OBSERVATORY_STATUS_DEFINITIONS.js";
 
 // A valid single-night observatory status response. The interval
 // (02:00–05:00 UTC on 2026-01-01) falls inside the night's twilight window
@@ -29,7 +32,10 @@ const AVAILABLE_OBS_STATUS = () => ({
     },
   ],
   metrics: { fault_loss: 1.5, weather: 0.5 },
-  availability: { status: "full", available_from: null },
+  availability: {
+    status: OBSERVATORY_STATE_AVAILABILITY_STATUS.FULL,
+    available_from: null,
+  },
   totals: { fault_loss: 1.5, weather: 0.5 },
 });
 
@@ -63,7 +69,33 @@ test.describe("Observatory Status applet — full availability", () => {
 
   test("renders the cumulative plot", async ({ page }) => {
     const card = observatoryStatusCard(page);
-    await expect(card.locator("svg").first()).toBeVisible();
+    await expect(card.getByTestId("obs-status-cumulative-plot")).toBeVisible();
+  });
+
+  test("brush-zooming the plot adds startTime and endTime to the URL", async ({
+    page,
+  }) => {
+    const card = observatoryStatusCard(page);
+    const svg = card.getByTestId("obs-status-cumulative-plot");
+    await expect(svg).toBeVisible();
+
+    await dragOn(page, svg, {
+      fromX: 0.4,
+      toX: 0.8,
+      fromY: 0.5,
+      toY: 0.5,
+    });
+
+    // The x-axis zoom is shared with the other plots via the URL time range.
+    // Both params must be integers (the URL schema rejects floats) and must be
+    // present and represent a non-empty zoomed range.
+    await expect(page).toHaveURL(/startTime=/);
+    const { startTime, endTime } = getTimeParams(page);
+    expect(startTime).not.toBeNull();
+    expect(endTime).not.toBeNull();
+    expect(Number.isInteger(startTime)).toBe(true);
+    expect(Number.isInteger(endTime)).toBe(true);
+    expect(endTime - startTime).not.toBe(0);
   });
 
   test("opens the fullscreen dialog with the cumulative plot", async ({
@@ -75,9 +107,10 @@ test.describe("Observatory Status applet — full availability", () => {
       .click();
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
-    await expect(dialog).toContainText(
-      "Observatory Status - Cumulative Time in State",
-    );
+    // The dialog title is the plain applet title; the plot (with its own
+    // plotTitle) is rendered separately within it.
+    await expect(dialog).toContainText("Observatory Status");
+    await expect(dialog).toContainText("Cumulative Time in State");
     // "Cumulative Hours" is the plot's y-axis label — the clearest signal the
     // fullscreen plot rendered (the dialog also contains a close-button SVG).
     await expect(dialog.getByText("Cumulative Hours")).toBeVisible();
@@ -113,7 +146,7 @@ test.describe("Observatory Status applet — full availability", () => {
     page,
   }) => {
     const card = observatoryStatusCard(page);
-    const svg = card.locator("svg").first();
+    const svg = card.getByTestId("obs-status-cumulative-plot");
     await hoverStateMarker(page, svg, "2:00");
 
     const tooltip = observatoryStatusTooltip(page);
@@ -125,7 +158,7 @@ test.describe("Observatory Status applet — full availability", () => {
 
   test("does not show a note row for a noteless interval", async ({ page }) => {
     const card = observatoryStatusCard(page);
-    const svg = card.locator("svg").first();
+    const svg = card.getByTestId("obs-status-cumulative-plot");
     await hoverStateMarker(page, svg, "2:00");
 
     const tooltip = observatoryStatusTooltip(page);
@@ -138,7 +171,7 @@ test.describe("Observatory Status applet — full availability", () => {
     page,
   }) => {
     const card = observatoryStatusCard(page);
-    const svg = card.locator("svg").first();
+    const svg = card.getByTestId("obs-status-cumulative-plot");
     await hoverStateMarker(page, svg, "2:00");
 
     const tooltip = observatoryStatusTooltip(page);
@@ -155,9 +188,15 @@ test.describe("Observatory Status applet — full availability", () => {
       .click();
 
     const dialog = page.getByRole("dialog");
-    await expect(dialog.locator("svg").first()).toBeVisible();
+    await expect(
+      dialog.getByTestId("obs-status-cumulative-plot"),
+    ).toBeVisible();
 
-    await hoverStateMarker(page, dialog.locator("svg").first(), "2:00");
+    await hoverStateMarker(
+      page,
+      dialog.getByTestId("obs-status-cumulative-plot"),
+      "2:00",
+    );
 
     const tooltip = observatoryStatusTooltip(page);
     await expect(tooltip).toBeVisible();
@@ -187,7 +226,7 @@ test.describe("Observatory Status applet — interval with a note", () => {
     page,
   }) => {
     const card = observatoryStatusCard(page);
-    const svg = card.locator("svg").first();
+    const svg = card.getByTestId("obs-status-cumulative-plot");
     await hoverStateMarker(page, svg, "2:00");
 
     const tooltip = observatoryStatusTooltip(page);
@@ -201,7 +240,10 @@ test.describe("Observatory Status applet — partial availability", () => {
     await setupApiMocks(page, {
       "obs-status": {
         ...AVAILABLE_OBS_STATUS(),
-        availability: { status: "partial", available_from: "20260102" },
+        availability: {
+          status: OBSERVATORY_STATE_AVAILABILITY_STATUS.PARTIAL,
+          available_from: "20260102",
+        },
       },
     });
     await page.goto(DIGEST_URL);
@@ -228,7 +270,10 @@ test.describe("Observatory Status applet — no availability", () => {
         entries: [],
         intervals: [],
         metrics: {},
-        availability: { status: "none", available_from: null },
+        availability: {
+          status: OBSERVATORY_STATE_AVAILABILITY_STATUS.NONE,
+          available_from: null,
+        },
         totals: {},
       },
     });
@@ -244,7 +289,7 @@ test.describe("Observatory Status applet — no availability", () => {
         "Observatory Status data is only available from the supported dayobs range.",
       ),
     ).toBeVisible();
-    await expect(card.locator("svg")).toHaveCount(0);
+    await expect(card.getByTestId("obs-status-cumulative-plot")).toHaveCount(0);
   });
 
   test("fullscreen shows the availability warning instead of the plot", async ({
@@ -279,7 +324,7 @@ test.describe("Observatory Status applet — fetch failure", () => {
     await expect(
       card.getByText("Observatory Status data could not be fetched."),
     ).toBeVisible();
-    await expect(card.locator("svg")).toHaveCount(0);
+    await expect(card.getByTestId("obs-status-cumulative-plot")).toHaveCount(0);
   });
 
   test("shows an Almanac fetch-error message instead of the plot", async ({
@@ -294,6 +339,6 @@ test.describe("Observatory Status applet — fetch failure", () => {
     await expect(
       card.getByText("Almanac data could not be fetched."),
     ).toBeVisible();
-    await expect(card.locator("svg")).toHaveCount(0);
+    await expect(card.getByTestId("obs-status-cumulative-plot")).toHaveCount(0);
   });
 });

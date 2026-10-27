@@ -37,7 +37,7 @@ import { useSearch } from "@tanstack/react-router";
 import { TELESCOPES } from "@/components/Parameters";
 import ObservingConditionsApplet from "@/components/ObservingConditionsApplet";
 import NightSummary from "@/components/NightSummary.jsx";
-import ObservatoryStatusApplet from "@/components/ObservatoryStatusApplet";
+import ObservatoryStatusCumulativeApplet from "@/components/ObservatoryStatusCumulativeApplet";
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
 import VisitMapStaticApplet from "@/components/VisitMapStaticApplet.jsx";
 import {
@@ -81,6 +81,7 @@ export default function Digest() {
   const [obsStatusFetchError, setObsStatusFetchError] = useState(false);
   const [almanacFetchError, setAlmanacFetchError] = useState(false);
   const [exposureFetchError, setExposureFetchError] = useState(false);
+  const [openDomeError, setOpenDomeError] = useState(false);
   const [expectedExposuresFetchError, setExpectedExposuresFetchError] =
     useState(false);
   const [flagsFetchError, setFlagsFetchError] = useState(false);
@@ -164,6 +165,7 @@ export default function Digest() {
     setObsStatusFetchError(false);
     setAlmanacFetchError(false);
     setExposureFetchError(false);
+    setOpenDomeError(false);
     setExpectedExposuresFetchError(false);
     setFlagsFetchError(false);
     setNightreportFetchError(false);
@@ -195,6 +197,7 @@ export default function Digest() {
           });
         }
         if (data.open_dome_error) {
+          setOpenDomeError(data.open_dome_error);
           addNotification({
             type: "error",
             source: SOURCE.DOME,
@@ -668,6 +671,38 @@ export default function Digest() {
   );
   const nightSummaryRequired = [SOURCE.NIGHT_REPORTS];
 
+  const obsStatusCumulativeSources = useMemo(
+    () => ({
+      [SOURCE.OBS_STATUS]: buildObsStatusSource(
+        obsStatusAvailability,
+        obsStatusFetchError,
+        obsStatusIntervals.length,
+      ),
+      [SOURCE.ALMANAC]: almanacFetchError
+        ? { ok: false }
+        : almanacInfo.length === 0
+          ? { ok: true, noData: true }
+          : { ok: true },
+      [SOURCE.DOME]:
+        openDomeError || exposureFetchError
+          ? { ok: false }
+          : openDomeTimes.length === 0
+            ? { ok: true, noData: true }
+            : { ok: true },
+    }),
+    [
+      obsStatusFetchError,
+      obsStatusAvailability,
+      obsStatusIntervals,
+      almanacFetchError,
+      almanacInfo,
+      openDomeError,
+      openDomeTimes,
+      exposureFetchError,
+    ],
+  );
+  const obsStatusCumulativeRequired = [SOURCE.OBS_STATUS, SOURCE.ALMANAC];
+
   const staticVisitMapSources = useMemo(
     () => ({
       [SOURCE.STATIC_VISIT_MAP]: staticVisitMapError
@@ -822,15 +857,17 @@ export default function Digest() {
                 required={nightSummaryRequired}
               />
             )}
-            <ObservatoryStatusApplet
+            <ObservatoryStatusCumulativeApplet
+              maintainHeight
               almanacInfo={almanacInfo}
               intervals={obsStatusIntervals}
-              availability={obsStatusAvailability}
-              fetchError={obsStatusFetchError}
-              almanacFetchError={almanacFetchError}
               openDomeTimes={openDomeTimes}
               fullTimeRange={fullTimeRange}
+              selectedTimeRange={selectedTimeRange}
+              setSelectedTimeRange={setSelectedTimeRange}
               loading={obsStatusLoading || exposuresLoading || almanacLoading}
+              sources={obsStatusCumulativeSources}
+              required={obsStatusCumulativeRequired}
             />
             <VisitMapStaticApplet
               mapData={staticVisitMaps?.staticMapUrl}

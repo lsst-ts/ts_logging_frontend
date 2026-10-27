@@ -12,7 +12,7 @@ import { expect } from "@playwright/test";
  * @returns {import('@playwright/test').Locator}
  */
 export function observatoryStatusCard(page) {
-  return page.locator("[data-slot='card']").filter({
+  return page.getByTestId("applet-card").filter({
     hasText: "Observatory Status",
   });
 }
@@ -121,10 +121,9 @@ export function appletCard(page, title) {
 /**
  * Waits until the Observatory Status applet has finished loading.
  *
- * The applet shows a skeleton while loading. Once loaded it either renders the
- * ECharts cumulative plot (an SVG) or, when no observatory-status data is
- * available, the "only available from ..." warning text. Waiting on either of
- * these signals is a reliable load sentinel.
+ * The applet shows a skeleton while loading. Once loaded it renders the
+ * marked cumulative plot or the availability message. Targeting the plot
+ * marker avoids confusing warning-icon SVGs with the chart.
  *
  * @param {import('@playwright/test').Page} page
  */
@@ -132,8 +131,7 @@ export async function waitForObservatoryStatusAppletLoad(page) {
   const card = observatoryStatusCard(page);
   await expect(
     card
-      .locator("svg")
-      .first()
+      .getByTestId("obs-status-cumulative-plot")
       .or(card.getByText(/Observatory Status data is only available from/)),
   ).toBeVisible({ timeout: 15000 });
 }
@@ -141,16 +139,14 @@ export async function waitForObservatoryStatusAppletLoad(page) {
 /**
  * Locator for the Observatory Status plot's tooltip.
  *
- * The tooltip is a DOM element rendered by ECharts from the custom formatter in
- * ObservatoryStatusCumulativePlot, using the `font-mono text-stone-100` classes
- * we control. Targeting these makes the assertion robust against ECharts'
- * internal tooltip markup.
+ * ECharts renders the tooltip from our custom formatter. Its test marker
+ * avoids depending on ECharts' generated wrappers or presentation classes.
  *
  * @param {import('@playwright/test').Page} page
  * @returns {import('@playwright/test').Locator}
  */
 export function observatoryStatusTooltip(page) {
-  return page.locator("div.font-mono.text-stone-100").first();
+  return page.getByTestId("obs-status-tooltip").first();
 }
 
 /**
