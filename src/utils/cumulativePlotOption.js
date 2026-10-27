@@ -25,9 +25,12 @@ import {
  * @param {Object} param0.variableDimensions Variable dimensions, resolved for applet/fullscreen.
  * @param {Array} [param0.xDomain] Current zoomed x-domain in millis.
  * @param {Array} [param0.yDomain] Current zoomed y-domain.
+ * @param {boolean} [param0.noData=false] When true, data-derived overlays (open
+ *   dome, night hours) are hidden and the day-break styling is subdued.
  * @returns {Object} ECharts option.
  */
 export function buildCumulativePlotOption({
+  plotTitle = "Cumulative Time in State",
   model,
   markerData,
   markerSize,
@@ -35,6 +38,7 @@ export function buildCumulativePlotOption({
   variableDimensions,
   xDomain,
   yDomain,
+  noData = false,
 }) {
   const { breaks, nightHours, openDomeSeries, stateSeries } = model;
 
@@ -43,7 +47,7 @@ export function buildCumulativePlotOption({
     animation: false,
     toolbox: { show: false },
     title: {
-      text: "Cumulative Time in State",
+      text: plotTitle,
       textStyle: {
         color: STATUS_CUMULATIVE_PLOT_COLOURS.NAMES,
         fontSize: fontSize.TITLE_FONT_SIZE,
@@ -94,7 +98,7 @@ export function buildCumulativePlotOption({
 
         // Build two-column tooltip HTML with Tailwind classes
         return `
-          <div class="font-mono text-stone-100 bg-black opacity-80 p-5 border-1 border-stone-200 rounded-sm">
+          <div data-testid="obs-status-tooltip" class="font-mono text-stone-100 bg-black opacity-80 p-5 border-1 border-stone-200 rounded-sm">
             ${
               clippedAtSunset
                 ? `<p class="italic">Status change occured prior to sunset; duration is clipped.</p></br>`
@@ -214,9 +218,11 @@ export function buildCumulativePlotOption({
         itemStyle: {
           borderType: "solid",
           borderColor: STATUS_CUMULATIVE_PLOT_COLOURS.BORDERS,
-          borderWidth: STATUS_CUMULATIVE_DIMENSIONS.BREAK_BORDER_WIDTH,
+          borderWidth: noData
+            ? 0.5
+            : STATUS_CUMULATIVE_DIMENSIONS.BREAK_BORDER_WIDTH,
           color: STATUS_CUMULATIVE_PLOT_COLOURS.BREAK_AREA_FILL,
-          opacity: 1,
+          opacity: noData ? 0.5 : 0.8,
         },
       },
     },
@@ -312,38 +318,43 @@ export function buildCumulativePlotOption({
         },
         z: STATUS_CUMULATIVE_ELEMENTS_Z.STATE_LINES,
       })),
-      // Open dome line
-      {
-        type: "line",
-        data: openDomeSeries,
-        name: "open dome",
-        id: "open-dome",
-        lineStyle: {
-          color: STATUS_CUMULATIVE_PLOT_COLOURS.OPEN_DOME_LINE,
-          width: STATUS_CUMULATIVE_DIMENSIONS.OPEN_DOME_LINE_WIDTH,
-        },
-        itemStyle: {
-          opacity: 0,
-        },
-        z: STATUS_CUMULATIVE_ELEMENTS_Z.OPEN_DOME_LINE,
-      },
-      // Night Hours - horizontal lines marking available observing hours
-      {
-        type: "line",
-        data: nightHours,
-        name: "night hours",
-        id: "night-hours",
-        lineStyle: {
-          color: STATUS_CUMULATIVE_PLOT_COLOURS.NIGHT_HOURS_LINE,
-          opacity: 1,
-          type: "solid",
-          width: STATUS_CUMULATIVE_DIMENSIONS.NIGHT_HOURS_LINE_WIDTH,
-        },
-        itemStyle: {
-          opacity: 0,
-        },
-        z: STATUS_CUMULATIVE_ELEMENTS_Z.NIGHT_HOURS,
-      },
+      // Hide reference overlays when empty.
+      ...(!noData
+        ? [
+            // Open dome line
+            {
+              type: "line",
+              data: openDomeSeries,
+              name: "open dome",
+              id: "open-dome",
+              lineStyle: {
+                color: STATUS_CUMULATIVE_PLOT_COLOURS.OPEN_DOME_LINE,
+                width: STATUS_CUMULATIVE_DIMENSIONS.OPEN_DOME_LINE_WIDTH,
+              },
+              itemStyle: {
+                opacity: 0,
+              },
+              z: STATUS_CUMULATIVE_ELEMENTS_Z.OPEN_DOME_LINE,
+            },
+            // Night Hours - horizontal lines marking available observing hours
+            {
+              type: "line",
+              data: nightHours,
+              name: "night hours",
+              id: "night-hours",
+              lineStyle: {
+                color: STATUS_CUMULATIVE_PLOT_COLOURS.NIGHT_HOURS_LINE,
+                opacity: 1,
+                type: "solid",
+                width: STATUS_CUMULATIVE_DIMENSIONS.NIGHT_HOURS_LINE_WIDTH,
+              },
+              itemStyle: {
+                opacity: 0,
+              },
+              z: STATUS_CUMULATIVE_ELEMENTS_Z.NIGHT_HOURS,
+            },
+          ]
+        : []),
       // Markers at the start of each interval: diamond if has note, circle if not
       ...STATUS_CUMULATIVE_SERIES_ORDER.map((stateName) => ({
         type: "scatter",
