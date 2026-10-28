@@ -4,14 +4,12 @@ import {
   getAvailableDayObsRange,
   isDateInRetentionRange,
 } from "../src/utils/retentionPolicyUtils";
-import { DateTime } from "luxon";
 
 vi.mock("../src/utils/utils", () => ({
   getSiteConfig: vi.fn(),
 }));
 
 import { getSiteConfig } from "../src/utils/utils";
-DateTime;
 describe("getRetentionPolicy", () => {
   const originalWindow = globalThis.window;
 

@@ -29,6 +29,12 @@ const instruments = Object.keys(TELESCOPES).map((key) => {
   };
 });
 
+/**
+ * The sidebar's inputs: telescope, night (dayobs) and the number of nights up
+ * to and including it, with the resulting date range shown below. Nights
+ * before the host's retention window cannot be picked, and the telescope
+ * selector is hidden in the Scientific Nightly Digest.
+ */
 function Parameters({
   dayobs,
   noOfNights,

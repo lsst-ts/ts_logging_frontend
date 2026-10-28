@@ -12,6 +12,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { PLOT_DEFINITIONS } from "@/components/PLOT_DEFINITIONS";
 import { prettyTitleFromKey } from "@/utils/utils";
 
+/**
+ * Dialog for choosing which plots from `PLOT_DEFINITIONS` are shown on the
+ * Plots page. Fields with no values in `dataLogEntries` are disabled, and
+ * are left out by "Select All".
+ */
 function PlotVisibilityPopover({
   dataLogEntries,
   visiblePlots,

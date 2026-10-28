@@ -1,6 +1,11 @@
 /**
  * Generates a mock `data_log` response body for use in e2e tests.
  *
+ * Apart from their times, records share every value by default (band "y",
+ * airmass 1.3, ...), so on the Plots page their dots stack on one line. Vary
+ * the plotted field with postProcess when a test needs to tell dots apart.
+ * The default data-log fixture has the same shape.
+ *
  * @param {number} count - Number of data-log records to generate.
  * @param {object} [options]
  * @param {number} [options.dayobs=20260101] - Day of observation in YYYYMMDD format. Records will

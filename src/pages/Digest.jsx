@@ -125,6 +125,13 @@ function getDigestWarningContent({
   return availabilityWarning;
 }
 
+/**
+ * The landing page: a summary of the selected nights. It fetches all
+ * sources the applets need (exposures, expected exposures, almanac, exposure
+ * flags, BLOCK details, night reports, Jira tickets, observatory status and
+ * the static visit map), derives the headline metrics, and passes the data
+ * down to the metric cards and applets.
+ */
 export default function Digest() {
   const { startDayobs, endDayobs, telescope } = useSearch({
     from: "__root__",

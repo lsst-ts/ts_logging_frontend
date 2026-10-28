@@ -35,6 +35,13 @@ import {
 import { useTimeRangeFromURL } from "@/hooks/useTimeRangeFromURL";
 import { useSelectionSync } from "@/components/DataTable";
 
+/**
+ * One row per exposure, in a `DataLogTable` below a `TimelineChart` of the
+ * nights. Rows combine the ConsDB data log with the exposure log's flags and
+ * comments and the BLOCK details for each science program, and are limited to
+ * the time window selected in the URL or TimelineChart. Allows the selection of
+ * a single row, which is kept in the URL as `selectedExposureId`.
+ */
 function DataLog() {
   // Routing and URL params
   const { startDayobs, endDayobs, telescope } = useSearch({

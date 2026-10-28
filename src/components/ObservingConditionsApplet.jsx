@@ -226,6 +226,15 @@ const renderCustomLegend = (props) => (
   </div>
 );
 
+/**
+ * Recharts-based Digest applet plotting seeing (PSF FWHM, left axis) and zero
+ * point per band (right axis) for each on-sky exposure against time, with
+ * dashed lines at 12° twilight and shading where there is more than five minutes
+ * between exposures. Dragging zooms both axes and sets the page's selected time
+ * range (holding Shift keeps the Y axis, holding Ctrl zooms out), and
+ * double-clicking resets. When a bar in the Exposure Breakdown applet is
+ * hovered, `hoveredExposureIds` dims every exposure outside that group.
+ */
 function ObservingConditionsApplet({
   exposuresLoading,
   exposureFields,

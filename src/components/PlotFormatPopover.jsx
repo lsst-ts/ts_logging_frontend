@@ -17,6 +17,11 @@ import {
 } from "@/components/PLOT_DEFINITIONS";
 import { Checkbox } from "./ui/checkbox";
 
+/**
+ * Dialog of formatting options applied to every plot on the Plots page: the
+ * x-axis (time or sequence number) and whether its label is shown, the point
+ * shape, the colour scheme and the band marker style.
+ */
 function PlotFormatPopover({
   xAxisType,
   setXAxisType,
