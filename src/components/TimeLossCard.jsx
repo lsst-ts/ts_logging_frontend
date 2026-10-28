@@ -41,7 +41,7 @@ export default function TimeLossCard({
   const loading = obsStatusLoading;
   const isClickable = onClick && !loading;
 
-  const heading = "Time Loss";
+  const heading = "Time Loss (hours)";
 
   const availability = obsStatusAvailability ?? {};
   const availabilityStatus =
