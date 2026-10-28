@@ -27,7 +27,9 @@ test.describe("Digest page — Time Loss card", () => {
     await page.goto(DIGEST_URL);
 
     const card = timeLossCard(page);
-    await expect(card.getByText("Time Loss", { exact: true })).toBeVisible();
+    await expect(
+      card.getByText("Time Loss (hours)", { exact: true }),
+    ).toBeVisible();
     await expect(card.locator("[data-slot='time-loss-fault']")).toHaveText(
       "1.50",
     );
