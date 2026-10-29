@@ -31,10 +31,7 @@ const NAV_ITEMS = [
 const digestUrlFor = (start, end, telescope = "Simonyi") =>
   `/nightlydigest/?startDayobs=${start}&endDayobs=${end}&telescope=${telescope}`;
 
-// The picker's trigger is labelled with the currently selected dayobs, which is
-// the end of the range.
-const openCalendar = (page, label = "January 01, 2026") =>
-  page.getByRole("button", { name: label }).click();
+const openCalendar = (page) => page.getByLabel("Night (dayobs)").click();
 
 // react-day-picker labels its day buttons "Sunday, January 11th, 2026", so the
 // cell's data-day is the readable way in.
@@ -194,18 +191,40 @@ test.describe("Sidebar — dayobs and number of nights", () => {
     await expect(page).toHaveURL(/endDayobs=20260115/);
   });
 
-  test("clearing the number of nights is rejected rather than inverting the range", async ({
+  test("clearing the number of nights leaves the range alone", async ({
     page,
   }) => {
-    await page.goto(DIGEST_URL);
+    await page.goto(digestUrlFor("20251230", TEST_DAYOBS));
     await page.locator("#noOfNights").fill("");
 
-    // calculateDayObsRange subtracts (nights - 1), so an empty value would put
-    // startDayobs a day after endDayobs; the schema refinement catches it.
-    await expect(page.getByText("Something went wrong")).toBeVisible();
-    await expect(
-      page.getByText("startDayobs must be before or equal to endDayobs."),
-    ).toBeVisible();
+    await expect(page.locator("#noOfNights")).toHaveValue("");
+    await expect(page).toHaveURL(
+      new RegExp(`startDayobs=20251230&endDayobs=${TEST_DAYOBS}`),
+    );
+    await expect(page.getByText("Something went wrong")).toHaveCount(0);
+  });
+
+  test.describe("when the local date runs ahead of the dayobs", () => {
+    // 05:00 UTC is still dayobs 20260101, but already 2 January in Auckland.
+    test.use({ timezoneId: "Pacific/Auckland" });
+
+    test.beforeEach(async ({ page }) => {
+      await page.clock.setFixedTime(new Date("2026-01-02T05:00:00Z"));
+    });
+
+    // Only the Scientific Nightly Digest stops the calendar at the current
+    // dayobs; see tests/e2e/snd/sidebar.spec.js.
+    test("the calendar marks the current dayobs as today without stopping at it", async ({
+      page,
+    }) => {
+      await page.goto(DIGEST_URL);
+      await openCalendar(page);
+
+      const day = (isoDate) => page.locator(`[data-day="${isoDate}"]`);
+      await expect(day("2026-01-02")).not.toHaveAttribute("data-disabled");
+      await expect(day("2026-01-01")).toHaveAttribute("data-today", "true");
+      await expect(day("2026-01-02")).not.toHaveAttribute("data-today");
+    });
   });
 });
 
