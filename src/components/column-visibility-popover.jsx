@@ -38,13 +38,13 @@ function ColumnVisibilityPopover({ table }) {
         <div className="flex justify-between mb-2">
           <button
             onClick={handleSelectAll}
-            className="text-xs text-blue-600 hover:underline"
+            className="text-xs text-blue-600 hover:underline cursor-pointer"
           >
             Select All
           </button>
           <button
             onClick={handleDeselectAll}
-            className="text-xs text-red-600 hover:underline"
+            className="text-xs text-red-600 hover:underline cursor-pointer"
           >
             Deselect All
           </button>
@@ -57,6 +57,7 @@ function ColumnVisibilityPopover({ table }) {
                 onCheckedChange={(checked) =>
                   column.toggleVisibility(!!checked)
                 }
+                className="cursor-pointer"
               />
               <span className="text-sm">{column.columnDef.header}</span>
             </div>

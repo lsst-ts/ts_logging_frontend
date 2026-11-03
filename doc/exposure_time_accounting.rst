@@ -1,4 +1,4 @@
-Definitions and Assumptions for Time Accounting
+Definitions and Assumptions for Exposure Time Accounting
 ===============================================
 
 - **Open dome times** are in **UTC**.

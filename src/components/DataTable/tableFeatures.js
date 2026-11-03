@@ -1,4 +1,5 @@
 import {
+  aggregationFn_sum,
   columnFacetingFeature,
   columnFilteringFeature,
   columnGroupingFeature,
@@ -13,6 +14,7 @@ import {
   createFilteredRowModel,
   createGroupedRowModel,
   createSortedRowModel,
+  rowAggregationFeature,
   rowExpandingFeature,
   rowSortingFeature,
   sortFn_alphanumeric,
@@ -43,6 +45,7 @@ export const dataTableFeatures = tableFeatures({
   columnSizingFeature,
   columnResizingFeature,
   columnVisibilityFeature,
+  rowAggregationFeature,
   rowExpandingFeature,
   rowSortingFeature,
 
@@ -53,6 +56,10 @@ export const dataTableFeatures = tableFeatures({
   filteredRowModel: createFilteredRowModel(),
   groupedRowModel: createGroupedRowModel(),
   sortedRowModel: createSortedRowModel(),
+
+  aggregationFns: {
+    sum: aggregationFn_sum,
+  },
 
   sortFns: {
     alphanumeric: sortFn_alphanumeric,

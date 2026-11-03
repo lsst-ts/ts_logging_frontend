@@ -4,20 +4,42 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
+import WarningTooltip from "@/components/WarningTooltip";
 
 import InfoIcon from "../assets/InfoIcon.svg";
 
+/**
+ * Generic metric card used across the Digest page.
+ *
+ * `data` is the ready-state display value; the resolved display state decides
+ * whether a warning badge appears next to it. A warning badge is shown on `error`
+ * (required source fetch failure), on `noData` (required source reached but
+ * empty) and on `ready` with a message.
+ *
+ * @param {Object} props
+ * @param {string} props.data Ready-state display value (Digest formats `--`,
+ *   `0`, etc. per state before passing it).
+ * @param {string} props.state The resolved display state ("loading"|"error"|"noData"|"ready").
+ * @param {string} [props.message] The resolved display message (for warnings).
+ * @param {string} [props.warningAriaLabel] Accessible name for the warning button.
+ */
 export default function MetricsCard({
   icon,
   data,
   label,
   metadata,
   tooltip,
-  statusIndicator = null,
+  state = "ready",
+  message = "",
+  warningAriaLabel = "data availability warning",
   loading = false,
   onClick = null,
 }) {
   const isClickable = onClick && !loading;
+  const showWarning =
+    !loading &&
+    (state === "error" || state === "noData" || state === "ready") &&
+    message;
 
   return (
     <div
@@ -34,7 +56,11 @@ export default function MetricsCard({
           ) : (
             <span data-slot="metrics-card-value">{data}</span>
           )}
-          {!loading && statusIndicator}
+          {showWarning && (
+            <WarningTooltip ariaLabel={warningAriaLabel}>
+              {message}
+            </WarningTooltip>
+          )}
         </div>
         {/* Render dynamic component and static icons */}
         {typeof icon === "string" ? (
@@ -59,7 +85,8 @@ export default function MetricsCard({
         {tooltip && (
           <Popover>
             <PopoverTrigger
-              className="self-end min-w-4"
+              data-testid="metrics-card-info"
+              className="self-end min-w-4 cursor-pointer"
               /* Prevents click from propagating to the card 
               to show the tooltip rather than open the dialog*/
               onClick={(e) => e.stopPropagation()}

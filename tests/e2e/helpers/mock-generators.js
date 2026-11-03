@@ -246,3 +246,63 @@ export function generateExposuresMock(
     time_accounting_error: null,
   };
 }
+
+/**
+ * Generates an `/exposures` API response populated for the Time Accounting
+ * Exposure Time Accounting applet.
+ *
+ * Unlike `generateExposuresMock` (aimed at the Digest exposure-breakdown),
+ * this exposes the on-sky time accounting and dome-hour fields the applet
+ * depends on. The `exposures` array itself can stay empty unless a test needs
+ * `calculateSumExpTimeBetweenTwilights` to contribute to the calculated fault.
+ *
+ * @param {Object} [options]
+ * @param {number} [options.totalOnSkySeconds=14400] - `total_on_sky_exposure_time`.
+ * @param {Object} [options.nightOnSkyAccounting={}] - `night_on_sky_time_accounting`
+ *   (sum_visit_gap_*, sum_overhead_* in hours).
+ * @param {Object} [options.dayObsOpenDomeHours={}] - Per-dayobs open-dome hours.
+ * @param {Object} [options.exposures=[]] - Exposure rows.
+ * @param {string|null} [options.openDomeError=null] - Dome error message or null.
+ * @param {string|null} [options.timeAccountingError=null] - Time-accounting error message or null.
+ * @returns {Object} The `/exposures` response body.
+ */
+export function generateExposureTimeAccountingMock({
+  totalOnSkySeconds = 14400,
+  nightOnSkyAccounting = {},
+  dayObsOpenDomeHours = {},
+  exposures = [],
+  openDomeError = null,
+  timeAccountingError = null,
+} = {}) {
+  return {
+    exposures,
+    exposures_count: exposures.length,
+    sum_exposure_time: exposures.length * 30,
+    on_sky_exposures_count: exposures.length,
+    total_on_sky_exposure_time: totalOnSkySeconds,
+    open_dome_times: [],
+    day_obs_open_dome_hours: dayObsOpenDomeHours,
+    open_dome_error: openDomeError,
+    night_on_sky_time_accounting: nightOnSkyAccounting,
+    time_accounting_error: timeAccountingError,
+  };
+}
+
+/**
+ * Generates an `/narrative-log` API response for the Time Accounting
+ * Narrative Log applet.
+ *
+ * @param {Object[]} entries - Narrative log entries. Only entries with
+ *   `time_lost_type === "fault"` and `time_lost > 0` are shown in the table.
+ * @returns {Object} The `/narrative-log` response body.
+ */
+export function generateNarrativeLogMock(entries = []) {
+  return {
+    time_lost_to_weather: 0.0,
+    time_lost_to_faults: entries.reduce(
+      (total, entry) => total + Number(entry.time_lost ?? 0),
+      0,
+    ),
+    narrative_log: entries,
+  };
+}

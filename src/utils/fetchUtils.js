@@ -1,3 +1,4 @@
+import { SOURCE } from "@/constants/DATA_SOURCES";
 import { isScientificNightlyDigest } from "./appConfig";
 
 const httpProtocol = window.location.protocol;
@@ -114,7 +115,7 @@ const fetchData = async (url, abortController) => {
  */
 const fetchExposures = async (start, end, instrument, abortController) => {
   try {
-    const url = buildBackendURL("exposures", start, end, instrument);
+    const url = buildBackendURL(SOURCE.EXPOSURES, start, end, instrument);
     const data = await fetchData(url, abortController);
     return data;
   } catch (err) {
@@ -139,7 +140,7 @@ const fetchExposures = async (start, end, instrument, abortController) => {
  */
 const fetchExpectedExposures = async (start, end, abortController) => {
   try {
-    const url = buildBackendURL("expected-exposures", start, end);
+    const url = buildBackendURL(SOURCE.EXPECTED_EXPOSURES, start, end);
     const data = await fetchData(url, abortController);
     return data.sum_exposures;
   } catch (err) {
@@ -162,7 +163,7 @@ const fetchExpectedExposures = async (start, end, abortController) => {
  * @throws {Error} Throws an error if the fetch fails or the response is invalid.
  */
 const fetchAlmanac = async (start, end, abortController) => {
-  const url = buildBackendURL("almanac", start, end);
+  const url = buildBackendURL(SOURCE.ALMANAC, start, end);
   try {
     const data = await fetchData(url, abortController);
     return data.almanac_info;
@@ -190,7 +191,7 @@ const fetchAlmanac = async (start, end, abortController) => {
  * @throws {Error} Throws an error if the narrative log cannot be fetched and the request was not aborted.
  */
 const fetchNarrativeLog = async (start, end, instrument, abortController) => {
-  const url = buildBackendURL("narrative-log", start, end, instrument);
+  const url = buildBackendURL(SOURCE.NARRATIVE_LOG, start, end, instrument);
   try {
     const data = await fetchData(url, abortController);
     return data;
@@ -246,7 +247,7 @@ const fetchObsStatusFromRubinNights = async ({
     const uniqueMetrics = [...new Set(metrics)];
     uniqueMetrics.forEach((metric) => params.append("metric", metric));
   }
-  const url = buildBackendURL("obs-status", start, end, null, params);
+  const url = buildBackendURL(SOURCE.OBS_STATUS, start, end, null, params);
 
   try {
     const data = await fetchData(url, abortController);
@@ -289,7 +290,7 @@ const fetchObsStatusFromRubinNights = async ({
  * @throws {Error} Throws an error if the night reports cannot be fetched and the request was not aborted.
  */
 const fetchNightreport = async (start, end, abortController) => {
-  const url = buildBackendURL("night-reports", start, end);
+  const url = buildBackendURL(SOURCE.NIGHT_REPORTS, start, end);
   try {
     const data = await fetchData(url, abortController);
     return [data.reports];
@@ -317,7 +318,7 @@ const fetchNightreport = async (start, end, abortController) => {
  * @throws {Error} Throws an error if fetching fails and the request was not aborted.
  */
 const fetchExposureFlags = async (start, end, instrument, abortController) => {
-  const url = buildBackendURL("exposure-flags", start, end, instrument);
+  const url = buildBackendURL(SOURCE.EXPOSURE_FLAGS, start, end, instrument);
   try {
     const data = await fetchData(url, abortController);
     if (!data) {
@@ -345,7 +346,7 @@ const fetchExposureFlags = async (start, end, instrument, abortController) => {
  * @throws {Error} Throws an error if fetching Jira tickets fails for reasons other than an abort.
  */
 const fetchJiraTickets = async (start, end, instrument, abortController) => {
-  const url = buildBackendURL("jira-tickets", start, end, instrument);
+  const url = buildBackendURL(SOURCE.JIRA_TICKETS, start, end, instrument);
   try {
     const data = await fetchData(url, abortController);
     return data.issues;
@@ -375,7 +376,7 @@ const fetchDataLogEntriesFromConsDB = async (
   instrument,
   abortController,
 ) => {
-  const url = buildBackendURL("data-log", start, end, instrument);
+  const url = buildBackendURL(SOURCE.DATA_LOG, start, end, instrument);
   try {
     const data = await fetchData(url, abortController);
     if (!data) {
@@ -408,7 +409,7 @@ const fetchDataLogEntriesFromExposureLog = async (
   instrument,
   abortController,
 ) => {
-  const url = buildBackendURL("exposure-entries", start, end, instrument);
+  const url = buildBackendURL(SOURCE.EXPOSURE_ENTRIES, start, end, instrument);
   try {
     const data = await fetchData(url, abortController);
     if (!data) {
@@ -437,7 +438,7 @@ const fetchDataLogEntriesFromExposureLog = async (
  * @throws {Error} Throws an error if the context feed data cannot be fetched and the request was not aborted.
  */
 const fetchContextFeedFromRubinNights = async (start, end, abortController) => {
-  const url = buildBackendURL("context-feed", start, end);
+  const url = buildBackendURL(SOURCE.CONTEXT_FEED, start, end);
   try {
     const data = await fetchData(url, abortController);
     return [data.data, data.cols];
@@ -460,7 +461,7 @@ const fetchContextFeedFromRubinNights = async (start, end, abortController) => {
  * @throws {Error} Throws an error if the package version cannot be fetched and the request was not aborted.
  */
 const fetchBackendVersion = async (abortController) => {
-  const url = buildBackendURL("version");
+  const url = buildBackendURL(SOURCE.BACKEND_VERSION);
   try {
     const data = await fetchData(url, abortController);
     return data.version;
@@ -497,7 +498,7 @@ const fetchVisitMaps = async (
     appletMode: appletMode,
   });
   const url = buildBackendURL(
-    "multi-night-visit-maps",
+    SOURCE.MULTI_NIGHT_VISIT_MAPS,
     start,
     end,
     instrument,
@@ -532,7 +533,7 @@ const fetchBlockDetails = async (keys, abortController) => {
   const params = new URLSearchParams();
   const uniqueKeys = [...new Set(keys)];
   uniqueKeys.forEach((key) => params.append("key", key));
-  const url = buildBackendURL("block-details", null, null, null, params);
+  const url = buildBackendURL(SOURCE.BLOCK_DETAILS, null, null, null, params);
   try {
     const data = await fetchData(url, abortController);
     return data;
@@ -568,7 +569,7 @@ const toDataUrl = (imagePayload) =>
  * @throws {Error} Throws an error if the fetch fails or returns invalid data and the request was not aborted.
  */
 const fetchStaticVisitMap = async (start, end, instrument, abortController) => {
-  const url = buildBackendURL("static-visit-map", start, end, instrument);
+  const url = buildBackendURL(SOURCE.STATIC_VISIT_MAP, start, end, instrument);
   try {
     const data = await fetchData(url, abortController);
     return {

@@ -20,7 +20,6 @@ export {
 export const FIXTURE_TOTAL_ROWS = 12;
 export const SIMONYI_ROWS = 10; // excludes the AT Queue + AuxTel Exposure rows
 export const AUXTEL_ROWS = 5; // OCS Queue, AuxTel Exposure, AT Queue, Error (General), Narrative Log (General)
-
 /** Rows whose finalStatus is "Traceback" (expandable description cells). */
 export const SIMONYI_TRACEBACK_ROWS = 2;
 
@@ -39,10 +38,17 @@ export const TIMELINE_SERIES_COUNT = 11;
  * @param {import('@playwright/test').Page} page
  */
 export async function waitForContextFeedLoad(page) {
+  // Wait for route normalization before opening menus.
+  await expect(page).toHaveURL(
+    (url) =>
+      url.searchParams.has("startTime") && url.searchParams.has("endTime"),
+  );
   await expect(page.locator("[data-slot='skeleton']")).toHaveCount(0, {
     timeout: 15000,
   });
-  await expect(page.locator("[data-slot='table-body']")).toBeAttached();
+  await expect(page.locator("[data-slot='table-body']")).toBeAttached({
+    timeout: 15000,
+  });
 }
 
 /**

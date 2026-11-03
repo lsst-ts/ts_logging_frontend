@@ -8,13 +8,20 @@ import { expect } from "@playwright/test";
  * @param {import('@playwright/test').Page} page
  */
 export async function waitForDataLogLoad(page) {
+  // Wait for route normalization before opening menus.
+  await expect(page).toHaveURL(
+    (url) =>
+      url.searchParams.has("startTime") && url.searchParams.has("endTime"),
+  );
   // Wait for all skeleton rows to disappear (signals tableLoading = false).
   // Avoid checking table-body visibility — it lives inside an overflow-auto
   // container which Playwright considers "hidden" even when content is present.
   await expect(page.locator("[data-slot='skeleton']")).toHaveCount(0, {
     timeout: 15000,
   });
-  await expect(page.locator("[data-slot='table-body']")).toBeAttached();
+  await expect(page.locator("[data-slot='table-body']")).toBeAttached({
+    timeout: 15000,
+  });
 }
 
 /**

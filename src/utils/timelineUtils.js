@@ -174,6 +174,7 @@ export const buildTimelineGraphicElements = (
     cumulativePlot = false,
     fullScreen = false,
     bottomMargin = TIMELINE_MARGINS.bottom,
+    noDataMessage = "",
   },
 ) => {
   const xMinMillis = fullTimeRange[0]?.toMillis();
@@ -185,6 +186,7 @@ export const buildTimelineGraphicElements = (
   if (gridLeft == null || gridRight == null) return null;
 
   const containerHeight = containerRef.current?.offsetHeight ?? computedHeight;
+  const containerWidth = containerRef.current?.offsetWidth ?? 0;
   const fontFamily = getComputedStyle(containerRef.current).fontFamily;
   const gridBottom = containerHeight - bottomMargin;
 
@@ -196,6 +198,47 @@ export const buildTimelineGraphicElements = (
 
   const elements = [];
 
+  // Display a centered no-data message when appropriate.
+  if (noDataMessage) {
+    // Use grid bounds when available.
+    let gridRect;
+    try {
+      gridRect = instance
+        .getModel?.()
+        .getComponent("grid")
+        ?.coordinateSystem?.getRect();
+    } catch {
+      gridRect = undefined;
+    }
+    const gx = gridRect?.x ?? 0;
+    const gy = gridRect?.y ?? 0;
+    const gw = gridRect?.width ?? containerWidth;
+    const gh = gridRect?.height ?? containerHeight;
+
+    elements.push({
+      id: "no-data-message",
+      type: "text",
+      silent: true,
+      z: 10,
+
+      x: gx + gw / 2,
+      y: gy + gh / 2,
+      style: {
+        fill: "#a8a29e",
+        fontSize: 16,
+        fontWeight: "lighter",
+        fontFamily,
+        lineHeight: 20,
+        textAlign: "center",
+        textVerticalAlign: "middle",
+
+        overflow: "break",
+        width: Math.max(gw - 24, 40),
+        text: noDataMessage,
+      },
+    });
+  }
+
   for (const tickMs of hourlyTicks) {
     const dt = millisToDateTime(tickMs);
     const hourUTC = dt.hour;
@@ -204,11 +247,13 @@ export const buildTimelineGraphicElements = (
 
     // UTC midday: dayobs border line
     if (hourUTC === 12 && !cumulativePlot) {
+      // Short dayobs line if no data (to avoid clashing with no-data message).
+      const y1 = noDataMessage ? containerHeight - 40 : 0;
       elements.push({
         type: "line",
         silent: true,
         z: 0,
-        shape: { x1: pixelX, y1: 0, x2: pixelX, y2: containerHeight },
+        shape: { x1: pixelX, y1: y1, x2: pixelX, y2: containerHeight },
         style: { stroke: TIMELINE_COLORS.DAYOBS_BORDER, lineWidth: 1 },
       });
       continue;

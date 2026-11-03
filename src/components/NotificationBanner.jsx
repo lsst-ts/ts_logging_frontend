@@ -51,11 +51,11 @@ const config = {
 
 export function NotificationBanner({
   type,
+  onDismiss,
+  dismissible,
   title = "",
   description = "",
   meta = "",
-  onDismiss,
-  dismissible,
 }) {
   const c = config[type];
   const isDismissible = dismissible ?? c.dismissible;

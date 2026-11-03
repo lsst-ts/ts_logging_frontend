@@ -18,9 +18,9 @@ function SelectValue({ ...props }) {
 
 function SelectTrigger({
   className,
-  size = "default",
   children,
   chevronDownIconClassName,
+  size = "default",
   ...props
 }) {
   return (

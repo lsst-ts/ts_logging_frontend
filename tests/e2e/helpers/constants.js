@@ -7,6 +7,7 @@ export const DIGEST_URL = `./?startDayobs=${TEST_DAYOBS}&endDayobs=${TEST_DAYOBS
 export const DATALOG_URL = `data-log?startDayobs=${TEST_DAYOBS}&endDayobs=${TEST_DAYOBS}&telescope=Simonyi`;
 export const CONTEXTFEED_URL = `context-feed?startDayobs=${TEST_DAYOBS}&endDayobs=${TEST_DAYOBS}&telescope=Simonyi`;
 export const VISITMAPS_URL = `visit-maps?startDayobs=${TEST_DAYOBS}&endDayobs=${TEST_DAYOBS}&telescope=Simonyi`;
+export const TIME_ACCOUNTING_URL = `time-accounting?startDayobs=${TEST_DAYOBS}&endDayobs=${TEST_DAYOBS}&telescope=Simonyi`;
 
 // Full time range UTC boundaries for dayobs=20260101:
 export const FULL_START = 1767268800000;

@@ -57,7 +57,11 @@ test.describe("Plots page — empty data", () => {
   test("shows a no data notification banner when there are no records", async ({
     page,
   }) => {
-    await expect(page.getByText("No exposures found in ConsDB")).toBeVisible({
+    // The banner text also appears inline in the plot area (with a trailing
+    // full stop), so match the banner exactly.
+    await expect(
+      page.getByText("No exposures found in ConsDB", { exact: true }),
+    ).toBeVisible({
       timeout: 10000,
     });
   });
@@ -106,7 +110,7 @@ test.describe("Plots page — API errors", () => {
       timeout: 10000,
     });
     await expect(
-      page.getByText("exposures failed to load. Data may be incomplete"),
+      page.getByText("data-log failed to load. Data may be incomplete"),
     ).toBeVisible({
       timeout: 10000,
     });
