@@ -9,6 +9,7 @@ import {
 import { matchValueOrInList } from "@/components/DataTable/tableUtils";
 import LinkIcon from "@/assets/LinkIcon.svg";
 import { isScientificNightlyDigest } from "@/utils/appConfig";
+import { formatTimestamp } from "@/utils/timeUtils";
 
 const columnHelper = createColumnHelper();
 
@@ -82,7 +83,7 @@ const commonColumns = [
   columnHelper.accessor("exposure_id", {
     header: "Exposure Id",
     cell: ({ getValue }) => getValue(),
-    size: 140,
+    size: 160,
     minSize: 140,
     filterType: null,
     meta: {

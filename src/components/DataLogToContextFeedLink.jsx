@@ -29,6 +29,7 @@ export default function DataLogToContextFeedLink({
     utcSelectedMillis,
     windowSeconds,
   );
+
   if (!url) return "X";
 
   return (
