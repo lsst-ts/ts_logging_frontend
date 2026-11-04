@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { createColumnHelper } from "@tanstack/react-table";
 import { toEpochMicros, formatTimestamp } from "@/utils/timeUtils";
-import { formatCellValue, formatTimestampCell } from "@/utils/utils";
+import { formatCellValue } from "@/utils/utils";
 import { matchValueOrInList } from "@/components/DataTable/tableUtils";
 import { CATEGORY_INDEX_INFO } from "@/constants/CONTEXT_FEED_DEFINITIONS";
 
