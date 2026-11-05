@@ -43,7 +43,7 @@ export default function TimeLossCard({
   const isClickable = onClick && !loading;
   const showValues = state !== "error";
 
-  const heading = "Time Loss";
+  const heading = "Time Loss (hours)";
 
   const numberFormatter = (value) =>
     showValues && typeof value === "number" && Number.isFinite(value)
