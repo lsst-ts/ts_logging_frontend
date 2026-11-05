@@ -1,3 +1,26 @@
+v0.27.0 (2026-11-04)
+====================
+
+New Features
+------------
+
+- Add new Time Accounting Page. (`OSW-2254 <https://rubinobs.atlassian.net//browse/OSW-2254>`_)
+- Add the units (hours) to the Time Loss card header. (`SSW-3110 <https://rubinobs.atlassian.net//browse/SSW-3110>`_)
+
+
+Bug Fixes
+---------
+
+- Fix ``SelectedTimeRangeBar`` grid and vertical alignments (`OSW-2018 <https://rubinobs.atlassian.net//browse/OSW-2018>`_)
+- Fix bug in buildBackendURL so an endpoint with extra parameters can return all params instead of just the final one. (`SSW-3079 <https://rubinobs.atlassian.net//browse/SSW-3079>`_)
+
+
+Other Changes and Additions
+---------------------------
+
+- Standardise applet headers, and loading and error states. (`OSW-2214 <https://rubinobs.atlassian.net//browse/OSW-2214>`_)
+
+
 v0.26.0 (2026-10-22)
 ====================
 
