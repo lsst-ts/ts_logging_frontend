@@ -1,1 +1,0 @@
-Fix ``SelectedTimeRangeBar`` grid and vertical alignments
