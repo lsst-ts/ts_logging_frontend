@@ -112,26 +112,28 @@ function ContextFeedLinkCell(info) {
   }
 
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Link
-          to="/context-feed"
-          search={{
-            startDayobs,
-            endDayobs,
-            telescope,
-            ...contextFeedParams,
-          }}
-          aria-label={linkDescription}
-          className="inline-flex hover:bg-white/20 rounded-sm"
-        >
-          <img src={LinkIcon} alt="Context Feed link" />
-        </Link>
-      </TooltipTrigger>
-      <TooltipContent className="max-w-sm text-wrap">
-        {linkDescription}
-      </TooltipContent>
-    </Tooltip>
+    <div className="flex justify-center items-center w-full h-full">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Link
+            to="/context-feed"
+            search={{
+              startDayobs,
+              endDayobs,
+              telescope,
+              ...contextFeedParams,
+            }}
+            aria-label={linkDescription}
+            className="inline-flex hover:bg-white/20 rounded-sm"
+          >
+            <img src={LinkIcon} alt="Context Feed link" />
+          </Link>
+        </TooltipTrigger>
+        <TooltipContent className="max-w-sm text-wrap">
+          {linkDescription}
+        </TooltipContent>
+      </Tooltip>
+    </div>
   );
 }
 
@@ -236,8 +238,8 @@ export const narrativeLogColumns = [
     id: "contextFeed",
     header: "Context Feed",
     cell: ContextFeedLinkCell,
-    size: 130,
-    minSize: 80,
+    size: 80,
+    minSize: 50,
     filterType: null,
     meta: {
       tooltip: `Open the Context Feed around this incident, showing a +/- ${formatMarginLabel(
