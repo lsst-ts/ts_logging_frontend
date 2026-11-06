@@ -1,12 +1,15 @@
 import { createColumnHelper } from "@tanstack/react-table";
 import RubinTVLink from "@/components/RubinTVLink";
+import DataLogToContextFeedLink from "@/components/DataLogToContextFeedLink";
 import {
   formatCellValue,
   DEFAULT_PIXEL_SCALE_MEDIAN,
   PSF_SIGMA_FACTOR,
 } from "@/utils/utils";
 import { matchValueOrInList } from "@/components/DataTable/tableUtils";
+import LinkIcon from "@/assets/LinkIcon.svg";
 import { isScientificNightlyDigest } from "@/utils/appConfig";
+import { formatTimestamp } from "@/utils/timeUtils";
 
 const columnHelper = createColumnHelper();
 
@@ -79,7 +82,7 @@ const commonColumns = [
   }),
   columnHelper.accessor("exposure_id", {
     header: "Exposure Id",
-    cell: (info) => formatCellValue(info.getValue()),
+    cell: ({ getValue }) => getValue(),
     size: 160,
     minSize: 140,
     filterType: null,
@@ -88,6 +91,38 @@ const commonColumns = [
       selectedKey: true,
     },
   }),
+  //A column linking each exposure to their entry in the Context Feed.
+  //This column is hidden in the Scientific Nightly Digest.
+  ...(isScientificNightlyDigest
+    ? []
+    : [
+        columnHelper.display({
+          id: "ContextFeedLink",
+          header: "Context Feed",
+          cell: ({ row }) => (
+            <div className="flex justify-center items-center w-full">
+              <DataLogToContextFeedLink
+                exposureId={row.original.exposure_id}
+                dayObs={row.original.day_obs}
+                obsStartTime={row.original.obs_start}
+                exposureName={row.original.exposure_name}
+              >
+                <img
+                  src={LinkIcon}
+                  alt="Go to context feed"
+                  className="w-4 h-4 cursor-pointer inline-block"
+                />
+              </DataLogToContextFeedLink>
+            </div>
+          ),
+          size: 140,
+          minSize: 140,
+          filterType: null,
+          meta: {
+            tooltip: "Go to the context feed around this exposure.",
+          },
+        }),
+      ]),
   columnHelper.accessor("seq_num", {
     header: "Seq Num",
     cell: (info) => formatCellValue(info.getValue()),
@@ -113,8 +148,8 @@ const commonColumns = [
   // Dayobs and timestamp
   columnHelper.accessor("obs_start", {
     header: "Obs Start (TAI)",
-    cell: (info) => formatCellValue(info.getValue()),
-    size: 260,
+    cell: (info) => formatTimestamp(info.getValue()),
+    size: 240,
     minSize: 240,
     filterType: "number-range",
     meta: {
@@ -124,8 +159,8 @@ const commonColumns = [
   }),
   columnHelper.accessor("obs_end", {
     header: "Obs End (TAI)",
-    cell: (info) => formatCellValue(info.getValue()),
-    size: 250,
+    cell: (info) => formatTimestamp(info.getValue()),
+    size: 240,
     minSize: 240,
     filterType: "number-range",
     meta: {
@@ -417,6 +452,7 @@ const dataLogColumns = {
 const defaultColumnVisibility = {
   Simonyi: {
     RubinTVLink: true,
+    ContextFeedLink: true,
     exposure_id: true,
     exposure_name: false,
     seq_num: false,
@@ -449,8 +485,9 @@ const defaultColumnVisibility = {
   },
   AuxTel: {
     RubinTVLink: true,
-    exposure_id: false,
-    exposure_name: true,
+    ContextFeedLink: true,
+    exposure_id: true,
+    exposure_name: false,
     seq_num: false,
     day_obs: false,
     science_program: true,
@@ -479,6 +516,7 @@ const defaultColumnVisibility = {
 const defaultColumnOrder = {
   Simonyi: [
     "RubinTVLink",
+    "ContextFeedLink",
     "exposure_id",
     "exposure_name",
     "day_obs",
@@ -511,6 +549,7 @@ const defaultColumnOrder = {
   ],
   AuxTel: [
     "RubinTVLink",
+    "ContextFeedLink",
     "exposure_id",
     "exposure_name",
     "day_obs",

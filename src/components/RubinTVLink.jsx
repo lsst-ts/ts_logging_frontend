@@ -1,9 +1,4 @@
-import { getRubinTVUrl } from "@/utils/utils";
-
-const telescopePrefixes = {
-  MC: "Simonyi",
-  AT: "AuxTel",
-};
+import { getRubinTVUrl, TELESCOPE_PREFIXES } from "@/utils/utils";
 
 export default function RubinTVLink({ dayObs, seqNum, exposureName }) {
   // Expected behaviour is to pass dayObs & seqNum
@@ -27,7 +22,7 @@ export default function RubinTVLink({ dayObs, seqNum, exposureName }) {
     }
   }
   // Derive telescope from exposureName
-  const telescope = telescopePrefixes[exposureName.slice(0, 2)] ?? "";
+  const telescope = TELESCOPE_PREFIXES[exposureName.slice(0, 2)] ?? "";
 
   const url = getRubinTVUrl(telescope, dayObs, seqNum);
   if (!url) return null;
