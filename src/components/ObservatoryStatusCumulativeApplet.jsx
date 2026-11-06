@@ -153,6 +153,26 @@ function ObservatoryStatusCumulativeApplet({
                 <br />
                 <br />
                 Hover over markers to see the details of the status update.
+                <br />
+                <br />
+                <strong>night hours:</strong> hours in between 12 deg twilights
+                <br />
+                <strong>open dome:</strong> dome is open to the sky
+                <br />
+                <strong>operational:</strong> system is capable of taking data
+                <br />
+                <strong>fault:</strong> the system faulted or observers declared
+                a fault
+                <br />
+                <strong>weather:</strong> weather prevented data taking
+                <br />
+                <strong>downtime:</strong> declared downtime by observatory
+                <br />
+                <strong>idle:</strong> there is no fault but we are not taking
+                data
+                <br />
+                <strong>unknown:</strong> transition between states prior to
+                diagnosis
               </p>
             </PopoverContent>
           </Popover>
