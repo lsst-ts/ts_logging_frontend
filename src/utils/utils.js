@@ -372,7 +372,7 @@ const getContextFeedUrl = (
   telescope,
   dayObs,
   utcSelectedMillis,
-  windowSeconds = 30,
+  windowSeconds = 60,
 ) => {
   if (!dayObs || !utcSelectedMillis) return null;
 
