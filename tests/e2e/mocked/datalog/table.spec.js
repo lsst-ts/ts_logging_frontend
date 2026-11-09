@@ -85,4 +85,50 @@ test.describe("Data-log page — table content and formatting", () => {
     );
     expect(bgAfter).not.toBe(bgBefore);
   });
+
+  test("data log to context feed renders a valid link when data is present", async ({
+    page,
+  }) => {
+    const firstRow = page.locator("[data-slot='table-body'] tr").first();
+    const linkCell = await cellByHeader(page, firstRow, "Context Feed");
+    const link = linkCell.getByRole("link");
+
+    await expect(link).toBeVisible();
+    await expect(link).toHaveAttribute(
+      "href",
+      /\/nightlydigest\/context-feed\?.*telescope=/,
+    );
+  });
+
+  test("data log link to cotnext feed falls back to 'na' when telescope or exposure data is missing", async ({
+    page,
+  }) => {
+    await setupApiMocks(page, {
+      "data-log": {
+        data_log: [
+          {
+            exposure_id: null, // Triggers "na" fallback
+            exposure_name: "", // Triggers "na" fallback
+            day_obs: 20260101,
+            obs_start: "2026-01-02T00:00:00.000",
+            science_program: "SURVEY",
+            physical_filter: "y_10",
+            band: "y",
+            can_see_sky: true,
+            airmass: 1.3,
+            sky_bg_median: 630,
+            exp_time: 30,
+          },
+        ],
+      },
+    });
+    await page.goto(DATALOG_URL);
+    await waitForDataLogLoad(page);
+
+    const firstRow = page.locator("[data-slot='table-body'] tr").first();
+    const cell = await cellByHeader(page, firstRow, "Context Feed");
+
+    await expect(cell).toHaveText("na");
+    await expect(cell.getByRole("link")).toHaveCount(0);
+  });
 });
