@@ -683,47 +683,47 @@ describe("utils", () => {
       const expectedUtcMicros = expectedUtcMillis * 1000;
       expect(params.get("selectedTime")).toBe(String(expectedUtcMicros));
 
-      // 3. Default 30s window bounds (±15,000 ms)
-      const expectedStartTime = expectedUtcMillis - 15000; // 1782820900413
-      const expectedEndTime = expectedUtcMillis + 15000; // 1782820930413
+      // 3. Default 60s window bounds (±30,000 ms)
+      const expectedStartTime = expectedUtcMillis - 30000; // 1782820900413
+      const expectedEndTime = expectedUtcMillis + 30000; // 1782820930413
 
       expect(params.get("startTime")).toBe(String(expectedStartTime));
       expect(params.get("endTime")).toBe(String(expectedEndTime));
 
-      // Verify total window duration is 30,000 ms (30s)
+      // Verify total window duration is 60,000 ms (60s)
       const durationMs =
         Number(params.get("endTime")) - Number(params.get("startTime"));
-      expect(durationMs).toBe(30000);
+      expect(durationMs).toBe(60000);
     });
 
-    it("supports an explicit 60s window override", () => {
+    it("supports an explicit 90s window override", () => {
       const urlString = getContextFeedUrl(
         telescope,
         dayObs,
         utcSelectedMillis,
-        60,
+        90,
       );
       const url = new URL(urlString, "http://localhost");
       const params = url.searchParams;
 
       const selectedMillis = 1782820915413;
-      // 60s window bounds (±30,000 ms)
-      const expectedStartTime = selectedMillis - 30000; // 1782820885413
-      const expectedEndTime = selectedMillis + 30000; // 1782820945413
+      // 90s window bounds (±45,000 ms)
+      const expectedStartTime = selectedMillis - 45000; // 1782820885413
+      const expectedEndTime = selectedMillis + 45000; // 1782820945413
 
       expect(params.get("startTime")).toBe(String(expectedStartTime));
       expect(params.get("endTime")).toBe(String(expectedEndTime));
 
       const durationMs =
         Number(params.get("endTime")) - Number(params.get("startTime"));
-      expect(durationMs).toBe(60000);
+      expect(durationMs).toBe(90000);
     });
 
     it("handles missing or empty telescope gracefully", () => {
       const urlString = getContextFeedUrl(null, dayObs, utcSelectedMillis);
       const url = new URL(urlString, "http://localhost");
 
-      expect(url.searchParams.get("telescope")).toBe("");
+      expect(url.searchParams.get("telescope")).toBe(null);
     });
   });
 

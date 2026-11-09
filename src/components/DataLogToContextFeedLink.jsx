@@ -1,11 +1,8 @@
-import {
-  getContextFeedUrl,
-  formatCellValue,
-  TELESCOPE_PREFIXES,
-} from "@/utils/utils";
+import { getContextFeedUrl, TELESCOPE_PREFIXES } from "@/utils/utils";
 import { taiDateTimeStrToUTCMillis } from "@/utils/timeUtils";
 import PropTypes from "prop-types";
 
+// Returns the data log to context feed link or "X" if something happens
 export default function DataLogToContextFeedLink({
   exposureId,
   dayObs,
@@ -14,11 +11,12 @@ export default function DataLogToContextFeedLink({
   windowSeconds = 60,
   children,
 }) {
-  if (!exposureId) return formatCellValue(exposureId);
+  if (!exposureId) return "na";
 
   const telescope = exposureName
     ? TELESCOPE_PREFIXES[exposureName.slice(0, 2)] ?? ""
     : "";
+  if (!telescope) return "na";
 
   // convert TAI ISO string directly into UTC epoch milliseconds
   const utcSelectedMillis = taiDateTimeStrToUTCMillis(obsStartTime);
@@ -30,7 +28,7 @@ export default function DataLogToContextFeedLink({
     windowSeconds,
   );
 
-  if (!url) return "X";
+  if (!url) return "na";
 
   return (
     <div className="p-1 rounded">
@@ -40,7 +38,7 @@ export default function DataLogToContextFeedLink({
         rel="noopener noreferrer"
         className="text-sky-500 underline hover:text-sky-300"
       >
-        {children ?? "X"}
+        {children ?? "na"}
       </a>
     </div>
   );

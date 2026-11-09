@@ -363,8 +363,8 @@ const getRubinTVUrl = (telescope, dayObs, seqNum) => {
  * Generates the Nightly Digest Context Feed URL based on telescope, dayObs, and TAI obsSelectedTime
  *
  * @param {string} telescope - The telescope name ("Simonyi" or "AuxTel").
- * @param {string|number} dayObs - Observation day (e.g. 20260521)
- * @param {string|number} UTCSelectedMillis - the UTC ms since the epoch time of what you want selected
+ * @param {string|number|null} dayObs - Observation day (e.g. 20260521)
+ * @param {string|number|null} UTCSelectedMillis - the UTC ms since the epoch time of what you want selected
  * @param {number} [windowSeconds=30] - Total size of time window in seconds (default: 30s, ±15s around selectedTime)
  * @returns {string|null} Formatted URL string or null if missing required parameters.
  */
@@ -374,9 +374,8 @@ const getContextFeedUrl = (
   utcSelectedMillis,
   windowSeconds = 60,
 ) => {
-  if (!dayObs || !utcSelectedMillis) return null;
-
-  if (isNaN(utcSelectedMillis)) return null;
+  if (!telescope || !dayObs || !utcSelectedMillis || isNaN(utcSelectedMillis))
+    return null;
 
   // Convert UTC milliseconds to UTC microseconds
   const utcSelectedMicros = utcSelectedMillis * 1000;
@@ -388,7 +387,7 @@ const getContextFeedUrl = (
 
   const dayObsStr = String(dayObs);
 
-  const baseUrl = "/nightlydigest/context-feed";
+  const baseUrl = `${import.meta.env.BASE_URL}context-feed`;
   const params = new URLSearchParams({
     startDayobs: dayObsStr,
     endDayobs: dayObsStr,
