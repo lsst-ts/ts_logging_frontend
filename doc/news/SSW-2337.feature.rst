@@ -1,1 +1,1 @@
-Added a link from the exposureID in the Data Log to 60 seconds around the exposure in the Context Feed.
+Add a column to the Data Log tht has a link to the Context Feed link 60 seconds around the exposure time start.
