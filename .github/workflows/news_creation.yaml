@@ -1,0 +1,32 @@
+name: ChangelogUpdated
+
+on: pull_request
+    
+env:
+  PYTHON_VERSION: '3.13'
+
+
+jobs:
+  build:
+    name: Check for new news fragments
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Miniconda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install
+        run: |
+          conda install -c conda-forge towncrier=23 -y
+  
+      - name: Run towncrier check command
+        run: |
+          towncrier check --compare-with origin/develop --config towncrier.toml
