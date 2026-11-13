@@ -9,7 +9,6 @@ import {
 import { matchValueOrInList } from "@/components/DataTable/tableUtils";
 import LinkIcon from "@/assets/LinkIcon.svg";
 import { isScientificNightlyDigest } from "@/utils/appConfig";
-import { formatTimestamp } from "@/utils/timeUtils";
 
 const columnHelper = createColumnHelper();
 
@@ -82,7 +81,7 @@ const commonColumns = [
   }),
   columnHelper.accessor("exposure_id", {
     header: "Exposure Id",
-    cell: ({ getValue }) => getValue(),
+    cell: (info) => formatCellValue(info.getValue()),
     size: 160,
     minSize: 140,
     filterType: null,
@@ -148,8 +147,8 @@ const commonColumns = [
   // Dayobs and timestamp
   columnHelper.accessor("obs_start", {
     header: "Obs Start (TAI)",
-    cell: (info) => formatTimestamp(info.getValue()),
-    size: 240,
+    cell: (info) => formatCellValue(info.getValue()),
+    size: 260,
     minSize: 240,
     filterType: "number-range",
     meta: {
@@ -159,8 +158,8 @@ const commonColumns = [
   }),
   columnHelper.accessor("obs_end", {
     header: "Obs End (TAI)",
-    cell: (info) => formatTimestamp(info.getValue()),
-    size: 240,
+    cell: (info) => formatCellValue(info.getValue()),
+    size: 250,
     minSize: 240,
     filterType: "number-range",
     meta: {
