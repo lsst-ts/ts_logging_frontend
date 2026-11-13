@@ -10,8 +10,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { createColumnHelper } from "@tanstack/react-table";
-import { formatCellValue } from "@/utils/utils";
 import { toEpochMicros, formatTimestamp } from "@/utils/timeUtils";
+import { formatCellValue } from "@/utils/utils";
 import { matchValueOrInList } from "@/components/DataTable/tableUtils";
 import { CATEGORY_INDEX_INFO } from "@/constants/CONTEXT_FEED_DEFINITIONS";
 
@@ -19,7 +19,6 @@ import CopyIcon from "../assets/CopyIcon.svg";
 import FullScreenIcon from "../assets/FullScreenIcon.svg";
 
 const columnHelper = createColumnHelper();
-
 // Handles Zephyr/Jira links on BLOCK names and plain text.
 function renderNameCell(info) {
   const value = info.getValue();
