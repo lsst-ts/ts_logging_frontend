@@ -1,3 +1,20 @@
+v0.29.0 (2026-11-18)
+====================
+
+New Features
+------------
+
+- Add SND retention policy. (`OSW-2669 <https://rubinobs.atlassian.net//browse/OSW-2669>`_)
+- Add a column to the Data Log tht has a link to the Context Feed link 60 seconds around the exposure time start. (`SSW-2337 <https://rubinobs.atlassian.net//browse/SSW-2337>`_)
+- Add a description of each observatory status into the information for Observatory Status app. (`SSW-3058 <https://rubinobs.atlassian.net//browse/SSW-3058>`_)
+
+
+Other Changes and Additions
+---------------------------
+
+- Update github workflows. (`SSW-3199 <https://rubinobs.atlassian.net//browse/SSW-3199>`_)
+
+
 v0.27.0 (2026-11-04)
 ====================
 

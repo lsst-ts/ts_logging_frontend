@@ -1,1 +1,0 @@
-Add a column to the Data Log tht has a link to the Context Feed link 60 seconds around the exposure time start.
