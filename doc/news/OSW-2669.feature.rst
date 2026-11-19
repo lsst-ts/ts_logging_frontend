@@ -1,1 +1,0 @@
-Add SND retention policy.
