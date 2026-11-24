@@ -78,17 +78,6 @@ export default function TimeLossCard({
       <div className="flex flex-row justify-between">
         {/* Data */}
         <div className="grid grid-cols-[auto_1fr] items-center gap-x-4 text-md">
-          <div>Fault:</div>
-          {obsStatusLoading ? (
-            <Skeleton
-              data-slot="time-loss-fault-loading"
-              className="h-3 w-10 bg-teal-700"
-            />
-          ) : (
-            <div data-slot="time-loss-fault">
-              {numberFormatter(obsStatusFaultLoss)}
-            </div>
-          )}
           <div>Weather:</div>
           {obsStatusLoading ? (
             <Skeleton
@@ -98,6 +87,17 @@ export default function TimeLossCard({
           ) : (
             <div data-slot="time-loss-weather">
               {numberFormatter(obsStatusWeatherLoss)}
+            </div>
+          )}
+          <div>Fault:</div>
+          {obsStatusLoading ? (
+            <Skeleton
+              data-slot="time-loss-fault-loading"
+              className="h-3 w-10 bg-teal-700"
+            />
+          ) : (
+            <div data-slot="time-loss-fault">
+              {numberFormatter(obsStatusFaultLoss)}
             </div>
           )}
           <div>Downtime:</div>
