@@ -157,10 +157,10 @@ export const METRIC_STATES = SERIES_ORDER.filter(
 export const STATUS_CUMULATIVE_SERIES_ORDER = [
   "UNKNOWN",
   "IDLE",
-  "WEATHER",
   "DOWNTIME",
   "OPERATIONAL",
   "FAULT",
+  "WEATHER",
 ];
 
 /**
@@ -201,13 +201,14 @@ export const STATUS_CUMULATIVE_LEGEND_LABELS = {
 
 /**
  * Opacity mapping for states
+ * Make weather the default color if/when it's active
  */
 export const STATUS_CUMULATIVE_AREA_OPACITY = {
   UNKNOWN: 0.5,
   DAYTIME: 0.4,
   OPERATIONAL: 0.4,
   FAULT: 0.4,
-  WEATHER: 0.4,
+  WEATHER: 1.0,
   DOWNTIME: 0.4,
   IDLE: 0.5,
 };
