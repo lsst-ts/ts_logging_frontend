@@ -67,10 +67,7 @@ export async function tooltipForTrigger(page, trigger) {
  * @param {string} title - The applet's CardTitle text.
  */
 export async function openAppletInfo(page, title) {
-  await appletCard(page, title)
-    .locator("[data-slot='card-header'] button")
-    .nth(1)
-    .click();
+  await appletCardActions(page, title).locator("button").nth(1).click();
 }
 
 /**
@@ -116,6 +113,15 @@ export function appletCard(page, title) {
       has: page.locator("[data-slot='card-title']", { hasText: title }),
     })
     .first();
+}
+
+export function appletCardActions(page, title) {
+  return page
+    .locator("[data-slot='card']")
+    .filter({
+      has: page.locator("[data-slot='card-title']", { hasText: title }),
+    })
+    .locator("xpath=following-sibling::*[1]");
 }
 
 /**
